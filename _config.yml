@@ -1,11 +1,11 @@
 # Site settings
 title: 袁平
-SEOTitle: 袁平 | Ping-Blog
+SEOTitle: 袁平 | HusterYP-Blog
 header-img: img/home-bg.jpg
 email: husteryp@gmail.com
 description: "Hello-World"
 keyword: ""
-url: "http://ping.github.io"              # your host, for absolute URL
+url: "http://husteryp.github.io"              # your host, for absolute URL
 baseurl: ""         # for example, '/blog' if your blog hosted on 'host/blog'
 
 
