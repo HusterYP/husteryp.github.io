@@ -5,16 +5,19 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Fri, 24 Aug 2018 12:00:19 +0800</pubDate>
-    <lastBuildDate>Fri, 24 Aug 2018 12:00:19 +0800</lastBuildDate>
+    <pubDate>Fri, 24 Aug 2018 20:04:19 +0800</pubDate>
+    <lastBuildDate>Fri, 24 Aug 2018 20:04:19 +0800</lastBuildDate>
     <generator>Jekyll v3.8.3</generator>
     
       <item>
         <title>高质量代码</title>
         <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
 &lt;blockquote&gt;
-  &lt;p&gt;本文不会详细去讲解代码规范等东西, 只是浅谈对高质量代码的一些细节理解和注意事项总结
-«剑指Offer»第三章要点总结&lt;/p&gt;
+  &lt;p&gt;本文不会详细去讲解代码规范等东西, 只是浅谈对高质量代码的一些细节理解和注意事项总结&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;«剑指Offer»第三章要点总结&lt;/p&gt;
 &lt;/blockquote&gt;
 
 &lt;hr /&gt;
@@ -116,11 +119,76 @@
       </item>
     
       <item>
+        <title>Detail</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+&lt;blockquote&gt;
+  &lt;p&gt;本文记录一些有助于提高代码性能和平时一些难以想到的细节处理&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;h2 id=&quot;一-边界值&quot;&gt;一. 边界值&lt;/h2&gt;
+
+&lt;h3 id=&quot;11-基本类型的范围限制&quot;&gt;1.1 基本类型的范围限制&lt;/h3&gt;
+
+&lt;h2 id=&quot;二-性能&quot;&gt;二. 性能&lt;/h2&gt;
+</description>
+        <pubDate>Fri, 24 Aug 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/08/24/Details/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/08/24/Details/</guid>
+        
+        <category>Algorithm</category>
+        
+        
+      </item>
+    
+      <item>
+        <title>AndroidStudio代理设置</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+&lt;blockquote&gt;
+  &lt;p&gt;近日, Android Studio新建项目一直Gradle失败, 网上各种搜, 说是设置代理, 然而代理设置之后不能使用, 搞了一天, 差点就滚去重装AS了, 不过终于还是搞清楚问题出在哪里了, 以此记录&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;h2 id=&quot;一-问题描述&quot;&gt;一. 问题描述&lt;/h2&gt;
+&lt;ul&gt;
+  &lt;li&gt;新建项目失败&lt;/li&gt;
+  &lt;li&gt;完好的项目第二次打开之后, Gradle失败&lt;/li&gt;
+  &lt;li&gt;使用Help-&amp;gt;Check for Updates 提示联网失败&lt;/li&gt;
+  &lt;li&gt;SDK 无法联网下载&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/AndroidStudio/timeout.png&quot; alt=&quot;联网失败&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;二-解决&quot;&gt;二. 解决&lt;/h2&gt;
+&lt;ul&gt;
+  &lt;li&gt;根本原因还是ShadowSocks的代理设置有问题, 之前使用的是Socks5代理, 改为Http代理就好了, 如下&lt;/li&gt;
+  &lt;li&gt;在网上查了一下, Socks5是局部代理, Android Studio 本身支持 socks5 代理，但是 gradle 只支持 http 代理，这也导致了虽然开着 shadowsocks 却无法更新 SDK 或者下载 gradle 依赖;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/AndroidStudio/socks.png&quot; alt=&quot;Socks5代理&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;改为&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/AndroidStudio/http.png&quot; alt=&quot;Http代理&quot; /&gt;&lt;/p&gt;
+</description>
+        <pubDate>Mon, 20 Aug 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/08/20/AndroidStudio%E4%BB%A3%E7%90%86%E8%AE%BE%E7%BD%AE%E8%B8%A9%E5%9D%91/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/08/20/AndroidStudio%E4%BB%A3%E7%90%86%E8%AE%BE%E7%BD%AE%E8%B8%A9%E5%9D%91/</guid>
+        
+        <category>AndroidStudio</category>
+        
+        
+      </item>
+    
+      <item>
         <title>Blog Template</title>
         <description>&lt;h3 id=&quot;blog-template&quot;&gt;Blog Template&lt;/h3&gt;
 
 &lt;p&gt;发布博客直接将&lt;code class=&quot;highlighter-rouge&quot;&gt;md&lt;/code&gt;文件扔到&lt;code class=&quot;highlighter-rouge&quot;&gt;_post&lt;/code&gt;文件夹下即可; 需要注意命名规范, 文件名需要以时间格式开头(参照&lt;code class=&quot;highlighter-rouge&quot;&gt;2018-08-20-template.md&lt;/code&gt;命名)&lt;/p&gt;
 
+&lt;p&gt;本地博客测试: &lt;code class=&quot;highlighter-rouge&quot;&gt;jekyll serve&lt;/code&gt;&lt;/p&gt;
 </description>
         <pubDate>Mon, 20 Aug 2018 00:00:00 +0800</pubDate>
         <link>http://localhost:4000/2018/08/20/template/</link>

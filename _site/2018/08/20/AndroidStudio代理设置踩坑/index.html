@@ -10,9 +10,9 @@
     <meta name="keyword"  content="">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>Blog Template - 袁平 | HusterYP-Blog</title>
+    <title>AndroidStudio代理设置 - 袁平 | HusterYP-Blog</title>
 
-    <link rel="canonical" href="http://localhost:4000/2018/08/20/template/">
+    <link rel="canonical" href="http://localhost:4000/2018/08/20/AndroidStudio%E4%BB%A3%E7%90%86%E8%AE%BE%E7%BD%AE%E8%B8%A9%E5%9D%91/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/css/bootstrap.min.css">
@@ -140,13 +140,13 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/tags/#Blog" title="Blog">Blog</a>
+                        <a class="tag" href="/tags/#AndroidStudio" title="AndroidStudio">AndroidStudio</a>
                         
                     </div>
-                    <h1>Blog Template</h1>
+                    <h1>AndroidStudio代理设置</h1>
                     
                     
-                    <h2 class="subheading">博客模板</h2>
+                    <h2 class="subheading">Android Studio踩坑</h2>
                     
                     <span class="meta">Posted by 袁平 on August 20, 2018</span>
                 </div>
@@ -166,11 +166,34 @@
                 col-md-10 col-md-offset-1
                 post-container">
 
-				<h3 id="blog-template">Blog Template</h3>
+				<h1 id="前言">前言</h1>
+<blockquote>
+  <p>近日, Android Studio新建项目一直Gradle失败, 网上各种搜, 说是设置代理, 然而代理设置之后不能使用, 搞了一天, 差点就滚去重装AS了, 不过终于还是搞清楚问题出在哪里了, 以此记录</p>
+</blockquote>
 
-<p>发布博客直接将<code class="highlighter-rouge">md</code>文件扔到<code class="highlighter-rouge">_post</code>文件夹下即可; 需要注意命名规范, 文件名需要以时间格式开头(参照<code class="highlighter-rouge">2018-08-20-template.md</code>命名)</p>
+<h1 id="正文">正文</h1>
 
-<p>本地博客测试: <code class="highlighter-rouge">jekyll serve</code></p>
+<h2 id="一-问题描述">一. 问题描述</h2>
+<ul>
+  <li>新建项目失败</li>
+  <li>完好的项目第二次打开之后, Gradle失败</li>
+  <li>使用Help-&gt;Check for Updates 提示联网失败</li>
+  <li>SDK 无法联网下载</li>
+</ul>
+
+<p><img src="/img/post/AndroidStudio/timeout.png" alt="联网失败" /></p>
+
+<h2 id="二-解决">二. 解决</h2>
+<ul>
+  <li>根本原因还是ShadowSocks的代理设置有问题, 之前使用的是Socks5代理, 改为Http代理就好了, 如下</li>
+  <li>在网上查了一下, Socks5是局部代理, Android Studio 本身支持 socks5 代理，但是 gradle 只支持 http 代理，这也导致了虽然开着 shadowsocks 却无法更新 SDK 或者下载 gradle 依赖;</li>
+</ul>
+
+<p><img src="/img/post/AndroidStudio/socks.png" alt="Socks5代理" /></p>
+
+<p>改为</p>
+
+<p><img src="/img/post/AndroidStudio/http.png" alt="Http代理" /></p>
 
 
                 <hr>
@@ -180,9 +203,13 @@
 
                 <ul class="pager">
                     
+                    <li class="previous">
+                        <a href="/2018/08/20/template/" data-toggle="tooltip" data-placement="top" title="Blog Template">&larr; Previous Post</a>
+                    </li>
+                    
                     
                     <li class="next">
-                        <a href="/2018/08/20/AndroidStudio%E4%BB%A3%E7%90%86%E8%AE%BE%E7%BD%AE%E8%B8%A9%E5%9D%91/" data-toggle="tooltip" data-placement="top" title="AndroidStudio代理设置">Next Post &rarr;</a>
+                        <a href="/2018/08/24/Details/" data-toggle="tooltip" data-placement="top" title="Detail">Next Post &rarr;</a>
                     </li>
                     
                 </ul>
@@ -248,8 +275,8 @@
 <script type="text/javascript">
     /* * * CONFIGURATION VARIABLES * * */
     var disqus_shortname = "HusterYP";
-    var disqus_identifier = "/2018/08/20/template";
-    var disqus_url = "http://localhost:4000/2018/08/20/template/";
+    var disqus_identifier = "/2018/08/20/AndroidStudio代理设置踩坑";
+    var disqus_url = "http://localhost:4000/2018/08/20/AndroidStudio%E4%BB%A3%E7%90%86%E8%AE%BE%E7%BD%AE%E8%B8%A9%E5%9D%91/";
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
