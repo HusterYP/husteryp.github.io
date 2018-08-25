@@ -31,3 +31,6 @@ tags:
 改为
 
 ![Http代理](/img/post/AndroidStudio/http.png)
+
+## 参考
+* [参考博客](https://hellovass.info/2017/04/04/%E7%9C%9F%C2%B7Android%20Studio%20%E4%BB%A3%E7%90%86%E8%AE%BE%E7%BD%AE%E6%8C%87%E5%8D%97/)

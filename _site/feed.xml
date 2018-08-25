@@ -5,9 +5,68 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Fri, 24 Aug 2018 20:04:19 +0800</pubDate>
-    <lastBuildDate>Fri, 24 Aug 2018 20:04:19 +0800</lastBuildDate>
+    <pubDate>Sat, 25 Aug 2018 10:53:25 +0800</pubDate>
+    <lastBuildDate>Sat, 25 Aug 2018 10:53:25 +0800</lastBuildDate>
     <generator>Jekyll v3.8.3</generator>
+    
+      <item>
+        <title>MarkDown中使用数学公式</title>
+        <description>&lt;script type=&quot;text/javascript&quot; src=&quot;http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=default&quot;&gt;&lt;/script&gt;
+
+&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+&lt;blockquote&gt;
+  &lt;p&gt;如何在MarkDown中使用数学公式&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;在MarkDown文章中插入下面代码(MathJax引擎)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&amp;lt;script type=&quot;text/javascript&quot; src=&quot;http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=default&quot;&amp;gt;&amp;lt;/script&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;之后就可以使用&lt;code class=&quot;highlighter-rouge&quot;&gt;Latex&lt;/code&gt;语法来书写数学公式了; 需要注意的是, 每个数学公式都应该以&lt;code class=&quot;highlighter-rouge&quot;&gt;$$&lt;/code&gt;开头和结尾, 如下&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$$
+a^{n}=\begin{equation}
+\left\{
+             \begin{array}{**lr**}
+             a^{n/2}*a^{n/2}, &amp;amp; n为偶数 \\
+             a^{(n-1)/2}*a^{(n-1)/2} &amp;amp; n为奇数 \\
+             \end{array}
+\right.
+\end{equation}
+$$
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;显示结果为&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+a^{n}=\begin{equation}
+\left\{
+             \begin{array}{**lr**}
+             a^{n/2}*a^{n/2}, &amp; n为偶数 \\
+             a^{(n-1)/2}*a^{(n-1)/2} &amp; n为奇数 \\
+             \end{array}
+\right.
+\end{equation} %]]&gt;&lt;/script&gt;
+
+&lt;h1 id=&quot;参考链接&quot;&gt;参考链接&lt;/h1&gt;
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://blog.csdn.net/xiahouzuoxin/article/details/26478179&quot;&gt;参考博客&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+        <pubDate>Sat, 25 Aug 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/08/25/MarkDown%E4%B8%AD%E4%BD%BF%E7%94%A8%E6%95%B0%E5%AD%A6%E5%85%AC%E5%BC%8F/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/08/25/MarkDown%E4%B8%AD%E4%BD%BF%E7%94%A8%E6%95%B0%E5%AD%A6%E5%85%AC%E5%BC%8F/</guid>
+        
+        <category>MarkDown</category>
+        
+        
+      </item>
     
       <item>
         <title>高质量代码</title>
@@ -120,7 +179,9 @@
     
       <item>
         <title>Detail</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+        <description>&lt;script type=&quot;text/javascript&quot; src=&quot;http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=default&quot;&gt;&lt;/script&gt;
+
+&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
 &lt;blockquote&gt;
   &lt;p&gt;本文记录一些有助于提高代码性能和平时一些难以想到的细节处理&lt;/p&gt;
 &lt;/blockquote&gt;
@@ -130,8 +191,115 @@
 &lt;h2 id=&quot;一-边界值&quot;&gt;一. 边界值&lt;/h2&gt;
 
 &lt;h3 id=&quot;11-基本类型的范围限制&quot;&gt;1.1 基本类型的范围限制&lt;/h3&gt;
+&lt;blockquote&gt;
+  &lt;p&gt;一般而言, 看到基本类型, 特别是返回值或者涉及到计算的, 都应该考虑基本类型的范围限制&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;比如实现库函数: &lt;code class=&quot;highlighter-rouge&quot;&gt;double Pow(double base, double exp)&lt;/code&gt;时, 需要考虑大数问题(如果要求是任意大的数字, 则需要使用特殊的数据结构来表示数据, 比如用字符串或者数组来表示大的数字, 以确保不会溢出(这也是大数问题的解决方法))&lt;/li&gt;
+&lt;/ul&gt;
 
 &lt;h2 id=&quot;二-性能&quot;&gt;二. 性能&lt;/h2&gt;
+&lt;blockquote&gt;
+  &lt;p&gt;性能的影响一般分为时间性能和空间性能, 一般性能的提升考虑的方面有: 递归转循环, 位运算代替加减乘除, 算法改进(如: 利用全局有序或者局部有序使用二分等)&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h3 id=&quot;21-快速计算乘方&quot;&gt;2.1 快速计算乘方&lt;/h3&gt;
+&lt;blockquote&gt;
+  &lt;p&gt;计算 &lt;script type=&quot;math/tex&quot;&gt;a^{n}&lt;/script&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;公式如下&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+a^{n}=\begin{equation}
+\left\{
+             \begin{array}{**lr**}
+             a^{n/2}*a^{n/2}, &amp; n为偶数 \\
+             a^{(n-1)/2}*a^{(n-1)/2} &amp; n为奇数 \\
+             \end{array}
+\right.
+\end{equation} %]]&gt;&lt;/script&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;除了使用常规方法, 即一个n次循环计算乘方外, 可利用上面的公式来快速计算; 该公式是明显的递归式&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;double PowerWithUnsignedExponent(double base, unsigned int exponent) // 注意 
+{
+    if (0 == exponent) 
+        return 1;
+    if (1 == exponent) 
+        return base;
+    double result = PowerWithUnsignedExponent(base, exponent &amp;gt;&amp;gt; 1); // 注意
+    result *= result;
+    if (1 == exponent &amp;amp; 0x1) // 注意
+        result *= base;
+    return result;
+} 
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;上面的代码中需要注意的几点
+    &lt;blockquote&gt;
+      &lt;ol&gt;
+        &lt;li&gt;使用&lt;code class=&quot;highlighter-rouge&quot;&gt;unsigned&lt;/code&gt;来进一步限定范围&lt;/li&gt;
+        &lt;li&gt;判等时, 常量放在左边&lt;/li&gt;
+        &lt;li&gt;使用移位运算代替乘除&lt;/li&gt;
+        &lt;li&gt;使用与运算代替奇数和偶数判断&lt;/li&gt;
+      &lt;/ol&gt;
+    &lt;/blockquote&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;22-位运算&quot;&gt;2.2 位运算&lt;/h3&gt;
+
+&lt;h4 id=&quot;22-1-奇偶判断&quot;&gt;2.2-1 奇偶判断&lt;/h4&gt;
+&lt;blockquote&gt;
+  &lt;p&gt;奇数二进制最后一位为1, 可利用与运算判断&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;if (1 == target &amp;amp; 0x1) 
+{
+    // 奇数...
+}
+else 
+{
+    // 偶数...
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h4 id=&quot;22-2-位移运算代替乘除&quot;&gt;2.2-2 位移运算代替乘除&lt;/h4&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;左移&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;&amp;lt;&lt;/code&gt;一位, 相当于乘2; 右移&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;gt;&amp;gt;&lt;/code&gt;一位, 相当于除以2&lt;/li&gt;
+  &lt;li&gt;注意移位规则
+    &lt;blockquote&gt;
+      &lt;ol&gt;
+        &lt;li&gt;左移: 右边直接补充0&lt;/li&gt;
+        &lt;li&gt;右移: 如果是一个无符号数, 左边用0填充n位; 如果是有符号数, 左边使用其符号位填充n位&lt;/li&gt;
+      &lt;/ol&gt;
+    &lt;/blockquote&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;三-编码细节&quot;&gt;三. 编码细节&lt;/h2&gt;
+&lt;blockquote&gt;
+  &lt;p&gt;记录一些常见或者很隐晦的编码错误或陋习&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h3 id=&quot;31--浮点数的相等判断&quot;&gt;3.1  浮点数的相等判断&lt;/h3&gt;
+&lt;ul&gt;
+  &lt;li&gt;不可直接使用&lt;code class=&quot;highlighter-rouge&quot;&gt;a == b&lt;/code&gt;的形式判断, 因为计算机表示浮点数是无限循环小数, 但是float和double是有限的, 结果就会差那么一点点; 具体&lt;a href=&quot;https://www.zhihu.com/question/21175703&quot;&gt;参见回答&lt;/a&gt;; 所以一般会将浮点数的判等转换为&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;=&lt;/code&gt;或者&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;gt;=&lt;/code&gt;, 即如下重写一个&lt;code class=&quot;highlighter-rouge&quot;&gt;equals()&lt;/code&gt;函数; 同时需要注意的是当用浮点常量和浮点变量相比较时, 不要忘了还是应该用这种比较噢&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;int equals(double a, double b) 
+{
+    return fabs(a - b) &amp;lt; exp;  // 其中exp为精度(如: 0.000001), 需要具体讨论得出
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 </description>
         <pubDate>Fri, 24 Aug 2018 00:00:00 +0800</pubDate>
         <link>http://localhost:4000/2018/08/24/Details/</link>
@@ -172,6 +340,11 @@
 &lt;p&gt;改为&lt;/p&gt;
 
 &lt;p&gt;&lt;img src=&quot;/img/post/AndroidStudio/http.png&quot; alt=&quot;Http代理&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;参考&quot;&gt;参考&lt;/h2&gt;
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://hellovass.info/2017/04/04/%E7%9C%9F%C2%B7Android%20Studio%20%E4%BB%A3%E7%90%86%E8%AE%BE%E7%BD%AE%E6%8C%87%E5%8D%97/&quot;&gt;参考博客&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
 </description>
         <pubDate>Mon, 20 Aug 2018 00:00:00 +0800</pubDate>
         <link>http://localhost:4000/2018/08/20/AndroidStudio%E4%BB%A3%E7%90%86%E8%AE%BE%E7%BD%AE%E8%B8%A9%E5%9D%91/</link>
