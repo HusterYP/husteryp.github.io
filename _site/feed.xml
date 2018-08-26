@@ -5,9 +5,278 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Sat, 25 Aug 2018 10:53:25 +0800</pubDate>
-    <lastBuildDate>Sat, 25 Aug 2018 10:53:25 +0800</lastBuildDate>
+    <pubDate>Sun, 26 Aug 2018 18:47:47 +0800</pubDate>
+    <lastBuildDate>Sun, 26 Aug 2018 18:47:47 +0800</lastBuildDate>
     <generator>Jekyll v3.8.3</generator>
+    
+      <item>
+        <title>Java集合框架概述</title>
+        <description>&lt;hr /&gt;
+
+&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+&lt;blockquote&gt;
+  &lt;p&gt;Java集合框架概述; 主要总述Java集合框架的设计理念, 组成和基本接口(及其区别等)&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;一-设计理念&quot;&gt;一. 设计理念&lt;/h2&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;在Java 2之前，Java是没有完整的集合框架的。它只有一些简单的可以自扩展的容器类，比如Vector，Stack，Hashtable等)&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Java集合其实就是一组对象的集合&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;独立于实现细节, 方便重用, 保证向下兼容(即保留了&lt;code class=&quot;highlighter-rouge&quot;&gt;Vector&lt;/code&gt;等旧的API)&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;加强了API之间的互通信, 减少了新API的学习: 提供尽量统一的接口&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;二-基本组成&quot;&gt;二. 基本组成&lt;/h2&gt;
+
+&lt;h3 id=&quot;21-总述&quot;&gt;2.1 总述&lt;/h3&gt;
+
+&lt;p&gt;Java集合框架主要分为三个部分: &lt;strong&gt;接口, 实现和算法&lt;/strong&gt;&lt;/p&gt;
+
+&lt;h4 id=&quot;21-1-接口&quot;&gt;2.1-1 接口&lt;/h4&gt;
+
+&lt;p&gt;接口指的是以&lt;code class=&quot;highlighter-rouge&quot;&gt;Collection&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;Map&lt;/code&gt;为起始的一系列公用接口&lt;/p&gt;
+
+&lt;p&gt;实际上从&lt;code class=&quot;highlighter-rouge&quot;&gt;Map&lt;/code&gt;出发的并不是真正的集合, 只是其包含集合视图操作, 所以也将其归入集合框架中&lt;/p&gt;
+
+&lt;p&gt;从&lt;code class=&quot;highlighter-rouge&quot;&gt;Collection&lt;/code&gt;出发的公用接口主要有以下几个, 也是这次会着重讲解和比较的; 当然, 下面的接口并不全面, 在后面会逐渐扩展和补充&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/Java_Collection/Collection基本接口.png&quot; alt=&quot;集合框架基本接口&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;从&lt;code class=&quot;highlighter-rouge&quot;&gt;Map&lt;/code&gt;出发的公用接口如下&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/Java_Collection/Map基本接口.png&quot; alt=&quot;集合框架基本接口&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;当然, 上述列举出来的子接口都是直接继承自&lt;code class=&quot;highlighter-rouge&quot;&gt;Collection&lt;/code&gt;或者&lt;code class=&quot;highlighter-rouge&quot;&gt;Map&lt;/code&gt;, 对于其子接口的子接口, 这里并没有列出在这里(比如&lt;code class=&quot;highlighter-rouge&quot;&gt;NavigableMap&lt;/code&gt;接口是&lt;code class=&quot;highlighter-rouge&quot;&gt;SortedMap&lt;/code&gt;接口的子接口, 而不是直接继承&lt;code class=&quot;highlighter-rouge&quot;&gt;Map&lt;/code&gt;的, 所以这里并没有直接列出来)&lt;/p&gt;
+
+&lt;h4 id=&quot;21-2-实现&quot;&gt;2.1-2 实现&lt;/h4&gt;
+
+&lt;p&gt;实现指的是接口的实现类, 这里笔者在官网找到一张表, 如下, 很好的列出了平时重点所用的实现类&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Interface&lt;/th&gt;
+      &lt;th&gt;Hash Table&lt;/th&gt;
+      &lt;th&gt;Resizable Array&lt;/th&gt;
+      &lt;th&gt;Balanced Tree&lt;/th&gt;
+      &lt;th&gt;Linked List&lt;/th&gt;
+      &lt;th&gt;Hash Table + Linked List&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Set&lt;/td&gt;
+      &lt;td&gt;HashSet&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+      &lt;td&gt;TreeSet&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+      &lt;td&gt;LinkedHashSet&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;List&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+      &lt;td&gt;ArrayList&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+      &lt;td&gt;LinkedList&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Deque&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+      &lt;td&gt;ArrayDeque&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+      &lt;td&gt;LinkedList&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Map&lt;/td&gt;
+      &lt;td&gt;HashMap&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+      &lt;td&gt;TreeMap&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+      &lt;td&gt;LinkedHashMap&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;当然, 还应该包含Java 2以前几个旧API, 即: &lt;code class=&quot;highlighter-rouge&quot;&gt;Vector&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;Stack&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;Hashtable&lt;/code&gt;&lt;/p&gt;
+
+&lt;h4 id=&quot;21-3-算法&quot;&gt;2.1-3 算法&lt;/h4&gt;
+
+&lt;h5 id=&quot;1-算法&quot;&gt;(1). 算法&lt;/h5&gt;
+
+&lt;p&gt;算法指的是以&lt;code class=&quot;highlighter-rouge&quot;&gt;Collections&lt;/code&gt;为主的提供的一系列对集合的操作, 参见下图, 列出了其提供的常用算法&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/Java_Collection/Collections方法.png&quot; alt=&quot;集合框架基本接口&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;下面对上述方法进行一些简单解释&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;sort(List)&lt;/code&gt;: 使用归并排序, 保证&lt;code class=&quot;highlighter-rouge&quot;&gt;NlogN&lt;/code&gt;的时间复杂度和稳定性&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;binarySearch(List, Object)&lt;/code&gt;: 在一个有序的&lt;code class=&quot;highlighter-rouge&quot;&gt;List&lt;/code&gt;中使用二分查找&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;reverse(List)&lt;/code&gt;: 逆转&lt;code class=&quot;highlighter-rouge&quot;&gt;List&lt;/code&gt;&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;shuffle(List)&lt;/code&gt;: 将&lt;code class=&quot;highlighter-rouge&quot;&gt;List&lt;/code&gt;中的元素随机重排&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;fill(List, Object)&lt;/code&gt;: 使用指定值(&lt;code class=&quot;highlighter-rouge&quot;&gt;Object&lt;/code&gt;)覆盖&lt;code class=&quot;highlighter-rouge&quot;&gt;List&lt;/code&gt;中所有元素&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;copy(List dest, List src)&lt;/code&gt;: 拷贝&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;min(Collection)&lt;/code&gt;: 返回最小值&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;max(Collection)&lt;/code&gt;: 返回最大值&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;rotate(List list, int distance)&lt;/code&gt;: 将&lt;code class=&quot;highlighter-rouge&quot;&gt;List&lt;/code&gt;中元素旋转指定&lt;code class=&quot;highlighter-rouge&quot;&gt;distance&lt;/code&gt;&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;replaceAll(List list, Object oldVal, Object newVal)&lt;/code&gt;: 将&lt;code class=&quot;highlighter-rouge&quot;&gt;List&lt;/code&gt;中出现的所有&lt;code class=&quot;highlighter-rouge&quot;&gt;oldVal&lt;/code&gt;替换为&lt;code class=&quot;highlighter-rouge&quot;&gt;newVal&lt;/code&gt;&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;indexOfSubList(List source, List target)&lt;/code&gt;: 返回&lt;code class=&quot;highlighter-rouge&quot;&gt;source&lt;/code&gt;中与&lt;code class=&quot;highlighter-rouge&quot;&gt;target&lt;/code&gt;匹配的第一个子项的首元素索引&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;lastIndexOfSubList(List source, List target)&lt;/code&gt;: 返回最后一个匹配子项的首元素索引&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;swap(List, int, int)&lt;/code&gt;: 交换指定位置的两个元素&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;frequency(Collection, Object)&lt;/code&gt;: 找出指定元素出现次数&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;disjoint(Collection, Collection)&lt;/code&gt;: 判断两个集合是否包含相同元素(即集合是否相交)&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;addAll(Collection&amp;lt;? super T&amp;gt;, T...)&lt;/code&gt;: 将指定元素添加到指定集合中&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h5 id=&quot;2-包装类&quot;&gt;(2). 包装类&lt;/h5&gt;
+
+&lt;p&gt;当然, 实际上&lt;code class=&quot;highlighter-rouge&quot;&gt;Collections&lt;/code&gt;提供的不仅仅是针对集合的算法, 其还提供了一系列对集合的包装类(即&lt;code class=&quot;highlighter-rouge&quot;&gt;Wrapper&lt;/code&gt;), 主要包括以下三大类:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Collections.unmodifiableInterface()&lt;/code&gt;: 返回一个不可修改的集合, 包括&lt;code class=&quot;highlighter-rouge&quot;&gt;UnmodifiableCollection&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;UnmodifiableSet&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;UnmodifiableList&lt;/code&gt;; 实现原理是在修改集合的操作上(如&lt;code class=&quot;highlighter-rouge&quot;&gt;add()&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;remove()&lt;/code&gt;等)抛出异常&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Collections.synchronizedInterface()&lt;/code&gt;: 返回一个线程安全的集合, 包括&lt;code class=&quot;highlighter-rouge&quot;&gt;SynchronizedCollection&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;SynchronizedSet&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;SynchronizedList&lt;/code&gt;; 实现原理是在需要同步的方法上添加&lt;code class=&quot;highlighter-rouge&quot;&gt;synchronized&lt;/code&gt;限制&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Collections.checkedInterface()&lt;/code&gt;: 返回一个类型检查的集合, 包括&lt;code class=&quot;highlighter-rouge&quot;&gt;CheckedCollection&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;CheckedQueue&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;CheckedSet&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;CheckedList&lt;/code&gt;; 实现原理是在&lt;code class=&quot;highlighter-rouge&quot;&gt;add()&lt;/code&gt;的时候进行类型检查, 如果是非法类型, 就抛出异常&lt;code class=&quot;highlighter-rouge&quot;&gt;ClassCastException&lt;/code&gt;; 这里的类型检查实际上是使用&lt;code class=&quot;highlighter-rouge&quot;&gt;Class.isInstance()&lt;/code&gt;来检查的, 关于该方法和&lt;code class=&quot;highlighter-rouge&quot;&gt;instanceof&lt;/code&gt;运算符的区别, &lt;a href=&quot;https://blog.csdn.net/chao821/article/details/79739447&quot;&gt;参见博客&lt;/a&gt;; (大致上, 二者是等价的, 只是&lt;code class=&quot;highlighter-rouge&quot;&gt;isInstance()&lt;/code&gt;是在运行时才进行类型检查, 故可用于反射, 泛型;
+但是&lt;code class=&quot;highlighter-rouge&quot;&gt;instanceof&lt;/code&gt;需要在编译时知道类的具体类型(重点理解在动态等价))&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;这些包装类的作用主要是满足平时一些特殊的需求, 比如同步, 不可修改等&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;三-基本接口&quot;&gt;三. 基本接口&lt;/h2&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;在这一节, 主要讲解上面提到的几个基本接口, 这里不会涉及到其实现类&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h3 id=&quot;31-collection&quot;&gt;3.1 Collection&lt;/h3&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Collection&lt;/code&gt;是集合框架中一个最顶层的基本接口, 提供了一个数据集的基本描述, 在官方API中并没有提供其直接实现类, 而是在其基础上提供了进一步的限制接口, 即&lt;code class=&quot;highlighter-rouge&quot;&gt;List&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;Set&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;Queue&lt;/code&gt;; 这样做的好处有:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;代码复用: 从面向对象的角度讲, 抽取出一个顶级接口, 有助于用户代码复用, 即编写一个接口, 实现不同传参(&lt;code class=&quot;highlighter-rouge&quot;&gt;Collection&lt;/code&gt;的各种实现类), 实际上也是利用了多态(官方文档的解释是: 实现最大通用性)&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;易于扩展: 符合面向对象的思想, 即将数据集抽象, 通过不同的需求对其实现不同方便的限制, 易于扩展; 同时减少新API学习成本&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Collection&lt;/code&gt;提供了数据操作的基本方法, 如&lt;code class=&quot;highlighter-rouge&quot;&gt;add()&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;remove()&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;size()&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;clear()&lt;/code&gt;等; 同时, 其还继承了&lt;code class=&quot;highlighter-rouge&quot;&gt;Iterable&lt;/code&gt;接口, 这个接口是用于使用迭代器遍历集合用的, 使用迭代器遍历集合的优点是我们不必知道集合的内部结果,集合的内部结构、状态由&lt;code class=&quot;highlighter-rouge&quot;&gt;Iterator&lt;/code&gt;来维持,   通过统一的方法&lt;code class=&quot;highlighter-rouge&quot;&gt;hasNext()&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;next()&lt;/code&gt;来判断和获取下一个元素&lt;/p&gt;
+
+&lt;h3 id=&quot;32-list&quot;&gt;3.2 List&lt;/h3&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;List&lt;/code&gt;在&lt;code class=&quot;highlighter-rouge&quot;&gt;Collection&lt;/code&gt;上做的限制是, 元素有序(但并不是排序), 允许重复元素; 同时还将迭代器换成了&lt;code class=&quot;highlighter-rouge&quot;&gt;ListIterator&lt;/code&gt;; 关于&lt;code class=&quot;highlighter-rouge&quot;&gt;ListIterator&lt;/code&gt;, 其允许双向的迭代, 以及元素插入(&lt;code class=&quot;highlighter-rouge&quot;&gt;ListIterator.add()&lt;/code&gt;), 删除(&lt;code class=&quot;highlighter-rouge&quot;&gt;ListIterator.remove()&lt;/code&gt;)和替换&lt;code class=&quot;highlighter-rouge&quot;&gt;ListIterator.set()&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;在&lt;code class=&quot;highlighter-rouge&quot;&gt;JDK9&lt;/code&gt;中, 还提供了一个&lt;code class=&quot;highlighter-rouge&quot;&gt;List.of()&lt;/code&gt;的静态方法, 用于返回一个不可变&lt;code class=&quot;highlighter-rouge&quot;&gt;List&lt;/code&gt;(&lt;code class=&quot;highlighter-rouge&quot;&gt;Immutable List&lt;/code&gt;)&lt;/p&gt;
+
+&lt;h3 id=&quot;33-set&quot;&gt;3.3 Set&lt;/h3&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Set&lt;/code&gt;在&lt;code class=&quot;highlighter-rouge&quot;&gt;Collection&lt;/code&gt;上做的限制是, 元素不重复, 至多一个null元素&lt;/p&gt;
+
+&lt;p&gt;在&lt;code class=&quot;highlighter-rouge&quot;&gt;JDK9&lt;/code&gt;中, 还提供了一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Set.of()&lt;/code&gt;的静态方法, 用于返回一个不可变的&lt;code class=&quot;highlighter-rouge&quot;&gt;Set&lt;/code&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;34-queue&quot;&gt;3.4 Queue&lt;/h3&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Queue&lt;/code&gt;在&lt;code class=&quot;highlighter-rouge&quot;&gt;Collection&lt;/code&gt;上做的限制是, 除了&lt;code class=&quot;highlighter-rouge&quot;&gt;Collection&lt;/code&gt;提供的基本操作外, 还提供了一些额外的操作, 分为两类, 一个返回特定值, 另一个抛出异常, 见下表&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt; &lt;/th&gt;
+      &lt;th&gt;Throw Exception&lt;/th&gt;
+      &lt;th&gt;Return Special Value&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Insert&lt;/td&gt;
+      &lt;td&gt;add(e)&lt;/td&gt;
+      &lt;td&gt;offer(e)&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Remove&lt;/td&gt;
+      &lt;td&gt;remove()&lt;/td&gt;
+      &lt;td&gt;poll()&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Examine&lt;/td&gt;
+      &lt;td&gt;element()&lt;/td&gt;
+      &lt;td&gt;peek()&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;h3 id=&quot;35-map&quot;&gt;3.5 Map&lt;/h3&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Map&lt;/code&gt;本质上是一组键值对, &lt;code class=&quot;highlighter-rouge&quot;&gt;Map&lt;/code&gt;允许单独访问&lt;code class=&quot;highlighter-rouge&quot;&gt;key&lt;/code&gt;(通过&lt;code class=&quot;highlighter-rouge&quot;&gt;keySet()&lt;/code&gt;返回&lt;code class=&quot;highlighter-rouge&quot;&gt;key&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;Set&lt;/code&gt;), 也可以单独访问&lt;code class=&quot;highlighter-rouge&quot;&gt;value&lt;/code&gt;(通过&lt;code class=&quot;highlighter-rouge&quot;&gt;values()&lt;/code&gt;方法返回&lt;code class=&quot;highlighter-rouge&quot;&gt;value&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;Collection&lt;/code&gt;), 也可以通过&lt;code class=&quot;highlighter-rouge&quot;&gt;entrySet()&lt;/code&gt;获取&lt;code class=&quot;highlighter-rouge&quot;&gt;key-value&lt;/code&gt;的对应关系&lt;/p&gt;
+
+</description>
+        <pubDate>Sun, 26 Aug 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/</guid>
+        
+        <category>Java</category>
+        
+        
+      </item>
     
       <item>
         <title>MarkDown中使用数学公式</title>
@@ -64,6 +333,76 @@ a^{n}=\begin{equation}
         <guid isPermaLink="true">http://localhost:4000/2018/08/25/MarkDown%E4%B8%AD%E4%BD%BF%E7%94%A8%E6%95%B0%E5%AD%A6%E5%85%AC%E5%BC%8F/</guid>
         
         <category>MarkDown</category>
+        
+        
+      </item>
+    
+      <item>
+        <title>Java集合框架</title>
+        <description>&lt;h2 id=&quot;参考链接&quot;&gt;参考链接&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&quot;https://docs.oracle.com/javase/9/docs/api/java/util/package-summary.html#CollectionsFramework&quot;&gt;官方文档–集合框架指南&lt;/a&gt;
+&lt;a href=&quot;https://docs.oracle.com/javase/9/docs/api/java/util/doc-files/coll-reference.html&quot;&gt;集合框架的分类&lt;/a&gt;
+&lt;a href=&quot;https://docs.oracle.com/javase/9/docs/api/java/util/doc-files/coll-designfaq.html&quot;&gt;集合框架设计理念答疑文档&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;Collection: 作用? 提供功能&lt;/p&gt;
+
+&lt;p&gt;List, Set, Queue: 区别, 实现原理, 提供功能, 适用场景&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;理解: &lt;code class=&quot;highlighter-rouge&quot;&gt;Collections that are not immutable are mutable&lt;/code&gt;: &lt;a href=&quot;https://stackoverflow.com/questions/8892350/immutable-vs-unmodifiable-collection&quot;&gt;参见StackOverFloaw回答&lt;/a&gt;
+理解: &lt;a href=&quot;https://docs.oracle.com/javase/9/docs/api/java/util/doc-files/coll-overview.html&quot;&gt;原文&lt;/a&gt;&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Collections that do not support modification operations (such as add, remove and clear) are referred to as unmodifiable. Collections that are not unmodifiable are modifiable.
+Collections that additionally guarantee that no change in the Collection object will be visible are referred to as immutable. Collections that are not immutable are mutable.
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;可以结合&lt;code class=&quot;highlighter-rouge&quot;&gt;emptySet, emptyList and emptyMap - Return an immutable empty set, list, or map.&lt;/code&gt;来理解&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;RandomAccess: 标识能够在常量时间内定位元素(叫random access lists)&lt;/p&gt;
+
+&lt;p&gt;Iterator: Iterable, ListIterator, Iterable
+能够双向遍历线性表的新列表迭代器ListIterator
+可以给TreeSet指定一个比较器Comparator来指定树形集中的元素顺序, 此处应该和Collections的算法相联系&lt;/p&gt;
+
+&lt;p&gt;AbstractCollection是提供Collection部分实现的抽象类; 集合框架中的Abstract的部分是集合接口的部分实现, 作用是有助于提供自定义实现(这些有: AbstractCollection, AbstractSet, AbstractList, AbstractSequentialList and AbstractMap)&lt;/p&gt;
+
+&lt;p&gt;接口Deque，是一个扩展自Queue的双端队列
+PriorityQueue类实现了一个优先队列&lt;/p&gt;
+
+&lt;p&gt;在之前的版本中，HashMap采用数组+链表实现，即使用链表处理冲突，同一hash值的链表都存储在一个链表里。但是当链表中的元素较多，即hash值相等的元素较多时，通过key值依次查找的效率较低。而JDK1.8中，HashMap采用数组+链表+红黑树实现，当链表长度超过阈值（8）时，将链表转换为红黑树，这样大大减少了查找时间。&lt;/p&gt;
+
+&lt;hr /&gt;
+&lt;p&gt;并发(Concurrent Collections): &lt;a href=&quot;&quot;&gt;参见文档&lt;/a&gt;https://docs.oracle.com/javase/9/docs/api/java/util/concurrent/package-summary.html&lt;/p&gt;
+
+&lt;p&gt;包括的接口: 
+BlockingQueue
+TransferQueue
+BlockingDeque
+ConcurrentMap
+ConcurrentNavigableMap&lt;/p&gt;
+
+&lt;p&gt;实现类
+LinkedBlockingQueue
+ArrayBlockingQueue
+PriorityBlockingQueue
+DelayQueue
+SynchronousQueue
+LinkedBlockingDeque
+LinkedTransferQueue
+CopyOnWriteArrayList
+CopyOnWriteArraySet
+ConcurrentSkipListSet
+ConcurrentHashMap
+ConcurrentSkipListMap&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;Arrays&lt;/p&gt;
+</description>
+        <pubDate>Sat, 25 Aug 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/08/25/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/08/25/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6/</guid>
         
         
       </item>
@@ -362,6 +701,20 @@ else
 &lt;p&gt;发布博客直接将&lt;code class=&quot;highlighter-rouge&quot;&gt;md&lt;/code&gt;文件扔到&lt;code class=&quot;highlighter-rouge&quot;&gt;_post&lt;/code&gt;文件夹下即可; 需要注意命名规范, 文件名需要以时间格式开头(参照&lt;code class=&quot;highlighter-rouge&quot;&gt;2018-08-20-template.md&lt;/code&gt;命名)&lt;/p&gt;
 
 &lt;p&gt;本地博客测试: &lt;code class=&quot;highlighter-rouge&quot;&gt;jekyll serve&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;博客首部&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;---
+layout:     post
+title:      &quot;&quot;
+subtitle:   &quot;&quot;
+date:       2018-
+author:     &quot;袁平&quot;
+header-img: &quot;img/tag-bg.jpg&quot;
+tags:
+    - 
+---
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 </description>
         <pubDate>Mon, 20 Aug 2018 00:00:00 +0800</pubDate>
         <link>http://localhost:4000/2018/08/20/template/</link>

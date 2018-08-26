@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Hello-World">
+    <meta name="keyword"  content="">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>Java集合框架概述 - 袁平 | HusterYP-Blog</title>
+
+    <link rel="canonical" href="http://localhost:4000/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    <!-- Pygments Github CSS -->
+    <link rel="stylesheet" href="/css/syntax.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="http://cdn.staticfile.org/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">袁平</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/about/">About</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/tags/">Tags</a>
+                    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Image to hack wechat -->
+<!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="/img/tag-bg.jpg" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/img/tag-bg.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/#Java" title="Java">Java</a>
+                        
+                    </div>
+                    <h1>Java集合框架概述</h1>
+                    
+                    
+                    <h2 class="subheading">Java集合框架概述</h2>
+                    
+                    <span class="meta">Posted by 袁平 on August 26, 2018</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+				<hr />
+
+<h1 id="前言">前言</h1>
+<blockquote>
+  <p>Java集合框架概述; 主要总述Java集合框架的设计理念, 组成和基本接口(及其区别等)</p>
+</blockquote>
+
+<hr />
+
+<h1 id="正文">正文</h1>
+
+<hr />
+
+<h2 id="一-设计理念">一. 设计理念</h2>
+
+<ol>
+  <li>
+    <p>在Java 2之前，Java是没有完整的集合框架的。它只有一些简单的可以自扩展的容器类，比如Vector，Stack，Hashtable等)</p>
+  </li>
+  <li>
+    <p>Java集合其实就是一组对象的集合</p>
+  </li>
+  <li>
+    <p>独立于实现细节, 方便重用, 保证向下兼容(即保留了<code class="highlighter-rouge">Vector</code>等旧的API)</p>
+  </li>
+  <li>
+    <p>加强了API之间的互通信, 减少了新API的学习: 提供尽量统一的接口</p>
+  </li>
+</ol>
+
+<hr />
+
+<h2 id="二-基本组成">二. 基本组成</h2>
+
+<h3 id="21-总述">2.1 总述</h3>
+
+<p>Java集合框架主要分为三个部分: <strong>接口, 实现和算法</strong></p>
+
+<h4 id="21-1-接口">2.1-1 接口</h4>
+
+<p>接口指的是以<code class="highlighter-rouge">Collection</code>和<code class="highlighter-rouge">Map</code>为起始的一系列公用接口</p>
+
+<p>实际上从<code class="highlighter-rouge">Map</code>出发的并不是真正的集合, 只是其包含集合视图操作, 所以也将其归入集合框架中</p>
+
+<p>从<code class="highlighter-rouge">Collection</code>出发的公用接口主要有以下几个, 也是这次会着重讲解和比较的; 当然, 下面的接口并不全面, 在后面会逐渐扩展和补充</p>
+
+<p><img src="/img/post/Java_Collection/Collection基本接口.png" alt="集合框架基本接口" /></p>
+
+<p>从<code class="highlighter-rouge">Map</code>出发的公用接口如下</p>
+
+<p><img src="/img/post/Java_Collection/Map基本接口.png" alt="集合框架基本接口" /></p>
+
+<p>当然, 上述列举出来的子接口都是直接继承自<code class="highlighter-rouge">Collection</code>或者<code class="highlighter-rouge">Map</code>, 对于其子接口的子接口, 这里并没有列出在这里(比如<code class="highlighter-rouge">NavigableMap</code>接口是<code class="highlighter-rouge">SortedMap</code>接口的子接口, 而不是直接继承<code class="highlighter-rouge">Map</code>的, 所以这里并没有直接列出来)</p>
+
+<h4 id="21-2-实现">2.1-2 实现</h4>
+
+<p>实现指的是接口的实现类, 这里笔者在官网找到一张表, 如下, 很好的列出了平时重点所用的实现类</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Interface</th>
+      <th>Hash Table</th>
+      <th>Resizable Array</th>
+      <th>Balanced Tree</th>
+      <th>Linked List</th>
+      <th>Hash Table + Linked List</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Set</td>
+      <td>HashSet</td>
+      <td> </td>
+      <td>TreeSet</td>
+      <td> </td>
+      <td>LinkedHashSet</td>
+    </tr>
+    <tr>
+      <td>List</td>
+      <td> </td>
+      <td>ArrayList</td>
+      <td> </td>
+      <td>LinkedList</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>Deque</td>
+      <td> </td>
+      <td>ArrayDeque</td>
+      <td> </td>
+      <td>LinkedList</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>Map</td>
+      <td>HashMap</td>
+      <td> </td>
+      <td>TreeMap</td>
+      <td> </td>
+      <td>LinkedHashMap</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>当然, 还应该包含Java 2以前几个旧API, 即: <code class="highlighter-rouge">Vector</code>, <code class="highlighter-rouge">Stack</code>, <code class="highlighter-rouge">Hashtable</code></p>
+
+<h4 id="21-3-算法">2.1-3 算法</h4>
+
+<h5 id="1-算法">(1). 算法</h5>
+
+<p>算法指的是以<code class="highlighter-rouge">Collections</code>为主的提供的一系列对集合的操作, 参见下图, 列出了其提供的常用算法</p>
+
+<p><img src="/img/post/Java_Collection/Collections方法.png" alt="集合框架基本接口" /></p>
+
+<p>下面对上述方法进行一些简单解释</p>
+
+<ol>
+  <li>
+    <p><code class="highlighter-rouge">sort(List)</code>: 使用归并排序, 保证<code class="highlighter-rouge">NlogN</code>的时间复杂度和稳定性</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">binarySearch(List, Object)</code>: 在一个有序的<code class="highlighter-rouge">List</code>中使用二分查找</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">reverse(List)</code>: 逆转<code class="highlighter-rouge">List</code></p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">shuffle(List)</code>: 将<code class="highlighter-rouge">List</code>中的元素随机重排</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">fill(List, Object)</code>: 使用指定值(<code class="highlighter-rouge">Object</code>)覆盖<code class="highlighter-rouge">List</code>中所有元素</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">copy(List dest, List src)</code>: 拷贝</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">min(Collection)</code>: 返回最小值</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">max(Collection)</code>: 返回最大值</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">rotate(List list, int distance)</code>: 将<code class="highlighter-rouge">List</code>中元素旋转指定<code class="highlighter-rouge">distance</code></p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">replaceAll(List list, Object oldVal, Object newVal)</code>: 将<code class="highlighter-rouge">List</code>中出现的所有<code class="highlighter-rouge">oldVal</code>替换为<code class="highlighter-rouge">newVal</code></p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">indexOfSubList(List source, List target)</code>: 返回<code class="highlighter-rouge">source</code>中与<code class="highlighter-rouge">target</code>匹配的第一个子项的首元素索引</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">lastIndexOfSubList(List source, List target)</code>: 返回最后一个匹配子项的首元素索引</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">swap(List, int, int)</code>: 交换指定位置的两个元素</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">frequency(Collection, Object)</code>: 找出指定元素出现次数</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">disjoint(Collection, Collection)</code>: 判断两个集合是否包含相同元素(即集合是否相交)</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">addAll(Collection&lt;? super T&gt;, T...)</code>: 将指定元素添加到指定集合中</p>
+  </li>
+</ol>
+
+<h5 id="2-包装类">(2). 包装类</h5>
+
+<p>当然, 实际上<code class="highlighter-rouge">Collections</code>提供的不仅仅是针对集合的算法, 其还提供了一系列对集合的包装类(即<code class="highlighter-rouge">Wrapper</code>), 主要包括以下三大类:</p>
+
+<ol>
+  <li>
+    <p><code class="highlighter-rouge">Collections.unmodifiableInterface()</code>: 返回一个不可修改的集合, 包括<code class="highlighter-rouge">UnmodifiableCollection</code>, <code class="highlighter-rouge">UnmodifiableSet</code>, <code class="highlighter-rouge">UnmodifiableList</code>; 实现原理是在修改集合的操作上(如<code class="highlighter-rouge">add()</code>, <code class="highlighter-rouge">remove()</code>等)抛出异常</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">Collections.synchronizedInterface()</code>: 返回一个线程安全的集合, 包括<code class="highlighter-rouge">SynchronizedCollection</code>, <code class="highlighter-rouge">SynchronizedSet</code>, <code class="highlighter-rouge">SynchronizedList</code>; 实现原理是在需要同步的方法上添加<code class="highlighter-rouge">synchronized</code>限制</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">Collections.checkedInterface()</code>: 返回一个类型检查的集合, 包括<code class="highlighter-rouge">CheckedCollection</code>, <code class="highlighter-rouge">CheckedQueue</code>, <code class="highlighter-rouge">CheckedSet</code>, <code class="highlighter-rouge">CheckedList</code>; 实现原理是在<code class="highlighter-rouge">add()</code>的时候进行类型检查, 如果是非法类型, 就抛出异常<code class="highlighter-rouge">ClassCastException</code>; 这里的类型检查实际上是使用<code class="highlighter-rouge">Class.isInstance()</code>来检查的, 关于该方法和<code class="highlighter-rouge">instanceof</code>运算符的区别, <a href="https://blog.csdn.net/chao821/article/details/79739447">参见博客</a>; (大致上, 二者是等价的, 只是<code class="highlighter-rouge">isInstance()</code>是在运行时才进行类型检查, 故可用于反射, 泛型;
+但是<code class="highlighter-rouge">instanceof</code>需要在编译时知道类的具体类型(重点理解在动态等价))</p>
+  </li>
+</ol>
+
+<p>这些包装类的作用主要是满足平时一些特殊的需求, 比如同步, 不可修改等</p>
+
+<hr />
+
+<h2 id="三-基本接口">三. 基本接口</h2>
+
+<blockquote>
+  <p>在这一节, 主要讲解上面提到的几个基本接口, 这里不会涉及到其实现类</p>
+</blockquote>
+
+<h3 id="31-collection">3.1 Collection</h3>
+
+<p><code class="highlighter-rouge">Collection</code>是集合框架中一个最顶层的基本接口, 提供了一个数据集的基本描述, 在官方API中并没有提供其直接实现类, 而是在其基础上提供了进一步的限制接口, 即<code class="highlighter-rouge">List</code>, <code class="highlighter-rouge">Set</code>, <code class="highlighter-rouge">Queue</code>; 这样做的好处有:</p>
+
+<ol>
+  <li>
+    <p>代码复用: 从面向对象的角度讲, 抽取出一个顶级接口, 有助于用户代码复用, 即编写一个接口, 实现不同传参(<code class="highlighter-rouge">Collection</code>的各种实现类), 实际上也是利用了多态(官方文档的解释是: 实现最大通用性)</p>
+  </li>
+  <li>
+    <p>易于扩展: 符合面向对象的思想, 即将数据集抽象, 通过不同的需求对其实现不同方便的限制, 易于扩展; 同时减少新API学习成本</p>
+  </li>
+</ol>
+
+<p><code class="highlighter-rouge">Collection</code>提供了数据操作的基本方法, 如<code class="highlighter-rouge">add()</code>, <code class="highlighter-rouge">remove()</code>, <code class="highlighter-rouge">size()</code>, <code class="highlighter-rouge">clear()</code>等; 同时, 其还继承了<code class="highlighter-rouge">Iterable</code>接口, 这个接口是用于使用迭代器遍历集合用的, 使用迭代器遍历集合的优点是我们不必知道集合的内部结果,集合的内部结构、状态由<code class="highlighter-rouge">Iterator</code>来维持,   通过统一的方法<code class="highlighter-rouge">hasNext()</code>, <code class="highlighter-rouge">next()</code>来判断和获取下一个元素</p>
+
+<h3 id="32-list">3.2 List</h3>
+
+<p><code class="highlighter-rouge">List</code>在<code class="highlighter-rouge">Collection</code>上做的限制是, 元素有序(但并不是排序), 允许重复元素; 同时还将迭代器换成了<code class="highlighter-rouge">ListIterator</code>; 关于<code class="highlighter-rouge">ListIterator</code>, 其允许双向的迭代, 以及元素插入(<code class="highlighter-rouge">ListIterator.add()</code>), 删除(<code class="highlighter-rouge">ListIterator.remove()</code>)和替换<code class="highlighter-rouge">ListIterator.set()</code></p>
+
+<p>在<code class="highlighter-rouge">JDK9</code>中, 还提供了一个<code class="highlighter-rouge">List.of()</code>的静态方法, 用于返回一个不可变<code class="highlighter-rouge">List</code>(<code class="highlighter-rouge">Immutable List</code>)</p>
+
+<h3 id="33-set">3.3 Set</h3>
+
+<p><code class="highlighter-rouge">Set</code>在<code class="highlighter-rouge">Collection</code>上做的限制是, 元素不重复, 至多一个null元素</p>
+
+<p>在<code class="highlighter-rouge">JDK9</code>中, 还提供了一个<code class="highlighter-rouge">Set.of()</code>的静态方法, 用于返回一个不可变的<code class="highlighter-rouge">Set</code></p>
+
+<h3 id="34-queue">3.4 Queue</h3>
+
+<p><code class="highlighter-rouge">Queue</code>在<code class="highlighter-rouge">Collection</code>上做的限制是, 除了<code class="highlighter-rouge">Collection</code>提供的基本操作外, 还提供了一些额外的操作, 分为两类, 一个返回特定值, 另一个抛出异常, 见下表</p>
+
+<table>
+  <thead>
+    <tr>
+      <th> </th>
+      <th>Throw Exception</th>
+      <th>Return Special Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Insert</td>
+      <td>add(e)</td>
+      <td>offer(e)</td>
+    </tr>
+    <tr>
+      <td>Remove</td>
+      <td>remove()</td>
+      <td>poll()</td>
+    </tr>
+    <tr>
+      <td>Examine</td>
+      <td>element()</td>
+      <td>peek()</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="35-map">3.5 Map</h3>
+
+<p><code class="highlighter-rouge">Map</code>本质上是一组键值对, <code class="highlighter-rouge">Map</code>允许单独访问<code class="highlighter-rouge">key</code>(通过<code class="highlighter-rouge">keySet()</code>返回<code class="highlighter-rouge">key</code>的<code class="highlighter-rouge">Set</code>), 也可以单独访问<code class="highlighter-rouge">value</code>(通过<code class="highlighter-rouge">values()</code>方法返回<code class="highlighter-rouge">value</code>的<code class="highlighter-rouge">Collection</code>), 也可以通过<code class="highlighter-rouge">entrySet()</code>获取<code class="highlighter-rouge">key-value</code>的对应关系</p>
+
+
+
+                <hr>
+
+                
+
+
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/2018/08/25/MarkDown%E4%B8%AD%E4%BD%BF%E7%94%A8%E6%95%B0%E5%AD%A6%E5%85%AC%E5%BC%8F/" data-toggle="tooltip" data-placement="top" title="MarkDown中使用数学公式">&larr; Previous Post</a>
+                    </li>
+                    
+                    
+                </ul>
+
+
+                
+
+                
+                <!-- disqus 评论框 start -->
+                <div class="comment">
+                    <div id="disqus_thread" class="disqus-thread"></div>
+                </div>
+                <!-- disqus 评论框 end -->
+                
+
+            </div>
+
+    <!-- Sidebar Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+        				
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#Algorithm" title="Algorithm" rel="2">
+                                    Algorithm
+                                </a>
+                            
+        				
+                            
+        				
+                            
+        				
+        			</div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+                <hr>
+                <h5>FRIENDS</h5>
+                <ul class="list-inline">
+                    
+                </ul>
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+
+<!-- disqus 公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = "HusterYP";
+    var disqus_identifier = "/2018/08/26/Java集合框架概述";
+    var disqus_url = "http://localhost:4000/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/";
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<!-- disqus 公共JS代码 end -->
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("http://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                    
+                    
+
+                    <!-- add Weibo, Zhihu by Hux, add target = "_blank" to <a> by Hux -->
+                    
+                    
+
+
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/HusterYP">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; 袁平 2018
+                    <br>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js "></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/js/bootstrap.min.js "></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js "></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("http://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+
+
+<!-- Baidu Tongji -->
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>

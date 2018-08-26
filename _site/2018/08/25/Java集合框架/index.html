@@ -1,0 +1,60 @@
+<h2 id="参考链接">参考链接</h2>
+<p><a href="https://docs.oracle.com/javase/9/docs/api/java/util/package-summary.html#CollectionsFramework">官方文档–集合框架指南</a>
+<a href="https://docs.oracle.com/javase/9/docs/api/java/util/doc-files/coll-reference.html">集合框架的分类</a>
+<a href="https://docs.oracle.com/javase/9/docs/api/java/util/doc-files/coll-designfaq.html">集合框架设计理念答疑文档</a></p>
+
+<p>Collection: 作用? 提供功能</p>
+
+<p>List, Set, Queue: 区别, 实现原理, 提供功能, 适用场景</p>
+
+<hr />
+
+<p>理解: <code class="highlighter-rouge">Collections that are not immutable are mutable</code>: <a href="https://stackoverflow.com/questions/8892350/immutable-vs-unmodifiable-collection">参见StackOverFloaw回答</a>
+理解: <a href="https://docs.oracle.com/javase/9/docs/api/java/util/doc-files/coll-overview.html">原文</a></p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Collections that do not support modification operations (such as add, remove and clear) are referred to as unmodifiable. Collections that are not unmodifiable are modifiable.
+Collections that additionally guarantee that no change in the Collection object will be visible are referred to as immutable. Collections that are not immutable are mutable.
+</code></pre></div></div>
+<p>可以结合<code class="highlighter-rouge">emptySet, emptyList and emptyMap - Return an immutable empty set, list, or map.</code>来理解</p>
+
+<hr />
+
+<p>RandomAccess: 标识能够在常量时间内定位元素(叫random access lists)</p>
+
+<p>Iterator: Iterable, ListIterator, Iterable
+能够双向遍历线性表的新列表迭代器ListIterator
+可以给TreeSet指定一个比较器Comparator来指定树形集中的元素顺序, 此处应该和Collections的算法相联系</p>
+
+<p>AbstractCollection是提供Collection部分实现的抽象类; 集合框架中的Abstract的部分是集合接口的部分实现, 作用是有助于提供自定义实现(这些有: AbstractCollection, AbstractSet, AbstractList, AbstractSequentialList and AbstractMap)</p>
+
+<p>接口Deque，是一个扩展自Queue的双端队列
+PriorityQueue类实现了一个优先队列</p>
+
+<p>在之前的版本中，HashMap采用数组+链表实现，即使用链表处理冲突，同一hash值的链表都存储在一个链表里。但是当链表中的元素较多，即hash值相等的元素较多时，通过key值依次查找的效率较低。而JDK1.8中，HashMap采用数组+链表+红黑树实现，当链表长度超过阈值（8）时，将链表转换为红黑树，这样大大减少了查找时间。</p>
+
+<hr />
+<p>并发(Concurrent Collections): <a href="">参见文档</a>https://docs.oracle.com/javase/9/docs/api/java/util/concurrent/package-summary.html</p>
+
+<p>包括的接口: 
+BlockingQueue
+TransferQueue
+BlockingDeque
+ConcurrentMap
+ConcurrentNavigableMap</p>
+
+<p>实现类
+LinkedBlockingQueue
+ArrayBlockingQueue
+PriorityBlockingQueue
+DelayQueue
+SynchronousQueue
+LinkedBlockingDeque
+LinkedTransferQueue
+CopyOnWriteArrayList
+CopyOnWriteArraySet
+ConcurrentSkipListSet
+ConcurrentHashMap
+ConcurrentSkipListMap</p>
+
+<hr />
+
+<p>Arrays</p>
