@@ -5,9 +5,48 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Tue, 28 Aug 2018 15:04:27 +0800</pubDate>
-    <lastBuildDate>Tue, 28 Aug 2018 15:04:27 +0800</lastBuildDate>
+    <pubDate>Wed, 29 Aug 2018 17:22:23 +0800</pubDate>
+    <lastBuildDate>Wed, 29 Aug 2018 17:22:23 +0800</lastBuildDate>
     <generator>Jekyll v3.8.3</generator>
+    
+      <item>
+        <title>Java集合框架之Set</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;&lt;a href=&quot;https://husteryp.github.io/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/&quot;&gt;前面&lt;/a&gt;我们对Java集合框架有了一个基本的认识, 这里我们从几大接口入手, 逐步讲解其实现类; 下面要讲解的是&lt;code class=&quot;highlighter-rouge&quot;&gt;Set&lt;/code&gt;的实现类, 即常用的&lt;code class=&quot;highlighter-rouge&quot;&gt;HashSet&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;TreeSet&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashSet&lt;/code&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;文章源码基于&lt;code class=&quot;highlighter-rouge&quot;&gt;JDK8&lt;/code&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;一-hashset&quot;&gt;一. HashSet&lt;/h2&gt;
+
+&lt;p&gt;没有重复元素, 允许null&lt;/p&gt;
+
+&lt;p&gt;内部通过HashMap实现&lt;/p&gt;
+
+&lt;p&gt;关于负载因子理解:
+Iterating over this set requires time proportional to the sum of the HashSet instance’s size (the number of elements) plus the “capacity” of the backing HashMap instance (the number of buckets). Thus, it’s very important not to set the initial capacity too high (or the load factor too low) if iteration performance is important.&lt;/p&gt;
+
+&lt;p&gt;不保证Set的遍历顺序, 不保证元素的存储数据, 
+一下方法提供常量时间: add, remove, contains and size
+非同步, 可以使用Collections.synchronizedSet(new HashSet(…));
+Iterator遍历的时候, 多线程抛出异常&lt;code class=&quot;highlighter-rouge&quot;&gt;ConcurrentModificationException&lt;/code&gt;(遍历过程中修改数据, 但是可以使用Iterator自己提供的remove()方法, 该方法不会造成异常)&lt;/p&gt;
+</description>
+        <pubDate>Mon, 27 Aug 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BSet/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BSet/</guid>
+        
+        <category>Java</category>
+        
+        
+      </item>
     
       <item>
         <title>Java集合框架之List</title>
@@ -207,6 +246,329 @@
         <pubDate>Mon, 27 Aug 2018 00:00:00 +0800</pubDate>
         <link>http://localhost:4000/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BList/</link>
         <guid isPermaLink="true">http://localhost:4000/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BList/</guid>
+        
+        <category>Java</category>
+        
+        
+      </item>
+    
+      <item>
+        <title>Java集合框架之HashMap</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;&lt;a href=&quot;https://husteryp.github.io/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/&quot;&gt;前面&lt;/a&gt;我们对Java集合框架有了一个基本的认识; 本文将主要讲解&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;的实现原理和处理细节&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;文章源码基于&lt;code class=&quot;highlighter-rouge&quot;&gt;JDK8&lt;/code&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;一-概述&quot;&gt;一. 概述&lt;/h2&gt;
+
+&lt;p&gt;我们知道&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;存储的是一组键值对, &lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;底层实际上就是一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Node&lt;/code&gt;数组, 将&lt;code class=&quot;highlighter-rouge&quot;&gt;key&lt;/code&gt;转换为&lt;code class=&quot;highlighter-rouge&quot;&gt;hash&lt;/code&gt;值, 映射到对应的数组位置, 这样存取都采用相同的规则, 利用数组的快速索引, 实现理想状态下的&lt;code class=&quot;highlighter-rouge&quot;&gt;O(1)&lt;/code&gt;时间定位; 但是其中也有很多处理细节, 比如一个最常见的就是&lt;code class=&quot;highlighter-rouge&quot;&gt;Hash&lt;/code&gt;冲突处理, 本文将主要介绍&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;的三大方面, 包括: &lt;code class=&quot;highlighter-rouge&quot;&gt;Hash&lt;/code&gt;规则, 扩容规则, 解决冲突&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;二-hash规则&quot;&gt;二. Hash规则&lt;/h2&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Hash&lt;/code&gt;规则就是如何将一个&lt;code class=&quot;highlighter-rouge&quot;&gt;key&lt;/code&gt;映射到对应的数组索引位置; 首先来看如何得到一个&lt;code class=&quot;highlighter-rouge&quot;&gt;key&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;Hash&lt;/code&gt;值; 如下&lt;code class=&quot;highlighter-rouge&quot;&gt;hash()&lt;/code&gt;函数, 该函数也叫扰动函数, 扰动函数做 的事情是将&lt;code class=&quot;highlighter-rouge&quot;&gt;key&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;hash&lt;/code&gt;值的高位与低位做异或运算(以&lt;code class=&quot;highlighter-rouge&quot;&gt;32&lt;/code&gt;位计算, &lt;code class=&quot;highlighter-rouge&quot;&gt;16&lt;/code&gt;正好是&lt;code class=&quot;highlighter-rouge&quot;&gt;32&lt;/code&gt;的一半)(这里说明一下&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/code&gt;是无符号右移, 高位补0), 这样做的目的是为了混合高低位的信息, 使得取余计算索引值的时候, 不仅仅只是低位起作用, 减少冲突发生的可能性&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    static final int hash(Object key) {
+        int h;
+        return (key == null) ? 0 : (h = key.hashCode()) ^ (h &amp;gt;&amp;gt;&amp;gt; 16);
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;这里需要联系索引值的计算来理解, 如下, 取存放一个键值对为例, 索引值的计算式子为&lt;code class=&quot;highlighter-rouge&quot;&gt;(n - 1) &amp;amp; hash&lt;/code&gt;(注意该式实际上等价于&lt;code class=&quot;highlighter-rouge&quot;&gt;hash % n&lt;/code&gt;, 即为了保证在有效索引范围内, 对&lt;code class=&quot;highlighter-rouge&quot;&gt;hash&lt;/code&gt;取余, 只是这里为了提高效率, 使用位运算代替了模运算, 关于优化程序性能, 可以&lt;a href=&quot;https://husteryp.github.io/2018/08/24/Details/&quot;&gt;参见博客&lt;/a&gt;), 这里的&lt;code class=&quot;highlighter-rouge&quot;&gt;n&lt;/code&gt;是数组的长度, 因为在&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;中, 数组长度始终取的是&lt;code class=&quot;highlighter-rouge&quot;&gt;2&lt;/code&gt;的整数次幂, 所以这里&lt;code class=&quot;highlighter-rouge&quot;&gt;n - 1&lt;/code&gt;就相当于是一个掩码(全&lt;code class=&quot;highlighter-rouge&quot;&gt;1&lt;/code&gt;, 比如默认初始长度&lt;code class=&quot;highlighter-rouge&quot;&gt;16&lt;/code&gt;, 减一后为&lt;code class=&quot;highlighter-rouge&quot;&gt;15&lt;/code&gt;, 二进制为&lt;code class=&quot;highlighter-rouge&quot;&gt;1111&lt;/code&gt;), 高位补&lt;code class=&quot;highlighter-rouge&quot;&gt;0&lt;/code&gt;, 进行与运算时, 就相当于只取了低位, 本来理想状态下, 如果数组长度足够大的话, 其实不需要扰动函数也可以, 因为数组长度足够大, 相当于&lt;code class=&quot;highlighter-rouge&quot;&gt;n&lt;/code&gt;值足够大, 那么取的有效位也就足够大, 发生冲突的概率也就相对降低了; 但是实际情况是,
+需要在空间利用率, 时间消耗和冲突频率之间取一个折中值, 空间上是不可能达到理想情况的, 那么这时候就需要一个扰动函数, 将高位的影响保留下来, 减少冲突, 因为如果只看低位的话, 冲突发生的频率还是很高的;&lt;/p&gt;
+
+&lt;p&gt;当然, 如果这里你还是没有弄清楚的话, 可以参见&lt;a href=&quot;https://www.zhihu.com/question/20733617&quot;&gt;HashMap中的hash原理&lt;/a&gt;&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;     final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
+                   boolean evict) {
+        Node&amp;lt;K,V&amp;gt;[] tab; Node&amp;lt;K,V&amp;gt; p; int n, i;
+        if ((tab = table) == null || (n = tab.length) == 0)
+            n = (tab = resize()).length;
+        if ((p = tab[i = (n - 1) &amp;amp; hash]) == null)  // 计算索引, 即 (n - 1) &amp;amp; hash
+            tab[i] = newNode(hash, key, value, null);
+        ...
+     }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;此外, 这里还想额外补充一点的是关于对象的&lt;code class=&quot;highlighter-rouge&quot;&gt;hashCode()&lt;/code&gt;方法和&lt;code class=&quot;highlighter-rouge&quot;&gt;equals()&lt;/code&gt;方法: &lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;中每一种数据类型的&lt;code class=&quot;highlighter-rouge&quot;&gt;hashCode()&lt;/code&gt;方法都必须和&lt;code class=&quot;highlighter-rouge&quot;&gt;equals()&lt;/code&gt;方法一致, 也就是说, 如果&lt;code class=&quot;highlighter-rouge&quot;&gt;a.equals(b)&lt;/code&gt;返回&lt;code class=&quot;highlighter-rouge&quot;&gt;true&lt;/code&gt;, 那么&lt;code class=&quot;highlighter-rouge&quot;&gt;a.hashCode()&lt;/code&gt;必然和&lt;code class=&quot;highlighter-rouge&quot;&gt;b.hashCode()&lt;/code&gt;相等; 相反, 如果两个对象的&lt;code class=&quot;highlighter-rouge&quot;&gt;hashCode()&lt;/code&gt;不同, 我们就知道该两个对象不同, 但是如果两个对象的&lt;code class=&quot;highlighter-rouge&quot;&gt;hashCode()&lt;/code&gt;相等, 这两个对象也可能不同, 此时还需要使用&lt;code class=&quot;highlighter-rouge&quot;&gt;equals()&lt;/code&gt;去判断&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;三-扩容规则&quot;&gt;三. 扩容规则&lt;/h2&gt;
+
+&lt;p&gt;讲扩容规则之前, 需要先看一下最开始的地方, 即&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;的构造函数;  但是在此之前, 我想先介绍一下&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;的几个重要成员变量和概念:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;transient Node&amp;lt;K,V&amp;gt;[] table;&lt;/code&gt;: 这个就是&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;的底层实现数组, 比较好理解&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;int threshold;&lt;/code&gt;: &lt;code class=&quot;highlighter-rouge&quot;&gt;threshold&lt;/code&gt;的意思是&lt;strong&gt;阈值&lt;/strong&gt;, 标志当&lt;code class=&quot;highlighter-rouge&quot;&gt;Hash&lt;/code&gt;表内元素数量超过该值时, 会发生扩容(&lt;code class=&quot;highlighter-rouge&quot;&gt;resize()&lt;/code&gt;)&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;final float loadFactor;&lt;/code&gt;: 加载因子, 用于计算&lt;code class=&quot;highlighter-rouge&quot;&gt;threshold&lt;/code&gt;, 即&lt;code class=&quot;highlighter-rouge&quot;&gt;threshold = table.length * loadFactor&lt;/code&gt;; 合理的加载因子可以在空间和冲突频率上取的较好的折中(提高空间利用率, 同时减少冲突发生,  减少扩容次数), 默认加载因子为&lt;code class=&quot;highlighter-rouge&quot;&gt;0.75&lt;/code&gt;&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;接下来看&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;的构造函数, 看其构造规则&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;有四个构造函数, 如下:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;传入初始容量与加载因子: 但是并不是说指定的初始容量是多少, 构造的&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;容量就是多少; &lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;的初始容量是取大于&lt;code class=&quot;highlighter-rouge&quot;&gt;initialCapacity&lt;/code&gt;的最小&lt;code class=&quot;highlighter-rouge&quot;&gt;2&lt;/code&gt;的整数次幂的数(比如传入&lt;code class=&quot;highlighter-rouge&quot;&gt;20&lt;/code&gt;的话, 实际容量就会取&lt;code class=&quot;highlighter-rouge&quot;&gt;32&lt;/code&gt;); 这里的作用主要在&lt;code class=&quot;highlighter-rouge&quot;&gt;tableSizeFor()&lt;/code&gt;函数中(如下); 这里之所以要取成&lt;code class=&quot;highlighter-rouge&quot;&gt;2&lt;/code&gt;的整数次幂, 是为了方便用各种位运算代替算数运算, 提高效率(比如上面的用与运算代替取模运算)&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    public HashMap(int initialCapacity, float loadFactor) {
+        if (initialCapacity &amp;lt; 0)
+            throw new IllegalArgumentException(&quot;Illegal initial capacity: &quot; +
+                                               initialCapacity);
+        if (initialCapacity &amp;gt; MAXIMUM_CAPACITY) // 其中MAXIMUM_CAPACITY = 1 &amp;lt;&amp;lt; 30;
+            initialCapacity = MAXIMUM_CAPACITY; // 初始容量不能超过MAXIMUM_CAPACITY
+        if (loadFactor &amp;lt;= 0 || Float.isNaN(loadFactor))
+            throw new IllegalArgumentException(&quot;Illegal load factor: &quot; +
+                                               loadFactor);
+        this.loadFactor = loadFactor;
+        this.threshold = tableSizeFor(initialCapacity);
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    // 返回大于cap的最小的2的整数次幂的数
+    static final int tableSizeFor(int cap) {
+        int n = cap - 1;
+        n |= n &amp;gt;&amp;gt;&amp;gt; 1;
+        n |= n &amp;gt;&amp;gt;&amp;gt; 2;
+        n |= n &amp;gt;&amp;gt;&amp;gt; 4;
+        n |= n &amp;gt;&amp;gt;&amp;gt; 8;
+        n |= n &amp;gt;&amp;gt;&amp;gt; 16;
+        return (n &amp;lt; 0) ? 1 : (n &amp;gt;= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : n + 1;
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;传入初始容量: 如下; 当只是指定初始容量时, 则使用默认装载因子&lt;code class=&quot;highlighter-rouge&quot;&gt;0.75&lt;/code&gt;(&lt;code class=&quot;highlighter-rouge&quot;&gt;static final float DEFAULT_LOAD_FACTOR = 0.75f;&lt;/code&gt;)&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    public HashMap(int initialCapacity) {
+        this(initialCapacity, DEFAULT_LOAD_FACTOR); // DEFAULT_LOAD_FACTOR = 0.75
+    }
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;默认构造函数: 都使用默认值, 其中装载因子默认&lt;code class=&quot;highlighter-rouge&quot;&gt;0.75&lt;/code&gt;, 初始容量默认&lt;code class=&quot;highlighter-rouge&quot;&gt;DEFAULT_INITIAL_CAPACITY = 1 &amp;lt;&amp;lt; 4&lt;/code&gt;(即&lt;code class=&quot;highlighter-rouge&quot;&gt;16&lt;/code&gt;);&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    public HashMap() {
+        this.loadFactor = DEFAULT_LOAD_FACTOR; // all other fields defaulted
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;从已有数据构建: 使用默认装载因子; 同时通过传入数据数量进行构建&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    public HashMap(Map&amp;lt;? extends K, ? extends V&amp;gt; m) {
+        this.loadFactor = DEFAULT_LOAD_FACTOR;
+        putMapEntries(m, false);
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;上述构造函数中, 使用默认值时, 都是只指定了&lt;code class=&quot;highlighter-rouge&quot;&gt;loadFactor&lt;/code&gt;的默认值, 没有明确设定初始容量值, 那么该初始容量值又是在哪里指定的呢? 其实, 默认初始容量值是在&lt;code class=&quot;highlighter-rouge&quot;&gt;resize()&lt;/code&gt;函数中指定的, 接下来马上讲解 !&lt;/p&gt;
+
+&lt;p&gt;扩容, 由&lt;code class=&quot;highlighter-rouge&quot;&gt;resize()&lt;/code&gt;函数作用; &lt;code class=&quot;highlighter-rouge&quot;&gt;resize()&lt;/code&gt;函数比较长, 具体逻辑可以参见下面代码和注释来理解; 作用主要有两方面: 一个是初始化&lt;code class=&quot;highlighter-rouge&quot;&gt;table&lt;/code&gt;, 另一个是扩容, 即将&lt;code class=&quot;highlighter-rouge&quot;&gt;table&lt;/code&gt;大小增大一倍&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    final Node&amp;lt;K,V&amp;gt;[] resize() {
+        Node&amp;lt;K,V&amp;gt;[] oldTab = table;
+        int oldCap = (oldTab == null) ? 0 : oldTab.length;
+        int oldThr = threshold;
+        int newCap, newThr = 0;
+        if (oldCap &amp;gt; 0) {
+            if (oldCap &amp;gt;= MAXIMUM_CAPACITY) {
+                threshold = Integer.MAX_VALUE;
+                return oldTab;
+            }
+            else if ((newCap = oldCap &amp;lt;&amp;lt; 1) &amp;lt; MAXIMUM_CAPACITY &amp;amp;&amp;amp; // newCap = oldCap &amp;lt;&amp;lt; 1: 容量增大一倍
+                     oldCap &amp;gt;= DEFAULT_INITIAL_CAPACITY)
+                newThr = oldThr &amp;lt;&amp;lt; 1; // 阈值增大一倍
+        }
+        else if (oldThr &amp;gt; 0) // 如果构造函数中设置了阈值, 那么就不会走下一步else, 即不会使用默认初始容量进行初始化
+            newCap = oldThr;
+        else {               // 如果oldCap == 0的话, 就需要进行初始化
+            newCap = DEFAULT_INITIAL_CAPACITY; // 使用默认容量进行初始化
+            newThr = (int)(DEFAULT_LOAD_FACTOR * DEFAULT_INITIAL_CAPACITY); // 装载因子: threshold = length * loadFactor
+        }
+        if (newThr == 0) {
+            float ft = (float)newCap * loadFactor;
+            newThr = (newCap &amp;lt; MAXIMUM_CAPACITY &amp;amp;&amp;amp; ft &amp;lt; (float)MAXIMUM_CAPACITY ?
+                      (int)ft : Integer.MAX_VALUE);
+        }
+
+        // 分配空间, 设置新阈值
+        threshold = newThr; 
+        @SuppressWarnings({&quot;rawtypes&quot;,&quot;unchecked&quot;})
+            Node&amp;lt;K,V&amp;gt;[] newTab = (Node&amp;lt;K,V&amp;gt;[])new Node[newCap];
+        table = newTab;
+        if (oldTab != null) {
+            for (int j = 0; j &amp;lt; oldCap; ++j) {
+                // 将旧值移动到新的位置
+                ...
+            }
+        }
+        return newTab;
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;可以看出, &lt;code class=&quot;highlighter-rouge&quot;&gt;resize()&lt;/code&gt;的时候进行了空间重新分配和数据的移动, 是一个相对比较耗时的操作, 所以应该合理设置初始容量和加载因子(一般都使用默认加载因子), 来减少扩容次数&lt;/p&gt;
+
+&lt;p&gt;上面我们详细了解了一下扩容函数&lt;code class=&quot;highlighter-rouge&quot;&gt;resize()&lt;/code&gt;的过程, 接下来要解决的是什么时候进行扩容; 其实这个问题, 我们直接看什么时候调用了&lt;code class=&quot;highlighter-rouge&quot;&gt;resize()&lt;/code&gt;即可; 调用关系主要分为两类, 如下; 可以很明显的看出, 当超出阈值的时候, 需要进行扩容; 当&lt;code class=&quot;highlighter-rouge&quot;&gt;table&lt;/code&gt;为&lt;code class=&quot;highlighter-rouge&quot;&gt;null&lt;/code&gt;, 即尚未初始化的时候, 需要进行初始化; 其实这也对应了上面所说的&lt;code class=&quot;highlighter-rouge&quot;&gt;resize()&lt;/code&gt;函数的两个作用: 容量倍增和初始化&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    if (s &amp;gt; threshold)
+        resize();
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    if ((tab = table) == null || (n = tab.length) == 0)
+        n = (tab = resize()).length;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;四-解决冲突&quot;&gt;四. 解决冲突&lt;/h2&gt;
+
+&lt;p&gt;冲突的解决是&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;中的一个重难点; 造成冲突的原因就是不同的键值对经过计算后得出相同的数组索引映射;&lt;/p&gt;
+
+&lt;p&gt;在之前的版本中, &lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;采用&lt;strong&gt;数组+链表&lt;/strong&gt;实现, 即使用链表处理冲突, 同一&lt;code class=&quot;highlighter-rouge&quot;&gt;hash&lt;/code&gt;值的节点都存储在一个链表里, 但是当链表中的元素较多, 即&lt;code class=&quot;highlighter-rouge&quot;&gt;hash&lt;/code&gt;值相等的元素较多时, 通过&lt;code class=&quot;highlighter-rouge&quot;&gt;key&lt;/code&gt;值依次查找的效率较低; 而&lt;code class=&quot;highlighter-rouge&quot;&gt;JDK1.8&lt;/code&gt;中, &lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;采用&lt;strong&gt;数组+链表+红黑树&lt;/strong&gt;实现, 当链表长度超过转换阈值(默认转换阈值为&lt;code class=&quot;highlighter-rouge&quot;&gt;TREEIFY_THRESHOLD = 8;&lt;/code&gt;)时, 将链表转换为红黑树, 这样大大减少了查找时间(将&lt;code class=&quot;highlighter-rouge&quot;&gt;get()&lt;/code&gt;方法的性能从&lt;code class=&quot;highlighter-rouge&quot;&gt;O(n)&lt;/code&gt;提升到&lt;code class=&quot;highlighter-rouge&quot;&gt;O(logN)&lt;/code&gt;); 同样,
+当&lt;code class=&quot;highlighter-rouge&quot;&gt;remove()&lt;/code&gt;元素使得红黑树中元素个数小于&lt;code class=&quot;highlighter-rouge&quot;&gt;UNTREEIFY_THRESHOLD&lt;/code&gt;阈值时(默认为&lt;code class=&quot;highlighter-rouge&quot;&gt;UNTREEIFY_THRESHOLD = 6&lt;/code&gt;), 将红黑树转换为链表&lt;/p&gt;
+
+&lt;p&gt;要看如何解决冲突, 当然是在存放一个值的时候咯! 如下&lt;code class=&quot;highlighter-rouge&quot;&gt;putVal()&lt;/code&gt;; 逻辑比较简单, 结合注释过一遍即可&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
+                   boolean evict) {
+        Node&amp;lt;K,V&amp;gt;[] tab; Node&amp;lt;K,V&amp;gt; p; int n, i;
+
+        if ((tab = table) == null || (n = tab.length) == 0) // resize, 上面已经讲了, 不多说
+            n = (tab = resize()).length;
+        
+        if ((p = tab[i = (n - 1) &amp;amp; hash]) == null) // 没有发生冲突时, 直接存放即可
+            tab[i] = newNode(hash, key, value, null);
+        else { // 发生冲突
+            Node&amp;lt;K,V&amp;gt; e; K k;
+            if (p.hash == hash &amp;amp;&amp;amp;
+                ((k = p.key) == key || (key != null &amp;amp;&amp;amp; key.equals(k))))
+                e = p;
+            else if (p instanceof TreeNode) // 如果本来就已经使用红黑树进行存储的了
+                e = ((TreeNode&amp;lt;K,V&amp;gt;)p).putTreeVal(this, tab, hash, key, value);
+            else {
+                for (int binCount = 0; ; ++binCount) { 
+                    if ((e = p.next) == null) {
+                        p.next = newNode(hash, key, value, null);
+                        if (binCount &amp;gt;= TREEIFY_THRESHOLD - 1) // 超出阈值, 链表转换为红黑树
+                            treeifyBin(tab, hash);
+                        break;
+                    }
+                    // 如果键值对已经存在, 不能重复存放
+                    if (e.hash == hash &amp;amp;&amp;amp;
+                        ((k = e.key) == key || (key != null &amp;amp;&amp;amp; key.equals(k))))
+                        break;
+                    p = e;
+                }
+            }
+
+            // 如果存在重复key, 那么进行value替换
+            if (e != null) { // existing mapping for key
+                V oldValue = e.value;
+                if (!onlyIfAbsent || oldValue == null)
+                    e.value = value;
+                afterNodeAccess(e);
+                return oldValue;
+            }
+        }
+        ...
+        return null;
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;接下来主要看两种数据结构的组织方式&lt;/p&gt;
+
+&lt;h3 id=&quot;41-链表&quot;&gt;4.1 链表&lt;/h3&gt;
+
+&lt;p&gt;链表节点是&lt;code class=&quot;highlighter-rouge&quot;&gt;Node&lt;/code&gt;, 如下; 也是常规的单链表数据结构, 只是数据域多了一个键值(&lt;code class=&quot;highlighter-rouge&quot;&gt;key&lt;/code&gt;); 比较简单, 没话说！&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    static class Node&amp;lt;K,V&amp;gt; implements Map.Entry&amp;lt;K,V&amp;gt; {
+        final int hash; // 软缓存
+        final K key;
+        V value;
+        Node&amp;lt;K,V&amp;gt; next;
+
+        Node(int hash, K key, V value, Node&amp;lt;K,V&amp;gt; next) {
+            this.hash = hash;
+            this.key = key;
+            this.value = value;
+            this.next = next;
+        }
+        
+        ...
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;这里需要提一个小的知识点：&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;软缓存&lt;/strong&gt;: 如果&lt;code class=&quot;highlighter-rouge&quot;&gt;hash&lt;/code&gt;值计算起来很困难, 那么就可以将第一次计算出来的&lt;code class=&quot;highlighter-rouge&quot;&gt;hash&lt;/code&gt;值缓存起来(&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;中&lt;code class=&quot;highlighter-rouge&quot;&gt;String&lt;/code&gt;就是这样的); &lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;中的&lt;code class=&quot;highlighter-rouge&quot;&gt;Node&lt;/code&gt;节点也使用了这种缓存&lt;/p&gt;
+
+&lt;h3 id=&quot;42-红黑树&quot;&gt;4.2 红黑树&lt;/h3&gt;
+
+&lt;h2 id=&quot;参考链接&quot;&gt;参考链接&lt;/h2&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://www.zhihu.com/question/20733617&quot;&gt;HashMap中的hash原理&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;—–摘自橙书—-&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    static class Node&amp;lt;K,V&amp;gt; implements Map.Entry&amp;lt;K,V&amp;gt; {
+        final int hash;
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;冲突处理:&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;扩容规则: resize()&lt;/p&gt;
+
+&lt;p&gt;其底层数据结构是数组称之为哈希桶，每个桶里面放的是链表，链表中的每个节点，就是哈希表中的每个元素; 在JDK8中，当链表长度达到8，会转化成红黑树，以提升它的查询、插入效率&lt;/p&gt;
+
+&lt;p&gt;允许null value 和null key&lt;/p&gt;
+
+&lt;p&gt;为get和put方法提供常量实现时间&lt;/p&gt;
+
+&lt;p&gt;理解装载因子: Hash表中的数据占有量超过该装载因子的时候, Hash表容量会进行自动增加&lt;/p&gt;
+
+&lt;p&gt;非同步: Collections.synchronizedMap(new HashMap(…));&lt;/p&gt;
+
+&lt;p&gt;Iterator遍历抛异常: ConcurrentModificationException&lt;/p&gt;
+
+&lt;p&gt;与HashTable的区别: 
+与之相比HashTable是线程安全的，且不允许key、value是null。
+HashTable默认容量是11。
+HashTable是直接使用key的hashCode(key.hashCode())作为hash值，不像HashMap内部使用static final int hash(Object key)扰动函数对key的hashCode进行扰动后作为hash值。
+HashTable取哈希桶下标是直接用模运算%.（因为其默认容量也不是2的n次方。所以也无法用位运算替代模运算）
+扩容时，新容量是原来的2倍+1。int newCapacity = (oldCapacity « 1) + 1;
+Hashtable是Dictionary的子类同时也实现了Map接口，HashMap是Map接口的一个实现类；&lt;/p&gt;
+
+&lt;p&gt;HashMap基本上与HashTable相同, 除了HashMap允许空值和非同步外&lt;/p&gt;
+
+</description>
+        <pubDate>Mon, 27 Aug 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/</guid>
         
         <category>Java</category>
         

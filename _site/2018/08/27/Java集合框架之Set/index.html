@@ -10,9 +10,9 @@
     <meta name="keyword"  content="">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>MarkDown中使用数学公式 - 袁平 | HusterYP-Blog</title>
+    <title>Java集合框架之Set - 袁平 | HusterYP-Blog</title>
 
-    <link rel="canonical" href="http://localhost:4000/2018/08/25/MarkDown%E4%B8%AD%E4%BD%BF%E7%94%A8%E6%95%B0%E5%AD%A6%E5%85%AC%E5%BC%8F/">
+    <link rel="canonical" href="http://localhost:4000/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BSet/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/css/bootstrap.min.css">
@@ -140,15 +140,15 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/tags/#MarkDown" title="MarkDown">MarkDown</a>
+                        <a class="tag" href="/tags/#Java" title="Java">Java</a>
                         
                     </div>
-                    <h1>MarkDown中使用数学公式</h1>
+                    <h1>Java集合框架之Set</h1>
                     
                     
-                    <h2 class="subheading">MarkDown中优雅的使用数学公式</h2>
+                    <h2 class="subheading">讲解Set实现类</h2>
                     
-                    <span class="meta">Posted by 袁平 on August 25, 2018</span>
+                    <span class="meta">Posted by 袁平 on August 27, 2018</span>
                 </div>
             </div>
         </div>
@@ -166,53 +166,33 @@
                 col-md-10 col-md-offset-1
                 post-container">
 
-				<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=default"></script>
+				<h1 id="前言">前言</h1>
 
-<h1 id="前言">前言</h1>
 <blockquote>
-  <p>如何在MarkDown中使用数学公式</p>
+  <p><a href="https://husteryp.github.io/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/">前面</a>我们对Java集合框架有了一个基本的认识, 这里我们从几大接口入手, 逐步讲解其实现类; 下面要讲解的是<code class="highlighter-rouge">Set</code>的实现类, 即常用的<code class="highlighter-rouge">HashSet</code>, <code class="highlighter-rouge">TreeSet</code>和<code class="highlighter-rouge">LinkedHashSet</code></p>
 </blockquote>
+
+<p>文章源码基于<code class="highlighter-rouge">JDK8</code></p>
+
+<hr />
 
 <h1 id="正文">正文</h1>
 
-<ul>
-  <li>在MarkDown文章中插入下面代码(MathJax引擎)</li>
-</ul>
+<hr />
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=default"&gt;&lt;/script&gt;
-</code></pre></div></div>
+<h2 id="一-hashset">一. HashSet</h2>
 
-<ul>
-  <li>之后就可以使用<code class="highlighter-rouge">Latex</code>语法来书写数学公式了; 需要注意的是, 每个数学公式都应该以<code class="highlighter-rouge">$$</code>开头和结尾, 如下</li>
-</ul>
+<p>没有重复元素, 允许null</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$$
-a^{n}=\begin{equation}
-\left\{
-             \begin{array}{**lr**}
-             a^{n/2}*a^{n/2}, &amp; n为偶数 \\
-             a^{(n-1)/2}*a^{(n-1)/2} &amp; n为奇数 \\
-             \end{array}
-\right.
-\end{equation}
-$$
-</code></pre></div></div>
-<p>显示结果为</p>
+<p>内部通过HashMap实现</p>
 
-<script type="math/tex; mode=display">% <![CDATA[
-a^{n}=\begin{equation}
-\left\{
-             \begin{array}{**lr**}
-             a^{n/2}*a^{n/2}, & n为偶数 \\
-             a^{(n-1)/2}*a^{(n-1)/2} & n为奇数 \\
-             \end{array}
-\right.
-\end{equation} %]]></script>
+<p>关于负载因子理解:
+Iterating over this set requires time proportional to the sum of the HashSet instance’s size (the number of elements) plus the “capacity” of the backing HashMap instance (the number of buckets). Thus, it’s very important not to set the initial capacity too high (or the load factor too low) if iteration performance is important.</p>
 
-<h1 id="参考链接">参考链接</h1>
-<ul>
-  <li><a href="https://blog.csdn.net/xiahouzuoxin/article/details/26478179">参考博客</a></li>
-</ul>
+<p>不保证Set的遍历顺序, 不保证元素的存储数据, 
+一下方法提供常量时间: add, remove, contains and size
+非同步, 可以使用Collections.synchronizedSet(new HashSet(…));
+Iterator遍历的时候, 多线程抛出异常<code class="highlighter-rouge">ConcurrentModificationException</code>(遍历过程中修改数据, 但是可以使用Iterator自己提供的remove()方法, 该方法不会造成异常)</p>
 
 
                 <hr>
@@ -223,13 +203,9 @@ a^{n}=\begin{equation}
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/2018/08/25/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6/" data-toggle="tooltip" data-placement="top" title="Java集合框架">&larr; Previous Post</a>
+                        <a href="/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BList/" data-toggle="tooltip" data-placement="top" title="Java集合框架之List">&larr; Previous Post</a>
                     </li>
                     
-                    
-                    <li class="next">
-                        <a href="/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/" data-toggle="tooltip" data-placement="top" title="Java集合框架概述">Next Post &rarr;</a>
-                    </li>
                     
                 </ul>
 
@@ -304,8 +280,8 @@ a^{n}=\begin{equation}
 <script type="text/javascript">
     /* * * CONFIGURATION VARIABLES * * */
     var disqus_shortname = "HusterYP";
-    var disqus_identifier = "/2018/08/25/MarkDown中使用数学公式";
-    var disqus_url = "http://localhost:4000/2018/08/25/MarkDown%E4%B8%AD%E4%BD%BF%E7%94%A8%E6%95%B0%E5%AD%A6%E5%85%AC%E5%BC%8F/";
+    var disqus_identifier = "/2018/08/27/Java集合框架之Set";
+    var disqus_url = "http://localhost:4000/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BSet/";
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;

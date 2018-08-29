@@ -154,6 +154,47 @@
             ">
     			
 <div class="post-preview">
+    <a href="/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BSet/">
+        <h2 class="post-title">
+            Java集合框架之Set
+        </h2>
+        
+        <h3 class="post-subtitle">
+            讲解Set实现类
+        </h3>
+        
+        <div class="post-content-preview">
+            前言
+
+
+  前面我们对Java集合框架有了一个基本的认识, 这里我们从几大接口入手, 逐步讲解其实现类; 下面要讲解的是Set的实现类, 即常用的HashSet, TreeSet和LinkedHashSet
+
+
+文章源码基于JDK8
+
+
+
+正文
+
+
+
+一. HashSet
+
+没有重复元素, 允许null
+
+内部通过HashMap实现
+
+关于负载因子理解:
+Iterating over th...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by 袁平 on August 27, 2018
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
     <a href="/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BList/">
         <h2 class="post-title">
             Java集合框架之List
@@ -191,6 +232,42 @@
 
   
     动态数组: ArrayList是一个...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by 袁平 on August 27, 2018
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
+    <a href="/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/">
+        <h2 class="post-title">
+            Java集合框架之HashMap
+        </h2>
+        
+        <h3 class="post-subtitle">
+            HashMap源码解析
+        </h3>
+        
+        <div class="post-content-preview">
+            前言
+
+
+  前面我们对Java集合框架有了一个基本的认识; 本文将主要讲解HashMap的实现原理和处理细节
+
+
+文章源码基于JDK8
+
+
+
+正文
+
+
+
+一. 概述
+
+我们知道HashMap存储的是一组键值对, HashMap底层实际上就是一个Node数组, 将key转换为hash值, 映射到对应的数组位置, 这样存取都采用相同的规则, 利用数组的快速索引, 实现理想状态下的O(1)时间定...
         </div>
     </a>
     <p class="post-meta">
@@ -486,7 +563,7 @@ author:...
                             
                         
                             
-                                <a href="/tags/#Java" title="Java" rel="2">
+                                <a href="/tags/#Java" title="Java" rel="4">
                                     Java
                                 </a>
                             

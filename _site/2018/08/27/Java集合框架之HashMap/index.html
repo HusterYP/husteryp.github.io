@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Hello-World">
+    <meta name="keyword"  content="">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>Java集合框架之HashMap - 袁平 | HusterYP-Blog</title>
+
+    <link rel="canonical" href="http://localhost:4000/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    <!-- Pygments Github CSS -->
+    <link rel="stylesheet" href="/css/syntax.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="http://cdn.staticfile.org/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">袁平</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/about/">About</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/tags/">Tags</a>
+                    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Image to hack wechat -->
+<!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="/img/tag-bg.jpg" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/img/tag-bg.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/#Java" title="Java">Java</a>
+                        
+                    </div>
+                    <h1>Java集合框架之HashMap</h1>
+                    
+                    
+                    <h2 class="subheading">HashMap源码解析</h2>
+                    
+                    <span class="meta">Posted by 袁平 on August 27, 2018</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+				<h1 id="前言">前言</h1>
+
+<blockquote>
+  <p><a href="https://husteryp.github.io/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/">前面</a>我们对Java集合框架有了一个基本的认识; 本文将主要讲解<code class="highlighter-rouge">HashMap</code>的实现原理和处理细节</p>
+</blockquote>
+
+<p>文章源码基于<code class="highlighter-rouge">JDK8</code></p>
+
+<hr />
+
+<h1 id="正文">正文</h1>
+
+<hr />
+
+<h2 id="一-概述">一. 概述</h2>
+
+<p>我们知道<code class="highlighter-rouge">HashMap</code>存储的是一组键值对, <code class="highlighter-rouge">HashMap</code>底层实际上就是一个<code class="highlighter-rouge">Node</code>数组, 将<code class="highlighter-rouge">key</code>转换为<code class="highlighter-rouge">hash</code>值, 映射到对应的数组位置, 这样存取都采用相同的规则, 利用数组的快速索引, 实现理想状态下的<code class="highlighter-rouge">O(1)</code>时间定位; 但是其中也有很多处理细节, 比如一个最常见的就是<code class="highlighter-rouge">Hash</code>冲突处理, 本文将主要介绍<code class="highlighter-rouge">HashMap</code>的三大方面, 包括: <code class="highlighter-rouge">Hash</code>规则, 扩容规则, 解决冲突</p>
+
+<hr />
+
+<h2 id="二-hash规则">二. Hash规则</h2>
+
+<p><code class="highlighter-rouge">Hash</code>规则就是如何将一个<code class="highlighter-rouge">key</code>映射到对应的数组索引位置; 首先来看如何得到一个<code class="highlighter-rouge">key</code>的<code class="highlighter-rouge">Hash</code>值; 如下<code class="highlighter-rouge">hash()</code>函数, 该函数也叫扰动函数, 扰动函数做 的事情是将<code class="highlighter-rouge">key</code>的<code class="highlighter-rouge">hash</code>值的高位与低位做异或运算(以<code class="highlighter-rouge">32</code>位计算, <code class="highlighter-rouge">16</code>正好是<code class="highlighter-rouge">32</code>的一半)(这里说明一下<code class="highlighter-rouge">&gt;&gt;&gt;</code>是无符号右移, 高位补0), 这样做的目的是为了混合高低位的信息, 使得取余计算索引值的时候, 不仅仅只是低位起作用, 减少冲突发生的可能性</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    static final int hash(Object key) {
+        int h;
+        return (key == null) ? 0 : (h = key.hashCode()) ^ (h &gt;&gt;&gt; 16);
+    }
+</code></pre></div></div>
+
+<p>这里需要联系索引值的计算来理解, 如下, 取存放一个键值对为例, 索引值的计算式子为<code class="highlighter-rouge">(n - 1) &amp; hash</code>(注意该式实际上等价于<code class="highlighter-rouge">hash % n</code>, 即为了保证在有效索引范围内, 对<code class="highlighter-rouge">hash</code>取余, 只是这里为了提高效率, 使用位运算代替了模运算, 关于优化程序性能, 可以<a href="https://husteryp.github.io/2018/08/24/Details/">参见博客</a>), 这里的<code class="highlighter-rouge">n</code>是数组的长度, 因为在<code class="highlighter-rouge">HashMap</code>中, 数组长度始终取的是<code class="highlighter-rouge">2</code>的整数次幂, 所以这里<code class="highlighter-rouge">n - 1</code>就相当于是一个掩码(全<code class="highlighter-rouge">1</code>, 比如默认初始长度<code class="highlighter-rouge">16</code>, 减一后为<code class="highlighter-rouge">15</code>, 二进制为<code class="highlighter-rouge">1111</code>), 高位补<code class="highlighter-rouge">0</code>, 进行与运算时, 就相当于只取了低位, 本来理想状态下, 如果数组长度足够大的话, 其实不需要扰动函数也可以, 因为数组长度足够大, 相当于<code class="highlighter-rouge">n</code>值足够大, 那么取的有效位也就足够大, 发生冲突的概率也就相对降低了; 但是实际情况是,
+需要在空间利用率, 时间消耗和冲突频率之间取一个折中值, 空间上是不可能达到理想情况的, 那么这时候就需要一个扰动函数, 将高位的影响保留下来, 减少冲突, 因为如果只看低位的话, 冲突发生的频率还是很高的;</p>
+
+<p>当然, 如果这里你还是没有弄清楚的话, 可以参见<a href="https://www.zhihu.com/question/20733617">HashMap中的hash原理</a></p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>     final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
+                   boolean evict) {
+        Node&lt;K,V&gt;[] tab; Node&lt;K,V&gt; p; int n, i;
+        if ((tab = table) == null || (n = tab.length) == 0)
+            n = (tab = resize()).length;
+        if ((p = tab[i = (n - 1) &amp; hash]) == null)  // 计算索引, 即 (n - 1) &amp; hash
+            tab[i] = newNode(hash, key, value, null);
+        ...
+     }
+</code></pre></div></div>
+
+<p>此外, 这里还想额外补充一点的是关于对象的<code class="highlighter-rouge">hashCode()</code>方法和<code class="highlighter-rouge">equals()</code>方法: <code class="highlighter-rouge">Java</code>中每一种数据类型的<code class="highlighter-rouge">hashCode()</code>方法都必须和<code class="highlighter-rouge">equals()</code>方法一致, 也就是说, 如果<code class="highlighter-rouge">a.equals(b)</code>返回<code class="highlighter-rouge">true</code>, 那么<code class="highlighter-rouge">a.hashCode()</code>必然和<code class="highlighter-rouge">b.hashCode()</code>相等; 相反, 如果两个对象的<code class="highlighter-rouge">hashCode()</code>不同, 我们就知道该两个对象不同, 但是如果两个对象的<code class="highlighter-rouge">hashCode()</code>相等, 这两个对象也可能不同, 此时还需要使用<code class="highlighter-rouge">equals()</code>去判断</p>
+
+<hr />
+
+<h2 id="三-扩容规则">三. 扩容规则</h2>
+
+<p>讲扩容规则之前, 需要先看一下最开始的地方, 即<code class="highlighter-rouge">HashMap</code>的构造函数;  但是在此之前, 我想先介绍一下<code class="highlighter-rouge">HashMap</code>的几个重要成员变量和概念:</p>
+
+<ol>
+  <li>
+    <p><code class="highlighter-rouge">transient Node&lt;K,V&gt;[] table;</code>: 这个就是<code class="highlighter-rouge">HashMap</code>的底层实现数组, 比较好理解</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">int threshold;</code>: <code class="highlighter-rouge">threshold</code>的意思是<strong>阈值</strong>, 标志当<code class="highlighter-rouge">Hash</code>表内元素数量超过该值时, 会发生扩容(<code class="highlighter-rouge">resize()</code>)</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">final float loadFactor;</code>: 加载因子, 用于计算<code class="highlighter-rouge">threshold</code>, 即<code class="highlighter-rouge">threshold = table.length * loadFactor</code>; 合理的加载因子可以在空间和冲突频率上取的较好的折中(提高空间利用率, 同时减少冲突发生,  减少扩容次数), 默认加载因子为<code class="highlighter-rouge">0.75</code></p>
+  </li>
+</ol>
+
+<p>接下来看<code class="highlighter-rouge">HashMap</code>的构造函数, 看其构造规则</p>
+
+<p><code class="highlighter-rouge">HashMap</code>有四个构造函数, 如下:</p>
+
+<ol>
+  <li>传入初始容量与加载因子: 但是并不是说指定的初始容量是多少, 构造的<code class="highlighter-rouge">HashMap</code>容量就是多少; <code class="highlighter-rouge">HashMap</code>的初始容量是取大于<code class="highlighter-rouge">initialCapacity</code>的最小<code class="highlighter-rouge">2</code>的整数次幂的数(比如传入<code class="highlighter-rouge">20</code>的话, 实际容量就会取<code class="highlighter-rouge">32</code>); 这里的作用主要在<code class="highlighter-rouge">tableSizeFor()</code>函数中(如下); 这里之所以要取成<code class="highlighter-rouge">2</code>的整数次幂, 是为了方便用各种位运算代替算数运算, 提高效率(比如上面的用与运算代替取模运算)</li>
+</ol>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    public HashMap(int initialCapacity, float loadFactor) {
+        if (initialCapacity &lt; 0)
+            throw new IllegalArgumentException("Illegal initial capacity: " +
+                                               initialCapacity);
+        if (initialCapacity &gt; MAXIMUM_CAPACITY) // 其中MAXIMUM_CAPACITY = 1 &lt;&lt; 30;
+            initialCapacity = MAXIMUM_CAPACITY; // 初始容量不能超过MAXIMUM_CAPACITY
+        if (loadFactor &lt;= 0 || Float.isNaN(loadFactor))
+            throw new IllegalArgumentException("Illegal load factor: " +
+                                               loadFactor);
+        this.loadFactor = loadFactor;
+        this.threshold = tableSizeFor(initialCapacity);
+    }
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    // 返回大于cap的最小的2的整数次幂的数
+    static final int tableSizeFor(int cap) {
+        int n = cap - 1;
+        n |= n &gt;&gt;&gt; 1;
+        n |= n &gt;&gt;&gt; 2;
+        n |= n &gt;&gt;&gt; 4;
+        n |= n &gt;&gt;&gt; 8;
+        n |= n &gt;&gt;&gt; 16;
+        return (n &lt; 0) ? 1 : (n &gt;= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : n + 1;
+    }
+</code></pre></div></div>
+
+<ol>
+  <li>传入初始容量: 如下; 当只是指定初始容量时, 则使用默认装载因子<code class="highlighter-rouge">0.75</code>(<code class="highlighter-rouge">static final float DEFAULT_LOAD_FACTOR = 0.75f;</code>)</li>
+</ol>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    public HashMap(int initialCapacity) {
+        this(initialCapacity, DEFAULT_LOAD_FACTOR); // DEFAULT_LOAD_FACTOR = 0.75
+    }
+
+</code></pre></div></div>
+
+<ol>
+  <li>默认构造函数: 都使用默认值, 其中装载因子默认<code class="highlighter-rouge">0.75</code>, 初始容量默认<code class="highlighter-rouge">DEFAULT_INITIAL_CAPACITY = 1 &lt;&lt; 4</code>(即<code class="highlighter-rouge">16</code>);</li>
+</ol>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    public HashMap() {
+        this.loadFactor = DEFAULT_LOAD_FACTOR; // all other fields defaulted
+    }
+</code></pre></div></div>
+
+<ol>
+  <li>从已有数据构建: 使用默认装载因子; 同时通过传入数据数量进行构建</li>
+</ol>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    public HashMap(Map&lt;? extends K, ? extends V&gt; m) {
+        this.loadFactor = DEFAULT_LOAD_FACTOR;
+        putMapEntries(m, false);
+    }
+</code></pre></div></div>
+
+<p>上述构造函数中, 使用默认值时, 都是只指定了<code class="highlighter-rouge">loadFactor</code>的默认值, 没有明确设定初始容量值, 那么该初始容量值又是在哪里指定的呢? 其实, 默认初始容量值是在<code class="highlighter-rouge">resize()</code>函数中指定的, 接下来马上讲解 !</p>
+
+<p>扩容, 由<code class="highlighter-rouge">resize()</code>函数作用; <code class="highlighter-rouge">resize()</code>函数比较长, 具体逻辑可以参见下面代码和注释来理解; 作用主要有两方面: 一个是初始化<code class="highlighter-rouge">table</code>, 另一个是扩容, 即将<code class="highlighter-rouge">table</code>大小增大一倍</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    final Node&lt;K,V&gt;[] resize() {
+        Node&lt;K,V&gt;[] oldTab = table;
+        int oldCap = (oldTab == null) ? 0 : oldTab.length;
+        int oldThr = threshold;
+        int newCap, newThr = 0;
+        if (oldCap &gt; 0) {
+            if (oldCap &gt;= MAXIMUM_CAPACITY) {
+                threshold = Integer.MAX_VALUE;
+                return oldTab;
+            }
+            else if ((newCap = oldCap &lt;&lt; 1) &lt; MAXIMUM_CAPACITY &amp;&amp; // newCap = oldCap &lt;&lt; 1: 容量增大一倍
+                     oldCap &gt;= DEFAULT_INITIAL_CAPACITY)
+                newThr = oldThr &lt;&lt; 1; // 阈值增大一倍
+        }
+        else if (oldThr &gt; 0) // 如果构造函数中设置了阈值, 那么就不会走下一步else, 即不会使用默认初始容量进行初始化
+            newCap = oldThr;
+        else {               // 如果oldCap == 0的话, 就需要进行初始化
+            newCap = DEFAULT_INITIAL_CAPACITY; // 使用默认容量进行初始化
+            newThr = (int)(DEFAULT_LOAD_FACTOR * DEFAULT_INITIAL_CAPACITY); // 装载因子: threshold = length * loadFactor
+        }
+        if (newThr == 0) {
+            float ft = (float)newCap * loadFactor;
+            newThr = (newCap &lt; MAXIMUM_CAPACITY &amp;&amp; ft &lt; (float)MAXIMUM_CAPACITY ?
+                      (int)ft : Integer.MAX_VALUE);
+        }
+
+        // 分配空间, 设置新阈值
+        threshold = newThr; 
+        @SuppressWarnings({"rawtypes","unchecked"})
+            Node&lt;K,V&gt;[] newTab = (Node&lt;K,V&gt;[])new Node[newCap];
+        table = newTab;
+        if (oldTab != null) {
+            for (int j = 0; j &lt; oldCap; ++j) {
+                // 将旧值移动到新的位置
+                ...
+            }
+        }
+        return newTab;
+    }
+</code></pre></div></div>
+
+<p>可以看出, <code class="highlighter-rouge">resize()</code>的时候进行了空间重新分配和数据的移动, 是一个相对比较耗时的操作, 所以应该合理设置初始容量和加载因子(一般都使用默认加载因子), 来减少扩容次数</p>
+
+<p>上面我们详细了解了一下扩容函数<code class="highlighter-rouge">resize()</code>的过程, 接下来要解决的是什么时候进行扩容; 其实这个问题, 我们直接看什么时候调用了<code class="highlighter-rouge">resize()</code>即可; 调用关系主要分为两类, 如下; 可以很明显的看出, 当超出阈值的时候, 需要进行扩容; 当<code class="highlighter-rouge">table</code>为<code class="highlighter-rouge">null</code>, 即尚未初始化的时候, 需要进行初始化; 其实这也对应了上面所说的<code class="highlighter-rouge">resize()</code>函数的两个作用: 容量倍增和初始化</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    if (s &gt; threshold)
+        resize();
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    if ((tab = table) == null || (n = tab.length) == 0)
+        n = (tab = resize()).length;
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="四-解决冲突">四. 解决冲突</h2>
+
+<p>冲突的解决是<code class="highlighter-rouge">HashMap</code>中的一个重难点; 造成冲突的原因就是不同的键值对经过计算后得出相同的数组索引映射;</p>
+
+<p>在之前的版本中, <code class="highlighter-rouge">HashMap</code>采用<strong>数组+链表</strong>实现, 即使用链表处理冲突, 同一<code class="highlighter-rouge">hash</code>值的节点都存储在一个链表里, 但是当链表中的元素较多, 即<code class="highlighter-rouge">hash</code>值相等的元素较多时, 通过<code class="highlighter-rouge">key</code>值依次查找的效率较低; 而<code class="highlighter-rouge">JDK1.8</code>中, <code class="highlighter-rouge">HashMap</code>采用<strong>数组+链表+红黑树</strong>实现, 当链表长度超过转换阈值(默认转换阈值为<code class="highlighter-rouge">TREEIFY_THRESHOLD = 8;</code>)时, 将链表转换为红黑树, 这样大大减少了查找时间(将<code class="highlighter-rouge">get()</code>方法的性能从<code class="highlighter-rouge">O(n)</code>提升到<code class="highlighter-rouge">O(logN)</code>); 同样,
+当<code class="highlighter-rouge">remove()</code>元素使得红黑树中元素个数小于<code class="highlighter-rouge">UNTREEIFY_THRESHOLD</code>阈值时(默认为<code class="highlighter-rouge">UNTREEIFY_THRESHOLD = 6</code>), 将红黑树转换为链表</p>
+
+<p>要看如何解决冲突, 当然是在存放一个值的时候咯! 如下<code class="highlighter-rouge">putVal()</code>; 逻辑比较简单, 结合注释过一遍即可</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
+                   boolean evict) {
+        Node&lt;K,V&gt;[] tab; Node&lt;K,V&gt; p; int n, i;
+
+        if ((tab = table) == null || (n = tab.length) == 0) // resize, 上面已经讲了, 不多说
+            n = (tab = resize()).length;
+        
+        if ((p = tab[i = (n - 1) &amp; hash]) == null) // 没有发生冲突时, 直接存放即可
+            tab[i] = newNode(hash, key, value, null);
+        else { // 发生冲突
+            Node&lt;K,V&gt; e; K k;
+            if (p.hash == hash &amp;&amp;
+                ((k = p.key) == key || (key != null &amp;&amp; key.equals(k))))
+                e = p;
+            else if (p instanceof TreeNode) // 如果本来就已经使用红黑树进行存储的了
+                e = ((TreeNode&lt;K,V&gt;)p).putTreeVal(this, tab, hash, key, value);
+            else {
+                for (int binCount = 0; ; ++binCount) { 
+                    if ((e = p.next) == null) {
+                        p.next = newNode(hash, key, value, null);
+                        if (binCount &gt;= TREEIFY_THRESHOLD - 1) // 超出阈值, 链表转换为红黑树
+                            treeifyBin(tab, hash);
+                        break;
+                    }
+                    // 如果键值对已经存在, 不能重复存放
+                    if (e.hash == hash &amp;&amp;
+                        ((k = e.key) == key || (key != null &amp;&amp; key.equals(k))))
+                        break;
+                    p = e;
+                }
+            }
+
+            // 如果存在重复key, 那么进行value替换
+            if (e != null) { // existing mapping for key
+                V oldValue = e.value;
+                if (!onlyIfAbsent || oldValue == null)
+                    e.value = value;
+                afterNodeAccess(e);
+                return oldValue;
+            }
+        }
+        ...
+        return null;
+    }
+</code></pre></div></div>
+
+<p>接下来主要看两种数据结构的组织方式</p>
+
+<h3 id="41-链表">4.1 链表</h3>
+
+<p>链表节点是<code class="highlighter-rouge">Node</code>, 如下; 也是常规的单链表数据结构, 只是数据域多了一个键值(<code class="highlighter-rouge">key</code>); 比较简单, 没话说！</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    static class Node&lt;K,V&gt; implements Map.Entry&lt;K,V&gt; {
+        final int hash; // 软缓存
+        final K key;
+        V value;
+        Node&lt;K,V&gt; next;
+
+        Node(int hash, K key, V value, Node&lt;K,V&gt; next) {
+            this.hash = hash;
+            this.key = key;
+            this.value = value;
+            this.next = next;
+        }
+        
+        ...
+    }
+</code></pre></div></div>
+
+<p>这里需要提一个小的知识点：</p>
+
+<p><strong>软缓存</strong>: 如果<code class="highlighter-rouge">hash</code>值计算起来很困难, 那么就可以将第一次计算出来的<code class="highlighter-rouge">hash</code>值缓存起来(<code class="highlighter-rouge">Java</code>中<code class="highlighter-rouge">String</code>就是这样的); <code class="highlighter-rouge">HashMap</code>中的<code class="highlighter-rouge">Node</code>节点也使用了这种缓存</p>
+
+<h3 id="42-红黑树">4.2 红黑树</h3>
+
+<h2 id="参考链接">参考链接</h2>
+
+<p><a href="https://www.zhihu.com/question/20733617">HashMap中的hash原理</a></p>
+
+<p>—–摘自橙书—-</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    static class Node&lt;K,V&gt; implements Map.Entry&lt;K,V&gt; {
+        final int hash;
+    }
+</code></pre></div></div>
+
+<p>冲突处理:</p>
+
+<hr />
+
+<p>扩容规则: resize()</p>
+
+<p>其底层数据结构是数组称之为哈希桶，每个桶里面放的是链表，链表中的每个节点，就是哈希表中的每个元素; 在JDK8中，当链表长度达到8，会转化成红黑树，以提升它的查询、插入效率</p>
+
+<p>允许null value 和null key</p>
+
+<p>为get和put方法提供常量实现时间</p>
+
+<p>理解装载因子: Hash表中的数据占有量超过该装载因子的时候, Hash表容量会进行自动增加</p>
+
+<p>非同步: Collections.synchronizedMap(new HashMap(…));</p>
+
+<p>Iterator遍历抛异常: ConcurrentModificationException</p>
+
+<p>与HashTable的区别: 
+与之相比HashTable是线程安全的，且不允许key、value是null。
+HashTable默认容量是11。
+HashTable是直接使用key的hashCode(key.hashCode())作为hash值，不像HashMap内部使用static final int hash(Object key)扰动函数对key的hashCode进行扰动后作为hash值。
+HashTable取哈希桶下标是直接用模运算%.（因为其默认容量也不是2的n次方。所以也无法用位运算替代模运算）
+扩容时，新容量是原来的2倍+1。int newCapacity = (oldCapacity « 1) + 1;
+Hashtable是Dictionary的子类同时也实现了Map接口，HashMap是Map接口的一个实现类；</p>
+
+<p>HashMap基本上与HashTable相同, 除了HashMap允许空值和非同步外</p>
+
+
+
+                <hr>
+
+                
+
+
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/" data-toggle="tooltip" data-placement="top" title="Java集合框架概述">&larr; Previous Post</a>
+                    </li>
+                    
+                    
+                    <li class="next">
+                        <a href="/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BList/" data-toggle="tooltip" data-placement="top" title="Java集合框架之List">Next Post &rarr;</a>
+                    </li>
+                    
+                </ul>
+
+
+                
+
+                
+                <!-- disqus 评论框 start -->
+                <div class="comment">
+                    <div id="disqus_thread" class="disqus-thread"></div>
+                </div>
+                <!-- disqus 评论框 end -->
+                
+
+            </div>
+
+    <!-- Sidebar Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+        				
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#Algorithm" title="Algorithm" rel="2">
+                                    Algorithm
+                                </a>
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#Java" title="Java" rel="4">
+                                    Java
+                                </a>
+                            
+        				
+        			</div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+                <hr>
+                <h5>FRIENDS</h5>
+                <ul class="list-inline">
+                    
+                        <li><a href="https://tech.meituan.com/archives">美团点评</a></li>
+                    
+                </ul>
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+
+<!-- disqus 公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = "HusterYP";
+    var disqus_identifier = "/2018/08/27/Java集合框架之HashMap";
+    var disqus_url = "http://localhost:4000/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/";
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<!-- disqus 公共JS代码 end -->
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("http://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                    
+                    
+
+                    <!-- add Weibo, Zhihu by Hux, add target = "_blank" to <a> by Hux -->
+                    
+                    
+
+
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/HusterYP">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; 袁平 2018
+                    <br>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js "></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/js/bootstrap.min.js "></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js "></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("http://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+
+
+<!-- Baidu Tongji -->
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>
