@@ -281,55 +281,59 @@ tags:
 
 ### 4.2 红黑树
 
+红黑树, 实际上也是一棵二叉查找树, 能够保证增加, 删除, 查找的最坏时间复杂度为`O(logN)`; 红黑树的具体实现细节, 本文不做多讲, 一方面是该知识点也是一个很庞杂的体系, 一时半会也讲不透; 另一方面就是, 对于本文来说, 只需要了解红黑树的特点就可以了; 当然关于红黑树详细的资料, 可以[参考博客](https://blog.csdn.net/v_JULY_v/article/details/6105630)
 
-
-
-
-## 参考链接
-
-[HashMap中的hash原理](https://www.zhihu.com/question/20733617)
-
-
-
-
------摘自橙书----
+这里, 我们简单看一下其节点组织方式
 
 ```
-    static class Node<K,V> implements Map.Entry<K,V> {
-        final int hash;
+    static final class TreeNode<K,V> extends LinkedHashMap.Entry<K,V> {
+        TreeNode<K,V> parent;  // red-black tree links
+        TreeNode<K,V> left; // 指向左节点指针
+        TreeNode<K,V> right; // 指向右节点指针
+        TreeNode<K,V> prev;    // 用于将红黑树转换为单链表时所用
+        boolean red; // 红黑咯 !
+        TreeNode(int hash, K key, V val, Node<K,V> next) {
+            super(hash, key, val, next);
+        }
+
+        ...
     }
 ```
 
-冲突处理: 
+-------------
+
+
+## 五. 总结
+
+到这里, `HashMap`相关的三大重难点就分析完了, 记忆的时候, 也可以从这三点出发, 虽然不必记忆具体的代码细节, 但是对于大致流程和设计思想还是要有印象的
+
+当然, 作为集合框架中的一员, `HashMap`还有一些其他特点, 如下:
+
+1. 非同步: `HashMap`不是线程安全的; 多线程中要使用`HashMap`的话, 可以考虑使用`Collections.synchronizedMap(new HashMap(...));`来进行包装
+
+2. `Iterator`遍历抛异常: `ConcurrentModificationException`; 这个和大多数集合一样; 也是在多线程中使用的时候可能出现的问题, 具体原因可以[Java集合框架之List](https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BList/)中的分析
+
+3. 支持`null`: `HashMap`支持`key`为`null`, 也支持`value`为`null`
+
+
+除此之外, 集合框架中还有一个叫`HashTable`的, 这里简要贴一下他们之间的区别:
+
+1. `HashTable`是线程安全的, 且不允许`key`, `value`是`null`
+
+2. `HashTable`默认容量是`11`
+
+3. `HashTable`是直接使用`key`的`hashCode(key.hashCode())`作为`hash`值, 不像`HashMap`内部使用`static final int hash(Object key)`扰动函数对`key`的`hashCode`进行扰动后作为`hash`值
+
+4. `HashTable`取哈希桶下标是直接用模运算`%` (因为其默认容量也不是`2`的`n`次方, 所以也无法用位运算替代模运算)
+
+5. 扩容时, 新容量是原来的`2`倍`+1`, `int newCapacity = (oldCapacity << 1) + 1;`
+
+6. `Hashtable`是`Dictionary`的子类同时也实现了`Map`接口, `HashMap`是`Map`接口的一个实现类
+
 
 -----
 
-扩容规则: resize()
 
-其底层数据结构是数组称之为哈希桶，每个桶里面放的是链表，链表中的每个节点，就是哈希表中的每个元素; 在JDK8中，当链表长度达到8，会转化成红黑树，以提升它的查询、插入效率
+## 六. 参考链接
 
-允许null value 和null key
-
-
-为get和put方法提供常量实现时间
-
-理解装载因子: Hash表中的数据占有量超过该装载因子的时候, Hash表容量会进行自动增加
-
-
-非同步: Collections.synchronizedMap(new HashMap(...));
-
-Iterator遍历抛异常: ConcurrentModificationException
-
-
-
-
-与HashTable的区别: 
-与之相比HashTable是线程安全的，且不允许key、value是null。
-HashTable默认容量是11。
-HashTable是直接使用key的hashCode(key.hashCode())作为hash值，不像HashMap内部使用static final int hash(Object key)扰动函数对key的hashCode进行扰动后作为hash值。
-HashTable取哈希桶下标是直接用模运算%.（因为其默认容量也不是2的n次方。所以也无法用位运算替代模运算）
-扩容时，新容量是原来的2倍+1。int newCapacity = (oldCapacity << 1) + 1;
-Hashtable是Dictionary的子类同时也实现了Map接口，HashMap是Map接口的一个实现类；
-
-HashMap基本上与HashTable相同, 除了HashMap允许空值和非同步外
-
+[HashMap中的hash原理](https://www.zhihu.com/question/20733617)

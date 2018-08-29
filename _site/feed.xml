@@ -5,8 +5,8 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Wed, 29 Aug 2018 17:22:23 +0800</pubDate>
-    <lastBuildDate>Wed, 29 Aug 2018 17:22:23 +0800</lastBuildDate>
+    <pubDate>Wed, 29 Aug 2018 20:38:48 +0800</pubDate>
+    <lastBuildDate>Wed, 29 Aug 2018 20:38:48 +0800</lastBuildDate>
     <generator>Jekyll v3.8.3</generator>
     
       <item>
@@ -526,45 +526,72 @@ Iterator遍历的时候, 多线程抛出异常&lt;code class=&quot;highlighter-r
 
 &lt;h3 id=&quot;42-红黑树&quot;&gt;4.2 红黑树&lt;/h3&gt;
 
-&lt;h2 id=&quot;参考链接&quot;&gt;参考链接&lt;/h2&gt;
+&lt;p&gt;红黑树, 实际上也是一棵二叉查找树, 能够保证增加, 删除, 查找的最坏时间复杂度为&lt;code class=&quot;highlighter-rouge&quot;&gt;O(logN)&lt;/code&gt;; 红黑树的具体实现细节, 本文不做多讲, 一方面是该知识点也是一个很庞杂的体系, 一时半会也讲不透; 另一方面就是, 对于本文来说, 只需要了解红黑树的特点就可以了; 当然关于红黑树详细的资料, 可以&lt;a href=&quot;https://blog.csdn.net/v_JULY_v/article/details/6105630&quot;&gt;参考博客&lt;/a&gt;&lt;/p&gt;
 
-&lt;p&gt;&lt;a href=&quot;https://www.zhihu.com/question/20733617&quot;&gt;HashMap中的hash原理&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;这里, 我们简单看一下其节点组织方式&lt;/p&gt;
 
-&lt;p&gt;—–摘自橙书—-&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    static final class TreeNode&amp;lt;K,V&amp;gt; extends LinkedHashMap.Entry&amp;lt;K,V&amp;gt; {
+        TreeNode&amp;lt;K,V&amp;gt; parent;  // red-black tree links
+        TreeNode&amp;lt;K,V&amp;gt; left; // 指向左节点指针
+        TreeNode&amp;lt;K,V&amp;gt; right; // 指向右节点指针
+        TreeNode&amp;lt;K,V&amp;gt; prev;    // 用于将红黑树转换为单链表时所用
+        boolean red; // 红黑咯 !
+        TreeNode(int hash, K key, V val, Node&amp;lt;K,V&amp;gt; next) {
+            super(hash, key, val, next);
+        }
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    static class Node&amp;lt;K,V&amp;gt; implements Map.Entry&amp;lt;K,V&amp;gt; {
-        final int hash;
+        ...
     }
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
-&lt;p&gt;冲突处理:&lt;/p&gt;
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;五-总结&quot;&gt;五. 总结&lt;/h2&gt;
+
+&lt;p&gt;到这里, &lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;相关的三大重难点就分析完了, 记忆的时候, 也可以从这三点出发, 虽然不必记忆具体的代码细节, 但是对于大致流程和设计思想还是要有印象的&lt;/p&gt;
+
+&lt;p&gt;当然, 作为集合框架中的一员, &lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;还有一些其他特点, 如下:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;非同步: &lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;不是线程安全的; 多线程中要使用&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;的话, 可以考虑使用&lt;code class=&quot;highlighter-rouge&quot;&gt;Collections.synchronizedMap(new HashMap(...));&lt;/code&gt;来进行包装&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Iterator&lt;/code&gt;遍历抛异常: &lt;code class=&quot;highlighter-rouge&quot;&gt;ConcurrentModificationException&lt;/code&gt;; 这个和大多数集合一样; 也是在多线程中使用的时候可能出现的问题, 具体原因可以&lt;a href=&quot;https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BList/&quot;&gt;Java集合框架之List&lt;/a&gt;中的分析&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;支持&lt;code class=&quot;highlighter-rouge&quot;&gt;null&lt;/code&gt;: &lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;支持&lt;code class=&quot;highlighter-rouge&quot;&gt;key&lt;/code&gt;为&lt;code class=&quot;highlighter-rouge&quot;&gt;null&lt;/code&gt;, 也支持&lt;code class=&quot;highlighter-rouge&quot;&gt;value&lt;/code&gt;为&lt;code class=&quot;highlighter-rouge&quot;&gt;null&lt;/code&gt;&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;除此之外, 集合框架中还有一个叫&lt;code class=&quot;highlighter-rouge&quot;&gt;HashTable&lt;/code&gt;的, 这里简要贴一下他们之间的区别:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;HashTable&lt;/code&gt;是线程安全的, 且不允许&lt;code class=&quot;highlighter-rouge&quot;&gt;key&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;value&lt;/code&gt;是&lt;code class=&quot;highlighter-rouge&quot;&gt;null&lt;/code&gt;&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;HashTable&lt;/code&gt;默认容量是&lt;code class=&quot;highlighter-rouge&quot;&gt;11&lt;/code&gt;&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;HashTable&lt;/code&gt;是直接使用&lt;code class=&quot;highlighter-rouge&quot;&gt;key&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;hashCode(key.hashCode())&lt;/code&gt;作为&lt;code class=&quot;highlighter-rouge&quot;&gt;hash&lt;/code&gt;值, 不像&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;内部使用&lt;code class=&quot;highlighter-rouge&quot;&gt;static final int hash(Object key)&lt;/code&gt;扰动函数对&lt;code class=&quot;highlighter-rouge&quot;&gt;key&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;hashCode&lt;/code&gt;进行扰动后作为&lt;code class=&quot;highlighter-rouge&quot;&gt;hash&lt;/code&gt;值&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;HashTable&lt;/code&gt;取哈希桶下标是直接用模运算&lt;code class=&quot;highlighter-rouge&quot;&gt;%&lt;/code&gt; (因为其默认容量也不是&lt;code class=&quot;highlighter-rouge&quot;&gt;2&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;n&lt;/code&gt;次方, 所以也无法用位运算替代模运算)&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;扩容时, 新容量是原来的&lt;code class=&quot;highlighter-rouge&quot;&gt;2&lt;/code&gt;倍&lt;code class=&quot;highlighter-rouge&quot;&gt;+1&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;int newCapacity = (oldCapacity &amp;lt;&amp;lt; 1) + 1;&lt;/code&gt;&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Hashtable&lt;/code&gt;是&lt;code class=&quot;highlighter-rouge&quot;&gt;Dictionary&lt;/code&gt;的子类同时也实现了&lt;code class=&quot;highlighter-rouge&quot;&gt;Map&lt;/code&gt;接口, &lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;是&lt;code class=&quot;highlighter-rouge&quot;&gt;Map&lt;/code&gt;接口的一个实现类&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
 
 &lt;hr /&gt;
 
-&lt;p&gt;扩容规则: resize()&lt;/p&gt;
+&lt;h2 id=&quot;六-参考链接&quot;&gt;六. 参考链接&lt;/h2&gt;
 
-&lt;p&gt;其底层数据结构是数组称之为哈希桶，每个桶里面放的是链表，链表中的每个节点，就是哈希表中的每个元素; 在JDK8中，当链表长度达到8，会转化成红黑树，以提升它的查询、插入效率&lt;/p&gt;
-
-&lt;p&gt;允许null value 和null key&lt;/p&gt;
-
-&lt;p&gt;为get和put方法提供常量实现时间&lt;/p&gt;
-
-&lt;p&gt;理解装载因子: Hash表中的数据占有量超过该装载因子的时候, Hash表容量会进行自动增加&lt;/p&gt;
-
-&lt;p&gt;非同步: Collections.synchronizedMap(new HashMap(…));&lt;/p&gt;
-
-&lt;p&gt;Iterator遍历抛异常: ConcurrentModificationException&lt;/p&gt;
-
-&lt;p&gt;与HashTable的区别: 
-与之相比HashTable是线程安全的，且不允许key、value是null。
-HashTable默认容量是11。
-HashTable是直接使用key的hashCode(key.hashCode())作为hash值，不像HashMap内部使用static final int hash(Object key)扰动函数对key的hashCode进行扰动后作为hash值。
-HashTable取哈希桶下标是直接用模运算%.（因为其默认容量也不是2的n次方。所以也无法用位运算替代模运算）
-扩容时，新容量是原来的2倍+1。int newCapacity = (oldCapacity « 1) + 1;
-Hashtable是Dictionary的子类同时也实现了Map接口，HashMap是Map接口的一个实现类；&lt;/p&gt;
-
-&lt;p&gt;HashMap基本上与HashTable相同, 除了HashMap允许空值和非同步外&lt;/p&gt;
-
+&lt;p&gt;&lt;a href=&quot;https://www.zhihu.com/question/20733617&quot;&gt;HashMap中的hash原理&lt;/a&gt;&lt;/p&gt;
 </description>
         <pubDate>Mon, 27 Aug 2018 00:00:00 +0800</pubDate>
         <link>http://localhost:4000/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/</link>

@@ -438,45 +438,72 @@
 
 <h3 id="42-红黑树">4.2 红黑树</h3>
 
-<h2 id="参考链接">参考链接</h2>
+<p>红黑树, 实际上也是一棵二叉查找树, 能够保证增加, 删除, 查找的最坏时间复杂度为<code class="highlighter-rouge">O(logN)</code>; 红黑树的具体实现细节, 本文不做多讲, 一方面是该知识点也是一个很庞杂的体系, 一时半会也讲不透; 另一方面就是, 对于本文来说, 只需要了解红黑树的特点就可以了; 当然关于红黑树详细的资料, 可以<a href="https://blog.csdn.net/v_JULY_v/article/details/6105630">参考博客</a></p>
 
-<p><a href="https://www.zhihu.com/question/20733617">HashMap中的hash原理</a></p>
+<p>这里, 我们简单看一下其节点组织方式</p>
 
-<p>—–摘自橙书—-</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    static final class TreeNode&lt;K,V&gt; extends LinkedHashMap.Entry&lt;K,V&gt; {
+        TreeNode&lt;K,V&gt; parent;  // red-black tree links
+        TreeNode&lt;K,V&gt; left; // 指向左节点指针
+        TreeNode&lt;K,V&gt; right; // 指向右节点指针
+        TreeNode&lt;K,V&gt; prev;    // 用于将红黑树转换为单链表时所用
+        boolean red; // 红黑咯 !
+        TreeNode(int hash, K key, V val, Node&lt;K,V&gt; next) {
+            super(hash, key, val, next);
+        }
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    static class Node&lt;K,V&gt; implements Map.Entry&lt;K,V&gt; {
-        final int hash;
+        ...
     }
 </code></pre></div></div>
 
-<p>冲突处理:</p>
+<hr />
+
+<h2 id="五-总结">五. 总结</h2>
+
+<p>到这里, <code class="highlighter-rouge">HashMap</code>相关的三大重难点就分析完了, 记忆的时候, 也可以从这三点出发, 虽然不必记忆具体的代码细节, 但是对于大致流程和设计思想还是要有印象的</p>
+
+<p>当然, 作为集合框架中的一员, <code class="highlighter-rouge">HashMap</code>还有一些其他特点, 如下:</p>
+
+<ol>
+  <li>
+    <p>非同步: <code class="highlighter-rouge">HashMap</code>不是线程安全的; 多线程中要使用<code class="highlighter-rouge">HashMap</code>的话, 可以考虑使用<code class="highlighter-rouge">Collections.synchronizedMap(new HashMap(...));</code>来进行包装</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">Iterator</code>遍历抛异常: <code class="highlighter-rouge">ConcurrentModificationException</code>; 这个和大多数集合一样; 也是在多线程中使用的时候可能出现的问题, 具体原因可以<a href="https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BList/">Java集合框架之List</a>中的分析</p>
+  </li>
+  <li>
+    <p>支持<code class="highlighter-rouge">null</code>: <code class="highlighter-rouge">HashMap</code>支持<code class="highlighter-rouge">key</code>为<code class="highlighter-rouge">null</code>, 也支持<code class="highlighter-rouge">value</code>为<code class="highlighter-rouge">null</code></p>
+  </li>
+</ol>
+
+<p>除此之外, 集合框架中还有一个叫<code class="highlighter-rouge">HashTable</code>的, 这里简要贴一下他们之间的区别:</p>
+
+<ol>
+  <li>
+    <p><code class="highlighter-rouge">HashTable</code>是线程安全的, 且不允许<code class="highlighter-rouge">key</code>, <code class="highlighter-rouge">value</code>是<code class="highlighter-rouge">null</code></p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">HashTable</code>默认容量是<code class="highlighter-rouge">11</code></p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">HashTable</code>是直接使用<code class="highlighter-rouge">key</code>的<code class="highlighter-rouge">hashCode(key.hashCode())</code>作为<code class="highlighter-rouge">hash</code>值, 不像<code class="highlighter-rouge">HashMap</code>内部使用<code class="highlighter-rouge">static final int hash(Object key)</code>扰动函数对<code class="highlighter-rouge">key</code>的<code class="highlighter-rouge">hashCode</code>进行扰动后作为<code class="highlighter-rouge">hash</code>值</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">HashTable</code>取哈希桶下标是直接用模运算<code class="highlighter-rouge">%</code> (因为其默认容量也不是<code class="highlighter-rouge">2</code>的<code class="highlighter-rouge">n</code>次方, 所以也无法用位运算替代模运算)</p>
+  </li>
+  <li>
+    <p>扩容时, 新容量是原来的<code class="highlighter-rouge">2</code>倍<code class="highlighter-rouge">+1</code>, <code class="highlighter-rouge">int newCapacity = (oldCapacity &lt;&lt; 1) + 1;</code></p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">Hashtable</code>是<code class="highlighter-rouge">Dictionary</code>的子类同时也实现了<code class="highlighter-rouge">Map</code>接口, <code class="highlighter-rouge">HashMap</code>是<code class="highlighter-rouge">Map</code>接口的一个实现类</p>
+  </li>
+</ol>
 
 <hr />
 
-<p>扩容规则: resize()</p>
+<h2 id="六-参考链接">六. 参考链接</h2>
 
-<p>其底层数据结构是数组称之为哈希桶，每个桶里面放的是链表，链表中的每个节点，就是哈希表中的每个元素; 在JDK8中，当链表长度达到8，会转化成红黑树，以提升它的查询、插入效率</p>
-
-<p>允许null value 和null key</p>
-
-<p>为get和put方法提供常量实现时间</p>
-
-<p>理解装载因子: Hash表中的数据占有量超过该装载因子的时候, Hash表容量会进行自动增加</p>
-
-<p>非同步: Collections.synchronizedMap(new HashMap(…));</p>
-
-<p>Iterator遍历抛异常: ConcurrentModificationException</p>
-
-<p>与HashTable的区别: 
-与之相比HashTable是线程安全的，且不允许key、value是null。
-HashTable默认容量是11。
-HashTable是直接使用key的hashCode(key.hashCode())作为hash值，不像HashMap内部使用static final int hash(Object key)扰动函数对key的hashCode进行扰动后作为hash值。
-HashTable取哈希桶下标是直接用模运算%.（因为其默认容量也不是2的n次方。所以也无法用位运算替代模运算）
-扩容时，新容量是原来的2倍+1。int newCapacity = (oldCapacity « 1) + 1;
-Hashtable是Dictionary的子类同时也实现了Map接口，HashMap是Map接口的一个实现类；</p>
-
-<p>HashMap基本上与HashTable相同, 除了HashMap允许空值和非同步外</p>
-
+<p><a href="https://www.zhihu.com/question/20733617">HashMap中的hash原理</a></p>
 
 
                 <hr>
