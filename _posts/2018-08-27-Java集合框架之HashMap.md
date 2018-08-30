@@ -315,6 +315,8 @@ tags:
 
 3. 支持`null`: `HashMap`支持`key`为`null`, 也支持`value`为`null`
 
+4. 无序: 即遍历`HashMap`得到的数据顺序并不是最初其存放顺序, 因为会伴随这再`Hash`
+
 
 除此之外, 集合框架中还有一个叫`HashTable`的, 这里简要贴一下他们之间的区别:
 

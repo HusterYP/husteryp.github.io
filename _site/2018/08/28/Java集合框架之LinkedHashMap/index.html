@@ -10,9 +10,9 @@
     <meta name="keyword"  content="">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>Java集合框架之Set - 袁平 | HusterYP-Blog</title>
+    <title>Java集合框架之LinkedHashMap - 袁平 | HusterYP-Blog</title>
 
-    <link rel="canonical" href="http://localhost:4000/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BSet/">
+    <link rel="canonical" href="http://localhost:4000/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/css/bootstrap.min.css">
@@ -143,12 +143,12 @@
                         <a class="tag" href="/tags/#Java" title="Java">Java</a>
                         
                     </div>
-                    <h1>Java集合框架之Set</h1>
+                    <h1>Java集合框架之LinkedHashMap</h1>
                     
                     
-                    <h2 class="subheading">讲解Set实现类</h2>
+                    <h2 class="subheading">LinkedHashMap源码讲解</h2>
                     
-                    <span class="meta">Posted by 袁平 on August 27, 2018</span>
+                    <span class="meta">Posted by 袁平 on August 28, 2018</span>
                 </div>
             </div>
         </div>
@@ -169,7 +169,10 @@
 				<h1 id="前言">前言</h1>
 
 <blockquote>
-  <p><a href="https://husteryp.github.io/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/">前面</a>我们对Java集合框架有了一个基本的认识, 这里我们从几大接口入手, 逐步讲解其实现类; 下面要讲解的是<code class="highlighter-rouge">Set</code>的实现类, 即常用的<code class="highlighter-rouge">HashSet</code>, <code class="highlighter-rouge">TreeSet</code>和<code class="highlighter-rouge">LinkedHashSet</code></p>
+  <ol>
+    <li><a href="https://husteryp.github.io/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/">前面</a>我们对Java集合框架有了一个基本的认识; 本文将主要讲解<code class="highlighter-rouge">LinkedHashMap</code>的实现原理和处理细节</li>
+    <li><code class="highlighter-rouge">LinkedHashMap</code>继承于<code class="highlighter-rouge">HashMap</code>, 所以需要先对<code class="highlighter-rouge">HashMap</code>有一个基本的认识, 可以参见<a href="https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/">Java集合框架之HashMap</a></li>
+  </ol>
 </blockquote>
 
 <p>文章源码基于<code class="highlighter-rouge">JDK8</code></p>
@@ -180,19 +183,96 @@
 
 <hr />
 
-<h2 id="一-hashset">一. HashSet</h2>
+<h2 id="一-概述">一. 概述</h2>
 
-<p>没有重复元素, 允许null</p>
+<p><code class="highlighter-rouge">LinkedHashMap</code>继承于<code class="highlighter-rouge">HashMap</code>, 除了<code class="highlighter-rouge">HashMap</code>元素遍历无序, <code class="highlighter-rouge">LinkedHashMap</code>元素遍历有序以外, 具有<code class="highlighter-rouge">HashMap</code>的大多数特点; 另外, <code class="highlighter-rouge">LinkedHashMap</code>内部还有一个双向链表, 用于记录元素顺序(这也是保证其遍历有序的原因), 具体有两种顺序,  一个是插入顺序, 一个访问顺序; 同时, <code class="highlighter-rouge">LinkedHashMap</code>还可以用来实现<code class="highlighter-rouge">LRU</code>算法(<code class="highlighter-rouge">Least Recently Used</code>, 即最近最少使用算法); 本文将主要分析<code class="highlighter-rouge">LinkedHashMap</code>的两个大方面: 一个是遍历有序, 另一个是用于<code class="highlighter-rouge">LRU</code>算法的特性</p>
 
-<p>内部通过HashMap实现</p>
+<hr />
 
-<p>关于负载因子理解:
-Iterating over this set requires time proportional to the sum of the HashSet instance’s size (the number of elements) plus the “capacity” of the backing HashMap instance (the number of buckets). Thus, it’s very important not to set the initial capacity too high (or the load factor too low) if iteration performance is important.</p>
+<h2 id="二-遍历有序">二. 遍历有序</h2>
 
-<p>不保证Set的遍历顺序, 不保证元素的存储数据, 
-一下方法提供常量时间: add, remove, contains and size
-非同步, 可以使用Collections.synchronizedSet(new HashSet(…));
-Iterator遍历的时候, 多线程抛出异常<code class="highlighter-rouge">ConcurrentModificationException</code>(遍历过程中修改数据, 但是可以使用Iterator自己提供的remove()方法, 该方法不会造成异常)</p>
+<p><code class="highlighter-rouge">LinkedHashMap</code>遍历有序, 主要是因为其在<code class="highlighter-rouge">HashMap</code>的基础上, 增加了一个双向链表, 按照元素的插入顺序或者访问顺序, 将数据重新组织成一个双向链表; 根据标志位<code class="highlighter-rouge">final boolean accessOrder;</code>来决定是按照插入顺序(<code class="highlighter-rouge">insertion-order</code>, 此时需要<code class="highlighter-rouge">accessOrder = false</code>)还是访问顺序(<code class="highlighter-rouge">access-order</code>, 此时需要<code class="highlighter-rouge">accessOrder = true</code>)来组织</p>
+
+<p><code class="highlighter-rouge">LinkedHashMap</code>改写了<code class="highlighter-rouge">HashMap</code>的节点, 如下; 在其中增加了<code class="highlighter-rouge">before</code>和<code class="highlighter-rouge">after</code>域用于帮助组织双向链表</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    static class Entry&lt;K,V&gt; extends HashMap.Node&lt;K,V&gt; {
+        Entry&lt;K,V&gt; before, after;
+        Entry(int hash, K key, V value, Node&lt;K,V&gt; next) {
+            super(hash, key, value, next);
+        }
+    }
+</code></pre></div></div>
+
+<p>对于<code class="highlighter-rouge">accessOrder</code>值的指定只能在创建<code class="highlighter-rouge">LinkedHashMap</code>的时候, 也就是说<code class="highlighter-rouge">LinkedHashMap</code>并没有提供明确的<code class="highlighter-rouge">set()</code>方法来改变该值(一旦在构造函数中指定, 就无法改变); <code class="highlighter-rouge">LinkedHashMap</code>提供了如下构造函数可以用于指定<code class="highlighter-rouge">accessOrder</code>的值, 其余构造函数中, <code class="highlighter-rouge">accessOrder</code>都默认为<code class="highlighter-rouge">false</code>, 即默认以<code class="highlighter-rouge">insertion-order</code>的顺序组织双向链表</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    public LinkedHashMap(int initialCapacity,
+                         float loadFactor,
+                         boolean accessOrder) {
+        super(initialCapacity, loadFactor);
+        this.accessOrder = accessOrder;
+    }
+</code></pre></div></div>
+
+<p><code class="highlighter-rouge">LinkedHashMap</code>重写了<code class="highlighter-rouge">HashMap</code>的<code class="highlighter-rouge">newNode()</code>函数, <code class="highlighter-rouge">newNode()</code>在进行元素插入的时候会被<code class="highlighter-rouge">HashMap.putVal()</code>调用, <code class="highlighter-rouge">LinkedHashMap</code>用自己的<code class="highlighter-rouge">Entry</code>节点替换<code class="highlighter-rouge">HashMap</code><code class="highlighter-rouge">Node</code>节点的同时, 进行双向链表的构建, 使得程序改动最小</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    Node&lt;K,V&gt; newNode(int hash, K key, V value, Node&lt;K,V&gt; e) {
+        LinkedHashMap.Entry&lt;K,V&gt; p =
+            new LinkedHashMap.Entry&lt;K,V&gt;(hash, key, value, e);
+        linkNodeLast(p); // 将节点插入到双向链表的末尾
+        return p;
+    }
+</code></pre></div></div>
+
+<p>至于<code class="highlighter-rouge">linkNodeLast()</code>函数, 即将节点插入到双向链表的末尾, 该方法比较简单, 这里就不再贴源码啦 !</p>
+
+<p>那么当我们指定了<code class="highlighter-rouge">accessOrder</code>为<code class="highlighter-rouge">true</code>的时候, 即以元素访问顺序来组织双向链表的时候, 其实就只是在获取元素的时候, 将被访问的元素移动到链表末尾; 如下; 那么链表表头的元素就是最近没有被访问的元素, 这也是我们实现<code class="highlighter-rouge">LRU</code>算法的依据(稍后会细讲)</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    public V get(Object key) {
+        Node&lt;K,V&gt; e;
+        if ((e = getNode(hash(key), key)) == null)
+            return null;
+        if (accessOrder) // 如果指定为按照元素访问顺序组织元素
+            afterNodeAccess(e); // 将元素移动到链表末尾
+        return e.value;
+    }
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    void afterNodeAccess(Node&lt;K,V&gt; e) { // move node to last
+        // 省略具体细节
+        ...
+    }
+</code></pre></div></div>
+
+<p>到这里, 我们对<code class="highlighter-rouge">LinkedHashMap</code>遍历有序的原因有了较为详细的了解; 接下来要讲的是<code class="highlighter-rouge">LinkedHashMap</code>的一个应用, 即用于实现<code class="highlighter-rouge">LRU</code>算法的特性</p>
+
+<hr />
+
+<h2 id="三-lru算法">三. LRU算法</h2>
+
+<p><strong>LRU算法</strong>即<code class="highlighter-rouge">Least Recently Used</code>, 其依据是<strong>如果数据最近被访问过, 那么其将来被访问的几率也更大</strong></p>
+
+<p><code class="highlighter-rouge">Android</code>中的<code class="highlighter-rouge">LruCache</code>(内存缓存)内部就是利用<code class="highlighter-rouge">LinkedHashMap</code>实现的</p>
+
+<p>前面我们讲了, 当<code class="highlighter-rouge">accessOrder</code>设置为<code class="highlighter-rouge">true</code>, 即按照元素访问顺序组织数据的时候, 会在<code class="highlighter-rouge">get()</code>方法中将被访问的元素移动到链表的末尾, 那么链表首部的元素就是最久没有访问的, 所以, 当要使用<code class="highlighter-rouge">LinkedHashMap</code>实现<code class="highlighter-rouge">LRU</code>的时候, 必须将<code class="highlighter-rouge">accessOrder</code>置为<code class="highlighter-rouge">true</code></p>
+
+<p>另外, 还需要我们自己去定义<code class="highlighter-rouge">LRU</code>的实现规则, 即自己定义什么时候应该移除最久没有使用的元素; 此时我们需要去重写<code class="highlighter-rouge">LinkedHashMap</code>的<code class="highlighter-rouge">removeEldestEntry()</code>函数, <code class="highlighter-rouge">removeEldestEntry()</code>是在我们插入一个元素完毕之后, 回调<code class="highlighter-rouge">afterNodeInsertion()</code>中调用的, 如下; 但是<code class="highlighter-rouge">removeEldestEntry()</code>默认返回<code class="highlighter-rouge">false</code>, 所以需要我们自己去定义规则</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    void afterNodeInsertion(boolean evict) { // possibly remove eldest
+        LinkedHashMap.Entry&lt;K,V&gt; first;
+        if (evict &amp;&amp; (first = head) != null &amp;&amp; removeEldestEntry(first)) { // 插入元素之后, 判断是否需要移除最久没有访问的元素
+            K key = first.key;
+            removeNode(hash(key), key, null, false, true); // 移除链表首部的元素
+        }
+    }
+</code></pre></div></div>
+
+<p>至于自定义规则, 比如: 约定最多在内存中缓存多少个元素, 超过该阈值之后, <code class="highlighter-rouge">removeEldestEntry()</code>返回<code class="highlighter-rouge">true</code>, 即将旧元素移除; 或者, 规定缓存占用多少内存, 当达到该阈值之后, 即进行旧元素移除; 当然, 这些都是后话, 具体的<code class="highlighter-rouge">LRU</code>算法, 可以根据实际需求来定</p>
+
+<hr />
+
+<h2 id="四-总结">四. 总结</h2>
+
+<p><code class="highlighter-rouge">LinkedHashMap</code>基于<code class="highlighter-rouge">HashMap</code>, 总体上比较简单, 主要掌握上文说的两个主要特点即可, 不再赘述 !</p>
 
 
                 <hr>
@@ -203,13 +283,9 @@ Iterator遍历的时候, 多线程抛出异常<code class="highlighter-rouge">Co
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BList/" data-toggle="tooltip" data-placement="top" title="Java集合框架之List">&larr; Previous Post</a>
+                        <a href="/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BSet/" data-toggle="tooltip" data-placement="top" title="Java集合框架之Set">&larr; Previous Post</a>
                     </li>
                     
-                    
-                    <li class="next">
-                        <a href="/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/" data-toggle="tooltip" data-placement="top" title="Java集合框架之LinkedHashMap">Next Post &rarr;</a>
-                    </li>
                     
                 </ul>
 
@@ -284,8 +360,8 @@ Iterator遍历的时候, 多线程抛出异常<code class="highlighter-rouge">Co
 <script type="text/javascript">
     /* * * CONFIGURATION VARIABLES * * */
     var disqus_shortname = "HusterYP";
-    var disqus_identifier = "/2018/08/27/Java集合框架之Set";
-    var disqus_url = "http://localhost:4000/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BSet/";
+    var disqus_identifier = "/2018/08/28/Java集合框架之LinkedHashMap";
+    var disqus_url = "http://localhost:4000/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/";
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
