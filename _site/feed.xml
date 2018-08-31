@@ -5,9 +5,181 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Thu, 30 Aug 2018 15:25:28 +0800</pubDate>
-    <lastBuildDate>Thu, 30 Aug 2018 15:25:28 +0800</lastBuildDate>
+    <pubDate>Fri, 31 Aug 2018 20:53:52 +0800</pubDate>
+    <lastBuildDate>Fri, 31 Aug 2018 20:53:52 +0800</lastBuildDate>
     <generator>Jekyll v3.8.3</generator>
+    
+      <item>
+        <title>图片三级缓存之内存缓存和磁盘缓存</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;本文主要分析&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;中图片三级缓存中的前两级缓存, 即内存缓存(&lt;code class=&quot;highlighter-rouge&quot;&gt;LruCache&lt;/code&gt;)和磁盘缓存(&lt;code class=&quot;highlighter-rouge&quot;&gt;DiskLruCache&lt;/code&gt;), 分析其源码实现&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;一-lrucache&quot;&gt;一. LruCache&lt;/h2&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;LruCache&lt;/code&gt;常用作内存缓存, 也就是第一级缓存&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;LruCache&lt;/code&gt;内部使用了一个&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;实例, 所以在继续往下看之前, 建议先了解一下&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;的特性, 可以参见&lt;a href=&quot;https://husteryp.github.io/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/&quot;&gt;Java集合框架之LinkedHashMap&lt;/a&gt;, 该文章有讲解如何将&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;用作内存缓存以及&lt;code class=&quot;highlighter-rouge&quot;&gt;LRU&lt;/code&gt;算法的一些基本分析&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;LRU算法&lt;/strong&gt;即&lt;code class=&quot;highlighter-rouge&quot;&gt;Least Recently Used&lt;/code&gt;, 其依据是&lt;strong&gt;如果数据最近被访问过, 那么其将来被访问的几率也更大&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;LruCache&lt;/code&gt;逻辑其实比较简单, 大致逻辑就是: 设定最大阈值(&lt;code class=&quot;highlighter-rouge&quot;&gt;maxSize&lt;/code&gt;), 当我们缓存一个新值的时候, 去判断是否超过该阈值, 如果超过了, 则移除最久未使用的缓存(这是利用的&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;的特性, 可以参考上面的链接); 这是&lt;code class=&quot;highlighter-rouge&quot;&gt;LruCache&lt;/code&gt;的一个大致流程与思路, 接下来我们会详细讲解一些较为细节的地方&lt;/p&gt;
+
+&lt;p&gt;先来看其构造函数: &lt;code class=&quot;highlighter-rouge&quot;&gt;LruCache&lt;/code&gt;只有一个构造函数, 需要传递一个最大的缓存阈值; 同时需要注意的是, 这里构造&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;的时候, 将&lt;code class=&quot;highlighter-rouge&quot;&gt;accessOrder&lt;/code&gt;标志位设置为&lt;code class=&quot;highlighter-rouge&quot;&gt;true&lt;/code&gt;了, 使得&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;通过访问顺序来构造双向链表, 这在我们讲解&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;源码的时候重点分析过, 这里不再赘述 !&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    public LruCache(int maxSize) {
+        if (maxSize &amp;lt;= 0) {
+            throw new IllegalArgumentException(&quot;maxSize &amp;lt;= 0&quot;);
+        }
+        this.maxSize = maxSize;
+        this.map = new LinkedHashMap&amp;lt;K, V&amp;gt;(0, 0.75f, true);
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;当然, &lt;code class=&quot;highlighter-rouge&quot;&gt;LruCache&lt;/code&gt;还允许重新设置该阈值, 通过&lt;code class=&quot;highlighter-rouge&quot;&gt;trimToSize()&lt;/code&gt;函数实现, 如下; 实现思路也很简单, 就是通过遍历当前缓存值, 然后不断删除最久未使用的缓存, 直到缓存量在阈值之下&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;     public void trimToSize(int maxSize) {
+        while (true) {
+            K key;
+            V value;
+            synchronized (this) {
+                ...
+                if (size &amp;lt;= maxSize || map.isEmpty()) {
+                    break;
+                }
+
+                Map.Entry&amp;lt;K, V&amp;gt; toEvict = map.entrySet().iterator().next();
+                key = toEvict.getKey();
+                value = toEvict.getValue();
+                map.remove(key);
+                size -= safeSizeOf(key, value);
+                evictionCount++;
+            }
+
+            entryRemoved(true, key, value, null);
+        }
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;在我们平时使用的时候, 需要重点关注的有两个方法, 一个是&lt;code class=&quot;highlighter-rouge&quot;&gt;sizeOf()&lt;/code&gt;, 另一个是&lt;code class=&quot;highlighter-rouge&quot;&gt;entryRemoved()&lt;/code&gt;; 这两个方法通常都会根据实际需要重写; 两个方法也很简单, 下面分别讲解&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;sizeOf()&lt;/code&gt;: 返回一个缓存条目的大小, 注意应该和&lt;code class=&quot;highlighter-rouge&quot;&gt;maxSize&lt;/code&gt;在一个量级(以便正确比较); 其默认返回&lt;code class=&quot;highlighter-rouge&quot;&gt;1&lt;/code&gt;, 单纯的表示缓存的条目数量, 代码很简单(只是&lt;code class=&quot;highlighter-rouge&quot;&gt;return 1&lt;/code&gt;而已), 这里就不贴啦 ~&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;entryRemoved()&lt;/code&gt;: 该方法有点意思, 默认是一个空方法, 没有做任何处理; 在发生&lt;code class=&quot;highlighter-rouge&quot;&gt;value&lt;/code&gt;缓存冲突的时候(&lt;code class=&quot;highlighter-rouge&quot;&gt;key&lt;/code&gt;重复, 冲突)和删除缓存条目的时候会调用(通过传入参数&lt;code class=&quot;highlighter-rouge&quot;&gt;evicted&lt;/code&gt;标志, &lt;code class=&quot;highlighter-rouge&quot;&gt;evicted == true&lt;/code&gt;表示为&lt;code class=&quot;highlighter-rouge&quot;&gt;value&lt;/code&gt;是被删除的, &lt;code class=&quot;highlighter-rouge&quot;&gt;evicted == false&lt;/code&gt;表示&lt;code class=&quot;highlighter-rouge&quot;&gt;value&lt;/code&gt;是因为&lt;code class=&quot;highlighter-rouge&quot;&gt;key&lt;/code&gt;冲突被挤出来的)&lt;/p&gt;
+
+&lt;p&gt;一般我们重写该方法是为了做一些旧数据的回收清理等特殊工作&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;protected void entryRemoved(boolean evicted, K key, V oldValue, V newValue) {}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;二-disklrucache&quot;&gt;二. DiskLruCache&lt;/h2&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;DiskLruCache&lt;/code&gt;常用作磁盘缓存, 也就是第二级缓存; 虽然其没有纳入&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;的官方&lt;code class=&quot;highlighter-rouge&quot;&gt;API&lt;/code&gt;, 但是受到了&lt;code class=&quot;highlighter-rouge&quot;&gt;Google&lt;/code&gt;的官方推荐; 源代码可以从&lt;a href=&quot;https://github.com/JakeWharton/DiskLruCache&quot;&gt;Github&lt;/a&gt;下载&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;DiskLruCache&lt;/code&gt;的基本思路是, 将文件缓存到磁盘上, 设定最大的缓存阈值, 超过该值的时候, 会在后台去清除旧缓存&lt;/p&gt;
+
+&lt;p&gt;需要注意的是, 这里旧文件的清除是在后台线程完成的(实际上是开了一个线程池去做该工作), 有时候缓存的文件总量会暂时超过最大阈值, 所以对缓存容量比较敏感的程序应该设置保守的缓存阈值&lt;/p&gt;
+
+&lt;p&gt;先来看一下&lt;code class=&quot;highlighter-rouge&quot;&gt;DiskLruCache&lt;/code&gt;的构造函数; 其只有一个构造函数, 如下; 其中&lt;code class=&quot;highlighter-rouge&quot;&gt;directory&lt;/code&gt;表示缓存目录; &lt;code class=&quot;highlighter-rouge&quot;&gt;appVersion&lt;/code&gt;表示应用版本号, 当该值改变时, &lt;code class=&quot;highlighter-rouge&quot;&gt;DiskLruCache&lt;/code&gt;会清除所有缓存, 默认需要从网上拉取新数据; &lt;code class=&quot;highlighter-rouge&quot;&gt;valueCount&lt;/code&gt;表示的是一个&lt;code class=&quot;highlighter-rouge&quot;&gt;key&lt;/code&gt;可以对应多少个文件, 通常都传入&lt;code class=&quot;highlighter-rouge&quot;&gt;1&lt;/code&gt;即可, 该值通常用于表示将一个大文件分成多个小文件存放, 存放的规则是, &lt;code class=&quot;highlighter-rouge&quot;&gt;key&lt;/code&gt;后面加上自增的索引(如&lt;code class=&quot;highlighter-rouge&quot;&gt;key1&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;key2&lt;/code&gt;等)(当然, 这些都是内部处理细节, 具体使用的时候可以不用管); &lt;code class=&quot;highlighter-rouge&quot;&gt;maxSize&lt;/code&gt;表示的是缓存阈值(&lt;code class=&quot;highlighter-rouge&quot;&gt;byte&lt;/code&gt;)&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private DiskLruCache(File directory, int appVersion, int valueCount, long maxSize) {
+    this.directory = directory;
+    this.appVersion = appVersion;
+    this.journalFile = new File(directory, JOURNAL_FILE);
+    this.journalFileTmp = new File(directory, JOURNAL_FILE_TEMP);
+    this.journalFileBackup = new File(directory, JOURNAL_FILE_BACKUP);
+    this.valueCount = valueCount;
+    this.maxSize = maxSize;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;DiskLruCache&lt;/code&gt;的文件缓存依赖于日志文件, 即存储在同一文件夹下的名为&lt;code class=&quot;highlighter-rouge&quot;&gt;journal&lt;/code&gt;的文件, 在该文件中, 存储了每个文件缓存的信息;  在开始之前, 需要先了解一下该文件的格式, 因为后面会去读取该日志文件, 做判断; 关于该文件格式, 可以参考&lt;a href=&quot;https://blog.csdn.net/guolin_blog/article/details/28863651&quot;&gt;Android DiskLruCache完全解析，硬盘缓存的最佳方案&lt;/a&gt;&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;          libcore.io.DiskLruCache
+          1
+          100
+          2
+     
+          CLEAN 3400330d1dfc7f3f7f4b8d4d803dfcf6 832 21054
+          DIRTY 335c4c6028171cfddfbaae1a9c313c52
+          CLEAN 335c4c6028171cfddfbaae1a9c313c52 3934 2342
+          REMOVE 335c4c6028171cfddfbaae1a9c313c52
+          DIRTY 1ab96a171faeeee38496d8b330771a7a
+          CLEAN 1ab96a171faeeee38496d8b330771a7a 1600 234
+          READ 335c4c6028171cfddfbaae1a9c313c52
+          READ 3400330d1dfc7f3f7f4b8d4d803dfcf6
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;在&lt;code class=&quot;highlighter-rouge&quot;&gt;DiskLruCache&lt;/code&gt;中, 有三个重要的内部类, 一个是&lt;code class=&quot;highlighter-rouge&quot;&gt;Editor&lt;/code&gt;, 用于文件写入; 一个是&lt;code class=&quot;highlighter-rouge&quot;&gt;Entry&lt;/code&gt;, 表示一个文件信息节点; 还有一个是&lt;code class=&quot;highlighter-rouge&quot;&gt;Snapshot&lt;/code&gt;, 表示文件节点的快照, 其实就是为了防止数据更改, 对&lt;code class=&quot;highlighter-rouge&quot;&gt;Entry&lt;/code&gt;信息做了一层封装&lt;/p&gt;
+
+&lt;p&gt;其中, 在&lt;code class=&quot;highlighter-rouge&quot;&gt;Editor&lt;/code&gt;中有一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Entry&lt;/code&gt;成员变量, 在&lt;code class=&quot;highlighter-rouge&quot;&gt;Entry&lt;/code&gt;中有一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Editor&lt;/code&gt;成员变量, 这是为了考虑在多线程中使用的时候, 通过判断携带的是不是同一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Entry&lt;/code&gt;或者&lt;code class=&quot;highlighter-rouge&quot;&gt;Editor&lt;/code&gt;来判断是否是在同一个线程中操作同一个文件; 因为&lt;code class=&quot;highlighter-rouge&quot;&gt;DiskLruCache&lt;/code&gt;不允许多个线程去操作同一个文件&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public final class Editor {
+    private final Entry entry;
+    ...
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private final class Entry {
+    ...
+    private Editor currentEditor;
+    ...
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;另外, 这里还需要关注的一点是, &lt;code class=&quot;highlighter-rouge&quot;&gt;DiskLruCache&lt;/code&gt;是如何判断哪些文件是旧文件; 这里我们发现了一个熟悉的身影, 即&lt;code class=&quot;highlighter-rouge&quot;&gt;
+private final LinkedHashMap&amp;lt;String, Entry&amp;gt; lruEntries = new LinkedHashMap&amp;lt;String, Entry&amp;gt;(0, 0.75f, true);&lt;/code&gt;, 前面我们知道了&lt;code class=&quot;highlighter-rouge&quot;&gt;LruCache&lt;/code&gt;是利用&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;的访问特性来实现旧文件的判断和移除, 这里其实也是一样, 只不过这里存储的是&lt;code class=&quot;highlighter-rouge&quot;&gt;key&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;Entry&lt;/code&gt;; 这也是前面日志文件&lt;code class=&quot;highlighter-rouge&quot;&gt;journal&lt;/code&gt;的作用&lt;/p&gt;
+
+&lt;p&gt;在初始化的时候, 会先去&lt;code class=&quot;highlighter-rouge&quot;&gt;journal&lt;/code&gt;日志文件读取键值信息, 在&lt;code class=&quot;highlighter-rouge&quot;&gt;readJournal()&lt;/code&gt;中不断的去读取&lt;code class=&quot;highlighter-rouge&quot;&gt;journal&lt;/code&gt;文件, 然后调用&lt;code class=&quot;highlighter-rouge&quot;&gt;readJournalLine()&lt;/code&gt;构建信息, 存储在&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;中; 然后在&lt;code class=&quot;highlighter-rouge&quot;&gt;get()&lt;/code&gt;值或者判断旧文件去移除的时候, 就直接去查询&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;中的值就好了; 至于判断旧文件的原理, 和&lt;code class=&quot;highlighter-rouge&quot;&gt;LruCache&lt;/code&gt;一样, 可以参见&lt;a href=&quot;https://husteryp.github.io/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/&quot;&gt;Java集合框架之LinkedHashMap&lt;/a&gt;&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private void readJournal() throws IOException {
+    ...
+    while (true) {
+        try {
+          readJournalLine(reader.readLine());
+          lineCount++;
+        } catch (EOFException endOfJournal) {
+          break;
+        }
+    }
+    ...
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private void readJournalLine(String line) throws IOException {
+    ...
+    Entry entry = lruEntries.get(key);
+    if (entry == null) {
+      entry = new Entry(key);
+      lruEntries.put(key, entry);
+    }
+    ...
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;三-总结&quot;&gt;三. 总结&lt;/h2&gt;
+
+&lt;p&gt;到这里, 我们对内存缓存和磁盘缓存所需要使用到的两个类有了较为详细的了解, 之后该动手自己实践啦 !&lt;/p&gt;
+</description>
+        <pubDate>Fri, 31 Aug 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/08/31/%E5%9B%BE%E7%89%87%E4%B8%89%E7%BA%A7%E7%BC%93%E5%AD%98%E4%B9%8BLruCache%E5%92%8CDiskLurCache/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/08/31/%E5%9B%BE%E7%89%87%E4%B8%89%E7%BA%A7%E7%BC%93%E5%AD%98%E4%B9%8BLruCache%E5%92%8CDiskLurCache/</guid>
+        
+        <category>Android</category>
+        
+        
+      </item>
     
       <item>
         <title>Java集合框架之LinkedHashMap</title>
@@ -1370,51 +1542,6 @@ else
         <guid isPermaLink="true">http://localhost:4000/2018/08/24/Details/</guid>
         
         <category>Algorithm</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>AndroidStudio代理设置</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-&lt;blockquote&gt;
-  &lt;p&gt;近日, Android Studio新建项目一直Gradle失败, 网上各种搜, 说是设置代理, 然而代理设置之后不能使用, 搞了一天, 差点就滚去重装AS了, 不过终于还是搞清楚问题出在哪里了, 以此记录&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;h2 id=&quot;一-问题描述&quot;&gt;一. 问题描述&lt;/h2&gt;
-&lt;ul&gt;
-  &lt;li&gt;新建项目失败&lt;/li&gt;
-  &lt;li&gt;完好的项目第二次打开之后, Gradle失败&lt;/li&gt;
-  &lt;li&gt;使用Help-&amp;gt;Check for Updates 提示联网失败&lt;/li&gt;
-  &lt;li&gt;SDK 无法联网下载&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/AndroidStudio/timeout.png&quot; alt=&quot;联网失败&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;二-解决&quot;&gt;二. 解决&lt;/h2&gt;
-&lt;ul&gt;
-  &lt;li&gt;根本原因还是ShadowSocks的代理设置有问题, 之前使用的是Socks5代理, 改为Http代理就好了, 如下&lt;/li&gt;
-  &lt;li&gt;在网上查了一下, Socks5是局部代理, Android Studio 本身支持 socks5 代理，但是 gradle 只支持 http 代理，这也导致了虽然开着 shadowsocks 却无法更新 SDK 或者下载 gradle 依赖;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/AndroidStudio/socks.png&quot; alt=&quot;Socks5代理&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;改为&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/AndroidStudio/http.png&quot; alt=&quot;Http代理&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;参考&quot;&gt;参考&lt;/h2&gt;
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://hellovass.info/2017/04/04/%E7%9C%9F%C2%B7Android%20Studio%20%E4%BB%A3%E7%90%86%E8%AE%BE%E7%BD%AE%E6%8C%87%E5%8D%97/&quot;&gt;参考博客&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-</description>
-        <pubDate>Mon, 20 Aug 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/08/20/AndroidStudio%E4%BB%A3%E7%90%86%E8%AE%BE%E7%BD%AE%E8%B8%A9%E5%9D%91/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/08/20/AndroidStudio%E4%BB%A3%E7%90%86%E8%AE%BE%E7%BD%AE%E8%B8%A9%E5%9D%91/</guid>
-        
-        <category>AndroidStudio</category>
         
         
       </item>
