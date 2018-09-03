@@ -5,9 +5,365 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Fri, 31 Aug 2018 20:53:52 +0800</pubDate>
-    <lastBuildDate>Fri, 31 Aug 2018 20:53:52 +0800</lastBuildDate>
+    <pubDate>Mon, 03 Sep 2018 22:33:48 +0800</pubDate>
+    <lastBuildDate>Mon, 03 Sep 2018 22:33:48 +0800</lastBuildDate>
     <generator>Jekyll v3.8.3</generator>
+    
+      <item>
+        <title>图片缓存之Picasso源码分析</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;图片缓存系列之&lt;code class=&quot;highlighter-rouge&quot;&gt;Picasso&lt;/code&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;一-概述&quot;&gt;一. 概述&lt;/h2&gt;
+
+&lt;p&gt;在开始之前, 我想先贴两张比较具有概括性的流程图&lt;/p&gt;
+
+&lt;p&gt;下面这张是对&lt;code class=&quot;highlighter-rouge&quot;&gt;Picasso&lt;/code&gt;核心交互类的概括, 来自&lt;a href=&quot;http://www.trinea.cn/android/android-image-cache-compare/&quot;&gt;Android 三大图片缓存原理、特性对比&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/Picasso/picasso.png&quot; alt=&quot;Picasso&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;下面这张是&lt;code class=&quot;highlighter-rouge&quot;&gt;Picasso&lt;/code&gt;下载一张图片的时候的执行流程图, 来自&lt;a href=&quot;https://blog.csdn.net/chdjj/article/details/49964901&quot;&gt;Picasso学习笔记&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/Picasso/picasso执行流程图.png&quot; alt=&quot;picasso流程图&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;注&lt;/strong&gt;: 笔者在看&lt;code class=&quot;highlighter-rouge&quot;&gt;Picasso&lt;/code&gt;源码的时候, 发现其执行流程和上图有些不符, 主要是没有最后的&lt;code class=&quot;highlighter-rouge&quot;&gt;Downloader&lt;/code&gt;, 下载过程完全交给了&lt;code class=&quot;highlighter-rouge&quot;&gt;NetworkRequestHandler&lt;/code&gt;去做, 应该是不同版本造成的; (本文对应&lt;code class=&quot;highlighter-rouge&quot;&gt;Picasso&lt;/code&gt;源码版本为&lt;code class=&quot;highlighter-rouge&quot;&gt;picasso:2.71828&lt;/code&gt;)&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Picasso&lt;/code&gt;中比较重要的类在上面第一张图片已经列出, 主要是&lt;code class=&quot;highlighter-rouge&quot;&gt;Picasso&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;Dispatcher&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;RequestHandler&lt;/code&gt;; 下面分别总述一下其作用:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Picasso&lt;/code&gt;: 该类是我们使用的起点, 是图片下载, 图片转换, 图片缓存的&lt;code class=&quot;highlighter-rouge&quot;&gt;Manager&lt;/code&gt;; 其提供的静态内部类&lt;code class=&quot;highlighter-rouge&quot;&gt;Builder&lt;/code&gt;, 用于接收用户配置, 一般而言, 我们都使用&lt;code class=&quot;highlighter-rouge&quot;&gt;Picasso&lt;/code&gt;的一个全局实例(单例);&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Dispatcher&lt;/code&gt;: 顾名思义, 就是一个调度中转站, 用于分发请求(下载请求, 暂停请求, 恢复请求等), 传递数据(数据成功返回时进行分发绑定), 错误处理分发等&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;RequestHandler&lt;/code&gt;: 这是一个抽象类, 提供了数据处理的公共抽象; &lt;code class=&quot;highlighter-rouge&quot;&gt;Picasso&lt;/code&gt;默认实现的有&lt;code class=&quot;highlighter-rouge&quot;&gt;AssetRequestHandler&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;ResourceRequestHandler&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;ResourceDrawableRequestHandler&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;NetworkRequestHandler&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;ContentStreamRequestHandler&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;ContactsPhotoRequestHandler&lt;/code&gt;; 分别对应于不同的处理场景和模式, 其中最重要和最常见的就是&lt;code class=&quot;highlighter-rouge&quot;&gt;NetworkRequestHandler&lt;/code&gt;了; 当然, 也可以自定义实现该类, 用于处理&lt;code class=&quot;highlighter-rouge&quot;&gt;Picasso&lt;/code&gt;所没有涵盖的特殊情况(需要使用&lt;code class=&quot;highlighter-rouge&quot;&gt;Picasso.Builder.addRequestHandler(RequestHandler)&lt;/code&gt;注册)&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;下面, 笔者将主要分析网络请求这一部分, 包括: 一条&lt;code class=&quot;highlighter-rouge&quot;&gt;URL&lt;/code&gt;被处理的完整流程,  暂停,恢复和取消请求机制, 缓存机制; 当然, &lt;code class=&quot;highlighter-rouge&quot;&gt;Picasso&lt;/code&gt;还处理了很多其他情况, 如程序监控部分, 图片处理部分等, 但这些不是最主要的, 本文不再赘述&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;二-url处理流程&quot;&gt;二. URL处理流程&lt;/h2&gt;
+
+&lt;p&gt;开始之前, 需要先看一下&lt;code class=&quot;highlighter-rouge&quot;&gt;Picasso&lt;/code&gt;的典型使用, 如下; 各部分的作用都已经标注清楚了, 下面将对每一个过程进行讲解&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;     PicassoProvider.get() // 单例, 用于得到一个全局唯一Picasso实例
+        .load(url) // 加载url
+        .placeholder(R.drawable.placeholder) // 设置图片加载过程中的占位图片
+        .error(R.drawable.error) // 设置出错后的占位图片
+        .fit() // 图片处理部分, 表示将图片适应ImageView大小
+        .tag(context) // 设置tag, 用于暂停, 恢复, 取消请求时使用
+        .into(view); // 加载成功后设置到哪个View中
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;PicassoProvider.get()&lt;/code&gt;是实现的一个单例模式, 如下; 该模式比较常见, 不多讲&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public static Picasso get() {
+    if (instance == null) {
+      synchronized (PicassoProvider.class) {
+        if (instance == null) {
+          Context autoContext = PicassoContentProvider.context;
+          if (autoContext == null) {
+            throw new NullPointerException(&quot;context == null&quot;);
+          }
+          instance = new Picasso.Builder(autoContext).build();
+        }
+      }
+    }
+    return instance;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;从上面我们可以看出, &lt;code class=&quot;highlighter-rouge&quot;&gt;Picasso&lt;/code&gt;的实例是通过其静态内部类&lt;code class=&quot;highlighter-rouge&quot;&gt;Builder&lt;/code&gt;进行&lt;code class=&quot;highlighter-rouge&quot;&gt;build&lt;/code&gt;的, 这也是一种典型的设计模式–&lt;code class=&quot;highlighter-rouge&quot;&gt;Builder&lt;/code&gt;模式; 该模式对于有很多参数要设置时是很方便的, 这里没有进行额外的参数设置, 使用的是&lt;code class=&quot;highlighter-rouge&quot;&gt;Picasso&lt;/code&gt;内部的默认参数(比如: 默认缓存大小, 使用自带&lt;code class=&quot;highlighter-rouge&quot;&gt;RequestHandler&lt;/code&gt;等进行请求处理等)&lt;/p&gt;
+
+&lt;p&gt;之后的过程是将&lt;code class=&quot;highlighter-rouge&quot;&gt;URL&lt;/code&gt;加载进去, 然后将该&lt;code class=&quot;highlighter-rouge&quot;&gt;URL&lt;/code&gt;封装为一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Request&lt;/code&gt;实例, 返回一个&lt;code class=&quot;highlighter-rouge&quot;&gt;RequestCreator&lt;/code&gt;实例, 然后在&lt;code class=&quot;highlighter-rouge&quot;&gt;into&lt;/code&gt;的时候, 进行异步请求图片; 当然, 在之前, 还有一个&lt;code class=&quot;highlighter-rouge&quot;&gt;placeholder()&lt;/code&gt;的过程, 该过程上面说了就是设置一个请求过程中的占位图片, 其内部做的也很简单, 只是将&lt;code class=&quot;highlighter-rouge&quot;&gt;ID&lt;/code&gt;保留下来, 在&lt;code class=&quot;highlighter-rouge&quot;&gt;into()&lt;/code&gt;中进行统一的逻辑处理&lt;/p&gt;
+
+&lt;p&gt;接下来, 主要的处理逻辑都指向了&lt;code class=&quot;highlighter-rouge&quot;&gt;into()&lt;/code&gt;函数, 下面我们来详细看其逻辑; 如下, 先设置占位图片, 然后将请求封装为一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Action&lt;/code&gt;实例提交到线程池中处理&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public void into(@NonNull ImageView target, @Nullable Callback callback) {
+    ...
+    if (!data.hasImage()) {
+      picasso.cancelRequest(target);
+      if (setPlaceholder) {
+        setPlaceholder(target, getPlaceholderDrawable()); // 设置占位图片
+      }
+      return;
+    }
+    ...
+    Action action = new ImageViewAction(picasso, wrapper, request, callback);
+    picasso.enqueueAndSubmit(action); // 提交请求
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;而&lt;code class=&quot;highlighter-rouge&quot;&gt;picasso.enqueueAndSubmit()&lt;/code&gt;又只是单纯的去调用&lt;code class=&quot;highlighter-rouge&quot;&gt;submit()&lt;/code&gt;, 在&lt;code class=&quot;highlighter-rouge&quot;&gt;submit()&lt;/code&gt;中将任务分配给&lt;code class=&quot;highlighter-rouge&quot;&gt;Dispatcher&lt;/code&gt;进行调度&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;void submit(Action action) {
+    dispatcher.dispatchSubmit(action);
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;而&lt;code class=&quot;highlighter-rouge&quot;&gt;Dispatcher&lt;/code&gt;进行调度实际上是通过&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;进行消息传递的, 该&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;实际上是&lt;code class=&quot;highlighter-rouge&quot;&gt;DispatcherHandler&lt;/code&gt;, 我们直接去看其&lt;code class=&quot;highlighter-rouge&quot;&gt;handleMessage()&lt;/code&gt;就好;&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;void dispatchSubmit(Action action) {
+    handler.sendMessage(handler.obtainMessage(REQUEST_SUBMIT, action));
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public void handleMessage(final Message msg) {
+    case REQUEST_SUBMIT: {
+          Action action = (Action) msg.obj;
+          dispatcher.performSubmit(action);
+          break;
+    }
+    ...
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;在&lt;code class=&quot;highlighter-rouge&quot;&gt;performSubmit()&lt;/code&gt;中进行处理, 将请求再次封装为一个&lt;code class=&quot;highlighter-rouge&quot;&gt;BitmapHunter&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;BitmapHunter&lt;/code&gt;是一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Runnable&lt;/code&gt;, 之后提交给线程池进行异步加载, 即下面的&lt;code class=&quot;highlighter-rouge&quot;&gt;service.submit()&lt;/code&gt;, 这里的&lt;code class=&quot;highlighter-rouge&quot;&gt;service&lt;/code&gt;实际上是&lt;code class=&quot;highlighter-rouge&quot;&gt;PicassoExecutorService&lt;/code&gt;, 继承于&lt;code class=&quot;highlighter-rouge&quot;&gt;ThreadPoolExecutor&lt;/code&gt;, 默认开了&lt;code class=&quot;highlighter-rouge&quot;&gt;3&lt;/code&gt;个线程, 当然, 这部分与网络请求相关的&lt;code class=&quot;highlighter-rouge&quot;&gt;Picasso&lt;/code&gt;内部也进行了判断, 比如在&lt;code class=&quot;highlighter-rouge&quot;&gt;Wifi&lt;/code&gt;或者&lt;code class=&quot;highlighter-rouge&quot;&gt;2G&lt;/code&gt;环境下采用不同的请求策略, 感兴趣的话可以自己跟着走一遍, 这里的主要目的是看一个网络请求的完整处理过程&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  void performSubmit(Action action, boolean dismissFailed) {
+        ...
+        hunter = forRequest(action.getPicasso(), this, cache, stats, action);
+        hunter.future = service.submit(hunter);
+        ...
+  }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;我们上面说了, &lt;code class=&quot;highlighter-rouge&quot;&gt;BitmapHunter&lt;/code&gt;是一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Runnable&lt;/code&gt;, 线程池执行的时候, 就是去执行其&lt;code class=&quot;highlighter-rouge&quot;&gt;run()&lt;/code&gt;方法, 在&lt;code class=&quot;highlighter-rouge&quot;&gt;run()&lt;/code&gt;中, 有一个&lt;code class=&quot;highlighter-rouge&quot;&gt;hunt()&lt;/code&gt;, 其作用是将请求得到的&lt;code class=&quot;highlighter-rouge&quot;&gt;Bitmap&lt;/code&gt;封装为&lt;code class=&quot;highlighter-rouge&quot;&gt;Result&lt;/code&gt;返回, 这里的&lt;code class=&quot;highlighter-rouge&quot;&gt;hunt()&lt;/code&gt;是一个阻塞耗时方法, 但是&lt;code class=&quot;highlighter-rouge&quot;&gt;run()&lt;/code&gt;异步运行, 所以也没有问题; 而在&lt;code class=&quot;highlighter-rouge&quot;&gt;hunt()&lt;/code&gt;中, 又是通过&lt;code class=&quot;highlighter-rouge&quot;&gt;RequestHandler&lt;/code&gt;的一个实现类&lt;code class=&quot;highlighter-rouge&quot;&gt;NetworkRequestHandler&lt;/code&gt;去处理的, 处理过程也是常规的图片下载过程, 如下;&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public void run() {
+    ...
+    result = hunt();
+    ...
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public void load(@NonNull Picasso picasso, @NonNull final Request request, @NonNull
+  final Callback callback) {
+    ...
+    ResponseBody body = response.body();
+    ...
+    Bitmap bitmap = decodeStream(body.source(), request);
+    callback.onSuccess(new Result(bitmap, loadedFrom));
+    ...
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;在图片接受完成之后, 再一步步函数返回, 封装为&lt;code class=&quot;highlighter-rouge&quot;&gt;Result&lt;/code&gt;, 回传至&lt;code class=&quot;highlighter-rouge&quot;&gt;run()&lt;/code&gt;中; 通过&lt;code class=&quot;highlighter-rouge&quot;&gt;Dispatcher&lt;/code&gt;进行通知图片接受成功还是失败; 最终会在&lt;code class=&quot;highlighter-rouge&quot;&gt;deliver()&lt;/code&gt;中调用主线程的&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;通知进行处理;&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public void run() {
+    ...
+    if (result.getBitmap() == null &amp;amp;&amp;amp; result.getDrawable() == null) {
+        dispatcher.dispatchFailed(this);
+    } else {
+        dispatcher.dispatchComplete(this);
+    }
+    ...
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private void deliver(BitmapHunter hunter) {
+    ...
+    mainThreadHandler.sendMessage(mainThreadHandler.obtainMessage(HUNTER_COMPLETE, hunter));
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;而&lt;code class=&quot;highlighter-rouge&quot;&gt;mainThreadHandler&lt;/code&gt;的处理逻辑在&lt;code class=&quot;highlighter-rouge&quot;&gt;Picasso&lt;/code&gt;类中, 很明显, 到这里之后就是将图片设置到&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;了&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;static final Handler HANDLER = new Handler(Looper.getMainLooper()) {
+    @Override public void handleMessage(Message msg) {
+      switch (msg.what) {
+        case HUNTER_COMPLETE: {
+          BitmapHunter hunter = (BitmapHunter) msg.obj;
+          hunter.picasso.complete(hunter);
+          break;
+        }
+        ...
+      }
+    }
+};
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;至此, 从网络请求图片的一个完整过程就讲完了, 当然, 中间还涉及很多代码细节和处理, 最好自己跟着流程再一遍 ~&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;三-暂停-恢复-取消请求处理&quot;&gt;三. 暂停, 恢复, 取消请求处理&lt;/h2&gt;
+
+&lt;p&gt;暂停请求使用&lt;code class=&quot;highlighter-rouge&quot;&gt;picasso.pauseTag();&lt;/code&gt;; 恢复请求使用&lt;code class=&quot;highlighter-rouge&quot;&gt;picasso.resumeTag();&lt;/code&gt;; 取消请求使用&lt;code class=&quot;highlighter-rouge&quot;&gt;picasso.cancelRequest();&lt;/code&gt;; 一般来说, 这些的使用场景是, 考虑当我们从网络加载图片填充到&lt;code class=&quot;highlighter-rouge&quot;&gt;GridView&lt;/code&gt;的时候, 如果我们在用户不断滑动过程中不暂停请求的话, 那么就会造成加载的延迟和卡顿(因为在不断滑动过程中会产生许多网络请求); 一般比较通用的解决方法是给&lt;code class=&quot;highlighter-rouge&quot;&gt;GridView&lt;/code&gt;添加&lt;code class=&quot;highlighter-rouge&quot;&gt;ScrollListener&lt;/code&gt;(&lt;code class=&quot;highlighter-rouge&quot;&gt;GridScrollListener&lt;/code&gt;), 监听滑动过程, 在滑动过程中暂停请求, 停止滑动时恢复请求即可&lt;/p&gt;
+
+&lt;p&gt;那么暂停, 恢复, 取消请求的实现机制又是如何的呢, 下面我们将一一分析&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h3 id=&quot;31-暂停请求&quot;&gt;3.1 暂停请求&lt;/h3&gt;
+
+&lt;p&gt;我们直接看&lt;code class=&quot;highlighter-rouge&quot;&gt;picasso.pauseTag();&lt;/code&gt;做了什么, 如下; 其直接交给了&lt;code class=&quot;highlighter-rouge&quot;&gt;Dispatcher&lt;/code&gt;进行请求分发, 这也符合我们上面总述的时候讲的&lt;code class=&quot;highlighter-rouge&quot;&gt;Dispatcher&lt;/code&gt;的功能; 之后&lt;code class=&quot;highlighter-rouge&quot;&gt;Dispatcher&lt;/code&gt;仍然通过&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;进行事件分发, 如下; 而其对&lt;code class=&quot;highlighter-rouge&quot;&gt;TAG_PAUSE&lt;/code&gt;事件的处理则是直接转交给了&lt;code class=&quot;highlighter-rouge&quot;&gt;dispatcher.performPauseTag(tag);&lt;/code&gt;中&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public void pauseTag(@NonNull Object tag) {
+    checkNotNull(tag, &quot;tag == null&quot;);
+    dispatcher.dispatchPauseTag(tag);
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;void dispatchPauseTag(Object tag) {
+    handler.sendMessage(handler.obtainMessage(TAG_PAUSE, tag));
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;在&lt;code class=&quot;highlighter-rouge&quot;&gt;performPauseTag()&lt;/code&gt;中, 其实就是将&lt;code class=&quot;highlighter-rouge&quot;&gt;tag&lt;/code&gt;保存到&lt;code class=&quot;highlighter-rouge&quot;&gt;pausedActions&lt;/code&gt;中, 这是一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Map&lt;/code&gt;&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;void performPauseTag(Object tag) {
+    // Trying to pause a tag that is already paused.
+    if (!pausedTags.add(tag)) { // 如果已经添加, 则直接返回
+      return;
+    }
+
+    // Go through all active hunters and detach/pause the requests
+    // that have the paused tag. // 否则, 遍历BitmapHunter, 将对应tag保存下来
+    for (Iterator&amp;lt;BitmapHunter&amp;gt; it = hunterMap.values().iterator(); it.hasNext();) {
+        ...
+        pausedActions.put(single.getTarget(), single);
+        ...
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;那么我们什么时候会用到该&lt;code class=&quot;highlighter-rouge&quot;&gt;tag&lt;/code&gt;呢, 就是在使用&lt;code class=&quot;highlighter-rouge&quot;&gt;Dispatcher&lt;/code&gt;分发请求的时候, 这里先去判断在&lt;code class=&quot;highlighter-rouge&quot;&gt;pausedTags&lt;/code&gt;中是否有对应的&lt;code class=&quot;highlighter-rouge&quot;&gt;tag&lt;/code&gt;记录, 如果有的话, 就不进行请求分发, 那么自然也就不会去下载图片了 ~&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;void performSubmit(Action action, boolean dismissFailed) {
+    if (pausedTags.contains(action.getTag())) {
+      pausedActions.put(action.getTarget(), action);
+      ...
+      return;
+    }
+    ...
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;32--恢复请求&quot;&gt;3.2  恢复请求&lt;/h3&gt;
+
+&lt;p&gt;恢复请求使用的是&lt;code class=&quot;highlighter-rouge&quot;&gt;picasso.resumeTag();&lt;/code&gt;; 恢复请求的过程和暂停请求的过程差不多, 前面都是通过&lt;code class=&quot;highlighter-rouge&quot;&gt;Dispatcher&lt;/code&gt;直接进行请求分发, 然后通过&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;去发送消息, 然后在&lt;code class=&quot;highlighter-rouge&quot;&gt;performResumeTag()&lt;/code&gt;进行处理; 在&lt;code class=&quot;highlighter-rouge&quot;&gt;performResumeTag()&lt;/code&gt;中, 一个是将&lt;code class=&quot;highlighter-rouge&quot;&gt;tag&lt;/code&gt;从&lt;code class=&quot;highlighter-rouge&quot;&gt;pausedTags&lt;/code&gt;中移除, 另一个是将原来的&lt;code class=&quot;highlighter-rouge&quot;&gt;Action&lt;/code&gt;(封装了请求等信息)通过&lt;code class=&quot;highlighter-rouge&quot;&gt;mainThreadHandler&lt;/code&gt;传递, 而&lt;code class=&quot;highlighter-rouge&quot;&gt;mainThreadHandler&lt;/code&gt;对&lt;code class=&quot;highlighter-rouge&quot;&gt;REQUEST_BATCH_RESUME&lt;/code&gt;的处理, 则是对每一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Action&lt;/code&gt;去调用&lt;code class=&quot;highlighter-rouge&quot;&gt;picasso.resumeAction()&lt;/code&gt;&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;void performResumeTag(Object tag) {
+    // Trying to resume a tag that is not paused.
+    if (!pausedTags.remove(tag)) {
+      return;
+    }
+
+    List&amp;lt;Action&amp;gt; batch = null;
+    for (Iterator&amp;lt;Action&amp;gt; i = pausedActions.values().iterator(); i.hasNext();) {
+      Action action = i.next();
+      if (action.getTag().equals(tag)) {
+        if (batch == null) {
+          batch = new ArrayList&amp;lt;&amp;gt;();
+        }
+        batch.add(action);
+        i.remove();
+      }
+    }
+
+    if (batch != null) {
+      mainThreadHandler.sendMessage(mainThreadHandler.obtainMessage(REQUEST_BATCH_RESUME, batch));
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;在&lt;code class=&quot;highlighter-rouge&quot;&gt;resumeAction()&lt;/code&gt;中, 其实就是将请求交给了&lt;code class=&quot;highlighter-rouge&quot;&gt;enqueueAndSubmit()&lt;/code&gt;, 而该过程在上面我们分析一个&lt;code class=&quot;highlighter-rouge&quot;&gt;URL&lt;/code&gt;的完整请求过程的时候, 已经看到过该函数了; 接下来的过程就不赘述了&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;void resumeAction(Action action) {
+    ...
+    enqueueAndSubmit(action);
+    ...
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;33-取消请求&quot;&gt;3.3 取消请求&lt;/h3&gt;
+
+&lt;p&gt;取消请求用的是&lt;code class=&quot;highlighter-rouge&quot;&gt;picasso.cancelRequest();&lt;/code&gt;, 该函数一共有三个重载函数, 但是最终都是交给了&lt;code class=&quot;highlighter-rouge&quot;&gt;cancelExistingRequest()&lt;/code&gt;处理, 接下来的过程和上面的过程差不多, &lt;code class=&quot;highlighter-rouge&quot;&gt;dispatcher.dispatchCancel()&lt;/code&gt;分发消息, 然后交给&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;传递消息, 最终调用&lt;code class=&quot;highlighter-rouge&quot;&gt;performCancel()&lt;/code&gt;处理请求; 在&lt;code class=&quot;highlighter-rouge&quot;&gt;performCancel()&lt;/code&gt;中, 其实就是将&lt;code class=&quot;highlighter-rouge&quot;&gt;BitmapHunter&lt;/code&gt;移除就好了, 前面我们说过, &lt;code class=&quot;highlighter-rouge&quot;&gt;BitmapHunter&lt;/code&gt;是一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Runnable&lt;/code&gt;, 所以将其移除之后, 自然就取消请求啦 ~&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;void performCancel(Action action) {
+    String key = action.getKey();
+    BitmapHunter hunter = hunterMap.get(key);
+    if (hunter != null) {
+      hunter.detach(action);
+      if (hunter.cancel()) {
+        hunterMap.remove(key);
+        ...
+      }
+    }
+    ...
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;34-小结&quot;&gt;3.4 小结&lt;/h3&gt;
+
+&lt;p&gt;到这里, 暂停, 恢复, 取消请求的过程我们已经有了比较详细的了解, 当然, 对于一个图片加载库来说, 这些接口也都是必备的&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;四-缓存&quot;&gt;四. 缓存&lt;/h2&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Picasso&lt;/code&gt;的缓存也分为内存缓存和磁盘缓存, 内存缓存基于&lt;code class=&quot;highlighter-rouge&quot;&gt;LruCache&lt;/code&gt;可以自行配置缓存大小等, 磁盘缓存依赖与&lt;code class=&quot;highlighter-rouge&quot;&gt;Http&lt;/code&gt;缓存, 不可配置&lt;/p&gt;
+
+&lt;p&gt;至于内存缓存部分, 逻辑很常规, 在&lt;a href=&quot;https://husteryp.github.io/2018/08/31/%E5%9B%BE%E7%89%87%E4%B8%89%E7%BA%A7%E7%BC%93%E5%AD%98%E4%B9%8BLruCache%E5%92%8CDiskLurCache/&quot;&gt;图片三级缓存之内存缓存和磁盘缓存&lt;/a&gt;中已经比较详细的讲过&lt;code class=&quot;highlighter-rouge&quot;&gt;LruCache&lt;/code&gt;的源码了, 可以参照该博客&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;通常都会有以下模块:
+请求分发模块。负责封装请求,对请求进行优先级排序,并按照类型进行分发。
+缓存模块。通常包括一个二级的缓存，内存缓存、磁盘缓存。并预置多种缓存策略。
+下载模块。负责下载网络图片。
+监控模块。负责监控缓存命中率、内存占用、加载图片平均耗时等。
+图片处理模块。负责对图片进行压缩、变换等处理。
+本地资源加载模块。负责加载本地资源，如assert、drawable、sdcard等。
+显示模块。负责将图片输出显示。&lt;/p&gt;
+
+&lt;hr /&gt;
+&lt;p&gt;Picasso的特性
+绝对是最轻量的图片加载库,120kb.
+自带监控功能，可以检测cache hit/内存大小等等数据
+图片预加载
+线程并发数依网络状态变化而变化、优先级调度
+图片变换
+图片压缩、自适应
+易扩展
+———-&lt;/p&gt;
+
+&lt;p&gt;Picasso的缓存是内存缓存+磁盘缓存，内存缓存基于LruCache类，可配置替换。磁盘缓存依赖于http缓存，不可配置&lt;/p&gt;
+
+&lt;h2 id=&quot;参考链接&quot;&gt;参考链接&lt;/h2&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;a href=&quot;https://skykai521.github.io/2016/02/25/Picasso%E6%BA%90%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90/&quot;&gt;Picasso源代码分析&lt;/a&gt;&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;a href=&quot;https://blog.csdn.net/chdjj/article/details/49964901&quot;&gt;Picasso学习笔记&lt;/a&gt;&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;a href=&quot;http://www.trinea.cn/android/android-image-cache-compare/&quot;&gt;Android 三大图片缓存原理、特性对比&lt;/a&gt;&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+</description>
+        <pubDate>Sat, 01 Sep 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/09/01/%E5%9B%BE%E7%89%87%E7%BC%93%E5%AD%98%E4%B9%8BPicasso%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/09/01/%E5%9B%BE%E7%89%87%E7%BC%93%E5%AD%98%E4%B9%8BPicasso%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
+        
+        <category>Android</category>
+        
+        
+      </item>
     
       <item>
         <title>图片三级缓存之内存缓存和磁盘缓存</title>
@@ -1407,139 +1763,6 @@ ConcurrentSkipListMap&lt;/p&gt;
         <pubDate>Fri, 24 Aug 2018 00:00:00 +0800</pubDate>
         <link>http://localhost:4000/2018/08/24/%E9%AB%98%E8%B4%A8%E9%87%8F%E7%9A%84%E4%BB%A3%E7%A0%81/</link>
         <guid isPermaLink="true">http://localhost:4000/2018/08/24/%E9%AB%98%E8%B4%A8%E9%87%8F%E7%9A%84%E4%BB%A3%E7%A0%81/</guid>
-        
-        <category>Algorithm</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>Detail</title>
-        <description>&lt;script type=&quot;text/javascript&quot; src=&quot;http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=default&quot;&gt;&lt;/script&gt;
-
-&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-&lt;blockquote&gt;
-  &lt;p&gt;本文记录一些有助于提高代码性能和平时一些难以想到的细节处理&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;h2 id=&quot;一-边界值&quot;&gt;一. 边界值&lt;/h2&gt;
-
-&lt;h3 id=&quot;11-基本类型的范围限制&quot;&gt;1.1 基本类型的范围限制&lt;/h3&gt;
-&lt;blockquote&gt;
-  &lt;p&gt;一般而言, 看到基本类型, 特别是返回值或者涉及到计算的, 都应该考虑基本类型的范围限制&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;比如实现库函数: &lt;code class=&quot;highlighter-rouge&quot;&gt;double Pow(double base, double exp)&lt;/code&gt;时, 需要考虑大数问题(如果要求是任意大的数字, 则需要使用特殊的数据结构来表示数据, 比如用字符串或者数组来表示大的数字, 以确保不会溢出(这也是大数问题的解决方法))&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h2 id=&quot;二-性能&quot;&gt;二. 性能&lt;/h2&gt;
-&lt;blockquote&gt;
-  &lt;p&gt;性能的影响一般分为时间性能和空间性能, 一般性能的提升考虑的方面有: 递归转循环, 位运算代替加减乘除, 算法改进(如: 利用全局有序或者局部有序使用二分等)&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;h3 id=&quot;21-快速计算乘方&quot;&gt;2.1 快速计算乘方&lt;/h3&gt;
-&lt;blockquote&gt;
-  &lt;p&gt;计算 &lt;script type=&quot;math/tex&quot;&gt;a^{n}&lt;/script&gt;&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;公式如下&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
-a^{n}=\begin{equation}
-\left\{
-             \begin{array}{**lr**}
-             a^{n/2}*a^{n/2}, &amp; n为偶数 \\
-             a^{(n-1)/2}*a^{(n-1)/2} &amp; n为奇数 \\
-             \end{array}
-\right.
-\end{equation} %]]&gt;&lt;/script&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;除了使用常规方法, 即一个n次循环计算乘方外, 可利用上面的公式来快速计算; 该公式是明显的递归式&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;double PowerWithUnsignedExponent(double base, unsigned int exponent) // 注意 
-{
-    if (0 == exponent) 
-        return 1;
-    if (1 == exponent) 
-        return base;
-    double result = PowerWithUnsignedExponent(base, exponent &amp;gt;&amp;gt; 1); // 注意
-    result *= result;
-    if (1 == exponent &amp;amp; 0x1) // 注意
-        result *= base;
-    return result;
-} 
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;上面的代码中需要注意的几点
-    &lt;blockquote&gt;
-      &lt;ol&gt;
-        &lt;li&gt;使用&lt;code class=&quot;highlighter-rouge&quot;&gt;unsigned&lt;/code&gt;来进一步限定范围&lt;/li&gt;
-        &lt;li&gt;判等时, 常量放在左边&lt;/li&gt;
-        &lt;li&gt;使用移位运算代替乘除&lt;/li&gt;
-        &lt;li&gt;使用与运算代替奇数和偶数判断&lt;/li&gt;
-      &lt;/ol&gt;
-    &lt;/blockquote&gt;
-  &lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3 id=&quot;22-位运算&quot;&gt;2.2 位运算&lt;/h3&gt;
-
-&lt;h4 id=&quot;22-1-奇偶判断&quot;&gt;2.2-1 奇偶判断&lt;/h4&gt;
-&lt;blockquote&gt;
-  &lt;p&gt;奇数二进制最后一位为1, 可利用与运算判断&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;if (1 == target &amp;amp; 0x1) 
-{
-    // 奇数...
-}
-else 
-{
-    // 偶数...
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h4 id=&quot;22-2-位移运算代替乘除&quot;&gt;2.2-2 位移运算代替乘除&lt;/h4&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;左移&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;&amp;lt;&lt;/code&gt;一位, 相当于乘2; 右移&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;gt;&amp;gt;&lt;/code&gt;一位, 相当于除以2&lt;/li&gt;
-  &lt;li&gt;注意移位规则
-    &lt;blockquote&gt;
-      &lt;ol&gt;
-        &lt;li&gt;左移: 右边直接补充0&lt;/li&gt;
-        &lt;li&gt;右移: 如果是一个无符号数, 左边用0填充n位; 如果是有符号数, 左边使用其符号位填充n位&lt;/li&gt;
-      &lt;/ol&gt;
-    &lt;/blockquote&gt;
-  &lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h2 id=&quot;三-编码细节&quot;&gt;三. 编码细节&lt;/h2&gt;
-&lt;blockquote&gt;
-  &lt;p&gt;记录一些常见或者很隐晦的编码错误或陋习&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;h3 id=&quot;31--浮点数的相等判断&quot;&gt;3.1  浮点数的相等判断&lt;/h3&gt;
-&lt;ul&gt;
-  &lt;li&gt;不可直接使用&lt;code class=&quot;highlighter-rouge&quot;&gt;a == b&lt;/code&gt;的形式判断, 因为计算机表示浮点数是无限循环小数, 但是float和double是有限的, 结果就会差那么一点点; 具体&lt;a href=&quot;https://www.zhihu.com/question/21175703&quot;&gt;参见回答&lt;/a&gt;; 所以一般会将浮点数的判等转换为&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;=&lt;/code&gt;或者&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;gt;=&lt;/code&gt;, 即如下重写一个&lt;code class=&quot;highlighter-rouge&quot;&gt;equals()&lt;/code&gt;函数; 同时需要注意的是当用浮点常量和浮点变量相比较时, 不要忘了还是应该用这种比较噢&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;int equals(double a, double b) 
-{
-    return fabs(a - b) &amp;lt; exp;  // 其中exp为精度(如: 0.000001), 需要具体讨论得出
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-</description>
-        <pubDate>Fri, 24 Aug 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/08/24/Details/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/08/24/Details/</guid>
         
         <category>Algorithm</category>
         
