@@ -5,8 +5,8 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Mon, 03 Sep 2018 22:33:48 +0800</pubDate>
-    <lastBuildDate>Mon, 03 Sep 2018 22:33:48 +0800</lastBuildDate>
+    <pubDate>Tue, 04 Sep 2018 20:03:54 +0800</pubDate>
+    <lastBuildDate>Tue, 04 Sep 2018 20:03:54 +0800</lastBuildDate>
     <generator>Jekyll v3.8.3</generator>
     
       <item>
@@ -316,33 +316,69 @@
 
 &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Picasso&lt;/code&gt;的缓存也分为内存缓存和磁盘缓存, 内存缓存基于&lt;code class=&quot;highlighter-rouge&quot;&gt;LruCache&lt;/code&gt;可以自行配置缓存大小等, 磁盘缓存依赖与&lt;code class=&quot;highlighter-rouge&quot;&gt;Http&lt;/code&gt;缓存, 不可配置&lt;/p&gt;
 
-&lt;p&gt;至于内存缓存部分, 逻辑很常规, 在&lt;a href=&quot;https://husteryp.github.io/2018/08/31/%E5%9B%BE%E7%89%87%E4%B8%89%E7%BA%A7%E7%BC%93%E5%AD%98%E4%B9%8BLruCache%E5%92%8CDiskLurCache/&quot;&gt;图片三级缓存之内存缓存和磁盘缓存&lt;/a&gt;中已经比较详细的讲过&lt;code class=&quot;highlighter-rouge&quot;&gt;LruCache&lt;/code&gt;的源码了, 可以参照该博客&lt;/p&gt;
+&lt;p&gt;至于内存缓存部分, 逻辑很常规, 在&lt;a href=&quot;https://husteryp.github.io/2018/08/31/%E5%9B%BE%E7%89%87%E4%B8%89%E7%BA%A7%E7%BC%93%E5%AD%98%E4%B9%8BLruCache%E5%92%8CDiskLurCache/&quot;&gt;图片三级缓存之内存缓存和磁盘缓存&lt;/a&gt;中已经比较详细的讲过&lt;code class=&quot;highlighter-rouge&quot;&gt;LruCache&lt;/code&gt;的源码了, 可以参照该博客; 在&lt;code class=&quot;highlighter-rouge&quot;&gt;Picasso&lt;/code&gt;中默认使用的内存缓存最大容量是可用内存的&lt;code class=&quot;highlighter-rouge&quot;&gt;15%&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;磁盘缓存, 实际上&lt;code class=&quot;highlighter-rouge&quot;&gt;Picasso&lt;/code&gt;是交给了&lt;code class=&quot;highlighter-rouge&quot;&gt;OkHttp&lt;/code&gt;去实现, 而没有明确的使用&lt;code class=&quot;highlighter-rouge&quot;&gt;DiskLruCache&lt;/code&gt;去缓存; 使用的是&lt;code class=&quot;highlighter-rouge&quot;&gt;OkHttp&lt;/code&gt;中的&lt;code class=&quot;highlighter-rouge&quot;&gt;okhttp3.Cache&lt;/code&gt;, 该类中有一个&lt;code class=&quot;highlighter-rouge&quot;&gt;DiskLruCache&lt;/code&gt;用于磁盘缓存; &lt;code class=&quot;highlighter-rouge&quot;&gt;DiskLruCache&lt;/code&gt;的缓存策略可以参见&lt;a href=&quot;https://husteryp.github.io/2018/08/31/%E5%9B%BE%E7%89%87%E4%B8%89%E7%BA%A7%E7%BC%93%E5%AD%98%E4%B9%8BLruCache%E5%92%8CDiskLurCache/&quot;&gt;图片三级缓存之内存缓存和磁盘缓存&lt;/a&gt;, 至于&lt;code class=&quot;highlighter-rouge&quot;&gt;OKHttp&lt;/code&gt;的缓存策略会单独抽取一篇博客出来;
+这里只是简单提一下&lt;code class=&quot;highlighter-rouge&quot;&gt;Picasso&lt;/code&gt;中默认的磁盘缓存策略, 即使用存储容量的&lt;code class=&quot;highlighter-rouge&quot;&gt;2%&lt;/code&gt;, 但是不多于&lt;code class=&quot;highlighter-rouge&quot;&gt;50M&lt;/code&gt;不少于&lt;code class=&quot;highlighter-rouge&quot;&gt;5M&lt;/code&gt;&lt;/p&gt;
 
 &lt;hr /&gt;
 
-&lt;p&gt;通常都会有以下模块:
-请求分发模块。负责封装请求,对请求进行优先级排序,并按照类型进行分发。
-缓存模块。通常包括一个二级的缓存，内存缓存、磁盘缓存。并预置多种缓存策略。
-下载模块。负责下载网络图片。
-监控模块。负责监控缓存命中率、内存占用、加载图片平均耗时等。
-图片处理模块。负责对图片进行压缩、变换等处理。
-本地资源加载模块。负责加载本地资源，如assert、drawable、sdcard等。
-显示模块。负责将图片输出显示。&lt;/p&gt;
+&lt;h2 id=&quot;五-总结&quot;&gt;五. 总结&lt;/h2&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Pciasso&lt;/code&gt;的主要源码就分析到这里, 最后还想贴一下&lt;code class=&quot;highlighter-rouge&quot;&gt;Picasso&lt;/code&gt;的总体特性&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;轻量级的图片加载库&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;自带监控功能, 可以检测&lt;code class=&quot;highlighter-rouge&quot;&gt;cache hit/内存大小&lt;/code&gt;等等数据&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;支持图片预加载&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;线程并发数依网络状态变化而变化, 优先级调度&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;支持图片变换, 图片压缩, 自适应&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;易扩展&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
 
 &lt;hr /&gt;
-&lt;p&gt;Picasso的特性
-绝对是最轻量的图片加载库,120kb.
-自带监控功能，可以检测cache hit/内存大小等等数据
-图片预加载
-线程并发数依网络状态变化而变化、优先级调度
-图片变换
-图片压缩、自适应
-易扩展
-———-&lt;/p&gt;
 
-&lt;p&gt;Picasso的缓存是内存缓存+磁盘缓存，内存缓存基于LruCache类，可配置替换。磁盘缓存依赖于http缓存，不可配置&lt;/p&gt;
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Picasso&lt;/code&gt;是一个优秀的图片加载库, 其也具备了一个图片加载库应该具有的模块:&lt;/p&gt;
 
-&lt;h2 id=&quot;参考链接&quot;&gt;参考链接&lt;/h2&gt;
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;请求分发模块。负责封装请求,对请求进行优先级排序,并按照类型进行分发。&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;缓存模块。通常包括一个二级的缓存，内存缓存、磁盘缓存。并预置多种缓存策略。&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;下载模块。负责下载网络图片。&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;监控模块。负责监控缓存命中率、内存占用、加载图片平均耗时等。&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;图片处理模块。负责对图片进行压缩、变换等处理。&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;本地资源加载模块。负责加载本地资源，如assert、drawable、sdcard等。&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;显示模块。负责将图片输出显示。&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;六-参考链接&quot;&gt;六. 参考链接&lt;/h2&gt;
 
 &lt;ol&gt;
   &lt;li&gt;

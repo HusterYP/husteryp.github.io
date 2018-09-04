@@ -471,33 +471,69 @@
 
 <p><code class="highlighter-rouge">Picasso</code>的缓存也分为内存缓存和磁盘缓存, 内存缓存基于<code class="highlighter-rouge">LruCache</code>可以自行配置缓存大小等, 磁盘缓存依赖与<code class="highlighter-rouge">Http</code>缓存, 不可配置</p>
 
-<p>至于内存缓存部分, 逻辑很常规, 在<a href="https://husteryp.github.io/2018/08/31/%E5%9B%BE%E7%89%87%E4%B8%89%E7%BA%A7%E7%BC%93%E5%AD%98%E4%B9%8BLruCache%E5%92%8CDiskLurCache/">图片三级缓存之内存缓存和磁盘缓存</a>中已经比较详细的讲过<code class="highlighter-rouge">LruCache</code>的源码了, 可以参照该博客</p>
+<p>至于内存缓存部分, 逻辑很常规, 在<a href="https://husteryp.github.io/2018/08/31/%E5%9B%BE%E7%89%87%E4%B8%89%E7%BA%A7%E7%BC%93%E5%AD%98%E4%B9%8BLruCache%E5%92%8CDiskLurCache/">图片三级缓存之内存缓存和磁盘缓存</a>中已经比较详细的讲过<code class="highlighter-rouge">LruCache</code>的源码了, 可以参照该博客; 在<code class="highlighter-rouge">Picasso</code>中默认使用的内存缓存最大容量是可用内存的<code class="highlighter-rouge">15%</code></p>
+
+<p>磁盘缓存, 实际上<code class="highlighter-rouge">Picasso</code>是交给了<code class="highlighter-rouge">OkHttp</code>去实现, 而没有明确的使用<code class="highlighter-rouge">DiskLruCache</code>去缓存; 使用的是<code class="highlighter-rouge">OkHttp</code>中的<code class="highlighter-rouge">okhttp3.Cache</code>, 该类中有一个<code class="highlighter-rouge">DiskLruCache</code>用于磁盘缓存; <code class="highlighter-rouge">DiskLruCache</code>的缓存策略可以参见<a href="https://husteryp.github.io/2018/08/31/%E5%9B%BE%E7%89%87%E4%B8%89%E7%BA%A7%E7%BC%93%E5%AD%98%E4%B9%8BLruCache%E5%92%8CDiskLurCache/">图片三级缓存之内存缓存和磁盘缓存</a>, 至于<code class="highlighter-rouge">OKHttp</code>的缓存策略会单独抽取一篇博客出来;
+这里只是简单提一下<code class="highlighter-rouge">Picasso</code>中默认的磁盘缓存策略, 即使用存储容量的<code class="highlighter-rouge">2%</code>, 但是不多于<code class="highlighter-rouge">50M</code>不少于<code class="highlighter-rouge">5M</code></p>
 
 <hr />
 
-<p>通常都会有以下模块:
-请求分发模块。负责封装请求,对请求进行优先级排序,并按照类型进行分发。
-缓存模块。通常包括一个二级的缓存，内存缓存、磁盘缓存。并预置多种缓存策略。
-下载模块。负责下载网络图片。
-监控模块。负责监控缓存命中率、内存占用、加载图片平均耗时等。
-图片处理模块。负责对图片进行压缩、变换等处理。
-本地资源加载模块。负责加载本地资源，如assert、drawable、sdcard等。
-显示模块。负责将图片输出显示。</p>
+<h2 id="五-总结">五. 总结</h2>
+
+<p><code class="highlighter-rouge">Pciasso</code>的主要源码就分析到这里, 最后还想贴一下<code class="highlighter-rouge">Picasso</code>的总体特性</p>
+
+<ol>
+  <li>
+    <p>轻量级的图片加载库</p>
+  </li>
+  <li>
+    <p>自带监控功能, 可以检测<code class="highlighter-rouge">cache hit/内存大小</code>等等数据</p>
+  </li>
+  <li>
+    <p>支持图片预加载</p>
+  </li>
+  <li>
+    <p>线程并发数依网络状态变化而变化, 优先级调度</p>
+  </li>
+  <li>
+    <p>支持图片变换, 图片压缩, 自适应</p>
+  </li>
+  <li>
+    <p>易扩展</p>
+  </li>
+</ol>
 
 <hr />
-<p>Picasso的特性
-绝对是最轻量的图片加载库,120kb.
-自带监控功能，可以检测cache hit/内存大小等等数据
-图片预加载
-线程并发数依网络状态变化而变化、优先级调度
-图片变换
-图片压缩、自适应
-易扩展
-———-</p>
 
-<p>Picasso的缓存是内存缓存+磁盘缓存，内存缓存基于LruCache类，可配置替换。磁盘缓存依赖于http缓存，不可配置</p>
+<p><code class="highlighter-rouge">Picasso</code>是一个优秀的图片加载库, 其也具备了一个图片加载库应该具有的模块:</p>
 
-<h2 id="参考链接">参考链接</h2>
+<ol>
+  <li>
+    <p>请求分发模块。负责封装请求,对请求进行优先级排序,并按照类型进行分发。</p>
+  </li>
+  <li>
+    <p>缓存模块。通常包括一个二级的缓存，内存缓存、磁盘缓存。并预置多种缓存策略。</p>
+  </li>
+  <li>
+    <p>下载模块。负责下载网络图片。</p>
+  </li>
+  <li>
+    <p>监控模块。负责监控缓存命中率、内存占用、加载图片平均耗时等。</p>
+  </li>
+  <li>
+    <p>图片处理模块。负责对图片进行压缩、变换等处理。</p>
+  </li>
+  <li>
+    <p>本地资源加载模块。负责加载本地资源，如assert、drawable、sdcard等。</p>
+  </li>
+  <li>
+    <p>显示模块。负责将图片输出显示。</p>
+  </li>
+</ol>
+
+<hr />
+
+<h2 id="六-参考链接">六. 参考链接</h2>
 
 <ol>
   <li>
