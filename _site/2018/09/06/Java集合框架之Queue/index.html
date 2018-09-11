@@ -10,9 +10,9 @@
     <meta name="keyword"  content="">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>Java集合框架之LinkedHashMap - 袁平 | HusterYP-Blog</title>
+    <title>Java集合框架之Queue - 袁平 | HusterYP-Blog</title>
 
-    <link rel="canonical" href="http://localhost:4000/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/">
+    <link rel="canonical" href="http://localhost:4000/2018/09/06/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BQueue/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/css/bootstrap.min.css">
@@ -143,12 +143,12 @@
                         <a class="tag" href="/tags/#Java" title="Java">Java</a>
                         
                     </div>
-                    <h1>Java集合框架之LinkedHashMap</h1>
+                    <h1>Java集合框架之Queue</h1>
                     
                     
-                    <h2 class="subheading">LinkedHashMap源码讲解</h2>
+                    <h2 class="subheading">Queue的实现类</h2>
                     
-                    <span class="meta">Posted by 袁平 on August 28, 2018</span>
+                    <span class="meta">Posted by 袁平 on September 6, 2018</span>
                 </div>
             </div>
         </div>
@@ -169,10 +169,7 @@
 				<h1 id="前言">前言</h1>
 
 <blockquote>
-  <ol>
-    <li><a href="https://husteryp.github.io/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/">前面</a>我们对Java集合框架有了一个基本的认识; 本文将主要讲解<code class="highlighter-rouge">LinkedHashMap</code>的实现原理和处理细节</li>
-    <li><code class="highlighter-rouge">LinkedHashMap</code>继承于<code class="highlighter-rouge">HashMap</code>, 所以需要先对<code class="highlighter-rouge">HashMap</code>有一个基本的认识, 可以参见<a href="https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/">Java集合框架之HashMap</a></li>
-  </ol>
+  <p><a href="https://husteryp.github.io/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/">前面</a>我们对Java集合框架有了一个基本的认识, 这里我们从几大接口入手, 逐步讲解其实现类; 下面要讲解的是<code class="highlighter-rouge">Queue</code>的实现类, 即<code class="highlighter-rouge">ArrayDeque</code></p>
 </blockquote>
 
 <p>文章源码基于<code class="highlighter-rouge">JDK8</code></p>
@@ -185,94 +182,118 @@
 
 <h2 id="一-概述">一. 概述</h2>
 
-<p><code class="highlighter-rouge">LinkedHashMap</code>继承于<code class="highlighter-rouge">HashMap</code>, 除了<code class="highlighter-rouge">HashMap</code>元素遍历无序, <code class="highlighter-rouge">LinkedHashMap</code>元素遍历有序以外, 具有<code class="highlighter-rouge">HashMap</code>的大多数特点; 另外, <code class="highlighter-rouge">LinkedHashMap</code>内部还有一个双向链表, 用于记录元素顺序(这也是保证其遍历有序的原因), 具体有两种顺序,  一个是插入顺序, 一个访问顺序; 同时, <code class="highlighter-rouge">LinkedHashMap</code>还可以用来实现<code class="highlighter-rouge">LRU</code>算法(<code class="highlighter-rouge">Least Recently Used</code>, 即最近最少使用算法); 本文将主要分析<code class="highlighter-rouge">LinkedHashMap</code>的两个大方面: 一个是遍历有序, 另一个是用于<code class="highlighter-rouge">LRU</code>算法的特性</p>
+<p><code class="highlighter-rouge">ArrayDeque</code>是一个双端队列, 内部使用数组实现, 既可以作为栈使用, 也可以作为队列使用(当作为栈使用时, 比<code class="highlighter-rouge">Stack</code>快; 当作为队列使用时, 比<code class="highlighter-rouge">LinkedList</code>快); 既然是双端队列, 那么自然支持首尾插入删除等操作; <code class="highlighter-rouge">ArrayDeque</code>不是线程安全的, 不允许插入<code class="highlighter-rouge">null</code></p>
+
+<p><code class="highlighter-rouge">ArrayDeque</code>内部使用<code class="highlighter-rouge">Object[] elements</code>来容纳元素, 默认初始容量为<code class="highlighter-rouge">16</code>, 需要注意的是, <code class="highlighter-rouge">ArrayDeque</code>的容量大小需要为<code class="highlighter-rouge">2</code>的整数幂次方, 这是为了使用位运算去代替普通的乘除运算来提高效率; 下面将从两个方面讲解其有关知识点: 即基本方法和扩容规则</p>
 
 <hr />
 
-<h2 id="二-遍历有序">二. 遍历有序</h2>
+<h2 id="二-基本方法">二. 基本方法</h2>
 
-<p><code class="highlighter-rouge">LinkedHashMap</code>遍历有序, 主要是因为其在<code class="highlighter-rouge">HashMap</code>的基础上, 增加了一个双向链表, 按照元素的插入顺序或者访问顺序, 将数据重新组织成一个双向链表; 根据标志位<code class="highlighter-rouge">final boolean accessOrder;</code>来决定是按照插入顺序(<code class="highlighter-rouge">insertion-order</code>, 此时需要<code class="highlighter-rouge">accessOrder = false</code>)还是访问顺序(<code class="highlighter-rouge">access-order</code>, 此时需要<code class="highlighter-rouge">accessOrder = true</code>)来组织</p>
+<h3 id="21-构造函数">2.1 构造函数</h3>
 
-<p><code class="highlighter-rouge">LinkedHashMap</code>改写了<code class="highlighter-rouge">HashMap</code>的节点, 如下; 在其中增加了<code class="highlighter-rouge">before</code>和<code class="highlighter-rouge">after</code>域用于帮助组织双向链表</p>
+<p><code class="highlighter-rouge">ArrayDeque</code>提供了三个构造函数, 这里只挑其中一个比较难的讲解; 如下, 该构造函数允许提供自定义初始容量, 但是并不是说, 我们传进去多少容量, 最初就会分配多少容量, 因为传进去的值还经过了<code class="highlighter-rouge">calculateSize()</code>函数的处理; <code class="highlighter-rouge">calculateSize()</code>函数的作用是, 找出不小于<code class="highlighter-rouge">numElements</code>的最小的<code class="highlighter-rouge">2</code>的整数次幂的整数, 因为上面已经说了, <code class="highlighter-rouge">ArrayDeque</code>的容量需要都是<code class="highlighter-rouge">2</code>的整数次幂; 这点和<code class="highlighter-rouge">HashMap</code>的扩容规则比较相像, 具体分析可以参见<a href="https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/">Java集合框架之HashMap</a>中对<code class="highlighter-rouge">HashMap</code>扩容规则一节的讲解; 另外, 值得一提的是, <code class="highlighter-rouge">calculateSize()</code>的时候还进行了边界值的判断, 一个是初始容量最小为<code class="highlighter-rouge">8</code>, 最大不得超过<code class="highlighter-rouge">2^30</code>, 如下代码;</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    static class Entry&lt;K,V&gt; extends HashMap.Node&lt;K,V&gt; {
-        Entry&lt;K,V&gt; before, after;
-        Entry(int hash, K key, V value, Node&lt;K,V&gt; next) {
-            super(hash, key, value, next);
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    private void allocateElements(int numElements) {
+        elements = new Object[calculateSize(numElements)];
+    }
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    private static int calculateSize(int numElements) {
+        int initialCapacity = MIN_INITIAL_CAPACITY;  // 初始最小容量为8
+        // Find the best power of two to hold elements.
+        // Tests "&lt;=" because arrays aren't kept full.
+        if (numElements &gt;= initialCapacity) {
+            initialCapacity = numElements;
+            initialCapacity |= (initialCapacity &gt;&gt;&gt;  1);
+            initialCapacity |= (initialCapacity &gt;&gt;&gt;  2);
+            initialCapacity |= (initialCapacity &gt;&gt;&gt;  4);
+            initialCapacity |= (initialCapacity &gt;&gt;&gt;  8);
+            initialCapacity |= (initialCapacity &gt;&gt;&gt; 16);
+            initialCapacity++;
+
+            if (initialCapacity &lt; 0)   // Too many elements, must back off
+                initialCapacity &gt;&gt;&gt;= 1;// Good luck allocating 2 ^ 30 elements // 最大容量为2^30
         }
+        return initialCapacity;
     }
 </code></pre></div></div>
 
-<p>对于<code class="highlighter-rouge">accessOrder</code>值的指定只能在创建<code class="highlighter-rouge">LinkedHashMap</code>的时候, 也就是说<code class="highlighter-rouge">LinkedHashMap</code>并没有提供明确的<code class="highlighter-rouge">set()</code>方法来改变该值(一旦在构造函数中指定, 就无法改变); <code class="highlighter-rouge">LinkedHashMap</code>提供了如下构造函数可以用于指定<code class="highlighter-rouge">accessOrder</code>的值, 其余构造函数中, <code class="highlighter-rouge">accessOrder</code>都默认为<code class="highlighter-rouge">false</code>, 即默认以<code class="highlighter-rouge">insertion-order</code>的顺序组织双向链表</p>
+<h3 id="22-元素增删">2.2 元素增删</h3>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    public LinkedHashMap(int initialCapacity,
-                         float loadFactor,
-                         boolean accessOrder) {
-        super(initialCapacity, loadFactor);
-        this.accessOrder = accessOrder;
+<p>双端队列的难点在于数据元素增删的时候, 如何通过首尾指针的关系判断当前队列是满还是空, 以及插入和删除元素后首尾指针的变化情况; 在<code class="highlighter-rouge">ArrayDeque</code>中的处理是, <code class="highlighter-rouge">head</code>指针指向队列首元素, <code class="highlighter-rouge">tail</code>指针指向队列尾元素的后一个位置, 那么比如在队列头部插入元素时,  通过判断<code class="highlighter-rouge">(head - 1) &amp; (elements.length - 1) == tail</code>为<code class="highlighter-rouge">true</code>的时候队列就满了, 这样, 虽然双端队列在队列满和空的情况下, 都是<code class="highlighter-rouge">head == tail</code>, 但是仍然能够分辨</p>
+
+<p>下面我们通过具体的元素添加来看, 如下, 为在队列头添加元素, 这里需要注意的一点是先添加元素, 再判断队列是否已满, 这是因为上面我们说了, <code class="highlighter-rouge">ArrayDeque</code>中<code class="highlighter-rouge">tail</code>指针指向的是队尾元素的下一个位置, 一定是空位置, 否则在上一次添加元素的时候就会引起扩容了</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    public void addFirst(E e) {
+        if (e == null)
+            throw new NullPointerException();
+        elements[head = (head - 1) &amp; (elements.length - 1)] = e;
+        if (head == tail)
+            doubleCapacity();
     }
 </code></pre></div></div>
 
-<p><code class="highlighter-rouge">LinkedHashMap</code>重写了<code class="highlighter-rouge">HashMap</code>的<code class="highlighter-rouge">newNode()</code>函数, <code class="highlighter-rouge">newNode()</code>在进行元素插入的时候会被<code class="highlighter-rouge">HashMap.putVal()</code>调用, <code class="highlighter-rouge">LinkedHashMap</code>用自己的<code class="highlighter-rouge">Entry</code>节点替换<code class="highlighter-rouge">HashMap</code><code class="highlighter-rouge">Node</code>节点的同时, 进行双向链表的构建, 使得程序改动最小</p>
+<p>这里讲一下<code class="highlighter-rouge">head = (head - 1) &amp; (elements.length - 1)</code>的运算规则, 比如, 当我们的数组容量为<code class="highlighter-rouge">8</code>, 本次插入之前<code class="highlighter-rouge">head = 0</code>, <code class="highlighter-rouge">tail = 7</code>的时候, 执行该插入操作, 通过<code class="highlighter-rouge">head = (head - 1) &amp; (elements.length - 1)</code>元素, 即 <code class="highlighter-rouge">-1 &amp; 7</code>, 转换为二进制就是(<code class="highlighter-rouge">1111 &amp; 0111 = 0111</code>), 最终运算结果为<code class="highlighter-rouge">7</code>, 所以可以判断队列满了, 需要扩容 ~</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    Node&lt;K,V&gt; newNode(int hash, K key, V value, Node&lt;K,V&gt; e) {
-        LinkedHashMap.Entry&lt;K,V&gt; p =
-            new LinkedHashMap.Entry&lt;K,V&gt;(hash, key, value, e);
-        linkNodeLast(p); // 将节点插入到双向链表的末尾
-        return p;
+<p>其实这里使用位运算也是利用了数组容量为<code class="highlighter-rouge">2</code>的整数次幂的特点</p>
+
+<p>同理, 在队列尾插入元素也是一样的, 如下; 就不再分析啦~</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    public void addLast(E e) {
+        if (e == null)
+            throw new NullPointerException();
+        elements[tail] = e;
+        if ( (tail = (tail + 1) &amp; (elements.length - 1)) == head)
+            doubleCapacity();
     }
 </code></pre></div></div>
 
-<p>至于<code class="highlighter-rouge">linkNodeLast()</code>函数, 即将节点插入到双向链表的末尾, 该方法比较简单, 这里就不再贴源码啦 !</p>
+<p>对于删除元素来说, 这里举一个例子, 如下; 主要看<code class="highlighter-rouge">head</code>指针的变化规则, 即<code class="highlighter-rouge">head = (h + 1) &amp; (elements.length - 1);</code>, 其实就是和插入元素相反的过程而已</p>
 
-<p>那么当我们指定了<code class="highlighter-rouge">accessOrder</code>为<code class="highlighter-rouge">true</code>的时候, 即以元素访问顺序来组织双向链表的时候, 其实就只是在获取元素的时候, 将被访问的元素移动到链表末尾; 如下; 那么链表表头的元素就是最近没有被访问的元素, 这也是我们实现<code class="highlighter-rouge">LRU</code>算法的依据(稍后会细讲)</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    public V get(Object key) {
-        Node&lt;K,V&gt; e;
-        if ((e = getNode(hash(key), key)) == null)
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    public E pollFirst() {
+        int h = head;
+        E result = (E) elements[h];
+        // Element is null if deque empty
+        if (result == null)
             return null;
-        if (accessOrder) // 如果指定为按照元素访问顺序组织元素
-            afterNodeAccess(e); // 将元素移动到链表末尾
-        return e.value;
+        elements[h] = null;     
+        head = (h + 1) &amp; (elements.length - 1);
+        return result;
     }
 </code></pre></div></div>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    void afterNodeAccess(Node&lt;K,V&gt; e) { // move node to last
-        // 省略具体细节
-        ...
-    }
-</code></pre></div></div>
-
-<p>到这里, 我们对<code class="highlighter-rouge">LinkedHashMap</code>遍历有序的原因有了较为详细的了解; 接下来要讲的是<code class="highlighter-rouge">LinkedHashMap</code>的一个应用, 即用于实现<code class="highlighter-rouge">LRU</code>算法的特性</p>
 
 <hr />
 
-<h2 id="三-lru算法">三. LRU算法</h2>
+<h2 id="三-扩容规则">三. 扩容规则</h2>
 
-<p><strong>LRU算法</strong>即<code class="highlighter-rouge">Least Recently Used</code>, 其依据是<strong>如果数据最近被访问过, 那么其将来被访问的几率也更大</strong></p>
+<p>什么时候会扩容呢, 我们注意到, 上面我们讲解插入元素指针变化规则的时候, 当<code class="highlighter-rouge">head == tail</code>也就是队列满了的时候, 会调用一个<code class="highlighter-rouge">doubleCapacity()</code>
+函数, 其实该函数就是用于扩容的</p>
 
-<p><code class="highlighter-rouge">Android</code>中的<code class="highlighter-rouge">LruCache</code>(内存缓存)内部就是利用<code class="highlighter-rouge">LinkedHashMap</code>实现的</p>
+<p>那么根据上面的分析, 什么时候会发生扩容呢, 其实就是当队列满的时候; 扩容的规则又是怎样的呢, 从<code class="highlighter-rouge">doubleCapacity()</code>的函数名我们猜测, 就是将数组容量加倍而已; 如下, 思路也比较简单, 就是创建一个扩容的新数组进行旧元素的复制罢了, 比较简单, 不再赘述</p>
 
-<p>前面我们讲了, 当<code class="highlighter-rouge">accessOrder</code>设置为<code class="highlighter-rouge">true</code>, 即按照元素访问顺序组织数据的时候, 会在<code class="highlighter-rouge">get()</code>方法中将被访问的元素移动到链表的末尾, 那么链表首部的元素就是最久没有访问的, 所以, 当要使用<code class="highlighter-rouge">LinkedHashMap</code>实现<code class="highlighter-rouge">LRU</code>的时候, 必须将<code class="highlighter-rouge">accessOrder</code>置为<code class="highlighter-rouge">true</code></p>
-
-<p>另外, 还需要我们自己去定义<code class="highlighter-rouge">LRU</code>的实现规则, 即自己定义什么时候应该移除最久没有使用的元素; 此时我们需要去重写<code class="highlighter-rouge">LinkedHashMap</code>的<code class="highlighter-rouge">removeEldestEntry()</code>函数, <code class="highlighter-rouge">removeEldestEntry()</code>是在我们插入一个元素完毕之后, 回调<code class="highlighter-rouge">afterNodeInsertion()</code>中调用的, 如下; 但是<code class="highlighter-rouge">removeEldestEntry()</code>默认返回<code class="highlighter-rouge">false</code>, 所以需要我们自己去定义规则</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    void afterNodeInsertion(boolean evict) { // possibly remove eldest
-        LinkedHashMap.Entry&lt;K,V&gt; first;
-        if (evict &amp;&amp; (first = head) != null &amp;&amp; removeEldestEntry(first)) { // 插入元素之后, 判断是否需要移除最久没有访问的元素
-            K key = first.key;
-            removeNode(hash(key), key, null, false, true); // 移除链表首部的元素
-        }
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    private void doubleCapacity() {
+        assert head == tail;
+        int p = head;
+        int n = elements.length;
+        int r = n - p; // number of elements to the right of p
+        int newCapacity = n &lt;&lt; 1; // 左移一位, 相当于容量加倍
+        if (newCapacity &lt; 0)
+            throw new IllegalStateException("Sorry, deque too big"); // 这是因为左移溢出之后会变成负值, 说明队列太大啦~
+        Object[] a = new Object[newCapacity];
+        System.arraycopy(elements, p, a, 0, r);
+        System.arraycopy(elements, 0, a, r, p);
+        elements = a;
+        head = 0;
+        tail = n;
     }
 </code></pre></div></div>
-
-<p>至于自定义规则, 比如: 约定最多在内存中缓存多少个元素, 超过该阈值之后, <code class="highlighter-rouge">removeEldestEntry()</code>返回<code class="highlighter-rouge">true</code>, 即将旧元素移除; 或者, 规定缓存占用多少内存, 当达到该阈值之后, 即进行旧元素移除; 当然, 这些都是后话, 具体的<code class="highlighter-rouge">LRU</code>算法, 可以根据实际需求来定</p>
-
-<hr />
 
 <h2 id="四-总结">四. 总结</h2>
 
-<p><code class="highlighter-rouge">LinkedHashMap</code>基于<code class="highlighter-rouge">HashMap</code>, 总体上比较简单, 主要掌握上文说的两个主要特点即可, 不再赘述 !</p>
+<p>到这里, <code class="highlighter-rouge">ArrayDeque</code>的源码就分析完啦~; 最后笔者还想补充解释一点的是, 最开始我们提过, 当<code class="highlighter-rouge">ArrayDeque</code>作为栈来使用的时候, 比<code class="highlighter-rouge">Stack</code>要快, 关于<code class="highlighter-rouge">Stack</code>, 我们在<a href="https://husteryp.github.io/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/">Java集合框架概述</a>中粗略的提过, <code class="highlighter-rouge">Stack</code>是<code class="highlighter-rouge">Java 2</code>以前的几个遗留<code class="highlighter-rouge">API</code>, 其内部也是使用数组实现的, 但是由于其加了锁, 支持多线程访问, 所以会比<code class="highlighter-rouge">ArrayDeque</code>要慢; 当<code class="highlighter-rouge">ArrayDeque</code>作为队列使用的时候,
+比<code class="highlighter-rouge">LinkedList</code>要快是因为在<code class="highlighter-rouge">LinkedList</code>内部是使用链表节点实现的, 不具备数组的索引定位, 当然也就是慢啦~</p>
+
 
 
                 <hr>
@@ -283,12 +304,12 @@
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BSet/" data-toggle="tooltip" data-placement="top" title="Java集合框架之Set">&larr; Previous Post</a>
+                        <a href="/2018/09/06/Fresco/" data-toggle="tooltip" data-placement="top" title="Fresco源码解析">&larr; Previous Post</a>
                     </li>
                     
                     
                     <li class="next">
-                        <a href="/2018/08/31/%E5%9B%BE%E7%89%87%E4%B8%89%E7%BA%A7%E7%BC%93%E5%AD%98%E4%B9%8BLruCache%E5%92%8CDiskLurCache/" data-toggle="tooltip" data-placement="top" title="图片三级缓存之内存缓存和磁盘缓存">Next Post &rarr;</a>
+                        <a href="/2018/09/08/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BConcurrentHashMap/" data-toggle="tooltip" data-placement="top" title="Java集合框架之ConcurrentHashMap">Next Post &rarr;</a>
                     </li>
                     
                 </ul>
@@ -376,8 +397,8 @@
 <script type="text/javascript">
     /* * * CONFIGURATION VARIABLES * * */
     var disqus_shortname = "HusterYP";
-    var disqus_identifier = "/2018/08/28/Java集合框架之LinkedHashMap";
-    var disqus_url = "http://localhost:4000/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/";
+    var disqus_identifier = "/2018/09/06/Java集合框架之Queue";
+    var disqus_url = "http://localhost:4000/2018/09/06/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BQueue/";
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;

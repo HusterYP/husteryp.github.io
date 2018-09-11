@@ -154,6 +154,190 @@
             ">
     			
 <div class="post-preview">
+    <a href="/2018/09/11/Linux%E5%BC%80%E6%9C%BA%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/">
+        <h2 class="post-title">
+            Linux开机启动流程
+        </h2>
+        
+        <h3 class="post-subtitle">
+            Linux开机启动流程
+        </h3>
+        
+        <div class="post-content-preview">
+            前言
+
+
+  Linux开机启动流程
+
+
+文中实验基于CentOS6.4版本（CentOS6.x版本都可以，但是CentOS7.x版本会有所区别）
+
+
+
+正文
+
+
+
+一. 启动流程
+
+
+  开关电源（SMPS）在开机之后将AC信号转换为DC信号，然后SMPS会进行电压的检测，如果正常，SMPS将会发送POWER GOOD 信号给主板定时器，主板定时器接收到POWER GOOD信号之后，将会停...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by 袁平 on September 11, 2018
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
+    <a href="/2018/09/08/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BConcurrentHashMap/">
+        <h2 class="post-title">
+            Java集合框架之ConcurrentHashMap
+        </h2>
+        
+        <h3 class="post-subtitle">
+            ConcurrentHashMap源码解析
+        </h3>
+        
+        <div class="post-content-preview">
+            前言
+
+
+  
+    前面我们对Java集合框架有了一个基本的认识; 本文将主要讲解ConcurrentHashMap的实现原理和处理细节
+  
+
+
+文章源码基于JDK8
+
+
+
+正文
+
+
+
+sizeCtl, 线程自旋
+
+U.compareAndSwapInt: 双重check
+
+在java7的ConcurrentHashMap实现上，使用了所谓分段锁的方法，而所谓分段锁就是将记录分段存储，...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by 袁平 on September 8, 2018
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
+    <a href="/2018/09/06/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BQueue/">
+        <h2 class="post-title">
+            Java集合框架之Queue
+        </h2>
+        
+        <h3 class="post-subtitle">
+            Queue的实现类
+        </h3>
+        
+        <div class="post-content-preview">
+            前言
+
+
+  前面我们对Java集合框架有了一个基本的认识, 这里我们从几大接口入手, 逐步讲解其实现类; 下面要讲解的是Queue的实现类, 即ArrayDeque
+
+
+文章源码基于JDK8
+
+
+
+正文
+
+
+
+一. 概述
+
+ArrayDeque是一个双端队列, 内部使用数组实现, 既可以作为栈使用, 也可以作为队列使用(当作为栈使用时, 比Stack快; 当作为队列使用时, 比Linked...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by 袁平 on September 6, 2018
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
+    <a href="/2018/09/06/Fresco/">
+        <h2 class="post-title">
+            Fresco源码解析
+        </h2>
+        
+        <h3 class="post-subtitle">
+            图片加载之Fresco
+        </h3>
+        
+        <div class="post-content-preview">
+            使用
+
+
+  
+    初始化Fresco: Fresco.initialize(this); 最好在Application中初始化, 多次初始化是无意义的
+  
+  
+    核心类为: SimpleDraweeView; 在layout中使用该类, 然后在代码中, 剩下的Fresco自动完成
+  
+
+
+Uri uri = Uri.parse("https://raw.githubuser...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by 袁平 on September 6, 2018
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
+    <a href="/2018/09/01/%E5%A4%A7%E4%BA%8C%E4%B8%8B%E6%80%BB%E7%BB%93/">
+        <h2 class="post-title">
+            大二下总结
+        </h2>
+        
+        <h3 class="post-subtitle">
+            
+        </h3>
+        
+        <div class="post-content-preview">
+            前言
+
+将一切交给时光, 相信一切都是最好的结局
+
+
+
+正文
+
+
+
+一. 概述
+
+大二下学期可能是我大学生活中最刺激的一个阶段, 大概就是整整一个学期, 从周一到周末, 每天满课的那种; 更刺激的是一天考了三门(早中晚, 没毛病~)
+
+上课期间, 学的主要是算法和Java, Android基础这部分; 暑假期间, 主要是做项目
+
+总体感受: 稍显疲惫 ~
+
+二. 项目
+
+项目部分主要是暑假接...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by 袁平 on September 1, 2018
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
     <a href="/2018/09/01/%E5%9B%BE%E7%89%87%E7%BC%93%E5%AD%98%E4%B9%8BPicasso%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">
         <h2 class="post-title">
             图片缓存之Picasso源码分析
@@ -297,14 +481,9 @@ LinkedHashMap继承于HashMap, ...
 
 
 
-一. HashSet
+一. 概述
 
-没有重复元素, 允许null
-
-内部通过HashMap实现
-
-关于负载因子理解:
-Iterating over th...
+需要注意的是, 本文要讲的Set的几个实现类内部都是基于Map实现的, 比如: HashSet基于HashMap, TreeS...
         </div>
     </a>
     <p class="post-meta">
@@ -359,194 +538,6 @@ Iterating over th...
 </div>
 <hr>
 
-<div class="post-preview">
-    <a href="/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/">
-        <h2 class="post-title">
-            Java集合框架之HashMap
-        </h2>
-        
-        <h3 class="post-subtitle">
-            HashMap源码解析
-        </h3>
-        
-        <div class="post-content-preview">
-            前言
-
-
-  前面我们对Java集合框架有了一个基本的认识; 本文将主要讲解HashMap的实现原理和处理细节
-
-
-文章源码基于JDK8
-
-
-
-正文
-
-
-
-一. 概述
-
-我们知道HashMap存储的是一组键值对, HashMap底层实际上就是一个Node数组, 将key转换为hash值, 映射到对应的数组位置, 这样存取都采用相同的规则, 利用数组的快速索引, 实现理想状态下的O(1)时间定...
-        </div>
-    </a>
-    <p class="post-meta">
-        Posted by 袁平 on August 27, 2018
-    </p>
-</div>
-<hr>
-
-<div class="post-preview">
-    <a href="/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/">
-        <h2 class="post-title">
-            Java集合框架概述
-        </h2>
-        
-        <h3 class="post-subtitle">
-            Java集合框架概述
-        </h3>
-        
-        <div class="post-content-preview">
-            
-
-前言
-
-  Java集合框架概述; 主要总述Java集合框架的设计理念, 组成和基本接口(及其区别等)
-
-
-
-
-正文
-
-
-
-一. 设计理念
-
-
-  
-    在Java 2之前，Java是没有完整的集合框架的。它只有一些简单的可以自扩展的容器类，比如Vector，Stack，Hashtable等)
-  
-  
-    Java集合其实就是一组对象的集合
-  
-  
-    独立于实现细节...
-        </div>
-    </a>
-    <p class="post-meta">
-        Posted by 袁平 on August 26, 2018
-    </p>
-</div>
-<hr>
-
-<div class="post-preview">
-    <a href="/2018/08/25/MarkDown%E4%B8%AD%E4%BD%BF%E7%94%A8%E6%95%B0%E5%AD%A6%E5%85%AC%E5%BC%8F/">
-        <h2 class="post-title">
-            MarkDown中使用数学公式
-        </h2>
-        
-        <h3 class="post-subtitle">
-            MarkDown中优雅的使用数学公式
-        </h3>
-        
-        <div class="post-content-preview">
-            
-
-前言
-
-  如何在MarkDown中使用数学公式
-
-
-正文
-
-
-  在MarkDown文章中插入下面代码(MathJax引擎)
-
-
-&lt;script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=default"&gt;&lt;/script&gt;
-
-
-
-  之...
-        </div>
-    </a>
-    <p class="post-meta">
-        Posted by 袁平 on August 25, 2018
-    </p>
-</div>
-<hr>
-
-<div class="post-preview">
-    <a href="/2018/08/25/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6/">
-        <h2 class="post-title">
-            Java集合框架
-        </h2>
-        
-        <div class="post-content-preview">
-            参考链接
-官方文档–集合框架指南
-集合框架的分类
-集合框架设计理念答疑文档
-
-
-
-理解: Collections that are not immutable are mutable: 参见StackOverFloaw回答
-理解: 原文
-Collections that do not support modification operations (such as add, remove a...
-        </div>
-    </a>
-    <p class="post-meta">
-        Posted by 袁平 on August 25, 2018
-    </p>
-</div>
-<hr>
-
-<div class="post-preview">
-    <a href="/2018/08/24/%E9%AB%98%E8%B4%A8%E9%87%8F%E7%9A%84%E4%BB%A3%E7%A0%81/">
-        <h2 class="post-title">
-            高质量代码
-        </h2>
-        
-        <h3 class="post-subtitle">
-            浅谈对高质量代码的一些细节理解和注意事项总结
-        </h3>
-        
-        <div class="post-content-preview">
-            前言
-
-  本文不会详细去讲解代码规范等东西, 只是浅谈对高质量代码的一些细节理解和注意事项总结
-
-
-
-  «剑指Offer»第三章要点总结
-
-
-
-
-正文
-
-一. 什么叫高质量代码
-
-1.1 规范性
-
-  从三个方面考虑: 书写, 布局, 命名
-
-
-1.1-1 清晰的书写
-
-  能够辨识, 一般而言, 面试代码都比较短, 所以一般时间充足
-
-
-1.1-2 清晰的布局
-
-  代码缩进, 空格等...
-        </div>
-    </a>
-    <p class="post-meta">
-        Posted by 袁平 on August 24, 2018
-    </p>
-</div>
-<hr>
-
 
 <!-- Pager -->
 
@@ -589,15 +580,21 @@ Collections that do not support modification operations (such as add, remove a..
                             
                         
                             
-                                <a href="/tags/#Java" title="Java" rel="5">
+                                <a href="/tags/#Java" title="Java" rel="7">
                                     Java
                                 </a>
                             
                         
                             
-                                <a href="/tags/#Android" title="Android" rel="2">
+                                <a href="/tags/#Android" title="Android" rel="3">
                                     Android
                                 </a>
+                            
+                        
+                            
+                        
+                            
+                        
                             
                         
                     </div>

@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Hello-World">
+    <meta name="keyword"  content="">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>Linux开机启动流程 - 袁平 | HusterYP-Blog</title>
+
+    <link rel="canonical" href="http://localhost:4000/2018/09/11/Linux%E5%BC%80%E6%9C%BA%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    <!-- Pygments Github CSS -->
+    <link rel="stylesheet" href="/css/syntax.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="http://cdn.staticfile.org/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">袁平</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/about/">About</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/tags/">Tags</a>
+                    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Image to hack wechat -->
+<!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="/img/tag-bg.jpg" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/img/tag-bg.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/#Linux" title="Linux">Linux</a>
+                        
+                        <a class="tag" href="/tags/#操作系统" title="操作系统">操作系统</a>
+                        
+                    </div>
+                    <h1>Linux开机启动流程</h1>
+                    
+                    
+                    <h2 class="subheading">Linux开机启动流程</h2>
+                    
+                    <span class="meta">Posted by 袁平 on September 11, 2018</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+				<h1 id="前言">前言</h1>
+
+<blockquote>
+  <p>Linux开机启动流程</p>
+</blockquote>
+
+<p>文中实验基于<code class="highlighter-rouge">CentOS6.4</code>版本（<code class="highlighter-rouge">CentOS6.x</code>版本都可以，但是<code class="highlighter-rouge">CentOS7.x</code>版本会有所区别）</p>
+
+<hr />
+
+<h1 id="正文">正文</h1>
+
+<hr />
+
+<h2 id="一-启动流程">一. 启动流程</h2>
+
+<ol>
+  <li>开关电源（<code class="highlighter-rouge">SMPS</code>）在开机之后将<code class="highlighter-rouge">AC</code>信号转换为<code class="highlighter-rouge">DC</code>信号，然后<code class="highlighter-rouge">SMPS</code>会进行电压的检测，如果正常，<code class="highlighter-rouge">SMPS</code>将会发送<code class="highlighter-rouge">POWER GOOD</code> 信号给主板定时器，主板定时器接收到<code class="highlighter-rouge">POWER GOOD</code>信号之后，将会停止发送<code class="highlighter-rouge">reset</code>指令给<code class="highlighter-rouge">CPU</code>，这意味着电脑可以正常启动</li>
+  <li>在<code class="highlighter-rouge">CPU</code>的设置中有一些值是固定的，这样<code class="highlighter-rouge">CPU</code>才知道从哪里开始读取指令，在<code class="highlighter-rouge">X86</code>计算机中，第一条指令是<code class="highlighter-rouge"> FFFF:0000h </code>，指向<code class="highlighter-rouge">ROM</code>的最后一个字节，该指令因为只有一个字节，所以只是简单的包含一个跳转指令，该跳转指令指向的是<code class="highlighter-rouge">BIOS</code>所在的地址（<code class="highlighter-rouge">EPROM</code>或者<code class="highlighter-rouge">ROM</code>中）</li>
+  <li><code class="highlighter-rouge">BIOS</code>就是基本输入输出系统，其功能主要有两个：</li>
+</ol>
+
+<blockquote>
+  <ol>
+    <li>POST：<code class="highlighter-rouge">Power On Self Test</code>；硬件自检；即在<code class="highlighter-rouge">BIOS</code>中有一个硬件设备的列表，为了检测某一个硬件设备是否可用，就发送一个电脉冲给每一个设备，如果该脉冲被设备返回，说明设备可用，否则，不可用；如果有新的硬件接入，那么会使用同样的检测过程，同时会更新<code class="highlighter-rouge">BIOS</code>中的列表，用于下次启动过程</li>
+    <li>选择第一个启动设备：<code class="highlighter-rouge"> BIOS</code>会根据<code class="highlighter-rouge">CMOS</code>里面的记录的启动顺序以及上一步硬件自检过程中，设备的可用装态，确定最终的可启动设备顺序，具体的过程是<code class="highlighter-rouge">BIOS</code>将磁盘的第一扇区（磁盘最开始的<code class="highlighter-rouge">512</code>字节）载入内存，放在 <code class="highlighter-rouge">0X0000:0X7C00</code>处，然后检查这个扇区的最后两个字节是不是<code class="highlighter-rouge">55AA</code>，如果是则认为这是一个有效的启动扇区，如果不是就会尝试下一个启动介 质，如果找到可以启动的程序就会从这一介质启动，如果所有的启动介质都判断过后仍然没有找到可启动的程序那么<code class="highlighter-rouge">BIOS</code>会给出错误提示</li>
+  </ol>
+</blockquote>
+
+<p><strong>注</strong>： 我们平时所说的更改<code class="highlighter-rouge">BIOS</code>设置，实际上是错的，我们更改的只是<code class="highlighter-rouge">CMOS</code>中存储的设置，<code class="highlighter-rouge">BIOS</code>中信息不能被用户改变，需要厂商提供闪存程序</p>
+
+<ol>
+  <li><strong>MBR</strong>：<code class="highlighter-rouge">BIOS</code>确定好第一个启动设备之后，去该设备磁盘的第一个扇区读取最开始的<code class="highlighter-rouge">512</code>字节到内存（通过硬件的<code class="highlighter-rouge">INT 13</code>中断功能来读取的），该<code class="highlighter-rouge">512</code>字节就是<code class="highlighter-rouge">MBR</code>，即主引导记录；这<code class="highlighter-rouge">512</code>字节中有<code class="highlighter-rouge">446</code>字节才是正真的主引导加载代码（<code class="highlighter-rouge">Boot Loader</code>，即可以安装引导加载程序的地方），还有<code class="highlighter-rouge">64</code>字节用于存放磁盘分区表信息，以及最后两个字节用于校验（<code class="highlighter-rouge">55AA</code>)是否为有效的启动扇区；每个分区需要<code class="highlighter-rouge">16</code>个字节用于存储分区的开始，结束位置，分区类型等（由于每个分区信息需要<code class="highlighter-rouge">16</code>个字节，所以对于采用<code class="highlighter-rouge">MBR</code>型分区结构的硬盘(其磁盘卷标类型为<code class="highlighter-rouge">MS-DOS</code>)，最多只能识别<code class="highlighter-rouge">4</code>个主要分区。所以对于一个采用此种分区结构的硬盘来说，想要得到<code class="highlighter-rouge">4</code>个以上的主要分区是不可能的。这里就需要引出了扩展分区。扩展分区也是主分区（<code class="highlighter-rouge">Primary partition</code>）的一种，但它与主分区的不同在于理论上可以划分为无数个逻辑分区，每一个逻辑分区都有一个和<code class="highlighter-rouge">MBR</code>结构类似的扩展引导记录(<code class="highlighter-rouge">EBR</code>) ）（<code class="highlighter-rouge"> MBR</code>分区方案无法支持超过<code class="highlighter-rouge">2TB</code>容量的磁盘。因为这一方案用<code class="highlighter-rouge">4</code>个字节存储分区的总扇区数，最大能表示<code class="highlighter-rouge">2</code>的<code class="highlighter-rouge">32</code>次方的扇区个数，按每扇区<code class="highlighter-rouge">512</code>字节计算，每个分区最大不能超过<code class="highlighter-rouge">2TB</code>，如果磁盘容量超过<code class="highlighter-rouge">2TB</code>，那分区的起始位置 就无法表示了）</li>
+  <li>继续之前，我们先看一下<code class="highlighter-rouge">MBR</code>的信息，这里以<code class="highlighter-rouge">CentOS6.4</code>为例（后文不再声明），使用命令<code class="highlighter-rouge">dd if=/dev/sda of=mbr bs=512 count=1</code>，将第一个扇区的<code class="highlighter-rouge">512</code>字节内容转存到<code class="highlighter-rouge">mbr</code>文件中，其中<code class="highlighter-rouge">bs</code>表示大小；然后可以通过<code class="highlighter-rouge">file mbr</code>来查看分区信息等，输出如下；其中<code class="highlighter-rouge">partition x</code>表示第<code class="highlighter-rouge">x</code>个分区的信息，上面说了，使用<code class="highlighter-rouge">MBR</code>时最多只能有四个分区，而且这四个分区中最多只能有一个活动分区，也就是下面被标记为<code class="highlighter-rouge">active</code>的<code class="highlighter-rouge">partition 1</code></li>
+</ol>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> x86 boot sector; partition 1: ID=0x83, active, starthead 32, startsector 2048, 19451904 sectors; partition 2: ID=0x5, starthead 254, startsector 19455998, 2093058 sectors, code offset 0x63
+</code></pre></div></div>
+
+<ol>
+  <li><strong>Grub–Stage1</strong>：<code class="highlighter-rouge">MBR</code>中的前<code class="highlighter-rouge">446</code>字节存储着引导加载程序，即<code class="highlighter-rouge">Boot Loader</code>，这里以<code class="highlighter-rouge">Grub</code>为例；<code class="highlighter-rouge">Grub</code>有两个阶段（实际上应该是三个阶段，后面会解释），实际上这<code class="highlighter-rouge">446</code>字节中存储的只是<code class="highlighter-rouge">Grub</code>的第一阶段，因为<code class="highlighter-rouge">446</code>字节的空间实在有限，做不了太多事情；<code class="highlighter-rouge">Grub</code>第一阶段的作用主要是加载第二阶段</li>
+</ol>
+
+<p><strong>注</strong>：<code class="highlighter-rouge">GRUB</code>实际上分为三个阶段：<code class="highlighter-rouge">stage1 -- stage1.5 -- stage2</code>）<code class="highlighter-rouge">stage1</code>是存储在<code class="highlighter-rouge">MBR</code>前<code class="highlighter-rouge">446</code>字节中的引导加载程序；<code class="highlighter-rouge">stage1.5</code>位于<code class="highlighter-rouge">MBR GAP</code>（<code class="highlighter-rouge">MBR GAP</code>：扇区编号从0开始，但是真正的磁盘分区一般是从第63个扇区开始的，也就是说从1-63扇区是空闲的（第0个扇区存储<code class="highlighter-rouge">MBR</code>），这段空间叫做<code class="highlighter-rouge">MBR GAP</code>），因为<code class="highlighter-rouge">stage2</code>的配置文件（<code class="highlighter-rouge">/boot/grub/grub.conf</code>）存储于磁盘上，但是读取文件系统需要驱动，<code class="highlighter-rouge">MBR GA</code>P中主要存储的就是读取文件系统的<code class="highlighter-rouge">driver</code>，<code class="highlighter-rouge">stage1</code>读取该部分内容之后，就可以去读取<code class="highlighter-rouge">grub</code>配置文件，即<code class="highlighter-rouge">stage2</code>的内容</p>
+
+<ol>
+  <li><strong>Grub–Stage2</strong>：<code class="highlighter-rouge">stage1</code>加载<code class="highlighter-rouge">stage2</code>的配置文件，主要是<code class="highlighter-rouge">/boot/grub/grub.conf</code>，这里我们先看一下<code class="highlighter-rouge">grub.conf</code>的内容，如下</li>
+</ol>
+
+<blockquote>
+  <ol>
+    <li><code class="highlighter-rouge">default=0</code>：这个必须和下面的<code class="highlighter-rouge">title</code>对应，在配置文件中有几个<code class="highlighter-rouge">title</code>，启动的时候就会有几个菜单可以选择；<code class="highlighter-rouge">default=0</code>表示使用第一个<code class="highlighter-rouge">title</code>选项来启动，<code class="highlighter-rouge">default</code>表示在读秒时间结束前都没有按键，则使用默认选项启动</li>
+    <li><code class="highlighter-rouge">timeout=5</code>：读秒时间，如果<code class="highlighter-rouge">5</code>秒钟内没有按键，则使用默认选项启动；当然可以自行调整时间</li>
+    <li><code class="highlighter-rouge">splashimage=(hd0,0)/grub/splash.xpm.gz</code>：<code class="highlighter-rouge">CentOS</code>启动的时候，后台不是黑白而是彩色变化的，就是这个文件提供的后台图示</li>
+    <li><code class="highlighter-rouge">hidemenu</code>：是否显示提示菜单，默认是<code class="highlighter-rouge">hide</code>的，但是笔者这里将这个选项注释掉了，在选择开机启动项的时候还会显示提示菜单</li>
+    <li><code class="highlighter-rouge">title</code>：这部分指定的是菜单选项，开机时有多少个<code class="highlighter-rouge">title</code>就会有多少个菜单选项；每一个<code class="highlighter-rouge">title</code>下的内容，一个是指定<code class="highlighter-rouge">kernel</code>文件及设置，另一个是指定<code class="highlighter-rouge">initrd</code>位置</li>
+  </ol>
+</blockquote>
+
+<p><img src="/img/post/Linux_Boot/grub_conf.png" alt="grub.conf" /></p>
+
+<ol>
+  <li><strong>Kernel</strong>加载：<code class="highlighter-rouge">Boot Loade</code>根据用户的选项，去加载相应的磁盘映像到内存，内核是一个压缩文件，解压缩后，内核会再一次进行测试与驱动周边设备；之后，内核需要去加载各个模块，<code class="highlighter-rouge">Linux</code>内核可以动态加载内核模块，这些内核模块放置在<code class="highlighter-rouge">/lib/modules/</code>目录下，由于模块放置到磁盘根目录下，所以内核要去读取这些模块的话，需要挂载到根目录，这样才能读取内核模块加载驱动程序的功能，但是内核根本不认识<code class="highlighter-rouge">SATA</code>磁盘，所以需要加载<code class="highlighter-rouge">SATA</code>磁盘的驱动程序，否则根本无法挂载根目录，但是<code class="highlighter-rouge">SATA</code>的驱动程序是在<code class="highlighter-rouge">/lib/modules/</code>内，这就出现了两难的问题，所以为了去挂载根目录，就出现了<code class="highlighter-rouge">initrd</code>这个东西</li>
+  <li><strong>initrd</strong>：虚拟文件系统，一般位于<code class="highlighter-rouge">/boot/initrd</code>，<code class="highlighter-rouge">Boot Loader</code>在将内核加载到内存的同时，也会将<code class="highlighter-rouge">initrd</code>加载到内存中，并仿真成为一个根目录；<code class="highlighter-rouge">initrd</code>的作用就是去加载必要的驱动，以便内核可以访问真正的根文件系统（如：磁盘控制器驱动，文件系统驱动（<code class="highlighter-rouge">ext3</code>，<code class="highlighter-rouge">ext4</code>等）），然后去挂载真正的根文件系统，进行根切换操作，用真正的根文件系统进行启动；<code class="highlighter-rouge">initrd</code>完成上述任务之后，会清除掉自己在内存中的痕迹，让出空间</li>
+  <li>内核及其必要模块加载完毕之后，会主动执行第一个程序，即<code class="highlighter-rouge">/sbin/init</code>，这也是第一个启动的进程；<code class="highlighter-rouge">/sbin/init</code>的主要功能是根据其配置文件（<code class="highlighter-rouge">/etc/inittab</code>）去准备软件的执行环境（系统服务等）；这里我们看一下其配置文件<code class="highlighter-rouge">/etc/inittab</code>的内容；如下；前面的注释是对该配置文件的描述，在笔者的该系统中，<code class="highlighter-rouge">inittab</code>中只有一项配置，即运行级别（<code class="highlighter-rouge">runlevel</code>）的设置，所谓的<code class="highlighter-rouge">run level</code>就是<code class="highlighter-rouge">Linux</code>会根据<code class="highlighter-rouge">run level</code>的设置来启动不同的服务，让<code class="highlighter-rouge">Linux</code>的运行环境不同；至于<code class="highlighter-rouge">run level</code>，分为七个等级：如下；</li>
+</ol>
+
+<blockquote>
+  <ol>
+    <li><code class="highlighter-rouge">0 -- halt</code>：系统直接关机</li>
+    <li><code class="highlighter-rouge">1 -- single user mode</code>：单用户维护模式，用在系统出问题时的维护</li>
+    <li><code class="highlighter-rouge">2 -- Multi-user， without NFS</code>：类似下面的<code class="highlighter-rouge">level 3</code>，只是没有<code class="highlighter-rouge">NFS</code>服务</li>
+    <li><code class="highlighter-rouge">3 -- Full multi-user mode</code>：完整含有网络功能的纯文本模式</li>
+    <li><code class="highlighter-rouge">4 -- unused</code>：系统保留功能</li>
+    <li><code class="highlighter-rouge">5 -- X11</code>：与<code class="highlighter-rouge">level 3</code>类似，但是加载使用<code class="highlighter-rouge">X Window</code></li>
+    <li><code class="highlighter-rouge">6 -- reboot</code>：重新启动</li>
+  </ol>
+</blockquote>
+
+<p>这里笔者将运行级别设置为<code class="highlighter-rouge">3</code>，所以是以纯文本形式启动，即纯命令行模式</p>
+
+<p><img src="/img/post/Linux_Boot/inittab.png" alt="grub.conf" /></p>
+
+<ol>
+  <li>到这里系统就启动起来啦 ~ ，这也是系统启动的大致流程 ~</li>
+</ol>
+
+<hr />
+
+<h2 id="二-参考链接">二. 参考链接</h2>
+
+<ol>
+  <li>鸟哥私房菜基础学习篇第三版</li>
+  <li>https://www.slashroot.in/linux-booting-process-step-step-tutorial-understanding-linux-boot-sequence</li>
+  <li>https://www.linuxnix.com/linux-booting-process-explained/</li>
+</ol>
+
+
+                <hr>
+
+                
+
+
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/2018/09/08/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BConcurrentHashMap/" data-toggle="tooltip" data-placement="top" title="Java集合框架之ConcurrentHashMap">&larr; Previous Post</a>
+                    </li>
+                    
+                    
+                </ul>
+
+
+                
+
+                
+                <!-- disqus 评论框 start -->
+                <div class="comment">
+                    <div id="disqus_thread" class="disqus-thread"></div>
+                </div>
+                <!-- disqus 评论框 end -->
+                
+
+            </div>
+
+    <!-- Sidebar Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+        				
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#Algorithm" title="Algorithm" rel="2">
+                                    Algorithm
+                                </a>
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#Java" title="Java" rel="7">
+                                    Java
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#Android" title="Android" rel="3">
+                                    Android
+                                </a>
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+        				
+        			</div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+                <hr>
+                <h5>FRIENDS</h5>
+                <ul class="list-inline">
+                    
+                        <li><a href="https://tech.meituan.com/archives">美团点评</a></li>
+                    
+                </ul>
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+
+<!-- disqus 公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = "HusterYP";
+    var disqus_identifier = "/2018/09/11/Linux开机启动流程";
+    var disqus_url = "http://localhost:4000/2018/09/11/Linux%E5%BC%80%E6%9C%BA%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/";
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<!-- disqus 公共JS代码 end -->
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("http://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                    
+                    
+
+                    <!-- add Weibo, Zhihu by Hux, add target = "_blank" to <a> by Hux -->
+                    
+                    
+
+
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/HusterYP">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; 袁平 2018
+                    <br>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js "></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/js/bootstrap.min.js "></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js "></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("http://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+
+
+<!-- Baidu Tongji -->
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>
