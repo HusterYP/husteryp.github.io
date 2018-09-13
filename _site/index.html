@@ -217,11 +217,9 @@
 
 
 
-sizeCtl, 线程自旋
+一. 概述
 
-U.compareAndSwapInt: 双重check
-
-在java7的ConcurrentHashMap实现上，使用了所谓分段锁的方法，而所谓分段锁就是将记录分段存储，...
+ConcurrentHashMap支持同步机制, 在多线程并发访问的情况下, 也能很好的支持安全的get(), put()等操作; 本文将主要分析多线程情况下, ConcurrentHas...
         </div>
     </a>
     <p class="post-meta">

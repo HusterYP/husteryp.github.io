@@ -5,8 +5,8 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Tue, 11 Sep 2018 11:07:23 +0800</pubDate>
-    <lastBuildDate>Tue, 11 Sep 2018 11:07:23 +0800</lastBuildDate>
+    <pubDate>Thu, 13 Sep 2018 20:53:31 +0800</pubDate>
+    <lastBuildDate>Thu, 13 Sep 2018 20:53:31 +0800</lastBuildDate>
     <generator>Jekyll v3.8.3</generator>
     
       <item>
@@ -137,6 +137,123 @@
 
 &lt;hr /&gt;
 
+&lt;h2 id=&quot;一-概述&quot;&gt;一. 概述&lt;/h2&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ConcurrentHashMap&lt;/code&gt;支持同步机制, 在多线程并发访问的情况下, 也能很好的支持安全的&lt;code class=&quot;highlighter-rouge&quot;&gt;get()&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;put()&lt;/code&gt;等操作; 本文将主要分析多线程情况下, &lt;code class=&quot;highlighter-rouge&quot;&gt;ConcurrentHashMap&lt;/code&gt;是如何保证线程安全操作的; 需要再次提醒的是, 文章源码基于&lt;code class=&quot;highlighter-rouge&quot;&gt;JDK8&lt;/code&gt;, 因为在&lt;code class=&quot;highlighter-rouge&quot;&gt;JDK7&lt;/code&gt;及其以前, &lt;code class=&quot;highlighter-rouge&quot;&gt;ConcurrentHashMap&lt;/code&gt;的实现有所不同, 这在文末将会提及&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ConcurrentHashMap&lt;/code&gt;中也有很多类似于&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;的处理机制, 比如, &lt;code class=&quot;highlighter-rouge&quot;&gt;Hash&lt;/code&gt;时将高位和低位组合, 减少&lt;code class=&quot;highlighter-rouge&quot;&gt;Hash&lt;/code&gt;冲突; &lt;code class=&quot;highlighter-rouge&quot;&gt;table&lt;/code&gt;的容量为&lt;code class=&quot;highlighter-rouge&quot;&gt;2&lt;/code&gt;的整数幂次方等, 这些可以参见&lt;a href=&quot;https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/&quot;&gt;Java集合框架之HashMap&lt;/a&gt;中对&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;的讲解; 本文将不再赘述重复之处&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;二-初始化&quot;&gt;二. 初始化&lt;/h2&gt;
+
+&lt;p&gt;初始化指的是对&lt;code class=&quot;highlighter-rouge&quot;&gt;table&lt;/code&gt;数组的初始化, &lt;code class=&quot;highlighter-rouge&quot;&gt;table&lt;/code&gt;被声明为&lt;code class=&quot;highlighter-rouge&quot;&gt;transient volatile Node&amp;lt;K,V&amp;gt;[] table;&lt;/code&gt;, 前面的&lt;code class=&quot;highlighter-rouge&quot;&gt;transient&lt;/code&gt;表示是的是不能被序列化, 与本文无关, 重点关注的是&lt;code class=&quot;highlighter-rouge&quot;&gt;volatile&lt;/code&gt;; 我们知道, &lt;code class=&quot;highlighter-rouge&quot;&gt;volatile&lt;/code&gt;能够保证变量对所有线程的可见性, 但是不能保证变量的原子性; 这里&lt;code class=&quot;highlighter-rouge&quot;&gt;table&lt;/code&gt;被声明为&lt;code class=&quot;highlighter-rouge&quot;&gt;transient&lt;/code&gt;, 表示多线程操作时, 各个线程始终能够获取到&lt;code class=&quot;highlighter-rouge&quot;&gt;table&lt;/code&gt;的最新值, 但是需要注意的是, &lt;code class=&quot;highlighter-rouge&quot;&gt;table&lt;/code&gt;里面的元素是不能保证可见性的, 关于这点, 可以参见&lt;a href=&quot;https://www.jianshu.com/p/5808db3e2ace&quot;&gt;如何保证数组元素的可见性&lt;/a&gt;中的解释&lt;/p&gt;
+
+&lt;p&gt;对&lt;code class=&quot;highlighter-rouge&quot;&gt;table&lt;/code&gt;的初始化是&lt;code class=&quot;highlighter-rouge&quot;&gt;lazy-init&lt;/code&gt;的, 也就是说在存放元素的时候才会进行&lt;code class=&quot;highlighter-rouge&quot;&gt;initTable()&lt;/code&gt;; 但是考虑到多线程使用的情况, 所以&lt;code class=&quot;highlighter-rouge&quot;&gt;initTable()&lt;/code&gt;操作需要保证每次只能有一个线程去执行该操作(因为多个线程去&lt;code class=&quot;highlighter-rouge&quot;&gt;initTable()&lt;/code&gt;的话, 会造成&lt;code class=&quot;highlighter-rouge&quot;&gt;table&lt;/code&gt;被&lt;code class=&quot;highlighter-rouge&quot;&gt;new&lt;/code&gt;多次)&lt;/p&gt;
+
+&lt;p&gt;下面我们来看&lt;code class=&quot;highlighter-rouge&quot;&gt;initTable()&lt;/code&gt;的实现, 如下; 这里引出一个很重要的变量&lt;code class=&quot;highlighter-rouge&quot;&gt;sizeCtl&lt;/code&gt;和一个很重要的概念&lt;strong&gt;CAS&lt;/strong&gt;;&lt;/p&gt;
+
+&lt;p&gt;我们先来看&lt;code class=&quot;highlighter-rouge&quot;&gt;sizeCtl&lt;/code&gt;, 如下为&lt;code class=&quot;highlighter-rouge&quot;&gt;sizeCtl&lt;/code&gt;的声明,从其注释可以看出, &lt;code class=&quot;highlighter-rouge&quot;&gt;sizeCtl&lt;/code&gt;是用于控制&lt;code class=&quot;highlighter-rouge&quot;&gt;table&lt;/code&gt;的初始化和扩容的, 当&lt;code class=&quot;highlighter-rouge&quot;&gt;sizeCtl&lt;/code&gt;为负数时, 表示&lt;code class=&quot;highlighter-rouge&quot;&gt;table&lt;/code&gt;正在被初始化或者扩容(&lt;code class=&quot;highlighter-rouge&quot;&gt;sizeCtl == -1&lt;/code&gt;表示初始化, &lt;code class=&quot;highlighter-rouge&quot;&gt;sizeCtl == -(1+n)&lt;/code&gt;表示正在被&lt;code class=&quot;highlighter-rouge&quot;&gt;n&lt;/code&gt;个线程扩容); 默认为&lt;code class=&quot;highlighter-rouge&quot;&gt;0&lt;/code&gt;表示还没有初始化; 当&lt;code class=&quot;highlighter-rouge&quot;&gt;sizeCtl&lt;/code&gt;大于&lt;code class=&quot;highlighter-rouge&quot;&gt;0&lt;/code&gt;时, 表示的是扩容阈值&lt;/p&gt;
+
+&lt;p&gt;从其注释也可以知道, 只能有一个线程去初始化&lt;code class=&quot;highlighter-rouge&quot;&gt;table&lt;/code&gt;; 那么&lt;code class=&quot;highlighter-rouge&quot;&gt;ConcurrentHashMap&lt;/code&gt;是如何保证一个线程去初始化&lt;code class=&quot;highlighter-rouge&quot;&gt;table&lt;/code&gt;的呢&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    /**
+     * Table initialization and resizing control.  When negative, the
+     * table is being initialized or resized: -1 for initialization,
+     * else -(1 + the number of active resizing threads).  Otherwise,
+     * when table is null, holds the initial table size to use upon
+     * creation, or 0 for default. After initialization, holds the
+     * next element count value upon which to resize the table.
+     */
+    private transient volatile int sizeCtl;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;在继续介绍之前, 我们还需要了解的一个概念是&lt;code class=&quot;highlighter-rouge&quot;&gt;CAS&lt;/code&gt;, 所谓的&lt;code class=&quot;highlighter-rouge&quot;&gt;CAS&lt;/code&gt;就是&lt;code class=&quot;highlighter-rouge&quot;&gt;Compare and Swap&lt;/code&gt;, 这个算法的基本思想就是不断地去比较当前内存中的变量值与你指定的一个变量值是否相等，如果相等，则接受你指定的修改的值，否则拒绝你的操作, &lt;code class=&quot;highlighter-rouge&quot;&gt;ConcurrentHashMap&lt;/code&gt;就是利用&lt;code class=&quot;highlighter-rouge&quot;&gt;CAS&lt;/code&gt;实现无锁化, 大大降低了锁代理点的消耗&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ConcurrentHashMap&lt;/code&gt;利用的是&lt;code class=&quot;highlighter-rouge&quot;&gt;sun.misc.Unsafe&lt;/code&gt;提供的&lt;code class=&quot;highlighter-rouge&quot;&gt;CAS&lt;/code&gt;算法实现, 也就是&lt;code class=&quot;highlighter-rouge&quot;&gt;ConcurrentHashMap&lt;/code&gt;中的&lt;code class=&quot;highlighter-rouge&quot;&gt;U&lt;/code&gt;(声明为&lt;code class=&quot;highlighter-rouge&quot;&gt;private static final sun.misc.Unsafe U;&lt;/code&gt;); 这里以&lt;code class=&quot;highlighter-rouge&quot;&gt;U.compareAndSwapInt(this, SIZECTL, sc, -1)&lt;/code&gt;操作为例讲解, 表示的是将&lt;code class=&quot;highlighter-rouge&quot;&gt;sc&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;this&lt;/code&gt;对象的&lt;code class=&quot;highlighter-rouge&quot;&gt;SIZECTL&lt;/code&gt;域的值进行比较, 如果相同的话, 则修改&lt;code class=&quot;highlighter-rouge&quot;&gt;SIZECTL&lt;/code&gt;为&lt;code class=&quot;highlighter-rouge&quot;&gt;-1&lt;/code&gt;, 同时返回&lt;code class=&quot;highlighter-rouge&quot;&gt;true&lt;/code&gt;, 否则, 不修改&lt;code class=&quot;highlighter-rouge&quot;&gt;SIZECTL&lt;/code&gt;的值, 并返回&lt;code class=&quot;highlighter-rouge&quot;&gt;false&lt;/code&gt;; 其余的&lt;code class=&quot;highlighter-rouge&quot;&gt;compareAndSwapXXX()&lt;/code&gt;也是一样的&lt;/p&gt;
+
+&lt;p&gt;这里可以再通过&lt;code class=&quot;highlighter-rouge&quot;&gt;CAS&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;C&lt;/code&gt;语言实现来理解: 可以看出&lt;code class=&quot;highlighter-rouge&quot;&gt;CAS&lt;/code&gt;中的操作都是原子的&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;int compare_and_swap (int* reg, int oldval, int newval)
+{
+  ATOMIC();
+  int old_reg_val = *reg;
+  if (old_reg_val == oldval)
+     *reg = newval;
+  END_ATOMIC();
+  return old_reg_val;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;这里还有一点需要注意的是, &lt;code class=&quot;highlighter-rouge&quot;&gt;SIZECTL&lt;/code&gt;所代表的含义; 如下, 这其实是&lt;code class=&quot;highlighter-rouge&quot;&gt;sun.misc.Unsafa&lt;/code&gt;的使用要求, 代表的实际上是&lt;code class=&quot;highlighter-rouge&quot;&gt;ConcurrentHashMap&lt;/code&gt;中的&lt;code class=&quot;highlighter-rouge&quot;&gt;sizeCtl&lt;/code&gt;域, 也就是说后文对&lt;code class=&quot;highlighter-rouge&quot;&gt;SIZECTL&lt;/code&gt;的修改实际上就是作用到具体实例的&lt;code class=&quot;highlighter-rouge&quot;&gt;sizeCtl&lt;/code&gt;域上的&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    private static final long SIZECTL;
+
+    static {
+            ...
+            U = sun.misc.Unsafe.getUnsafe();
+            Class&amp;lt;?&amp;gt; k = ConcurrentHashMap.class;
+            SIZECTL = U.objectFieldOffset
+                (k.getDeclaredField(&quot;sizeCtl&quot;));
+            ...
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;现在我们开始来看&lt;code class=&quot;highlighter-rouge&quot;&gt;initTable()&lt;/code&gt;的实现, 如下; 所有的操作都在&lt;code class=&quot;highlighter-rouge&quot;&gt;while&lt;/code&gt;循环中, 先去判断&lt;code class=&quot;highlighter-rouge&quot;&gt;sizeCtl&lt;/code&gt;的值是否为负数, 为负数表示已经有线程在初始化了, 所以直接进行&lt;code class=&quot;highlighter-rouge&quot;&gt;Thread.yield()&lt;/code&gt;让出&lt;code class=&quot;highlighter-rouge&quot;&gt;CPU&lt;/code&gt;资源, 从运行状态变为就绪状态, 因为是在&lt;code class=&quot;highlighter-rouge&quot;&gt;while&lt;/code&gt;循环中, 所以在即使该线程再次变为运行状态, 但是初始化还未完成的话, 还是只有&lt;code class=&quot;highlighter-rouge&quot;&gt;yield()&lt;/code&gt;, 这也是自旋(不断尝试, 不断等待的过程)的由来; 如果&lt;code class=&quot;highlighter-rouge&quot;&gt;sizeCtl&lt;/code&gt;非负, 则先使用&lt;code class=&quot;highlighter-rouge&quot;&gt;U.compareAndSwapInt(this, SIZECTL, sc,
+-1)&lt;/code&gt;来判断是否能成功将&lt;code class=&quot;highlighter-rouge&quot;&gt;sizeCtl&lt;/code&gt;置为&lt;code class=&quot;highlighter-rouge&quot;&gt;-1&lt;/code&gt;(含义见上文); 因为&lt;code class=&quot;highlighter-rouge&quot;&gt;sizeCtl&lt;/code&gt;也是用&lt;code class=&quot;highlighter-rouge&quot;&gt;volatile&lt;/code&gt;修饰的, 所以, 能够保证其他线程得到&lt;code class=&quot;highlighter-rouge&quot;&gt;sizeCtl&lt;/code&gt;的最新值; 之后便是进行&lt;code class=&quot;highlighter-rouge&quot;&gt;table&lt;/code&gt;空间分配&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    private final Node&amp;lt;K,V&amp;gt;[] initTable() {
+        Node&amp;lt;K,V&amp;gt;[] tab; int sc;
+        while ((tab = table) == null || tab.length == 0) {
+            if ((sc = sizeCtl) &amp;lt; 0)
+                Thread.yield(); // lost initialization race; just spin
+            else if (U.compareAndSwapInt(this, SIZECTL, sc, -1)) {
+                try {
+                    if ((tab = table) == null || tab.length == 0) {
+                        int n = (sc &amp;gt; 0) ? sc : DEFAULT_CAPACITY;
+                        @SuppressWarnings(&quot;unchecked&quot;)
+                        Node&amp;lt;K,V&amp;gt;[] nt = (Node&amp;lt;K,V&amp;gt;[])new Node&amp;lt;?,?&amp;gt;[n];
+                        table = tab = nt;
+                        sc = n - (n &amp;gt;&amp;gt;&amp;gt; 2); // 类似与n * loadFactor
+                    }
+                } finally {
+                    sizeCtl = sc;
+                }
+                break;
+            }
+        }
+        return tab;
+   }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;三-扩容&quot;&gt;三. 扩容&lt;/h2&gt;
+
+&lt;p&gt;扩容操作是由&lt;code class=&quot;highlighter-rouge&quot;&gt;transfer()&lt;/code&gt;函数完成的,&lt;/p&gt;
+
+&lt;h2 id=&quot;三-存放值&quot;&gt;三. 存放值&lt;/h2&gt;
+
+&lt;p&gt;插入时恰好在有线程在扩容, 当前线程将参与帮助扩容&lt;/p&gt;
+
+&lt;p&gt;获取ConcurrentHashMap这个对象字段sizeCtl在内存中的偏移量&lt;/p&gt;
+
+&lt;p&gt;扩容: 自旋锁&lt;/p&gt;
+
+&lt;p&gt;get&lt;/p&gt;
+
+&lt;p&gt;put&lt;/p&gt;
+
+&lt;p&gt;U.compareAndSwapInt(this, SIZECTL, sc, -1): 比较SIZECTL和sc的值是否相等, 如果相等, 则接受修改值, 即将SIZECTL修改为-1, 如果值修改成功, 则返回true, 否则返回false&lt;/p&gt;
+
+&lt;p&gt;CAS是项 乐观锁 技术，当多个线程尝试使用CAS同时更新同一个变量时，只有其中一个线程能更新变量的值，而其它线程都失败，失败的线程并不会被挂起，而是被告知这次竞争中失败，并可以再次尝试&lt;/p&gt;
+
+&lt;p&gt;沿用了与它同时期的HashMap版本的思想，底层依然由“数组”+链表+红黑树的方式思想&lt;/p&gt;
+
+&lt;p&gt;随处可以看到U, 大量使用了U.compareAndSwapXXX的方法，这个方法是利用一个CAS算法实现无锁化的修改值的操作，他可以大大降低锁代理的性能消耗&lt;/p&gt;
+
+&lt;p&gt;支持并发扩容的&lt;/p&gt;
+
 &lt;p&gt;sizeCtl, 线程自旋&lt;/p&gt;
 
 &lt;p&gt;U.compareAndSwapInt: 双重check&lt;/p&gt;
@@ -145,7 +262,29 @@
 
 &lt;p&gt;ConcurrentHashMap是基于CAS来实现线程安全的，CAS是一种轻量级的锁，它不会阻塞线程，而是会等待直到获得变量，然后进行业务操作，这和锁需要阻塞线程来实现线程安全来比较，是一种很大的改良，&lt;/p&gt;
 
-&lt;p&gt;https://docs.oracle.com/javase/9/docs/api/index.html?overview-summary.html&lt;/p&gt;
+&lt;p&gt;iterators被设计为每次只能被一个线程使用&lt;/p&gt;
+
+&lt;p&gt;对于ConcurrentHashMap是如何提高其效率的，可能大多人只是知道它使用了多个锁代替HashTable中的单个锁，也就是锁分离技术（Lock Stripping）&lt;/p&gt;
+
+&lt;p&gt;ConcurrentHashMap的迭代器不是Fast-Fail的方式，所以在迭代的过程中别其他线程添加/删除了元素，不会抛出异常，也不能体现出元素的改动。但也没有关系，因为每个entry的成员除了value都是final修饰的，暴漏出去也不会对其他元素造成影响&lt;/p&gt;
+
+&lt;p&gt;我们一般说一个操作happen-before另一个操作，这到底是什么意思呢？当说操作A happen-before操作B时，我们其实是在说在发生操作B之前，操作A对内存施加的影响能够被观测到&lt;/p&gt;
+
+&lt;p&gt;HashTable的同步使用锁来保证的，并且所有同步操作使用的是同一个锁对象。这样若有n个线程同时在get时，这n个线程要串行的等待来获取锁&lt;/p&gt;
+
+&lt;p&gt;ConcurrentHashMap则是将每16组元素使用同一个锁(默认), 提高效率(分离锁)—有待验证(ConcurrentHashMap内部使用段(Segment)来表示这些不同的部分，每个段其实就是一个小的hash table，它们有自己的锁。只要多个修改操作发生在不同的段上，它们就可以并发进行)&lt;/p&gt;
+
+&lt;p&gt;通过他的说法，我必须纠正我一开始以为ConcurrentHashMap完全可以代替HashTable的说法，如果你的环境要求“强一致性”的话，就不能用ConcurrentHashMap了，它的get，clear方法和迭代器都是“弱一致性”的。不过真正需要“强一致性”的场景可能非常少，我们大多应用中ConcurrentHashMap是满足的。&lt;/p&gt;
+
+&lt;p&gt;为了加快定位段以及段中hash槽的速度，每个段hash槽的的个数都是2^n&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://blog.csdn.net/mian_CSDN/article/details/70185104&quot;&gt;ConcurrentHashMap(JDK1.8)为什么要放弃Segment&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;在JDK1.7 (??)版本之前, ConcurrentHashMap采用的是锁分离技术(可重入锁), JDK1.8之后采用的是CAS算法&lt;/p&gt;
+
+&lt;p&gt;JDK7版本参见博客:
+http://ifeve.com/java-concurrent-hashmap-1/
+http://ifeve.com/java-concurrent-hashmap-2/&lt;/p&gt;
 </description>
         <pubDate>Sat, 08 Sep 2018 00:00:00 +0800</pubDate>
         <link>http://localhost:4000/2018/09/08/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BConcurrentHashMap/</link>

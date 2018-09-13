@@ -182,6 +182,123 @@
 
 <hr />
 
+<h2 id="一-概述">一. 概述</h2>
+
+<p><code class="highlighter-rouge">ConcurrentHashMap</code>支持同步机制, 在多线程并发访问的情况下, 也能很好的支持安全的<code class="highlighter-rouge">get()</code>, <code class="highlighter-rouge">put()</code>等操作; 本文将主要分析多线程情况下, <code class="highlighter-rouge">ConcurrentHashMap</code>是如何保证线程安全操作的; 需要再次提醒的是, 文章源码基于<code class="highlighter-rouge">JDK8</code>, 因为在<code class="highlighter-rouge">JDK7</code>及其以前, <code class="highlighter-rouge">ConcurrentHashMap</code>的实现有所不同, 这在文末将会提及</p>
+
+<p><code class="highlighter-rouge">ConcurrentHashMap</code>中也有很多类似于<code class="highlighter-rouge">HashMap</code>的处理机制, 比如, <code class="highlighter-rouge">Hash</code>时将高位和低位组合, 减少<code class="highlighter-rouge">Hash</code>冲突; <code class="highlighter-rouge">table</code>的容量为<code class="highlighter-rouge">2</code>的整数幂次方等, 这些可以参见<a href="https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/">Java集合框架之HashMap</a>中对<code class="highlighter-rouge">HashMap</code>的讲解; 本文将不再赘述重复之处</p>
+
+<hr />
+
+<h2 id="二-初始化">二. 初始化</h2>
+
+<p>初始化指的是对<code class="highlighter-rouge">table</code>数组的初始化, <code class="highlighter-rouge">table</code>被声明为<code class="highlighter-rouge">transient volatile Node&lt;K,V&gt;[] table;</code>, 前面的<code class="highlighter-rouge">transient</code>表示是的是不能被序列化, 与本文无关, 重点关注的是<code class="highlighter-rouge">volatile</code>; 我们知道, <code class="highlighter-rouge">volatile</code>能够保证变量对所有线程的可见性, 但是不能保证变量的原子性; 这里<code class="highlighter-rouge">table</code>被声明为<code class="highlighter-rouge">transient</code>, 表示多线程操作时, 各个线程始终能够获取到<code class="highlighter-rouge">table</code>的最新值, 但是需要注意的是, <code class="highlighter-rouge">table</code>里面的元素是不能保证可见性的, 关于这点, 可以参见<a href="https://www.jianshu.com/p/5808db3e2ace">如何保证数组元素的可见性</a>中的解释</p>
+
+<p>对<code class="highlighter-rouge">table</code>的初始化是<code class="highlighter-rouge">lazy-init</code>的, 也就是说在存放元素的时候才会进行<code class="highlighter-rouge">initTable()</code>; 但是考虑到多线程使用的情况, 所以<code class="highlighter-rouge">initTable()</code>操作需要保证每次只能有一个线程去执行该操作(因为多个线程去<code class="highlighter-rouge">initTable()</code>的话, 会造成<code class="highlighter-rouge">table</code>被<code class="highlighter-rouge">new</code>多次)</p>
+
+<p>下面我们来看<code class="highlighter-rouge">initTable()</code>的实现, 如下; 这里引出一个很重要的变量<code class="highlighter-rouge">sizeCtl</code>和一个很重要的概念<strong>CAS</strong>;</p>
+
+<p>我们先来看<code class="highlighter-rouge">sizeCtl</code>, 如下为<code class="highlighter-rouge">sizeCtl</code>的声明,从其注释可以看出, <code class="highlighter-rouge">sizeCtl</code>是用于控制<code class="highlighter-rouge">table</code>的初始化和扩容的, 当<code class="highlighter-rouge">sizeCtl</code>为负数时, 表示<code class="highlighter-rouge">table</code>正在被初始化或者扩容(<code class="highlighter-rouge">sizeCtl == -1</code>表示初始化, <code class="highlighter-rouge">sizeCtl == -(1+n)</code>表示正在被<code class="highlighter-rouge">n</code>个线程扩容); 默认为<code class="highlighter-rouge">0</code>表示还没有初始化; 当<code class="highlighter-rouge">sizeCtl</code>大于<code class="highlighter-rouge">0</code>时, 表示的是扩容阈值</p>
+
+<p>从其注释也可以知道, 只能有一个线程去初始化<code class="highlighter-rouge">table</code>; 那么<code class="highlighter-rouge">ConcurrentHashMap</code>是如何保证一个线程去初始化<code class="highlighter-rouge">table</code>的呢</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    /**
+     * Table initialization and resizing control.  When negative, the
+     * table is being initialized or resized: -1 for initialization,
+     * else -(1 + the number of active resizing threads).  Otherwise,
+     * when table is null, holds the initial table size to use upon
+     * creation, or 0 for default. After initialization, holds the
+     * next element count value upon which to resize the table.
+     */
+    private transient volatile int sizeCtl;
+</code></pre></div></div>
+
+<p>在继续介绍之前, 我们还需要了解的一个概念是<code class="highlighter-rouge">CAS</code>, 所谓的<code class="highlighter-rouge">CAS</code>就是<code class="highlighter-rouge">Compare and Swap</code>, 这个算法的基本思想就是不断地去比较当前内存中的变量值与你指定的一个变量值是否相等，如果相等，则接受你指定的修改的值，否则拒绝你的操作, <code class="highlighter-rouge">ConcurrentHashMap</code>就是利用<code class="highlighter-rouge">CAS</code>实现无锁化, 大大降低了锁代理点的消耗</p>
+
+<p><code class="highlighter-rouge">ConcurrentHashMap</code>利用的是<code class="highlighter-rouge">sun.misc.Unsafe</code>提供的<code class="highlighter-rouge">CAS</code>算法实现, 也就是<code class="highlighter-rouge">ConcurrentHashMap</code>中的<code class="highlighter-rouge">U</code>(声明为<code class="highlighter-rouge">private static final sun.misc.Unsafe U;</code>); 这里以<code class="highlighter-rouge">U.compareAndSwapInt(this, SIZECTL, sc, -1)</code>操作为例讲解, 表示的是将<code class="highlighter-rouge">sc</code>和<code class="highlighter-rouge">this</code>对象的<code class="highlighter-rouge">SIZECTL</code>域的值进行比较, 如果相同的话, 则修改<code class="highlighter-rouge">SIZECTL</code>为<code class="highlighter-rouge">-1</code>, 同时返回<code class="highlighter-rouge">true</code>, 否则, 不修改<code class="highlighter-rouge">SIZECTL</code>的值, 并返回<code class="highlighter-rouge">false</code>; 其余的<code class="highlighter-rouge">compareAndSwapXXX()</code>也是一样的</p>
+
+<p>这里可以再通过<code class="highlighter-rouge">CAS</code>的<code class="highlighter-rouge">C</code>语言实现来理解: 可以看出<code class="highlighter-rouge">CAS</code>中的操作都是原子的</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>int compare_and_swap (int* reg, int oldval, int newval)
+{
+  ATOMIC();
+  int old_reg_val = *reg;
+  if (old_reg_val == oldval)
+     *reg = newval;
+  END_ATOMIC();
+  return old_reg_val;
+}
+</code></pre></div></div>
+
+<p>这里还有一点需要注意的是, <code class="highlighter-rouge">SIZECTL</code>所代表的含义; 如下, 这其实是<code class="highlighter-rouge">sun.misc.Unsafa</code>的使用要求, 代表的实际上是<code class="highlighter-rouge">ConcurrentHashMap</code>中的<code class="highlighter-rouge">sizeCtl</code>域, 也就是说后文对<code class="highlighter-rouge">SIZECTL</code>的修改实际上就是作用到具体实例的<code class="highlighter-rouge">sizeCtl</code>域上的</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    private static final long SIZECTL;
+
+    static {
+            ...
+            U = sun.misc.Unsafe.getUnsafe();
+            Class&lt;?&gt; k = ConcurrentHashMap.class;
+            SIZECTL = U.objectFieldOffset
+                (k.getDeclaredField("sizeCtl"));
+            ...
+    }
+</code></pre></div></div>
+
+<p>现在我们开始来看<code class="highlighter-rouge">initTable()</code>的实现, 如下; 所有的操作都在<code class="highlighter-rouge">while</code>循环中, 先去判断<code class="highlighter-rouge">sizeCtl</code>的值是否为负数, 为负数表示已经有线程在初始化了, 所以直接进行<code class="highlighter-rouge">Thread.yield()</code>让出<code class="highlighter-rouge">CPU</code>资源, 从运行状态变为就绪状态, 因为是在<code class="highlighter-rouge">while</code>循环中, 所以在即使该线程再次变为运行状态, 但是初始化还未完成的话, 还是只有<code class="highlighter-rouge">yield()</code>, 这也是自旋(不断尝试, 不断等待的过程)的由来; 如果<code class="highlighter-rouge">sizeCtl</code>非负, 则先使用<code class="highlighter-rouge">U.compareAndSwapInt(this, SIZECTL, sc,
+-1)</code>来判断是否能成功将<code class="highlighter-rouge">sizeCtl</code>置为<code class="highlighter-rouge">-1</code>(含义见上文); 因为<code class="highlighter-rouge">sizeCtl</code>也是用<code class="highlighter-rouge">volatile</code>修饰的, 所以, 能够保证其他线程得到<code class="highlighter-rouge">sizeCtl</code>的最新值; 之后便是进行<code class="highlighter-rouge">table</code>空间分配</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    private final Node&lt;K,V&gt;[] initTable() {
+        Node&lt;K,V&gt;[] tab; int sc;
+        while ((tab = table) == null || tab.length == 0) {
+            if ((sc = sizeCtl) &lt; 0)
+                Thread.yield(); // lost initialization race; just spin
+            else if (U.compareAndSwapInt(this, SIZECTL, sc, -1)) {
+                try {
+                    if ((tab = table) == null || tab.length == 0) {
+                        int n = (sc &gt; 0) ? sc : DEFAULT_CAPACITY;
+                        @SuppressWarnings("unchecked")
+                        Node&lt;K,V&gt;[] nt = (Node&lt;K,V&gt;[])new Node&lt;?,?&gt;[n];
+                        table = tab = nt;
+                        sc = n - (n &gt;&gt;&gt; 2); // 类似与n * loadFactor
+                    }
+                } finally {
+                    sizeCtl = sc;
+                }
+                break;
+            }
+        }
+        return tab;
+   }
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="三-扩容">三. 扩容</h2>
+
+<p>扩容操作是由<code class="highlighter-rouge">transfer()</code>函数完成的,</p>
+
+<h2 id="三-存放值">三. 存放值</h2>
+
+<p>插入时恰好在有线程在扩容, 当前线程将参与帮助扩容</p>
+
+<p>获取ConcurrentHashMap这个对象字段sizeCtl在内存中的偏移量</p>
+
+<p>扩容: 自旋锁</p>
+
+<p>get</p>
+
+<p>put</p>
+
+<p>U.compareAndSwapInt(this, SIZECTL, sc, -1): 比较SIZECTL和sc的值是否相等, 如果相等, 则接受修改值, 即将SIZECTL修改为-1, 如果值修改成功, 则返回true, 否则返回false</p>
+
+<p>CAS是项 乐观锁 技术，当多个线程尝试使用CAS同时更新同一个变量时，只有其中一个线程能更新变量的值，而其它线程都失败，失败的线程并不会被挂起，而是被告知这次竞争中失败，并可以再次尝试</p>
+
+<p>沿用了与它同时期的HashMap版本的思想，底层依然由“数组”+链表+红黑树的方式思想</p>
+
+<p>随处可以看到U, 大量使用了U.compareAndSwapXXX的方法，这个方法是利用一个CAS算法实现无锁化的修改值的操作，他可以大大降低锁代理的性能消耗</p>
+
+<p>支持并发扩容的</p>
+
 <p>sizeCtl, 线程自旋</p>
 
 <p>U.compareAndSwapInt: 双重check</p>
@@ -190,7 +307,29 @@
 
 <p>ConcurrentHashMap是基于CAS来实现线程安全的，CAS是一种轻量级的锁，它不会阻塞线程，而是会等待直到获得变量，然后进行业务操作，这和锁需要阻塞线程来实现线程安全来比较，是一种很大的改良，</p>
 
-<p>https://docs.oracle.com/javase/9/docs/api/index.html?overview-summary.html</p>
+<p>iterators被设计为每次只能被一个线程使用</p>
+
+<p>对于ConcurrentHashMap是如何提高其效率的，可能大多人只是知道它使用了多个锁代替HashTable中的单个锁，也就是锁分离技术（Lock Stripping）</p>
+
+<p>ConcurrentHashMap的迭代器不是Fast-Fail的方式，所以在迭代的过程中别其他线程添加/删除了元素，不会抛出异常，也不能体现出元素的改动。但也没有关系，因为每个entry的成员除了value都是final修饰的，暴漏出去也不会对其他元素造成影响</p>
+
+<p>我们一般说一个操作happen-before另一个操作，这到底是什么意思呢？当说操作A happen-before操作B时，我们其实是在说在发生操作B之前，操作A对内存施加的影响能够被观测到</p>
+
+<p>HashTable的同步使用锁来保证的，并且所有同步操作使用的是同一个锁对象。这样若有n个线程同时在get时，这n个线程要串行的等待来获取锁</p>
+
+<p>ConcurrentHashMap则是将每16组元素使用同一个锁(默认), 提高效率(分离锁)—有待验证(ConcurrentHashMap内部使用段(Segment)来表示这些不同的部分，每个段其实就是一个小的hash table，它们有自己的锁。只要多个修改操作发生在不同的段上，它们就可以并发进行)</p>
+
+<p>通过他的说法，我必须纠正我一开始以为ConcurrentHashMap完全可以代替HashTable的说法，如果你的环境要求“强一致性”的话，就不能用ConcurrentHashMap了，它的get，clear方法和迭代器都是“弱一致性”的。不过真正需要“强一致性”的场景可能非常少，我们大多应用中ConcurrentHashMap是满足的。</p>
+
+<p>为了加快定位段以及段中hash槽的速度，每个段hash槽的的个数都是2^n</p>
+
+<p><a href="https://blog.csdn.net/mian_CSDN/article/details/70185104">ConcurrentHashMap(JDK1.8)为什么要放弃Segment</a></p>
+
+<p>在JDK1.7 (??)版本之前, ConcurrentHashMap采用的是锁分离技术(可重入锁), JDK1.8之后采用的是CAS算法</p>
+
+<p>JDK7版本参见博客:
+http://ifeve.com/java-concurrent-hashmap-1/
+http://ifeve.com/java-concurrent-hashmap-2/</p>
 
 
                 <hr>
