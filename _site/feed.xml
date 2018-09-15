@@ -5,9 +5,360 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Thu, 13 Sep 2018 20:53:31 +0800</pubDate>
-    <lastBuildDate>Thu, 13 Sep 2018 20:53:31 +0800</lastBuildDate>
+    <pubDate>Sat, 15 Sep 2018 21:58:47 +0800</pubDate>
+    <lastBuildDate>Sat, 15 Sep 2018 21:58:47 +0800</lastBuildDate>
     <generator>Jekyll v3.8.3</generator>
+    
+      <item>
+        <title>Handler</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Android消息机制分析&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Handler源码分析&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;一-概述&quot;&gt;一. 概述&lt;/h2&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;算是我们平时开发中比较常用的一个, &lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;所代表的是&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;中重要的一部分, 即消息机制; 本文将分析&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;的运行机制&lt;/p&gt;
+
+&lt;h3 id=&quot;11-使用场景&quot;&gt;1.1 使用场景&lt;/h3&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;线程切换: 这个是使用&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;最常见和最频繁的场景了; 我们都知道, &lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;线程中不允许执行耗时操作, 那么当我们需要先去获取数据(耗时)再进行&lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;展示或者交互的时候, 线程切换就必不可少了&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;任务延时: 即在未来某个时刻再执行任务, 这个主要是通过&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler.postDelayed()&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler.sendMessageDelayed()&lt;/code&gt;完成的(实际上&lt;code class=&quot;highlighter-rouge&quot;&gt;postDelayed()&lt;/code&gt;也是通过&lt;code class=&quot;highlighter-rouge&quot;&gt;sendMessageDelayed()&lt;/code&gt;完成的)&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&quot;12-为什么会有handler&quot;&gt;1.2 为什么会有Handler&lt;/h3&gt;
+
+&lt;p&gt;我们都知道&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;的作用主要是用于切换线程, 那么为什么会出现&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;喃; 我们以&lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;线程中执行耗时操作为例, 对于耗时操作, 特别是在需要实时交互的应用中, 肯定是需要设计为多线程的, 那么&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;设计之初为什么不使用多线程去访问&lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;呢, 最致命的一点就是, 多线程存在并发访问的不确定性, 这就会造成&lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;表现的不可预期性, 造成用户体验极差; 当然, 对于多线程并发的问题还是有很多方式去避免和解决的, 最常见的一个就是加锁, 那么为什么不采用多线程访问,
+对&lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;加锁的方式实现呢, 一个是加锁会使&lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;逻辑变得复杂, 另一个是加锁会降低效率, 阻塞某些线程的执行&lt;/p&gt;
+
+&lt;p&gt;所以, 基于很多方面的考虑, 特别是对于&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;应用这样交互性很强的场景而言, 使得需要去实现自己的一套异步通信机制, 需要达到的目标是, 线程之间的独立性保持和数据交互的便利性, 这也是&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;实现的&lt;/p&gt;
+
+&lt;h3 id=&quot;13-概述&quot;&gt;1.3 概述&lt;/h3&gt;
+
+&lt;p&gt;在&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;消息机制中, 有非常重要的几个部分, 也是我们分析的切入点:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;MessageQueue&lt;/strong&gt;: 单链表, 实现消息存储; 是&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;层和&lt;code class=&quot;highlighter-rouge&quot;&gt;Native&lt;/code&gt;层的连接纽带&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;Looper&lt;/strong&gt;: 无限循环查询是否有新消息&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;Handler&lt;/strong&gt;: 消息接受和分发处理的中转站&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;以下是我们使用&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;最常见的一种写法, 我们通常会重写&lt;code class=&quot;highlighter-rouge&quot;&gt;handleMessage()&lt;/code&gt;来实现自己的逻辑; 当在其他线程中通过&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler.sendMessage()&lt;/code&gt;来发送消息时, 我们就会在&lt;code class=&quot;highlighter-rouge&quot;&gt;handleMessage()&lt;/code&gt;中接收到该消息&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    private final Handler mHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            // do somthing with msg
+            super.handleMessage(msg);
+        }
+    };
+
+    new Thread() {
+        @Override
+        public void run() {
+           mHandler.sendEmptyMessage(0);
+        }
+    }.start();
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;进行线程切换和消息传递的一个大致流程是, 当我们通过&lt;code class=&quot;highlighter-rouge&quot;&gt;sendMessage()&lt;/code&gt;发送消息的时候, &lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;负责存储该消息, &lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;会无限循环的去检查&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;中是否有消息, 如果有则调用&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;dispatchMessage()&lt;/code&gt;进行消息分发, 最终会回到&lt;code class=&quot;highlighter-rouge&quot;&gt;handleMessage&lt;/code&gt;中进行处理&lt;/p&gt;
+
+&lt;p&gt;在开始讲解之前, 需要先明确几个结论(在稍后会验证): 每个线程都可以有自己的&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;, 但是默认没有创建(除了&lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;线程外); &lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;是创建&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;所必须的(否则会抛异常); &lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;是一一对应的关系, 也就是说每个线程会有自己的&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;; &lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;在哪个线程中创建就在哪个线程中处理消息, 其他线程发送的消息存储在对应&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;所对应的&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;中&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;二-构造函数&quot;&gt;二. 构造函数&lt;/h2&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;提供了七个构造函数, 如下表&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Handler()&lt;/td&gt;
+      &lt;td&gt;Handler(Callback callback)&lt;/td&gt;
+      &lt;td&gt;Handler(Looper looper)&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Handler(Looper looper, Callback callback)&lt;/td&gt;
+      &lt;td&gt;Handler(boolean async)&lt;/td&gt;
+      &lt;td&gt;Handler(Callback callback, boolean async)&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Handler(Looper looper, Callback callback, boolean async)&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;这七个构造函数最常用的是默认构造函数(即不带参数那个), 其他几个, 一类是带&lt;code class=&quot;highlighter-rouge&quot;&gt;Callback&lt;/code&gt;的, 是提供的消息处理函数, 我们使用&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;一般都会重写其&lt;code class=&quot;highlighter-rouge&quot;&gt;handleMessage()&lt;/code&gt;方法来处理消息, 但是也可以不重写&lt;code class=&quot;highlighter-rouge&quot;&gt;handleMessage()&lt;/code&gt;, 而是在构造&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;的时候传入一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Callback&lt;/code&gt;回调, &lt;code class=&quot;highlighter-rouge&quot;&gt;Callback&lt;/code&gt;是&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;中的一个接口, 如下; 另一类是带标志位&lt;code class=&quot;highlighter-rouge&quot;&gt;async&lt;/code&gt;的, 是设置消息是否为异步处理, &lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;中的消息默认是同步处理的&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    public interface Callback {
+        public boolean handleMessage(Message msg);
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;这里我们以构造函数&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler(Callback callback, boolean async)&lt;/code&gt;进行分析, 如下; 可以看出, 这里的&lt;code class=&quot;highlighter-rouge&quot;&gt;mLooper&lt;/code&gt;是通过&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper.myLooper()&lt;/code&gt;获取的, 如果我们获取为&lt;code class=&quot;highlighter-rouge&quot;&gt;null&lt;/code&gt;也就是说当前线程没有&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;的话, 会抛出异常, 这个异常也是我们大多数初学者会遇到的; 这里也验证了上面所说的, &lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;是&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;构造所必须的, 如果当前线程没有&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;的话, 会抛异常(至于为什么说是当前线程, 接下来马上分析~)&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    public Handler(Callback callback, boolean async) {
+        ...
+        mLooper = Looper.myLooper();
+        if (mLooper == null) {
+            throw new RuntimeException(
+                &quot;Can't create handler inside thread &quot; + Thread.currentThread()
+                        + &quot; that has not called Looper.prepare()&quot;);
+        }
+        mQueue = mLooper.mQueue;
+        mCallback = callback;
+        mAsynchronous = async;
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;那么&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper.myLooper()&lt;/code&gt;又是如何获取当前线程的&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;的呢; 如下, 可以看出是通过&lt;code class=&quot;highlighter-rouge&quot;&gt;sThreadLocal&lt;/code&gt;获取的, &lt;code class=&quot;highlighter-rouge&quot;&gt;sThreadLocal&lt;/code&gt;是一个&lt;code class=&quot;highlighter-rouge&quot;&gt;ThreadLocal&lt;/code&gt;类型的实例&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    public static @Nullable Looper myLooper() {
+        return sThreadLocal.get();
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ThreadLocal&lt;/code&gt;不是一个线程, 而是用于在每个线程中存储数据的, &lt;code class=&quot;highlighter-rouge&quot;&gt;ThreadLocal&lt;/code&gt;可以在不同的线程中互不干扰的存储并提供数据; 那么它是如何实现在不同线程中互不干扰的存取数据的呢, 我们先来看其&lt;code class=&quot;highlighter-rouge&quot;&gt;set()&lt;/code&gt;方法, 可以看出, 其实际上会先去检查当前线程是否持有&lt;code class=&quot;highlighter-rouge&quot;&gt;ThreadLocalMap&lt;/code&gt;, 如果有的话, 直接将&lt;code class=&quot;highlighter-rouge&quot;&gt;value&lt;/code&gt;存储进去即可, 否则, 初始化当前线程的&lt;code class=&quot;highlighter-rouge&quot;&gt;ThreadLocalMap&lt;/code&gt;然后再存放值, 这样就可以根据不同的线程来存取各自线程的值了&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    public void set(T value) {
+        Thread t = Thread.currentThread();
+        ThreadLocalMap map = getMap(t);
+        if (map != null)
+            map.set(this, value);
+        else
+            createMap(t, value);
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;那么我们要构造&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;就必须获取当前线程的&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;, 那么我们又是什么时候构造和存储的&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;喃; 前面我们说了, 每个线程都可以有自己的&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;, 但是除了&lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;线程以外都默认没有创建; 我们先来看&lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;线程中是什么时候创建的&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;线程就是&lt;code class=&quot;highlighter-rouge&quot;&gt;ActivityThread&lt;/code&gt;, 在其&lt;code class=&quot;highlighter-rouge&quot;&gt;main()&lt;/code&gt;函数中, 我们发现了如下与&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;相关的语句, 这实际上是开启了主线程的消息处理(因为要处理各种事件, 所以一开始就开启了)&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public static void main(String[] args) {
+    ...
+    Looper.prepareMainLooper();
+    ...
+    Looper.loop();
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;我们继续看&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper.prepareMainLooper()&lt;/code&gt;, 其中实际上是调用了&lt;code class=&quot;highlighter-rouge&quot;&gt;prepare()&lt;/code&gt;, 如下; 这里我们看到了熟悉的&lt;code class=&quot;highlighter-rouge&quot;&gt;ThreadLocal.set()&lt;/code&gt;, 而且存储的是一个新的&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;, 那么这里就将线程和各自的&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;联系起来了, 我们在&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;构造函数中获取的也就是和各个线程相关的&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;了&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    private static void prepare(boolean quitAllowed) {
+        if (sThreadLocal.get() != null) {
+            throw new RuntimeException(&quot;Only one Looper may be created per thread&quot;);
+        }
+        sThreadLocal.set(new Looper(quitAllowed));
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;到这里我们知道了, &lt;code class=&quot;highlighter-rouge&quot;&gt;perpare&lt;/code&gt;实际上是在准备&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;, 那么&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper.loop()&lt;/code&gt;又是在做啥呢, 其实&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper.loop()&lt;/code&gt;是开启消息处理循环, 前面我们说了&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;不断的去检测&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;中是否有消息, 实际上就是在&lt;code class=&quot;highlighter-rouge&quot;&gt;loop()&lt;/code&gt;中开启的&lt;/p&gt;
+
+&lt;p&gt;这里我们暂时不讲&lt;code class=&quot;highlighter-rouge&quot;&gt;loop()&lt;/code&gt;, 而是放到后面讲消息处理的时候讲; 我们平时使用&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;的时候, 大多是在&lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;
+线程中创建的, 因为上面我们已经看到了, &lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;线程中默认是创建了&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;的, 所以不需要我们再去手动创建, 但是我们如何在子线程中构造和使用&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;呢; 其实在&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;的文档中已经给出了示例, 如下; 其实, 和上面&lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;线程中&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;的处理过程差不多, 只是由于&lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;线程的特殊性, 所以单独给它准备了一个方法~(实际上是做一些其他特殊判断和处理)&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class LooperThread extends Thread {
+      public Handler mHandler;
+
+      public void run() {
+          Looper.prepare();
+ 
+          mHandler = new Handler() {
+              public void handleMessage(Message msg) {
+                  // process incoming messages here
+              }
+          };
+
+          Looper.loop();
+      }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;hr /&gt;
+
+&lt;h3 id=&quot;三-消息发送&quot;&gt;三. 消息发送&lt;/h3&gt;
+
+&lt;p&gt;当我们需要通过&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;发送消息时, 可以使用两个系列, 一个是&lt;code class=&quot;highlighter-rouge&quot;&gt;postXXX&lt;/code&gt;系列, 一个&lt;code class=&quot;highlighter-rouge&quot;&gt;sendXXX&lt;/code&gt;系列&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;postXXX&lt;/strong&gt;: &lt;code class=&quot;highlighter-rouge&quot;&gt;post&lt;/code&gt;系列主要是发送一个自定义的&lt;code class=&quot;highlighter-rouge&quot;&gt;Runnable&lt;/code&gt;事件, 然后去执行(延迟执行)自定义事件&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;post(Runnable r)&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;postAtTime(Runnable r, long uptimeMillis)&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;postAtTime(Runnable r, Object token, long uptimeMillis)&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;postDelayed(Runnable r, long delayMillis)&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;postDelayed(Runnable r, Object token, long delayMillis)&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;postAtFrontOfQueue(Runnable r)&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;&lt;strong&gt;sendXXX&lt;/strong&gt;: &lt;code class=&quot;highlighter-rouge&quot;&gt;send&lt;/code&gt;系列主要是发送封装的一个&lt;code class=&quot;highlighter-rouge&quot;&gt;msg&lt;/code&gt;, 然后根据&lt;code class=&quot;highlighter-rouge&quot;&gt;msg&lt;/code&gt;带的&lt;code class=&quot;highlighter-rouge&quot;&gt;tag&lt;/code&gt;或者数据在&lt;code class=&quot;highlighter-rouge&quot;&gt;handleMessage()&lt;/code&gt;中进行处理&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;sendMessage(Message msg)&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;sendEmptyMessage(int what)&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;sendEmptyMessageDelayed(int what, long delayMillis)&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;sendEmptyMessageAtTime(int what, long uptimeMillis)&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;sendMessageDelayed(Message msg, long delayMillis)&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;sendMessageAtTime(Message msg, long uptimeMillis)&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;sendMessageAtFrontOfQueue(Message msg)&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;但是, 实际上&lt;code class=&quot;highlighter-rouge&quot;&gt;post&lt;/code&gt;系列最终还是将&lt;code class=&quot;highlighter-rouge&quot;&gt;Runnable&lt;/code&gt;事件封装为了一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Message&lt;/code&gt;对象交给了&lt;code class=&quot;highlighter-rouge&quot;&gt;send&lt;/code&gt;系列处理, 而不管是&lt;code class=&quot;highlighter-rouge&quot;&gt;postXXX&lt;/code&gt;还是&lt;code class=&quot;highlighter-rouge&quot;&gt;sendXXX&lt;/code&gt;, 最终转到的都是&lt;code class=&quot;highlighter-rouge&quot;&gt;enqueueMessage()&lt;/code&gt;进行处理; 另外, 不管是&lt;code class=&quot;highlighter-rouge&quot;&gt;post&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;Runnable&lt;/code&gt;还是&lt;code class=&quot;highlighter-rouge&quot;&gt;send&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;int what&lt;/code&gt;等其他类型, 其实最终都会将每一条消息封装为一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Message&lt;/code&gt;对象进行传递&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;四-消息存储&quot;&gt;四. 消息存储&lt;/h2&gt;
+
+&lt;p&gt;前面我们说过, &lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;会对发送的消息进行存储, 这一步就是在&lt;code class=&quot;highlighter-rouge&quot;&gt;enqueueMessage()&lt;/code&gt;中处理的; 如下; 需要注意的是这里传入的&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;是在创建&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;时创建, 也就是说和&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;相关, 因为涉及到多线程的处理, 所以需要清楚&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;的来源, 不然消息处理的时候就混了~&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    private boolean enqueueMessage(MessageQueue queue, Message msg, long uptimeMillis) {
+        msg.target = this;
+        if (mAsynchronous) {
+            msg.setAsynchronous(true);
+        }
+        return queue.enqueueMessage(msg, uptimeMillis);
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;这里我们简单看一下&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;中&lt;code class=&quot;highlighter-rouge&quot;&gt;Message&lt;/code&gt;的组织方式, 如下, &lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue.enqueueMessage()&lt;/code&gt;, 可以看出是很明显的单链表的存储方式, 之所以用单链表, 是因为单链表在增加和删除节点上有优势&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;boolean enqueueMessage(Message msg, long when) {
+    ...
+    needWake = mBlocked &amp;amp;&amp;amp; p.target == null &amp;amp;&amp;amp; msg.isAsynchronous();
+    Message prev;
+    for (;;) {
+        prev = p;
+        p = p.next;
+        if (p == null || when &amp;lt; p.when) {
+            break;
+        }
+        if (needWake &amp;amp;&amp;amp; p.isAsynchronous()) {
+            needWake = false;
+        }
+    }
+    msg.next = p; // invariant: p == prev.next
+    prev.next = msg;
+    ...
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;五-消息处理&quot;&gt;五. 消息处理&lt;/h2&gt;
+
+&lt;p&gt;还记得前面我们还有一个问题没有解决吗, 就是&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper.loop()&lt;/code&gt;过程, &lt;code class=&quot;highlighter-rouge&quot;&gt;Looper.loop()&lt;/code&gt;过程实际上就是开启循环处理消息的过程~&lt;/p&gt;
+
+&lt;p&gt;该函数如下; 首先获取消息处理线程的&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;, 前面我们已经看到了, &lt;code class=&quot;highlighter-rouge&quot;&gt;Looper.loop()&lt;/code&gt;是在消息处理线程中调用的, 所以这里获取到的, 也就是消息处理线程, 即创建&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;的线程; 之后获取对应线程的消息队列, 即&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;, 需要注意这里的&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;关联的, 而&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;的获取是通过&lt;code class=&quot;highlighter-rouge&quot;&gt;Thread.currentThread()&lt;/code&gt;来判断和获取的, 那么这里就能获取到和对应&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;相关联的&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;, 当我们在不同线程中调用&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler.sendMsg&lt;/code&gt;的时候, 插入的也是和该&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;关联的&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;, 这样, 一整条完整的线就串成了:  不同的线程往需要发送消息的线程的&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;中插入&lt;code class=&quot;highlighter-rouge&quot;&gt;Message&lt;/code&gt;, 而和线程关联的&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;又从该&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;中不断获取&lt;code class=&quot;highlighter-rouge&quot;&gt;Message&lt;/code&gt;处理, 这样就完成了线程的切换 !!&lt;/p&gt;
+
+&lt;p&gt;接下来就是用一个死循环(&lt;code class=&quot;highlighter-rouge&quot;&gt;for&lt;/code&gt;)开始消息处理了; 逻辑也比较简单, 其实就是不断的从&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;中获取消息(&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue.next()&lt;/code&gt;), 然后回调&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler.dispatchMessage(msg)&lt;/code&gt;分发, 需要注意的是, 这里的&lt;code class=&quot;highlighter-rouge&quot;&gt;msg.target&lt;/code&gt;实际上是存储的对应&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;的引用&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public static void loop() {
+    final Looper me = myLooper();
+    ...
+    final MessageQueue queue = me.mQueue;
+    ...
+
+     for (;;) {
+        Message msg = queue.next(); // might block
+        // 如果消息为null, 不处理咯
+        if (msg == null) {
+            // No message indicates that the message queue is quitting.
+            return;
+        }
+        ...
+        msg.target.dispatchMessage(msg);
+     }
+
+}
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;我们看一下&lt;code class=&quot;highlighter-rouge&quot;&gt;dispatchMessage&lt;/code&gt;的处理逻辑, 如下; 逻辑也很简单, 就是消息处理的优先级: 如果&lt;code class=&quot;highlighter-rouge&quot;&gt;Message&lt;/code&gt;自身设置了&lt;code class=&quot;highlighter-rouge&quot;&gt;Callback&lt;/code&gt;, 就直接执行&lt;code class=&quot;highlighter-rouge&quot;&gt;Message&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;Callback&lt;/code&gt;(这种情况对应前面说的&lt;code class=&quot;highlighter-rouge&quot;&gt;post(Runnable)&lt;/code&gt;的情况); 如果构造&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;的时候设置了&lt;code class=&quot;highlighter-rouge&quot;&gt;Callback&lt;/code&gt;那么交给该&lt;code class=&quot;highlighter-rouge&quot;&gt;Callback&lt;/code&gt;处理, 否则回调&lt;code class=&quot;highlighter-rouge&quot;&gt;handleMessage()&lt;/code&gt;处理&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    public void dispatchMessage(Message msg) {
+        if (msg.callback != null) {
+            handleCallback(msg);
+        } else {
+            if (mCallback != null) {
+                if (mCallback.handleMessage(msg)) {
+                    return;
+                }
+            }
+            handleMessage(msg);
+        }
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;这里还要注意的一点是从&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;中获取消息时, 即&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue.next()&lt;/code&gt;, 这是一个阻塞方法, 也就是说当&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;中没有消息的时候, 会阻塞在这里, 直到&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;中再次存储消息&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;六-总结&quot;&gt;六. 总结&lt;/h2&gt;
+
+&lt;p&gt;到这里&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;的整个&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;层面的运行机制我们就讲解完啦~ , 到这里我们对整个&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;的消息传递和处理机制也有了比较详细的了解了; 为加深记忆, 可以对着源码自己再过一遍过程~&lt;/p&gt;
+
+</description>
+        <pubDate>Sat, 15 Sep 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/09/15/Handler/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/09/15/Handler/</guid>
+        
+        <category>Android</category>
+        
+        
+      </item>
     
       <item>
         <title>Linux开机启动流程</title>
@@ -115,182 +466,6 @@
         <category>Linux</category>
         
         <category>操作系统</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>Java集合框架之ConcurrentHashMap</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;&lt;a href=&quot;https://husteryp.github.io/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/&quot;&gt;前面&lt;/a&gt;我们对Java集合框架有了一个基本的认识; 本文将主要讲解&lt;code class=&quot;highlighter-rouge&quot;&gt;ConcurrentHashMap&lt;/code&gt;的实现原理和处理细节&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;文章源码基于&lt;code class=&quot;highlighter-rouge&quot;&gt;JDK8&lt;/code&gt;&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;一-概述&quot;&gt;一. 概述&lt;/h2&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ConcurrentHashMap&lt;/code&gt;支持同步机制, 在多线程并发访问的情况下, 也能很好的支持安全的&lt;code class=&quot;highlighter-rouge&quot;&gt;get()&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;put()&lt;/code&gt;等操作; 本文将主要分析多线程情况下, &lt;code class=&quot;highlighter-rouge&quot;&gt;ConcurrentHashMap&lt;/code&gt;是如何保证线程安全操作的; 需要再次提醒的是, 文章源码基于&lt;code class=&quot;highlighter-rouge&quot;&gt;JDK8&lt;/code&gt;, 因为在&lt;code class=&quot;highlighter-rouge&quot;&gt;JDK7&lt;/code&gt;及其以前, &lt;code class=&quot;highlighter-rouge&quot;&gt;ConcurrentHashMap&lt;/code&gt;的实现有所不同, 这在文末将会提及&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ConcurrentHashMap&lt;/code&gt;中也有很多类似于&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;的处理机制, 比如, &lt;code class=&quot;highlighter-rouge&quot;&gt;Hash&lt;/code&gt;时将高位和低位组合, 减少&lt;code class=&quot;highlighter-rouge&quot;&gt;Hash&lt;/code&gt;冲突; &lt;code class=&quot;highlighter-rouge&quot;&gt;table&lt;/code&gt;的容量为&lt;code class=&quot;highlighter-rouge&quot;&gt;2&lt;/code&gt;的整数幂次方等, 这些可以参见&lt;a href=&quot;https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/&quot;&gt;Java集合框架之HashMap&lt;/a&gt;中对&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;的讲解; 本文将不再赘述重复之处&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;二-初始化&quot;&gt;二. 初始化&lt;/h2&gt;
-
-&lt;p&gt;初始化指的是对&lt;code class=&quot;highlighter-rouge&quot;&gt;table&lt;/code&gt;数组的初始化, &lt;code class=&quot;highlighter-rouge&quot;&gt;table&lt;/code&gt;被声明为&lt;code class=&quot;highlighter-rouge&quot;&gt;transient volatile Node&amp;lt;K,V&amp;gt;[] table;&lt;/code&gt;, 前面的&lt;code class=&quot;highlighter-rouge&quot;&gt;transient&lt;/code&gt;表示是的是不能被序列化, 与本文无关, 重点关注的是&lt;code class=&quot;highlighter-rouge&quot;&gt;volatile&lt;/code&gt;; 我们知道, &lt;code class=&quot;highlighter-rouge&quot;&gt;volatile&lt;/code&gt;能够保证变量对所有线程的可见性, 但是不能保证变量的原子性; 这里&lt;code class=&quot;highlighter-rouge&quot;&gt;table&lt;/code&gt;被声明为&lt;code class=&quot;highlighter-rouge&quot;&gt;transient&lt;/code&gt;, 表示多线程操作时, 各个线程始终能够获取到&lt;code class=&quot;highlighter-rouge&quot;&gt;table&lt;/code&gt;的最新值, 但是需要注意的是, &lt;code class=&quot;highlighter-rouge&quot;&gt;table&lt;/code&gt;里面的元素是不能保证可见性的, 关于这点, 可以参见&lt;a href=&quot;https://www.jianshu.com/p/5808db3e2ace&quot;&gt;如何保证数组元素的可见性&lt;/a&gt;中的解释&lt;/p&gt;
-
-&lt;p&gt;对&lt;code class=&quot;highlighter-rouge&quot;&gt;table&lt;/code&gt;的初始化是&lt;code class=&quot;highlighter-rouge&quot;&gt;lazy-init&lt;/code&gt;的, 也就是说在存放元素的时候才会进行&lt;code class=&quot;highlighter-rouge&quot;&gt;initTable()&lt;/code&gt;; 但是考虑到多线程使用的情况, 所以&lt;code class=&quot;highlighter-rouge&quot;&gt;initTable()&lt;/code&gt;操作需要保证每次只能有一个线程去执行该操作(因为多个线程去&lt;code class=&quot;highlighter-rouge&quot;&gt;initTable()&lt;/code&gt;的话, 会造成&lt;code class=&quot;highlighter-rouge&quot;&gt;table&lt;/code&gt;被&lt;code class=&quot;highlighter-rouge&quot;&gt;new&lt;/code&gt;多次)&lt;/p&gt;
-
-&lt;p&gt;下面我们来看&lt;code class=&quot;highlighter-rouge&quot;&gt;initTable()&lt;/code&gt;的实现, 如下; 这里引出一个很重要的变量&lt;code class=&quot;highlighter-rouge&quot;&gt;sizeCtl&lt;/code&gt;和一个很重要的概念&lt;strong&gt;CAS&lt;/strong&gt;;&lt;/p&gt;
-
-&lt;p&gt;我们先来看&lt;code class=&quot;highlighter-rouge&quot;&gt;sizeCtl&lt;/code&gt;, 如下为&lt;code class=&quot;highlighter-rouge&quot;&gt;sizeCtl&lt;/code&gt;的声明,从其注释可以看出, &lt;code class=&quot;highlighter-rouge&quot;&gt;sizeCtl&lt;/code&gt;是用于控制&lt;code class=&quot;highlighter-rouge&quot;&gt;table&lt;/code&gt;的初始化和扩容的, 当&lt;code class=&quot;highlighter-rouge&quot;&gt;sizeCtl&lt;/code&gt;为负数时, 表示&lt;code class=&quot;highlighter-rouge&quot;&gt;table&lt;/code&gt;正在被初始化或者扩容(&lt;code class=&quot;highlighter-rouge&quot;&gt;sizeCtl == -1&lt;/code&gt;表示初始化, &lt;code class=&quot;highlighter-rouge&quot;&gt;sizeCtl == -(1+n)&lt;/code&gt;表示正在被&lt;code class=&quot;highlighter-rouge&quot;&gt;n&lt;/code&gt;个线程扩容); 默认为&lt;code class=&quot;highlighter-rouge&quot;&gt;0&lt;/code&gt;表示还没有初始化; 当&lt;code class=&quot;highlighter-rouge&quot;&gt;sizeCtl&lt;/code&gt;大于&lt;code class=&quot;highlighter-rouge&quot;&gt;0&lt;/code&gt;时, 表示的是扩容阈值&lt;/p&gt;
-
-&lt;p&gt;从其注释也可以知道, 只能有一个线程去初始化&lt;code class=&quot;highlighter-rouge&quot;&gt;table&lt;/code&gt;; 那么&lt;code class=&quot;highlighter-rouge&quot;&gt;ConcurrentHashMap&lt;/code&gt;是如何保证一个线程去初始化&lt;code class=&quot;highlighter-rouge&quot;&gt;table&lt;/code&gt;的呢&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    /**
-     * Table initialization and resizing control.  When negative, the
-     * table is being initialized or resized: -1 for initialization,
-     * else -(1 + the number of active resizing threads).  Otherwise,
-     * when table is null, holds the initial table size to use upon
-     * creation, or 0 for default. After initialization, holds the
-     * next element count value upon which to resize the table.
-     */
-    private transient volatile int sizeCtl;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;在继续介绍之前, 我们还需要了解的一个概念是&lt;code class=&quot;highlighter-rouge&quot;&gt;CAS&lt;/code&gt;, 所谓的&lt;code class=&quot;highlighter-rouge&quot;&gt;CAS&lt;/code&gt;就是&lt;code class=&quot;highlighter-rouge&quot;&gt;Compare and Swap&lt;/code&gt;, 这个算法的基本思想就是不断地去比较当前内存中的变量值与你指定的一个变量值是否相等，如果相等，则接受你指定的修改的值，否则拒绝你的操作, &lt;code class=&quot;highlighter-rouge&quot;&gt;ConcurrentHashMap&lt;/code&gt;就是利用&lt;code class=&quot;highlighter-rouge&quot;&gt;CAS&lt;/code&gt;实现无锁化, 大大降低了锁代理点的消耗&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ConcurrentHashMap&lt;/code&gt;利用的是&lt;code class=&quot;highlighter-rouge&quot;&gt;sun.misc.Unsafe&lt;/code&gt;提供的&lt;code class=&quot;highlighter-rouge&quot;&gt;CAS&lt;/code&gt;算法实现, 也就是&lt;code class=&quot;highlighter-rouge&quot;&gt;ConcurrentHashMap&lt;/code&gt;中的&lt;code class=&quot;highlighter-rouge&quot;&gt;U&lt;/code&gt;(声明为&lt;code class=&quot;highlighter-rouge&quot;&gt;private static final sun.misc.Unsafe U;&lt;/code&gt;); 这里以&lt;code class=&quot;highlighter-rouge&quot;&gt;U.compareAndSwapInt(this, SIZECTL, sc, -1)&lt;/code&gt;操作为例讲解, 表示的是将&lt;code class=&quot;highlighter-rouge&quot;&gt;sc&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;this&lt;/code&gt;对象的&lt;code class=&quot;highlighter-rouge&quot;&gt;SIZECTL&lt;/code&gt;域的值进行比较, 如果相同的话, 则修改&lt;code class=&quot;highlighter-rouge&quot;&gt;SIZECTL&lt;/code&gt;为&lt;code class=&quot;highlighter-rouge&quot;&gt;-1&lt;/code&gt;, 同时返回&lt;code class=&quot;highlighter-rouge&quot;&gt;true&lt;/code&gt;, 否则, 不修改&lt;code class=&quot;highlighter-rouge&quot;&gt;SIZECTL&lt;/code&gt;的值, 并返回&lt;code class=&quot;highlighter-rouge&quot;&gt;false&lt;/code&gt;; 其余的&lt;code class=&quot;highlighter-rouge&quot;&gt;compareAndSwapXXX()&lt;/code&gt;也是一样的&lt;/p&gt;
-
-&lt;p&gt;这里可以再通过&lt;code class=&quot;highlighter-rouge&quot;&gt;CAS&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;C&lt;/code&gt;语言实现来理解: 可以看出&lt;code class=&quot;highlighter-rouge&quot;&gt;CAS&lt;/code&gt;中的操作都是原子的&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;int compare_and_swap (int* reg, int oldval, int newval)
-{
-  ATOMIC();
-  int old_reg_val = *reg;
-  if (old_reg_val == oldval)
-     *reg = newval;
-  END_ATOMIC();
-  return old_reg_val;
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;这里还有一点需要注意的是, &lt;code class=&quot;highlighter-rouge&quot;&gt;SIZECTL&lt;/code&gt;所代表的含义; 如下, 这其实是&lt;code class=&quot;highlighter-rouge&quot;&gt;sun.misc.Unsafa&lt;/code&gt;的使用要求, 代表的实际上是&lt;code class=&quot;highlighter-rouge&quot;&gt;ConcurrentHashMap&lt;/code&gt;中的&lt;code class=&quot;highlighter-rouge&quot;&gt;sizeCtl&lt;/code&gt;域, 也就是说后文对&lt;code class=&quot;highlighter-rouge&quot;&gt;SIZECTL&lt;/code&gt;的修改实际上就是作用到具体实例的&lt;code class=&quot;highlighter-rouge&quot;&gt;sizeCtl&lt;/code&gt;域上的&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    private static final long SIZECTL;
-
-    static {
-            ...
-            U = sun.misc.Unsafe.getUnsafe();
-            Class&amp;lt;?&amp;gt; k = ConcurrentHashMap.class;
-            SIZECTL = U.objectFieldOffset
-                (k.getDeclaredField(&quot;sizeCtl&quot;));
-            ...
-    }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;现在我们开始来看&lt;code class=&quot;highlighter-rouge&quot;&gt;initTable()&lt;/code&gt;的实现, 如下; 所有的操作都在&lt;code class=&quot;highlighter-rouge&quot;&gt;while&lt;/code&gt;循环中, 先去判断&lt;code class=&quot;highlighter-rouge&quot;&gt;sizeCtl&lt;/code&gt;的值是否为负数, 为负数表示已经有线程在初始化了, 所以直接进行&lt;code class=&quot;highlighter-rouge&quot;&gt;Thread.yield()&lt;/code&gt;让出&lt;code class=&quot;highlighter-rouge&quot;&gt;CPU&lt;/code&gt;资源, 从运行状态变为就绪状态, 因为是在&lt;code class=&quot;highlighter-rouge&quot;&gt;while&lt;/code&gt;循环中, 所以在即使该线程再次变为运行状态, 但是初始化还未完成的话, 还是只有&lt;code class=&quot;highlighter-rouge&quot;&gt;yield()&lt;/code&gt;, 这也是自旋(不断尝试, 不断等待的过程)的由来; 如果&lt;code class=&quot;highlighter-rouge&quot;&gt;sizeCtl&lt;/code&gt;非负, 则先使用&lt;code class=&quot;highlighter-rouge&quot;&gt;U.compareAndSwapInt(this, SIZECTL, sc,
--1)&lt;/code&gt;来判断是否能成功将&lt;code class=&quot;highlighter-rouge&quot;&gt;sizeCtl&lt;/code&gt;置为&lt;code class=&quot;highlighter-rouge&quot;&gt;-1&lt;/code&gt;(含义见上文); 因为&lt;code class=&quot;highlighter-rouge&quot;&gt;sizeCtl&lt;/code&gt;也是用&lt;code class=&quot;highlighter-rouge&quot;&gt;volatile&lt;/code&gt;修饰的, 所以, 能够保证其他线程得到&lt;code class=&quot;highlighter-rouge&quot;&gt;sizeCtl&lt;/code&gt;的最新值; 之后便是进行&lt;code class=&quot;highlighter-rouge&quot;&gt;table&lt;/code&gt;空间分配&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    private final Node&amp;lt;K,V&amp;gt;[] initTable() {
-        Node&amp;lt;K,V&amp;gt;[] tab; int sc;
-        while ((tab = table) == null || tab.length == 0) {
-            if ((sc = sizeCtl) &amp;lt; 0)
-                Thread.yield(); // lost initialization race; just spin
-            else if (U.compareAndSwapInt(this, SIZECTL, sc, -1)) {
-                try {
-                    if ((tab = table) == null || tab.length == 0) {
-                        int n = (sc &amp;gt; 0) ? sc : DEFAULT_CAPACITY;
-                        @SuppressWarnings(&quot;unchecked&quot;)
-                        Node&amp;lt;K,V&amp;gt;[] nt = (Node&amp;lt;K,V&amp;gt;[])new Node&amp;lt;?,?&amp;gt;[n];
-                        table = tab = nt;
-                        sc = n - (n &amp;gt;&amp;gt;&amp;gt; 2); // 类似与n * loadFactor
-                    }
-                } finally {
-                    sizeCtl = sc;
-                }
-                break;
-            }
-        }
-        return tab;
-   }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;三-扩容&quot;&gt;三. 扩容&lt;/h2&gt;
-
-&lt;p&gt;扩容操作是由&lt;code class=&quot;highlighter-rouge&quot;&gt;transfer()&lt;/code&gt;函数完成的,&lt;/p&gt;
-
-&lt;h2 id=&quot;三-存放值&quot;&gt;三. 存放值&lt;/h2&gt;
-
-&lt;p&gt;插入时恰好在有线程在扩容, 当前线程将参与帮助扩容&lt;/p&gt;
-
-&lt;p&gt;获取ConcurrentHashMap这个对象字段sizeCtl在内存中的偏移量&lt;/p&gt;
-
-&lt;p&gt;扩容: 自旋锁&lt;/p&gt;
-
-&lt;p&gt;get&lt;/p&gt;
-
-&lt;p&gt;put&lt;/p&gt;
-
-&lt;p&gt;U.compareAndSwapInt(this, SIZECTL, sc, -1): 比较SIZECTL和sc的值是否相等, 如果相等, 则接受修改值, 即将SIZECTL修改为-1, 如果值修改成功, 则返回true, 否则返回false&lt;/p&gt;
-
-&lt;p&gt;CAS是项 乐观锁 技术，当多个线程尝试使用CAS同时更新同一个变量时，只有其中一个线程能更新变量的值，而其它线程都失败，失败的线程并不会被挂起，而是被告知这次竞争中失败，并可以再次尝试&lt;/p&gt;
-
-&lt;p&gt;沿用了与它同时期的HashMap版本的思想，底层依然由“数组”+链表+红黑树的方式思想&lt;/p&gt;
-
-&lt;p&gt;随处可以看到U, 大量使用了U.compareAndSwapXXX的方法，这个方法是利用一个CAS算法实现无锁化的修改值的操作，他可以大大降低锁代理的性能消耗&lt;/p&gt;
-
-&lt;p&gt;支持并发扩容的&lt;/p&gt;
-
-&lt;p&gt;sizeCtl, 线程自旋&lt;/p&gt;
-
-&lt;p&gt;U.compareAndSwapInt: 双重check&lt;/p&gt;
-
-&lt;p&gt;在java7的ConcurrentHashMap实现上，使用了所谓分段锁的方法，而所谓分段锁就是将记录分段存储，不同段的访问互相不影响，某个线程想要访问某一个段的时候就需要对该段上锁，而其他线程不能访问在有其他线程加锁的段&lt;/p&gt;
-
-&lt;p&gt;ConcurrentHashMap是基于CAS来实现线程安全的，CAS是一种轻量级的锁，它不会阻塞线程，而是会等待直到获得变量，然后进行业务操作，这和锁需要阻塞线程来实现线程安全来比较，是一种很大的改良，&lt;/p&gt;
-
-&lt;p&gt;iterators被设计为每次只能被一个线程使用&lt;/p&gt;
-
-&lt;p&gt;对于ConcurrentHashMap是如何提高其效率的，可能大多人只是知道它使用了多个锁代替HashTable中的单个锁，也就是锁分离技术（Lock Stripping）&lt;/p&gt;
-
-&lt;p&gt;ConcurrentHashMap的迭代器不是Fast-Fail的方式，所以在迭代的过程中别其他线程添加/删除了元素，不会抛出异常，也不能体现出元素的改动。但也没有关系，因为每个entry的成员除了value都是final修饰的，暴漏出去也不会对其他元素造成影响&lt;/p&gt;
-
-&lt;p&gt;我们一般说一个操作happen-before另一个操作，这到底是什么意思呢？当说操作A happen-before操作B时，我们其实是在说在发生操作B之前，操作A对内存施加的影响能够被观测到&lt;/p&gt;
-
-&lt;p&gt;HashTable的同步使用锁来保证的，并且所有同步操作使用的是同一个锁对象。这样若有n个线程同时在get时，这n个线程要串行的等待来获取锁&lt;/p&gt;
-
-&lt;p&gt;ConcurrentHashMap则是将每16组元素使用同一个锁(默认), 提高效率(分离锁)—有待验证(ConcurrentHashMap内部使用段(Segment)来表示这些不同的部分，每个段其实就是一个小的hash table，它们有自己的锁。只要多个修改操作发生在不同的段上，它们就可以并发进行)&lt;/p&gt;
-
-&lt;p&gt;通过他的说法，我必须纠正我一开始以为ConcurrentHashMap完全可以代替HashTable的说法，如果你的环境要求“强一致性”的话，就不能用ConcurrentHashMap了，它的get，clear方法和迭代器都是“弱一致性”的。不过真正需要“强一致性”的场景可能非常少，我们大多应用中ConcurrentHashMap是满足的。&lt;/p&gt;
-
-&lt;p&gt;为了加快定位段以及段中hash槽的速度，每个段hash槽的的个数都是2^n&lt;/p&gt;
-
-&lt;p&gt;&lt;a href=&quot;https://blog.csdn.net/mian_CSDN/article/details/70185104&quot;&gt;ConcurrentHashMap(JDK1.8)为什么要放弃Segment&lt;/a&gt;&lt;/p&gt;
-
-&lt;p&gt;在JDK1.7 (??)版本之前, ConcurrentHashMap采用的是锁分离技术(可重入锁), JDK1.8之后采用的是CAS算法&lt;/p&gt;
-
-&lt;p&gt;JDK7版本参见博客:
-http://ifeve.com/java-concurrent-hashmap-1/
-http://ifeve.com/java-concurrent-hashmap-2/&lt;/p&gt;
-</description>
-        <pubDate>Sat, 08 Sep 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/09/08/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BConcurrentHashMap/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/09/08/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BConcurrentHashMap/</guid>
-        
-        <category>Java</category>
         
         
       </item>
