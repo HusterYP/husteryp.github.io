@@ -15,6 +15,22 @@ tags:
 
 文章源码基于`JDK8`
 
+
+**`Java`集合框架系列博客**: 
+
+1. [Java集合框架概述](https://husteryp.github.io/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/)
+
+2. [Java集合框架之List](https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BList/)
+
+3. [Java集合框架之HashMap](https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/)
+
+4. [Java集合框架之Set](https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BSet/)
+
+5. [Java集合框架之LinkedHashMap](https://husteryp.github.io/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/)
+
+6. [Java集合框架之Queue](https://husteryp.github.io/2018/09/06/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BQueue/)
+
+
 ----
 
 # 正文
