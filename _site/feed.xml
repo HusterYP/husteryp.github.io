@@ -5,9 +5,273 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Sun, 16 Sep 2018 12:36:52 +0800</pubDate>
-    <lastBuildDate>Sun, 16 Sep 2018 12:36:52 +0800</lastBuildDate>
+    <pubDate>Thu, 20 Sep 2018 15:57:02 +0800</pubDate>
+    <lastBuildDate>Thu, 20 Sep 2018 15:57:02 +0800</lastBuildDate>
     <generator>Jekyll v3.8.3</generator>
+    
+      <item>
+        <title>View之事件分发机制</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;源码分析之&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;系列之事件分发机制&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;一-概述&quot;&gt;一. 概述&lt;/h2&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的触摸事件分发是&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;系列中的一个重难点, 主要需要掌握的是&lt;code class=&quot;highlighter-rouge&quot;&gt;MotionEvent&lt;/code&gt;的传递规则和处理规则, 这是自定义&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;中冲突处理的理论来源~&lt;/p&gt;
+
+&lt;p&gt;触摸事件分发的处理主要是对&lt;code class=&quot;highlighter-rouge&quot;&gt;MotionEvent&lt;/code&gt;的处理, &lt;code class=&quot;highlighter-rouge&quot;&gt;MotionEvent&lt;/code&gt;封装了用户的一系列行为, 如: &lt;code class=&quot;highlighter-rouge&quot;&gt;ACTION_DOWN&lt;/code&gt;(手指刚触摸屏幕), &lt;code class=&quot;highlighter-rouge&quot;&gt;ACTION_MOVE&lt;/code&gt;(手指在屏幕上滑动), &lt;code class=&quot;highlighter-rouge&quot;&gt;ACTION_UP&lt;/code&gt;(手指抬起)等; 以及事件发生的坐标(通过&lt;code class=&quot;highlighter-rouge&quot;&gt;MotionEvent.getX()&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;MotionEvent.getY()&lt;/code&gt;可以得到)等&lt;/p&gt;
+
+&lt;p&gt;在开始讲解之前需要明确的一些概念是:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;一个事件序列: 指的是一次完整的触摸过程, 即从&lt;code class=&quot;highlighter-rouge&quot;&gt;ACTION_DOWN&lt;/code&gt;(手指触摸屏幕)开始, 到中间的一系列&lt;code class=&quot;highlighter-rouge&quot;&gt;ACTION_MOVE&lt;/code&gt;(手指滑动), 最后到&lt;code class=&quot;highlighter-rouge&quot;&gt;ACTION_UP&lt;/code&gt;为止(手指抬起); 总结起来就是&lt;code class=&quot;highlighter-rouge&quot;&gt;down...move...move..up&lt;/code&gt;&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;触摸事件的分发其实是一个从上到下不断递归传递和拦截的过程; 一个大致的传递流程是: &lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt; –&amp;gt; &lt;code class=&quot;highlighter-rouge&quot;&gt;Window&lt;/code&gt; –&amp;gt; &lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt; –&amp;gt; &lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;, 当然如果向下传递但是&lt;code class=&quot;highlighter-rouge&quot;&gt;MotionEvent&lt;/code&gt;又没有消耗的话, 又会逐层返回, 最终将没有消耗的&lt;code class=&quot;highlighter-rouge&quot;&gt;MotionEvent&lt;/code&gt;交给&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;处理&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;二-事件分发之源&quot;&gt;二. 事件分发之源&lt;/h2&gt;
+
+&lt;p&gt;触摸事件产生和分发的源头是在&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;中处理的, 即在&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;dispatchTouchEvent()&lt;/code&gt;中; 如下; 处理思路也很简单, 只是单纯的向下分发而已, 如果事件没有得到处理, 那么最终就交给&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;onTouchEvent()&lt;/code&gt;处理; 另外, 这里还为用户提供了一个监听和拦截事件的方法, 即&lt;code class=&quot;highlighter-rouge&quot;&gt;onUserInteraction()&lt;/code&gt;, 该方法在&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;中是一个空实现, 可以重写该方法在事件向下传递之前进行特殊拦截和处理&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    public boolean dispatchTouchEvent(MotionEvent ev) {
+        if (ev.getAction() == MotionEvent.ACTION_DOWN) {
+            onUserInteraction();  // 自定义事件拦截
+        }
+        if (getWindow().superDispatchTouchEvent(ev)) {  // 通过Window向下分发事件
+            return true;
+        }
+        return onTouchEvent(ev);  // 如果事件最终没有被处理, 那么交给Activity自己的onTouchEvent()来处理
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;中的&lt;code class=&quot;highlighter-rouge&quot;&gt;Window&lt;/code&gt;实际上是&lt;code class=&quot;highlighter-rouge&quot;&gt;PhoneWindow&lt;/code&gt;, 这里通过&lt;code class=&quot;highlighter-rouge&quot;&gt;PhoneWindow.superDispatchTouchEvent()&lt;/code&gt;传递实际上是只是简单调用了&lt;code class=&quot;highlighter-rouge&quot;&gt;mDecor.superDispatchTouchEvent(event)&lt;/code&gt;, 而这里的&lt;code class=&quot;highlighter-rouge&quot;&gt;mDecor&lt;/code&gt;实际上是&lt;code class=&quot;highlighter-rouge&quot;&gt;DecorView&lt;/code&gt;, 是一个&lt;code class=&quot;highlighter-rouge&quot;&gt;FrameLayout&lt;/code&gt;(&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;), 在&lt;code class=&quot;highlighter-rouge&quot;&gt;DecorView&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;superDispatchTouchEvent()&lt;/code&gt;方法中, 也只是简单的将事件传递给&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;进行分发(即&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup.dispatchTouchEvent()&lt;/code&gt;); 到这里就将事件传递给&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;处理了, 也是事件分发处理中最主要的一部分&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;三-viewgroup分发事件&quot;&gt;三. ViewGroup分发事件&lt;/h2&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup.dispatchTouchEvent()&lt;/code&gt;中对事件的分发处理过程比较长, 实际上大致分成了三个部分来处理&lt;/p&gt;
+
+&lt;h3 id=&quot;31-事件拦截&quot;&gt;3.1 事件拦截&lt;/h3&gt;
+
+&lt;p&gt;首先, &lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;会判断是否进行事件拦截, 如下; 从后面将事件分发给子&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的条件可以看出, 如果&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;进行了事件拦截, 那么该事件序列将不再向下分发; 这里还需要注意的一点是, &lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;判断是否进行事件拦截的条件一个是为&lt;code class=&quot;highlighter-rouge&quot;&gt;ACTION_DOWN&lt;/code&gt;时, 另一个是&lt;code class=&quot;highlighter-rouge&quot;&gt;mFirstTouchTarget != null&lt;/code&gt;时; 也就是说一个事件序列的在开始时, 即&lt;code class=&quot;highlighter-rouge&quot;&gt;ACTION_DOWN&lt;/code&gt;时一定会调用&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;onInterceptTouchEvent&lt;/code&gt;(当然, 还有一个影响因素是&lt;code class=&quot;highlighter-rouge&quot;&gt;FLAG_DISALLOW_INTERCEPT&lt;/code&gt;, 我们稍后讲解); 至于&lt;code class=&quot;highlighter-rouge&quot;&gt;mFirstTouchTarget&lt;/code&gt;的赋值是在后面分发给子&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;时, 如果有子&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;处理了事件那么&lt;code class=&quot;highlighter-rouge&quot;&gt;mFirstTouchTarget&lt;/code&gt;将会被赋值;&lt;/p&gt;
+
+&lt;p&gt;上面是&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;进行事件拦截的基本思路, 简单总结起来就是:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ACTION_DOWN&lt;/code&gt;时, 如果&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;进行了事件拦截(&lt;code class=&quot;highlighter-rouge&quot;&gt;onInterceptTouchEvent()&lt;/code&gt;返回&lt;code class=&quot;highlighter-rouge&quot;&gt;true&lt;/code&gt;), 那么同一事件序列将不再向下分发(因为之后的&lt;code class=&quot;highlighter-rouge&quot;&gt;ACTION_MOVE&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;ACTION_UP&lt;/code&gt;到来时, 由于之前&lt;code class=&quot;highlighter-rouge&quot;&gt;ACTION_DOWN&lt;/code&gt;时进行了事件拦截, &lt;code class=&quot;highlighter-rouge&quot;&gt;mFirstTouchTarget&lt;/code&gt;没有机会赋值, 所以仍然为&lt;code class=&quot;highlighter-rouge&quot;&gt;null&lt;/code&gt;, 故直接走&lt;code class=&quot;highlighter-rouge&quot;&gt;else&lt;/code&gt;语句, 即&lt;code class=&quot;highlighter-rouge&quot;&gt;intercepted = true&lt;/code&gt;);&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ACTION_DOWN&lt;/code&gt;时, 如果&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;不进行事件拦截, 并且在事件向下分发时, 有子&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;处理了事件, 那么&lt;code class=&quot;highlighter-rouge&quot;&gt;mFirstTouchTarget&lt;/code&gt;将会被赋值, 即不为&lt;code class=&quot;highlighter-rouge&quot;&gt;null&lt;/code&gt;, 此时仍然会继续调用&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;onInterceptTouchEvent&lt;/code&gt;判断是否进行事件拦截, 需要注意的是此时仍然在同一事件序列中&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ACTION_DOWN&lt;/code&gt;时, 如果&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;不进行事件拦截, 并且在事件向下分发时, 也没有子&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;进行事件处理, 那么&lt;code class=&quot;highlighter-rouge&quot;&gt;mFirstTouchTarget&lt;/code&gt;仍为&lt;code class=&quot;highlighter-rouge&quot;&gt;null&lt;/code&gt;, 即走&lt;code class=&quot;highlighter-rouge&quot;&gt;else&lt;/code&gt;, 交由&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;处理事件&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;strong&gt;注&lt;/strong&gt;: 只有当&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;拦截了事件或者子&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;不处理事件时, &lt;code class=&quot;highlighter-rouge&quot;&gt;onInterceptTouchEvent&lt;/code&gt;才只会调用一次&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;            // ViewGroup是否进行事件拦截
+            final boolean intercepted;
+            if (actionMasked == MotionEvent.ACTION_DOWN
+                    || mFirstTouchTarget != null) {
+                final boolean disallowIntercept = (mGroupFlags &amp;amp; FLAG_DISALLOW_INTERCEPT) != 0;
+                if (!disallowIntercept) {
+                    intercepted = onInterceptTouchEvent(ev);
+                    ev.setAction(action); // restore action in case it was changed
+                } else {
+                    intercepted = false;
+                }
+            } else {
+                // There are no touch targets and this action is not an initial down
+                // so this view group continues to intercept touches.
+                intercepted = true;
+            }
+
+            if (!canceled &amp;amp;&amp;amp; !intercepted) { // 如果拦截事件, 将不再分发给子View
+                // 事件分发给子View
+                ....
+            }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;另外, 上面还讲了, 在&lt;code class=&quot;highlighter-rouge&quot;&gt;ACTION_DOWN&lt;/code&gt;时, 一定会调用&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;onInterceptTouchEvent&lt;/code&gt;, 这里还有一个影响因素是标志位&lt;code class=&quot;highlighter-rouge&quot;&gt;FLAG_DISALLOW_INTERCEPT&lt;/code&gt;, 该标志位是通过&lt;code class=&quot;highlighter-rouge&quot;&gt;requestDisallowInterceptTouchEvent()&lt;/code&gt;设置的, 作用是在子&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;中强制父&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;不进行事件拦截, 但是该标志位不能影响&lt;code class=&quot;highlighter-rouge&quot;&gt;ACTION_DOWN&lt;/code&gt;, 因为在一个事件序列开始之前会先进行状态重置, 如下; 在&lt;code class=&quot;highlighter-rouge&quot;&gt;resetTouchState()&lt;/code&gt;中会将该标志位重置, 所以就不会影响&lt;code class=&quot;highlighter-rouge&quot;&gt;ACTION_DOWN&lt;/code&gt;啦~&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;            if (actionMasked == MotionEvent.ACTION_DOWN) {
+                // Throw away all previous state when starting a new touch gesture.
+                // The framework may have dropped the up or cancel event for the previous gesture
+                // due to an app switch, ANR, or some other state change.
+                cancelAndClearTouchTargets(ev);
+                resetTouchState(); // 状态重置
+            }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;32-事件分发&quot;&gt;3.2 事件分发&lt;/h3&gt;
+
+&lt;p&gt;如果&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;不进行事件拦截的话, 会将事件分发给子&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;处理; 事件分发的主要代码如下; 逻辑也比较简单, 就是遍历所有的子&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;, 然后通过&lt;code class=&quot;highlighter-rouge&quot;&gt;dispatchTransformedTouchEvent()&lt;/code&gt;进行将事件传递给子&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;                    if (!canceled &amp;amp;&amp;amp; !intercepted) {
+                        ...
+                        for (int i = childrenCount - 1; i &amp;gt;= 0; i--) {
+                            if (dispatchTransformedTouchEvent(ev, false, child, idBitsToAssign)) {
+                                // Child wants to receive touch within its bounds.
+                                mLastTouchDownTime = ev.getDownTime();
+                                if (preorderedList != null) {
+                                    // childIndex points into presorted list, find original index
+                                    for (int j = 0; j &amp;lt; childrenCount; j++) {
+                                        if (children[childIndex] == mChildren[j]) {
+                                            mLastTouchDownIndex = j;
+                                            break;
+                                        }
+                                    }
+                                } else {
+                                    mLastTouchDownIndex = childIndex;
+                                }
+                                mLastTouchDownX = ev.getX();
+                                mLastTouchDownY = ev.getY();
+                                newTouchTarget = addTouchTarget(child, idBitsToAssign); // 设置mFirstTouchTarget的值
+                                alreadyDispatchedToNewTouchTarget = true;
+                                break;
+                            }
+                        }
+                        ...
+                    }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;我们继续来看&lt;code class=&quot;highlighter-rouge&quot;&gt;dispatchTransformedTouchEvent()&lt;/code&gt;的处理过程, 如下; 从上面的代码中我们可以看出, 将事件分发给子&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的时候, 调用&lt;code class=&quot;highlighter-rouge&quot;&gt;dispatchTransformedTouchEvent()&lt;/code&gt;传入的&lt;code class=&quot;highlighter-rouge&quot;&gt;child&lt;/code&gt;非空, 所以应该调用的是&lt;code class=&quot;highlighter-rouge&quot;&gt;child.dispatchTouchEvent(event)&lt;/code&gt;, 这样就将事件传递到子&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;中去了; 这里关于子&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;dispatchTouchEvent()&lt;/code&gt;处理在后文继续讲解&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private boolean dispatchTransformedTouchEvent(MotionEvent event, boolean cancel,
+            View child, int desiredPointerIdBits) {
+        ...
+        if (newPointerIdBits == oldPointerIdBits) {
+            if (child == null || child.hasIdentityMatrix()) {
+                if (child == null) {
+                    handled = super.dispatchTouchEvent(event); // child非null
+                } else {
+                    final float offsetX = mScrollX - child.mLeft;
+                    final float offsetY = mScrollY - child.mTop;
+                    event.offsetLocation(offsetX, offsetY);
+
+                    handled = child.dispatchTouchEvent(event); // 调用child.dispatchTouchEvent(event)
+
+                    event.offsetLocation(-offsetX, -offsetY);
+                }
+                return handled;
+            }
+            transformedEvent = MotionEvent.obtain(event);
+        } else {
+            transformedEvent = event.split(newPointerIdBits);
+        }
+        ...
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;上面我们说过, 如果子&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;处理了事件的话, 将会去设置&lt;code class=&quot;highlighter-rouge&quot;&gt;mFirstTouchTarget&lt;/code&gt;的值, 该值的设置其实是在&lt;code class=&quot;highlighter-rouge&quot;&gt;addTouchTarget()&lt;/code&gt;中, 也就是说, 当&lt;code class=&quot;highlighter-rouge&quot;&gt;dispatchTransformedTouchEvent()&lt;/code&gt;返回&lt;code class=&quot;highlighter-rouge&quot;&gt;true&lt;/code&gt;, 即有子&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;处理了事件的话, 就会去调用该函数, 也就证明了我们前面所说的; 我们来看&lt;code class=&quot;highlighter-rouge&quot;&gt;addTouchTarget()&lt;/code&gt;, 如下; 可以看出这里实际上相当于一个单链表&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    private TouchTarget addTouchTarget(@NonNull View child, int pointerIdBits) {
+        final TouchTarget target = TouchTarget.obtain(child, pointerIdBits);
+        target.next = mFirstTouchTarget; 
+        mFirstTouchTarget = target; // 设置mFirstTouchTarget
+        return target;
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;33-viewgroup处理事件&quot;&gt;3.3 ViewGroup处理事件&lt;/h3&gt;
+
+&lt;p&gt;如果&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;拦截了事件或者子&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;没有进行事件处理, 那么&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;将进行事件处理, 如下; 可以看出, &lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;进行事件处理也是调用&lt;code class=&quot;highlighter-rouge&quot;&gt;dispatchTransformedTouchEvent()&lt;/code&gt;, 只是传入的&lt;code class=&quot;highlighter-rouge&quot;&gt;child&lt;/code&gt;为&lt;code class=&quot;highlighter-rouge&quot;&gt;null&lt;/code&gt;, 那么从上面的&lt;code class=&quot;highlighter-rouge&quot;&gt;dispatchTransformedTouchEvent()&lt;/code&gt;代码中我们可以看出, 如果&lt;code class=&quot;highlighter-rouge&quot;&gt;child&lt;/code&gt;为&lt;code class=&quot;highlighter-rouge&quot;&gt;null&lt;/code&gt;调用的应该就是&lt;code class=&quot;highlighter-rouge&quot;&gt;super.dispatchTouchEvent(event)&lt;/code&gt;进行事件处理&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;            if (mFirstTouchTarget == null) {
+                // No touch targets so treat this as an ordinary view.
+                handled = dispatchTransformedTouchEvent(ev, canceled, null,
+                        TouchTarget.ALL_POINTER_IDS);
+            }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;需要注意的是不管是&lt;code class=&quot;highlighter-rouge&quot;&gt;super.dispatchTouchEvent(event)&lt;/code&gt;还是&lt;code class=&quot;highlighter-rouge&quot;&gt;child.dispatchTouchEvent(event)&lt;/code&gt;, 调用的其实都是&lt;code class=&quot;highlighter-rouge&quot;&gt;View.dispatchTouchEvent()&lt;/code&gt;, 所以接下来我们要看的就是&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;中对事件的处理&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;四-view事件处理&quot;&gt;四. View事件处理&lt;/h2&gt;
+
+&lt;p&gt;需要注意的是, &lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;中没有&lt;code class=&quot;highlighter-rouge&quot;&gt;onInterceptTouchEvent()&lt;/code&gt;方法来进行事件拦截; 我们这里关注的, 主要是&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;对事件的处理, 这里的&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;包括&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;进行事件拦截之后对事件的处理以及子&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;对事件的处理; 因为从前面我们已经说了, 不管是调用的&lt;code class=&quot;highlighter-rouge&quot;&gt;super.dispatchTouchEvent()&lt;/code&gt;(&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;处理事件)还是&lt;code class=&quot;highlighter-rouge&quot;&gt;child.dispatchTouchEvent()&lt;/code&gt;(子&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;处理事件), 其实都是调用的&lt;code class=&quot;highlighter-rouge&quot;&gt;View.dispatchTouchEvent()&lt;/code&gt;; 所以二者对事件的处理实际上是一样的, 同时需要注意的是, 这一节不包括事件的分发了,
+事件分发在上一节中已经讲解完啦~&lt;/p&gt;
+
+&lt;p&gt;触摸事件的处理主要涉及到&lt;code class=&quot;highlighter-rouge&quot;&gt;OnTouchListener&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;onTouchEvent&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;onClick&lt;/code&gt;的处理优先级&lt;/p&gt;
+
+&lt;p&gt;主要代码如下; 可以看出先处理的是&lt;code class=&quot;highlighter-rouge&quot;&gt;OnTouchListener&lt;/code&gt;, 如果&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;没有设置&lt;code class=&quot;highlighter-rouge&quot;&gt;OnTouchListener&lt;/code&gt;(&lt;code class=&quot;highlighter-rouge&quot;&gt;View.setOnTouchListener()&lt;/code&gt;)的话, 再去处理&lt;code class=&quot;highlighter-rouge&quot;&gt;onTouchEvent()&lt;/code&gt;,  所以&lt;code class=&quot;highlighter-rouge&quot;&gt;OnTouchListener&lt;/code&gt;的优先级比&lt;code class=&quot;highlighter-rouge&quot;&gt;onTouchEvent&lt;/code&gt;高; 同时还要注意的一点是, 如果设置了&lt;code class=&quot;highlighter-rouge&quot;&gt;OnTouchListener&lt;/code&gt;的话, &lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;onTouchEvent&lt;/code&gt;将不再调用&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public boolean dispatchTouchEvent(MotionEvent event) {
+    ...
+    if (li != null &amp;amp;&amp;amp; li.mOnTouchListener != null
+            &amp;amp;&amp;amp; (mViewFlags &amp;amp; ENABLED_MASK) == ENABLED
+            &amp;amp;&amp;amp; li.mOnTouchListener.onTouch(this, event)) {  // OnTouchListener
+        result = true;
+    }
+    if (!result &amp;amp;&amp;amp; onTouchEvent(event)) { // onTouchEvent
+        result = true;
+    }
+    ...
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;这里还有一个&lt;code class=&quot;highlighter-rouge&quot;&gt;onClick()&lt;/code&gt;其实是在&lt;code class=&quot;highlighter-rouge&quot;&gt;onTouchEvent()&lt;/code&gt;中处理的; 如下; &lt;code class=&quot;highlighter-rouge&quot;&gt;onClick&lt;/code&gt;是在&lt;code class=&quot;highlighter-rouge&quot;&gt;performClickInternal()&lt;/code&gt;中触发的, 可以看出, 要触发&lt;code class=&quot;highlighter-rouge&quot;&gt;onClick&lt;/code&gt;需要的条件是: &lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;是可以点击的(&lt;code class=&quot;highlighter-rouge&quot;&gt;clickable&lt;/code&gt;), 这里的可点击包括了&lt;code class=&quot;highlighter-rouge&quot;&gt;CLICKABLE&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;LONG_CLICKABLE&lt;/code&gt;, 注意&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;enable&lt;/code&gt;属性不影响&lt;code class=&quot;highlighter-rouge&quot;&gt;onTouchEvent&lt;/code&gt;的返回值, 只要它可点击, 那么&lt;code class=&quot;highlighter-rouge&quot;&gt;onTouchEvent()&lt;/code&gt;就会处理该点击事件&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public boolean onTouchEvent(MotionEvent event) {
+    if (clickable || (viewFlags &amp;amp; TOOLTIP) == TOOLTIP) {
+        switch (action) {
+            case MotionEvent.ACTION_UP:
+                ...
+                if (!mHasPerformedLongPress &amp;amp;&amp;amp; !mIgnoreNextUpEvent) {
+                    if (!focusTaken) {
+                        // Use a Runnable and post this rather than calling
+                        // performClick directly. This lets other visual state
+                        // of the view update before click actions start.
+                        if (mPerformClick == null) {
+                            mPerformClick = new PerformClick();
+                        }
+                        if (!post(mPerformClick)) {
+                            performClickInternal();
+                        }
+                    }
+                }
+                ...
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;而在&lt;code class=&quot;highlighter-rouge&quot;&gt;performClickInternal()&lt;/code&gt;中, 则是去调用了&lt;code class=&quot;highlighter-rouge&quot;&gt;performClick()&lt;/code&gt;进行处理, 在&lt;code class=&quot;highlighter-rouge&quot;&gt;performClick()&lt;/code&gt;会判断, 如果设置了&lt;code class=&quot;highlighter-rouge&quot;&gt;OnClickListener&lt;/code&gt;, 则会去调用&lt;code class=&quot;highlighter-rouge&quot;&gt;OnClickListener&lt;/code&gt;, 代码比较简单, 就不贴啦~&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;五-总结&quot;&gt;五. 总结&lt;/h2&gt;
+
+&lt;p&gt;到这里, &lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的事件分发和处理流程就分析结束啦~; 我们最开始讲&lt;strong&gt;事件分发之源&lt;/strong&gt;时讲&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;对事件的传递的时候, 如果&lt;code class=&quot;highlighter-rouge&quot;&gt;getWindow().superDispatchTouchEvent()&lt;/code&gt;返回&lt;code class=&quot;highlighter-rouge&quot;&gt;false&lt;/code&gt;的话, 就最终将事件交给&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;onTouchEvent()&lt;/code&gt;处理, 这种情况其实对应的是&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;都不进行事件处理, 那么就逐层回传咯~&lt;/p&gt;
+
+&lt;p&gt;最后将上述流程总结为下图:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/View/View事件分发.png&quot; alt=&quot;View事件分发机制&quot; /&gt;&lt;/p&gt;
+</description>
+        <pubDate>Thu, 20 Sep 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/09/20/View%E4%B9%8B%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E6%9C%BA%E5%88%B6/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/09/20/View%E4%B9%8B%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E6%9C%BA%E5%88%B6/</guid>
+        
+        <category>Android</category>
+        
+        <category>View</category>
+        
+        
+      </item>
     
       <item>
         <title>Handler</title>
@@ -756,7 +1020,7 @@ draweeView.setImageURI(uri);
         <link>http://localhost:4000/2018/09/06/Fresco/</link>
         <guid isPermaLink="true">http://localhost:4000/2018/09/06/Fresco/</guid>
         
-        <category>Android</category>
+        <category>Draft</category>
         
         
       </item>
@@ -1688,233 +1952,6 @@ private final LinkedHashMap&amp;lt;String, Entry&amp;gt; lruEntries = new Linked
         <pubDate>Mon, 27 Aug 2018 00:00:00 +0800</pubDate>
         <link>http://localhost:4000/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BSet/</link>
         <guid isPermaLink="true">http://localhost:4000/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BSet/</guid>
-        
-        <category>Java</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>Java集合框架之List</title>
-        <description>&lt;hr /&gt;
-
-&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;&lt;a href=&quot;https://husteryp.github.io/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/&quot;&gt;前面&lt;/a&gt;我们对Java集合框架有了一个基本的认识, 这里我们从几大接口入手, 逐步讲解其实现类; 下面要讲解的是&lt;code class=&quot;highlighter-rouge&quot;&gt;List&lt;/code&gt;的实现类, 即常用的&lt;code class=&quot;highlighter-rouge&quot;&gt;ArrayList&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedList&lt;/code&gt;&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;文章源码基于&lt;code class=&quot;highlighter-rouge&quot;&gt;JDK8&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;strong&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;集合框架系列博客&lt;/strong&gt;:&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;a href=&quot;https://husteryp.github.io/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/&quot;&gt;Java集合框架概述&lt;/a&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;a href=&quot;https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BList/&quot;&gt;Java集合框架之List&lt;/a&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;a href=&quot;https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/&quot;&gt;Java集合框架之HashMap&lt;/a&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;a href=&quot;https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BSet/&quot;&gt;Java集合框架之Set&lt;/a&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;a href=&quot;https://husteryp.github.io/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/&quot;&gt;Java集合框架之LinkedHashMap&lt;/a&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;a href=&quot;https://husteryp.github.io/2018/09/06/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BQueue/&quot;&gt;Java集合框架之Queue&lt;/a&gt;&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;一-arraylist&quot;&gt;一. ArrayList&lt;/h2&gt;
-
-&lt;h3 id=&quot;11-特点概述&quot;&gt;1.1 特点概述&lt;/h3&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;这里先将结论给出, 稍后会挑重难点详细讲解&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;动态数组: &lt;code class=&quot;highlighter-rouge&quot;&gt;ArrayList&lt;/code&gt;是一个动态数组, 所谓的动态数组, 就是使用时不必担心扩容问题(会自动扩容, 其实现原理其实也是通过创建一个更大的数组来进行数据拷贝, 关于扩容规则稍后会细讲);&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;支持随机访问: 既然是基于数组实现的, 那么其当然也就具备了数组的随机访问特点, &lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;中通过&lt;code class=&quot;highlighter-rouge&quot;&gt;RandomAccess&lt;/code&gt;接口来标识&lt;code class=&quot;highlighter-rouge&quot;&gt;List&lt;/code&gt;是否支持随机访问(该接口实际上没有方法, 只是为了在使用某些算法时, 通过&lt;code class=&quot;highlighter-rouge&quot;&gt;instanceof RandomAccess&lt;/code&gt;去判断作用对象是否支持随机访问, 如果支持的话, 就可以使用某些特定算法)&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;支持序列化: 实现了&lt;code class=&quot;highlighter-rouge&quot;&gt;Serializable&lt;/code&gt;接口&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Iterator&lt;/code&gt;遍历&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;线程不安全: 多线程使用时可能会出现问题&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h3 id=&quot;12-动态数组&quot;&gt;1.2 动态数组&lt;/h3&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ArrayList&lt;/code&gt;的默认初始容量为&lt;strong&gt;10&lt;/strong&gt;, 其提供了三个构造函数, 分别是: &lt;code class=&quot;highlighter-rouge&quot;&gt;public ArrayList(int initialCapacity)&lt;/code&gt;(支持指定初始容量); &lt;code class=&quot;highlighter-rouge&quot;&gt;public ArrayList()&lt;/code&gt;(无参构造函数); &lt;code class=&quot;highlighter-rouge&quot;&gt;public ArrayList(Collection&amp;lt;? extends E&amp;gt; c)&lt;/code&gt;(支持从已有数据集创建)&lt;/p&gt;
-
-&lt;p&gt;我们最常见的用法是: &lt;code class=&quot;highlighter-rouge&quot;&gt;ArrayList&amp;lt;T&amp;gt; arr = new ArrayList();&lt;/code&gt;; 因此我们先来看其无参构造函数, 如下;  其中&lt;code class=&quot;highlighter-rouge&quot;&gt;elementData&lt;/code&gt;就是用于存储数据的数组; &lt;code class=&quot;highlighter-rouge&quot;&gt;DEFAULTCAPACITY_EMPTY_ELEMENTDATA&lt;/code&gt;是一个初始长度为&lt;code class=&quot;highlighter-rouge&quot;&gt;0&lt;/code&gt;的数组, 这样设计的原因也是为了节约空间(因为没必要一开始就占用内存空间, 合理的做法应该是在具体需要使用的时候再去分配)&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    private static final Object[] DEFAULTCAPACITY_EMPTY_ELEMENTDATA = {};
-
-    public ArrayList() {
-        this.elementData = DEFAULTCAPACITY_EMPTY_ELEMENTDATA;
-    }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;如果是使用无参构造函数进行创建的话, 那么在第一次使用&lt;code class=&quot;highlighter-rouge&quot;&gt;add()&lt;/code&gt;进行数据添加的时候会进行第一次扩容, 也就是扩展到默认初始容量(10); 见下面代码:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    public boolean add(E e) {
-        ensureCapacityInternal(size + 1);  // 此时size为0
-        elementData[size++] = e;
-        return true;
-    }
-
-    private static int calculateCapacity(Object[] elementData, int minCapacity) {
-        if (elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA) { // 这里相等进入
-            return Math.max(DEFAULT_CAPACITY, minCapacity); // 返回默认初始容量
-        }
-        return minCapacity;
-    }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;那如果并非是第一次执行&lt;code class=&quot;highlighter-rouge&quot;&gt;add()&lt;/code&gt;操作呢, 其扩容规则又如何; 这里的代码也比较简单, 在下面的&lt;code class=&quot;highlighter-rouge&quot;&gt;grow()&lt;/code&gt;函数中; 逻辑比较简单, 扩容规则是, 增加当前数组长度的&lt;strong&gt;50%&lt;/strong&gt;; 那么是不是每次执行&lt;code class=&quot;highlighter-rouge&quot;&gt;add&lt;/code&gt;操作的时候都会进行扩容呢, 肯定不是的, 只有当&lt;code class=&quot;highlighter-rouge&quot;&gt;add&lt;/code&gt;会造成溢出时才会进行扩容&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    private void grow(int minCapacity) {
-        int oldCapacity = elementData.length; // 注意这里用来判断的是数组的长度, 而不是当前数据个数
-        int newCapacity = oldCapacity + (oldCapacity &amp;gt;&amp;gt; 1); // 扩容50%
-        if (newCapacity - minCapacity &amp;lt; 0)
-            newCapacity = minCapacity;
-        if (newCapacity - MAX_ARRAY_SIZE &amp;gt; 0)
-            newCapacity = hugeCapacity(minCapacity);
-        // minCapacity is usually close to size, so this is a win:
-        elementData = Arrays.copyOf(elementData, newCapacity);
-    }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h3 id=&quot;13-随机访问&quot;&gt;1.3 随机访问&lt;/h3&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ArrayList&lt;/code&gt;由于内部使用数组实现, 所以能够支持快速的索引定位, 但是数组的连续空间在带来增加和索引查找便利的同时, 也使得删除元素变得相对耗时, 所以在实际使用的时候, 需要根据需求特点来合理选择&lt;/p&gt;
-
-&lt;h3 id=&quot;14-iterator遍历&quot;&gt;1.4 Iterator遍历&lt;/h3&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ArrayList&lt;/code&gt;支持普通的&lt;code class=&quot;highlighter-rouge&quot;&gt;Iterator&lt;/code&gt;遍历, 也自己实现了一个特殊的&lt;code class=&quot;highlighter-rouge&quot;&gt;ListIterator&lt;/code&gt;遍历&lt;/p&gt;
-
-&lt;h4 id=&quot;14-1-iterator遍历的效率&quot;&gt;1.4-1 Iterator遍历的效率&lt;/h4&gt;
-
-&lt;p&gt;关于&lt;code class=&quot;highlighter-rouge&quot;&gt;Iterator&lt;/code&gt;遍历, &lt;code class=&quot;highlighter-rouge&quot;&gt;for&lt;/code&gt;循环遍历和&lt;code class=&quot;highlighter-rouge&quot;&gt;foreach&lt;/code&gt;遍历的效率分析, 可以参见文末&lt;strong&gt;参考链接&lt;/strong&gt;&lt;/p&gt;
-
-&lt;p&gt;这里只是单纯的讲一下结论:&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;在&lt;code class=&quot;highlighter-rouge&quot;&gt;ArrayList&lt;/code&gt;中使用&lt;code class=&quot;highlighter-rouge&quot;&gt;for&lt;/code&gt;循环遍历的效率比另外两种高, 因为其支持随机访问; &lt;code class=&quot;highlighter-rouge&quot;&gt;for&lt;/code&gt;循环适合访问顺序存储结构, 可以根据下标快速获取指定元素(即支持随机访问)&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Iterator&lt;/code&gt;适合访问链式存储结构(如在&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedList&lt;/code&gt;中其访问效率就比&lt;code class=&quot;highlighter-rouge&quot;&gt;for&lt;/code&gt;高), 因为迭代器是通过&lt;code class=&quot;highlighter-rouge&quot;&gt;next()&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;Pre()&lt;/code&gt;来定位的, 但它也可以访问顺序存储结构的集合(&lt;code class=&quot;highlighter-rouge&quot;&gt;forEach&lt;/code&gt;的使用效率其实和&lt;code class=&quot;highlighter-rouge&quot;&gt;Iterator&lt;/code&gt;差不多)&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;使用&lt;code class=&quot;highlighter-rouge&quot;&gt;Iterator&lt;/code&gt;最大的一个好处是, 可以随时修改或者删除集合内部的元素, 并且是在不需要知道元素和集合的类型的情况下进行的(当需要对不同的容器实现同样的遍历方式时, 迭代器是最好的选择)&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h4 id=&quot;14-2-iterator和listiterator&quot;&gt;1.4-2 Iterator和ListIterator&lt;/h4&gt;
-
-&lt;p&gt;二者最大的区别就是&lt;code class=&quot;highlighter-rouge&quot;&gt;ListIterator&lt;/code&gt;支持双向的遍历, 而&lt;code class=&quot;highlighter-rouge&quot;&gt;Iterator&lt;/code&gt;只是常规的从头到尾的遍历&lt;/p&gt;
-
-&lt;h3 id=&quot;15-线程不安全&quot;&gt;1.5 线程不安全&lt;/h3&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ArrayList&lt;/code&gt;不是一个线程安全的集合, 如果要在多线程的情况下使用, 可以考虑用&lt;code class=&quot;highlighter-rouge&quot;&gt;Collections.synchronizedList(List l)&lt;/code&gt;函数返回一个线程安全的&lt;code class=&quot;highlighter-rouge&quot;&gt;ArrayList&lt;/code&gt;类, 也可以使用&lt;code class=&quot;highlighter-rouge&quot;&gt;concurrent&lt;/code&gt;并发包下的&lt;code class=&quot;highlighter-rouge&quot;&gt;CopyOnWriteArrayList&lt;/code&gt;类或者遗留的&lt;code class=&quot;highlighter-rouge&quot;&gt;Vector&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;另外就是使用&lt;code class=&quot;highlighter-rouge&quot;&gt;Iterator&lt;/code&gt;遍历的过程中, 如果用户&lt;code class=&quot;highlighter-rouge&quot;&gt;add&lt;/code&gt;或者&lt;code class=&quot;highlighter-rouge&quot;&gt;remove&lt;/code&gt;了元素的话, 会抛出&lt;code class=&quot;highlighter-rouge&quot;&gt;ConcurrentModificationException&lt;/code&gt;异常, 其实这也是一种保护机制, 具体代码如下; 至于&lt;code class=&quot;highlighter-rouge&quot;&gt;modCount&lt;/code&gt;是每次调用&lt;code class=&quot;highlighter-rouge&quot;&gt;add&lt;/code&gt;或者&lt;code class=&quot;highlighter-rouge&quot;&gt;remove&lt;/code&gt;方法都会自增的&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;        public E next() {
-            checkForComodification();
-            ...
-        }
-
-        final void checkForComodification() {
-            if (modCount != expectedModCount)
-                throw new ConcurrentModificationException();
-        }
-
-        int expectedModCount = ArrayList.this.modCount;  // 这个值在初始化Iterator时就确定了
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;二-linkedlist&quot;&gt;二. LinkedList&lt;/h2&gt;
-
-&lt;h3 id=&quot;21-特点概述&quot;&gt;2.1 特点概述&lt;/h3&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;老规矩, 先给出总的结论!&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;特殊数据结构: &lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedList&lt;/code&gt;可以被用作特殊的数据结构, 如: 双向链表, 堆栈, 队列或者双端队列等&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;序列化: 实现了&lt;code class=&quot;highlighter-rouge&quot;&gt;Serializable&lt;/code&gt;接口&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;线程不安全: &lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedList&lt;/code&gt;不支持线程同步, 当使用&lt;code class=&quot;highlighter-rouge&quot;&gt;Iterator&lt;/code&gt;或者&lt;code class=&quot;highlighter-rouge&quot;&gt;ListIterator&lt;/code&gt;去遍历的时候, 在多线程时, 可能会出现问题(抛出&lt;code class=&quot;highlighter-rouge&quot;&gt;ConcurrentModificationException&lt;/code&gt;异常)&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h3 id=&quot;22-特殊数据结构&quot;&gt;2.2 特殊数据结构&lt;/h3&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedList&lt;/code&gt;内部是以&lt;code class=&quot;highlighter-rouge&quot;&gt;Node&lt;/code&gt;为节点连接起来的一个链表, 从&lt;code class=&quot;highlighter-rouge&quot;&gt;Node&lt;/code&gt;节点的组织方式(如下), 其实也可以看出, 其有两个指针, 一个指向前驱, 一个指向后继, 那么很自然的, 其就支持双向的遍历, 同时, &lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedList&lt;/code&gt;对外提供了丰富的接口, 让我们可以根据自己的需要, 去选择将其视为哪种数据结构来使用&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    private static class Node&amp;lt;E&amp;gt; {
-        E item;
-        Node&amp;lt;E&amp;gt; next;
-        Node&amp;lt;E&amp;gt; prev;
-
-        Node(Node&amp;lt;E&amp;gt; prev, E element, Node&amp;lt;E&amp;gt; next) {
-            this.item = element;
-            this.next = next;
-            this.prev = prev;
-        }
-    }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;ArrayList&lt;/code&gt;一样, 我们可以使用&lt;code class=&quot;highlighter-rouge&quot;&gt;ListIterator&lt;/code&gt;来方便的实现双向的遍历, 同时其还提供了&lt;code class=&quot;highlighter-rouge&quot;&gt;addFirst()&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;addLast()&lt;/code&gt;方法, 以及明确的&lt;code class=&quot;highlighter-rouge&quot;&gt;push()&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;pop()&lt;/code&gt;方法, 那么我们就可以根据自己的组织方式将其视为双向链表或者堆栈等来使用, 当然, 其还有许多其他有用接口, 具体使用时再去查看即可, 这里不做多讲&lt;/p&gt;
-
-&lt;h3 id=&quot;23-线程不安全&quot;&gt;2.3 线程不安全&lt;/h3&gt;
-
-&lt;p&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;ArrayList&lt;/code&gt;一样, 其也没有实现线程同步, 所以在多线程时, 也要慎用; 当然, 可以使用&lt;code class=&quot;highlighter-rouge&quot;&gt;Collections.synchronizedList(new LinkedList(...))&lt;/code&gt;来进行包装, 成为一个线程安全的&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedList&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;上面讲了&lt;code class=&quot;highlighter-rouge&quot;&gt;ArrayList&lt;/code&gt;使用&lt;code class=&quot;highlighter-rouge&quot;&gt;Iterator&lt;/code&gt;或者&lt;code class=&quot;highlighter-rouge&quot;&gt;ListIterator&lt;/code&gt;遍历的过程中, 如果对数据进行了修改, 那么会抛出异常, 对于&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedList&lt;/code&gt;也有同样的问题, 原因也一样, 这里不再赘述&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;三-总结&quot;&gt;三. 总结&lt;/h2&gt;
-
-&lt;p&gt;到这里, 与&lt;code class=&quot;highlighter-rouge&quot;&gt;List&lt;/code&gt;有关的两个常用实现类&lt;code class=&quot;highlighter-rouge&quot;&gt;ArrayList&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedList&lt;/code&gt;就讲解完了, 重点在于掌握每种实现的特点, 在实际使用的时候再去具体选择, 总的来说, 这两种实现都比较简单, 涉及到的算法也不难; 需要回顾的话, 翻到前面去看每种实现的概述即可!&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;四-参考链接&quot;&gt;四. 参考链接&lt;/h2&gt;
-
-&lt;p&gt;&lt;a href=&quot;https://www.cnblogs.com/aoguren/p/4771589.html&quot;&gt;Iterator和for效率分析&lt;/a&gt;&lt;/p&gt;
-</description>
-        <pubDate>Mon, 27 Aug 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BList/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BList/</guid>
         
         <category>Java</category>
         
