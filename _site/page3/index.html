@@ -10,9 +10,9 @@
     <meta name="keyword"  content="">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>About - 袁平 | HusterYP-Blog</title>
+    <title>袁平 | HusterYP-Blog</title>
 
-    <link rel="canonical" href="http://localhost:4000/about/">
+    <link rel="canonical" href="http://localhost:4000/page3/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/css/bootstrap.min.css">
@@ -124,14 +124,14 @@
 
 
     <!-- Page Header -->
-<header class="intro-header" style="background-image: url('/img/about-bg.jpg')">
+<header class="intro-header" style="background-image: url('/img/home-bg.jpg')">
     <div class="container">
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 ">
                 <div class="site-heading">
-                    <h1>About</h1>
+                    <h1>袁平</h1>
                     <!--<hr class="small">-->
-                    <span class="subheading">Prepare to Win !</span>
+                    <span class="subheading">Hello ! Welcome !</span>
                 </div>
             </div>
         </div>
@@ -152,71 +152,51 @@
                 col-xs-12
                 post-container
             ">
-    			<!-- Language Selector -->
-<!--
-<select class="sel-lang" onchange= "onLanChange(this.options[this.options.selectedIndex].value)">
-    <option value="0" selected> 中文 Chinese </option>
-    <option value="1"> 英文 English </option>
-</select>
--->
+    			
+<div class="post-preview">
+    <a href="/2018/08/20/template/">
+        <h2 class="post-title">
+            Blog Template
+        </h2>
+        
+        <h3 class="post-subtitle">
+            博客模板
+        </h3>
+        
+        <div class="post-content-preview">
+            Blog Template
 
-<!-- Chinese Version -->
-<div class="zh post-container">
+发布博客直接将md文件扔到_post文件夹下即可; 需要注意命名规范, 文件名需要以时间格式开头(参照2018-08-20-template.md命名)
+
+本地博客测试: jekyll serve
+
+博客首部
+
+---
+layout:     post
+title:      ""
+subtitle:   ""
+date:       2018-
+author:...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by 袁平 on August 20, 2018
+    </p>
+</div>
+<hr>
+
+
+<!-- Pager -->
+
+<ul class="pager">
     
-    <ul>
-  <li><a href="https://www.hustunique.com/">Unique Studio</a></li>
-  <li><a href="http://www.hust.edu.cn/?">华中科技大学</a>在读(2016.9 – )</li>
-  <li>Android Developer</li>
-  <li>开源爱好者</li>
-  <li><a href="https://www.jianshu.com/u/aa5c7f87405c">简书</a></li>
-  <li><a href="https://github.com/HusterYP">Github</a></li>
-  <li>Email
-    <blockquote>
-      <table>
-        <tbody>
-          <tr>
-            <td><code class="highlighter-rouge">husteryp@163.com</code></td>
-            <td><code class="highlighter-rouge">husteryp@gmail.com</code></td>
-          </tr>
-        </tbody>
-      </table>
-    </blockquote>
-  </li>
+    <li class="previous">
+        <a href="/page2">&larr; Newer Posts</a>
+    </li>
+    
+    
 </ul>
-
-</div>
-
-<!-- English Version -->
-<div class="en post-container">
-    
-    
-
-</div>
-
-
-
-<!-- disqus 评论框 start -->
-<div class="comment">
-    <div id="disqus_thread" class="disqus-thread">
-
-    </div>
-</div>
-<!-- disqus 评论框 end -->
-
-<!-- disqus 公共JS代码 start (一个网页只需插入一次) -->
-<script type="text/javascript">
-    /* * * CONFIGURATION VARIABLES * * */
-    var disqus_shortname = "HusterYP";
-    var disqus_identifier = "HusterYP//about/";
-    var disqus_url = "http://localhost:4000/about/";
-
-    (function() {
-        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
-        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-    })();
-</script>
-<!-- disqus 公共JS代码 end -->
 
 
     		</div>

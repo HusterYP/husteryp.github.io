@@ -10,9 +10,9 @@
     <meta name="keyword"  content="">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>MarkDown中使用数学公式 - 袁平 | HusterYP-Blog</title>
+    <title>Java之IO流 - 袁平 | HusterYP-Blog</title>
 
-    <link rel="canonical" href="http://localhost:4000/2018/08/25/MarkDown%E4%B8%AD%E4%BD%BF%E7%94%A8%E6%95%B0%E5%AD%A6%E5%85%AC%E5%BC%8F/">
+    <link rel="canonical" href="http://localhost:4000/2018/09/25/Java%E4%B9%8BIO%E6%B5%81/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/css/bootstrap.min.css">
@@ -140,15 +140,15 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/tags/#MarkDown" title="MarkDown">MarkDown</a>
+                        <a class="tag" href="/tags/#Java" title="Java">Java</a>
                         
                     </div>
-                    <h1>MarkDown中使用数学公式</h1>
+                    <h1>Java之IO流</h1>
                     
                     
-                    <h2 class="subheading">MarkDown中优雅的使用数学公式</h2>
+                    <h2 class="subheading">IO流相关API总结</h2>
                     
-                    <span class="meta">Posted by 袁平 on August 25, 2018</span>
+                    <span class="meta">Posted by 袁平 on September 25, 2018</span>
                 </div>
             </div>
         </div>
@@ -166,53 +166,160 @@
                 col-md-10 col-md-offset-1
                 post-container">
 
-				<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=default"></script>
+				<h1 id="前言">前言</h1>
 
-<h1 id="前言">前言</h1>
-<blockquote>
-  <p>如何在MarkDown中使用数学公式</p>
-</blockquote>
+<p>本文将讲解<code class="highlighter-rouge">Java</code>中一个比较重要的模块–<code class="highlighter-rouge">I/O</code>流</p>
+
+<p>以下内容是对<strong>Java核心技术卷II</strong>的总结, 权做个人笔记~</p>
+
+<hr />
 
 <h1 id="正文">正文</h1>
 
-<ul>
-  <li>在MarkDown文章中插入下面代码(MathJax引擎)</li>
-</ul>
+<hr />
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=default"&gt;&lt;/script&gt;
+<h2 id="一-概述">一. 概述</h2>
+
+<p><code class="highlighter-rouge">Java I/O</code>流指的是<code class="highlighter-rouge">java.io</code>包和<code class="highlighter-rouge">java.nio</code>包提供的各种操作文件和输入输出等的<code class="highlighter-rouge">API</code>, 具体可以分为两大类: 一类是面向字节的, 一类是面向字符的; 面向字节的<code class="highlighter-rouge">API</code>是以<code class="highlighter-rouge">InputStream</code>和<code class="highlighter-rouge">OutputStream</code>类为基类, 每次以一个字节为单位进行读写操作; 面向字符的<code class="highlighter-rouge">API</code>指的是以<code class="highlighter-rouge">Reader</code>和<code class="highlighter-rouge">Writer</code>为基类, 每次以两个字节为单位进行读写操作, 面向字符的<code class="highlighter-rouge">API</code>主要是针对文本操作设计的</p>
+
+<p>可以参见下图:</p>
+
+<p><strong>面向字节</strong>:</p>
+
+<p><img src="/img/post/Java_IO/面向字节.png" alt="面向字节" /></p>
+
+<p><strong>面向字符</strong>:</p>
+
+<p><img src="/img/post/Java_IO/面向字符.png" alt="面向字符" /></p>
+
+<p><strong>注</strong>: <a href="https://blog.csdn.net/zhoupenglei/article/details/46312405">图片来源</a></p>
+
+<hr />
+
+<h2 id="二-重要概念">二. 重要概念</h2>
+
+<h3 id="21-流嵌套">2.1 流嵌套</h3>
+
+<p>即将不同功能的流嵌套起来, 过滤; 比如: <code class="highlighter-rouge">Java</code>中流默认是不被缓冲区缓存的, 也就是说每个<code class="highlighter-rouge">read()</code>的调用都会请求操作系统再分发一个字节, 相比之下, 请求一个数据块并将其置于缓冲区中会显得更加高效, 如果我们想使用缓冲机制, 以及用于文件输入方法, 可以使用<code class="highlighter-rouge">            BufferedInputStream inputStream = new BufferedInputStream(new FileInputStream("file"));</code></p>
+
+<h3 id="22-glob模式匹配">2.2 Glob模式匹配</h3>
+
+<p>即使用正则筛选文件, 如筛选文件后缀名为<code class="highlighter-rouge">java</code>的文件: <code class="highlighter-rouge">DirectoryStream&lt;Path&gt; entries = Files.newDirectoryStream(Paths.get("/"), "*.java");</code></p>
+
+<p><code class="highlighter-rouge">Glob</code>模式见下表:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>模式</th>
+      <th>描述</th>
+      <th>示例</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>*</td>
+      <td>匹配路径组成部分中0个或多个字符</td>
+      <td>*.java匹配当前目录中的所有Java文件</td>
+    </tr>
+    <tr>
+      <td>**</td>
+      <td>匹配跨目录边界的0个或多个字符</td>
+      <td>**.java匹配在所有子目录中的Java文件</td>
+    </tr>
+    <tr>
+      <td>?</td>
+      <td>匹配一个字符</td>
+      <td>????.java匹配所有四个字符的Java文件</td>
+    </tr>
+    <tr>
+      <td>[…]</td>
+      <td>匹配一个字符集合</td>
+      <td>Test[0-9A-F].java匹配Testx.java, 其中x是一个十六进制数字</td>
+    </tr>
+    <tr>
+      <td>{…}</td>
+      <td>匹配由逗号隔开的多个可选项之一</td>
+      <td>*.{java, class}匹配所有的Java文件和类class文件</td>
+    </tr>
+    <tr>
+      <td>\</td>
+      <td>转移上述任意模式中的字符</td>
+      <td><em>*</em>匹配所有文件名中包含*的文件</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="23-常用工具类">2.3 常用工具类</h3>
+
+<ol>
+  <li><strong>Files</strong>: 使得读写文件和操作文件及文件夹变得简单; 旧的<code class="highlighter-rouge">File</code>类中有一个方法可以用来获取一个目录下的所有文件构成的数组, 但是当目录中包含大量文件时, 这个方法的性能非常低, <code class="highlighter-rouge">Files</code>类设计了一个方法可以产生<code class="highlighter-rouge">Iterable</code>对象, 如下示例代码:</li>
+</ol>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>DirectoryStream&lt;Path&gt; entries = Files.newDirectoryStream(Paths.get("/"));
+Iterator&lt;Path&gt; iterator = entries.iterator();
+for (Path path : entries) {
+    System.out.println(path);
+}
 </code></pre></div></div>
 
-<ul>
-  <li>之后就可以使用<code class="highlighter-rouge">Latex</code>语法来书写数学公式了; 需要注意的是, 每个数学公式都应该以<code class="highlighter-rouge">$$</code>开头和结尾, 如下</li>
-</ul>
+<ol>
+  <li><strong>Paths</strong>: <code class="highlighter-rouge">Paths</code>可以用来构造<code class="highlighter-rouge">Path</code>对象: <code class="highlighter-rouge">Paths.get(args)</code>, 可以接收一个或多个字符串, 并将它们用默认文件系统分隔符连接起来</li>
+</ol>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$$
-a^{n}=\begin{equation}
-\left\{
-             \begin{array}{**lr**}
-             a^{n/2}*a^{n/2}, &amp; n为偶数 \\
-             a^{(n-1)/2}*a^{(n-1)/2} &amp; n为奇数 \\
-             \end{array}
-\right.
-\end{equation}
-$$
-</code></pre></div></div>
-<p>显示结果为</p>
+<h3 id="24-内存映射文件">2.4 内存映射文件</h3>
 
-<script type="math/tex; mode=display">% <![CDATA[
-a^{n}=\begin{equation}
-\left\{
-             \begin{array}{**lr**}
-             a^{n/2}*a^{n/2}, & n为偶数 \\
-             a^{(n-1)/2}*a^{(n-1)/2} & n为奇数 \\
-             \end{array}
-\right.
-\end{equation} %]]></script>
+<p>大多数操作系统都可以利用虚拟内存实现来将一个文件或者文件的一部分”映射”到内存中, 然后这个文件就可以当做是内存数组一样的访问, 中比传统的文件操作要快得多; 如: <code class="highlighter-rouge">FileChannel</code></p>
 
-<h1 id="参考链接">参考链接</h1>
-<ul>
-  <li><a href="https://blog.csdn.net/xiahouzuoxin/article/details/26478179">参考博客</a></li>
-</ul>
+<h2 id="25-易忘类">2.5 易忘类</h2>
+
+<ol>
+  <li>
+    <p><code class="highlighter-rouge">InputStreamReader</code>, <code class="highlighter-rouge">OutputStreamWriter</code>: 可以指定编码</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">PrintWriter</code>: 以文本格式写出数据</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">RandomAccessFile</code>: 在任何位置查找或写入数据; 可以用于实现断点续传</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">DataInputStream</code>: 读取数字</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">ObjectInputStream</code>, <code class="highlighter-rouge">ObjectOutputStream</code>: 读取对象</p>
+  </li>
+</ol>
+
+<h3 id="26-文件操作处理效率">2.6 文件操作处理效率</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>方法</th>
+      <th>时间</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>普通输入流</td>
+      <td>110s</td>
+    </tr>
+    <tr>
+      <td>带缓冲的输入流</td>
+      <td>9.9s</td>
+    </tr>
+    <tr>
+      <td>随机方访问文件</td>
+      <td>162s</td>
+    </tr>
+    <tr>
+      <td>内存映射文件</td>
+      <td>7.2s</td>
+    </tr>
+  </tbody>
+</table>
+
 
 
                 <hr>
@@ -223,13 +330,9 @@ a^{n}=\begin{equation}
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/2018/08/25/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6/" data-toggle="tooltip" data-placement="top" title="Java集合框架">&larr; Previous Post</a>
+                        <a href="/2018/09/24/View%E4%B9%8B%E7%BB%98%E5%88%B6%E6%B5%81%E7%A8%8B/" data-toggle="tooltip" data-placement="top" title="View之绘制流程">&larr; Previous Post</a>
                     </li>
                     
-                    
-                    <li class="next">
-                        <a href="/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/" data-toggle="tooltip" data-placement="top" title="Java集合框架概述">Next Post &rarr;</a>
-                    </li>
                     
                 </ul>
 
@@ -328,8 +431,8 @@ a^{n}=\begin{equation}
 <script type="text/javascript">
     /* * * CONFIGURATION VARIABLES * * */
     var disqus_shortname = "HusterYP";
-    var disqus_identifier = "/2018/08/25/MarkDown中使用数学公式";
-    var disqus_url = "http://localhost:4000/2018/08/25/MarkDown%E4%B8%AD%E4%BD%BF%E7%94%A8%E6%95%B0%E5%AD%A6%E5%85%AC%E5%BC%8F/";
+    var disqus_identifier = "/2018/09/25/Java之IO流";
+    var disqus_url = "http://localhost:4000/2018/09/25/Java%E4%B9%8BIO%E6%B5%81/";
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;

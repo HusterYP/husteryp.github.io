@@ -5,9 +5,175 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Tue, 25 Sep 2018 12:21:40 +0800</pubDate>
-    <lastBuildDate>Tue, 25 Sep 2018 12:21:40 +0800</lastBuildDate>
+    <pubDate>Tue, 25 Sep 2018 21:11:55 +0800</pubDate>
+    <lastBuildDate>Tue, 25 Sep 2018 21:11:55 +0800</lastBuildDate>
     <generator>Jekyll v3.8.3</generator>
+    
+      <item>
+        <title>Java之IO流</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;本文将讲解&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;中一个比较重要的模块–&lt;code class=&quot;highlighter-rouge&quot;&gt;I/O&lt;/code&gt;流&lt;/p&gt;
+
+&lt;p&gt;以下内容是对&lt;strong&gt;Java核心技术卷II&lt;/strong&gt;的总结, 权做个人笔记~&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;一-概述&quot;&gt;一. 概述&lt;/h2&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Java I/O&lt;/code&gt;流指的是&lt;code class=&quot;highlighter-rouge&quot;&gt;java.io&lt;/code&gt;包和&lt;code class=&quot;highlighter-rouge&quot;&gt;java.nio&lt;/code&gt;包提供的各种操作文件和输入输出等的&lt;code class=&quot;highlighter-rouge&quot;&gt;API&lt;/code&gt;, 具体可以分为两大类: 一类是面向字节的, 一类是面向字符的; 面向字节的&lt;code class=&quot;highlighter-rouge&quot;&gt;API&lt;/code&gt;是以&lt;code class=&quot;highlighter-rouge&quot;&gt;InputStream&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;OutputStream&lt;/code&gt;类为基类, 每次以一个字节为单位进行读写操作; 面向字符的&lt;code class=&quot;highlighter-rouge&quot;&gt;API&lt;/code&gt;指的是以&lt;code class=&quot;highlighter-rouge&quot;&gt;Reader&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;Writer&lt;/code&gt;为基类, 每次以两个字节为单位进行读写操作, 面向字符的&lt;code class=&quot;highlighter-rouge&quot;&gt;API&lt;/code&gt;主要是针对文本操作设计的&lt;/p&gt;
+
+&lt;p&gt;可以参见下图:&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;面向字节&lt;/strong&gt;:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/Java_IO/面向字节.png&quot; alt=&quot;面向字节&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;面向字符&lt;/strong&gt;:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/Java_IO/面向字符.png&quot; alt=&quot;面向字符&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;注&lt;/strong&gt;: &lt;a href=&quot;https://blog.csdn.net/zhoupenglei/article/details/46312405&quot;&gt;图片来源&lt;/a&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;二-重要概念&quot;&gt;二. 重要概念&lt;/h2&gt;
+
+&lt;h3 id=&quot;21-流嵌套&quot;&gt;2.1 流嵌套&lt;/h3&gt;
+
+&lt;p&gt;即将不同功能的流嵌套起来, 过滤; 比如: &lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;中流默认是不被缓冲区缓存的, 也就是说每个&lt;code class=&quot;highlighter-rouge&quot;&gt;read()&lt;/code&gt;的调用都会请求操作系统再分发一个字节, 相比之下, 请求一个数据块并将其置于缓冲区中会显得更加高效, 如果我们想使用缓冲机制, 以及用于文件输入方法, 可以使用&lt;code class=&quot;highlighter-rouge&quot;&gt;            BufferedInputStream inputStream = new BufferedInputStream(new FileInputStream(&quot;file&quot;));&lt;/code&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;22-glob模式匹配&quot;&gt;2.2 Glob模式匹配&lt;/h3&gt;
+
+&lt;p&gt;即使用正则筛选文件, 如筛选文件后缀名为&lt;code class=&quot;highlighter-rouge&quot;&gt;java&lt;/code&gt;的文件: &lt;code class=&quot;highlighter-rouge&quot;&gt;DirectoryStream&amp;lt;Path&amp;gt; entries = Files.newDirectoryStream(Paths.get(&quot;/&quot;), &quot;*.java&quot;);&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Glob&lt;/code&gt;模式见下表:&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;模式&lt;/th&gt;
+      &lt;th&gt;描述&lt;/th&gt;
+      &lt;th&gt;示例&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;*&lt;/td&gt;
+      &lt;td&gt;匹配路径组成部分中0个或多个字符&lt;/td&gt;
+      &lt;td&gt;*.java匹配当前目录中的所有Java文件&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;**&lt;/td&gt;
+      &lt;td&gt;匹配跨目录边界的0个或多个字符&lt;/td&gt;
+      &lt;td&gt;**.java匹配在所有子目录中的Java文件&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;?&lt;/td&gt;
+      &lt;td&gt;匹配一个字符&lt;/td&gt;
+      &lt;td&gt;????.java匹配所有四个字符的Java文件&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;[…]&lt;/td&gt;
+      &lt;td&gt;匹配一个字符集合&lt;/td&gt;
+      &lt;td&gt;Test[0-9A-F].java匹配Testx.java, 其中x是一个十六进制数字&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;{…}&lt;/td&gt;
+      &lt;td&gt;匹配由逗号隔开的多个可选项之一&lt;/td&gt;
+      &lt;td&gt;*.{java, class}匹配所有的Java文件和类class文件&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;\&lt;/td&gt;
+      &lt;td&gt;转移上述任意模式中的字符&lt;/td&gt;
+      &lt;td&gt;&lt;em&gt;*&lt;/em&gt;匹配所有文件名中包含*的文件&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;h3 id=&quot;23-常用工具类&quot;&gt;2.3 常用工具类&lt;/h3&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;&lt;strong&gt;Files&lt;/strong&gt;: 使得读写文件和操作文件及文件夹变得简单; 旧的&lt;code class=&quot;highlighter-rouge&quot;&gt;File&lt;/code&gt;类中有一个方法可以用来获取一个目录下的所有文件构成的数组, 但是当目录中包含大量文件时, 这个方法的性能非常低, &lt;code class=&quot;highlighter-rouge&quot;&gt;Files&lt;/code&gt;类设计了一个方法可以产生&lt;code class=&quot;highlighter-rouge&quot;&gt;Iterable&lt;/code&gt;对象, 如下示例代码:&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;DirectoryStream&amp;lt;Path&amp;gt; entries = Files.newDirectoryStream(Paths.get(&quot;/&quot;));
+Iterator&amp;lt;Path&amp;gt; iterator = entries.iterator();
+for (Path path : entries) {
+    System.out.println(path);
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;&lt;strong&gt;Paths&lt;/strong&gt;: &lt;code class=&quot;highlighter-rouge&quot;&gt;Paths&lt;/code&gt;可以用来构造&lt;code class=&quot;highlighter-rouge&quot;&gt;Path&lt;/code&gt;对象: &lt;code class=&quot;highlighter-rouge&quot;&gt;Paths.get(args)&lt;/code&gt;, 可以接收一个或多个字符串, 并将它们用默认文件系统分隔符连接起来&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&quot;24-内存映射文件&quot;&gt;2.4 内存映射文件&lt;/h3&gt;
+
+&lt;p&gt;大多数操作系统都可以利用虚拟内存实现来将一个文件或者文件的一部分”映射”到内存中, 然后这个文件就可以当做是内存数组一样的访问, 中比传统的文件操作要快得多; 如: &lt;code class=&quot;highlighter-rouge&quot;&gt;FileChannel&lt;/code&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;25-易忘类&quot;&gt;2.5 易忘类&lt;/h2&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;InputStreamReader&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;OutputStreamWriter&lt;/code&gt;: 可以指定编码&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;PrintWriter&lt;/code&gt;: 以文本格式写出数据&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;RandomAccessFile&lt;/code&gt;: 在任何位置查找或写入数据; 可以用于实现断点续传&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;DataInputStream&lt;/code&gt;: 读取数字&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ObjectInputStream&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;ObjectOutputStream&lt;/code&gt;: 读取对象&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&quot;26-文件操作处理效率&quot;&gt;2.6 文件操作处理效率&lt;/h3&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;方法&lt;/th&gt;
+      &lt;th&gt;时间&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;普通输入流&lt;/td&gt;
+      &lt;td&gt;110s&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;带缓冲的输入流&lt;/td&gt;
+      &lt;td&gt;9.9s&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;随机方访问文件&lt;/td&gt;
+      &lt;td&gt;162s&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;内存映射文件&lt;/td&gt;
+      &lt;td&gt;7.2s&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+</description>
+        <pubDate>Tue, 25 Sep 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/09/25/Java%E4%B9%8BIO%E6%B5%81/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/09/25/Java%E4%B9%8BIO%E6%B5%81/</guid>
+        
+        <category>Java</category>
+        
+        
+      </item>
     
       <item>
         <title>View之绘制流程</title>
@@ -1794,148 +1960,6 @@ private final LinkedHashMap&amp;lt;String, Entry&amp;gt; lruEntries = new Linked
         <guid isPermaLink="true">http://localhost:4000/2018/08/31/%E5%9B%BE%E7%89%87%E4%B8%89%E7%BA%A7%E7%BC%93%E5%AD%98%E4%B9%8BLruCache%E5%92%8CDiskLurCache/</guid>
         
         <category>Android</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>Java集合框架之LinkedHashMap</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;&lt;a href=&quot;https://husteryp.github.io/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/&quot;&gt;前面&lt;/a&gt;我们对Java集合框架有了一个基本的认识; 本文将主要讲解&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;的实现原理和处理细节&lt;/li&gt;
-    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;继承于&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;, 所以需要先对&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;有一个基本的认识, 可以参见&lt;a href=&quot;https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/&quot;&gt;Java集合框架之HashMap&lt;/a&gt;&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;文章源码基于&lt;code class=&quot;highlighter-rouge&quot;&gt;JDK8&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;strong&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;集合框架系列博客&lt;/strong&gt;:&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;a href=&quot;https://husteryp.github.io/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/&quot;&gt;Java集合框架概述&lt;/a&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;a href=&quot;https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BList/&quot;&gt;Java集合框架之List&lt;/a&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;a href=&quot;https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/&quot;&gt;Java集合框架之HashMap&lt;/a&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;a href=&quot;https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BSet/&quot;&gt;Java集合框架之Set&lt;/a&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;a href=&quot;https://husteryp.github.io/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/&quot;&gt;Java集合框架之LinkedHashMap&lt;/a&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;a href=&quot;https://husteryp.github.io/2018/09/06/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BQueue/&quot;&gt;Java集合框架之Queue&lt;/a&gt;&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;一-概述&quot;&gt;一. 概述&lt;/h2&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;继承于&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;, 除了&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;元素遍历无序, &lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;元素遍历有序以外, 具有&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;的大多数特点; 另外, &lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;内部还有一个双向链表, 用于记录元素顺序(这也是保证其遍历有序的原因), 具体有两种顺序,  一个是插入顺序, 一个访问顺序; 同时, &lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;还可以用来实现&lt;code class=&quot;highlighter-rouge&quot;&gt;LRU&lt;/code&gt;算法(&lt;code class=&quot;highlighter-rouge&quot;&gt;Least Recently Used&lt;/code&gt;, 即最近最少使用算法); 本文将主要分析&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;的两个大方面: 一个是遍历有序, 另一个是用于&lt;code class=&quot;highlighter-rouge&quot;&gt;LRU&lt;/code&gt;算法的特性&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;二-遍历有序&quot;&gt;二. 遍历有序&lt;/h2&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;遍历有序, 主要是因为其在&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;的基础上, 增加了一个双向链表, 按照元素的插入顺序或者访问顺序, 将数据重新组织成一个双向链表; 根据标志位&lt;code class=&quot;highlighter-rouge&quot;&gt;final boolean accessOrder;&lt;/code&gt;来决定是按照插入顺序(&lt;code class=&quot;highlighter-rouge&quot;&gt;insertion-order&lt;/code&gt;, 此时需要&lt;code class=&quot;highlighter-rouge&quot;&gt;accessOrder = false&lt;/code&gt;)还是访问顺序(&lt;code class=&quot;highlighter-rouge&quot;&gt;access-order&lt;/code&gt;, 此时需要&lt;code class=&quot;highlighter-rouge&quot;&gt;accessOrder = true&lt;/code&gt;)来组织&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;改写了&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;的节点, 如下; 在其中增加了&lt;code class=&quot;highlighter-rouge&quot;&gt;before&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;after&lt;/code&gt;域用于帮助组织双向链表&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    static class Entry&amp;lt;K,V&amp;gt; extends HashMap.Node&amp;lt;K,V&amp;gt; {
-        Entry&amp;lt;K,V&amp;gt; before, after;
-        Entry(int hash, K key, V value, Node&amp;lt;K,V&amp;gt; next) {
-            super(hash, key, value, next);
-        }
-    }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;对于&lt;code class=&quot;highlighter-rouge&quot;&gt;accessOrder&lt;/code&gt;值的指定只能在创建&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;的时候, 也就是说&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;并没有提供明确的&lt;code class=&quot;highlighter-rouge&quot;&gt;set()&lt;/code&gt;方法来改变该值(一旦在构造函数中指定, 就无法改变); &lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;提供了如下构造函数可以用于指定&lt;code class=&quot;highlighter-rouge&quot;&gt;accessOrder&lt;/code&gt;的值, 其余构造函数中, &lt;code class=&quot;highlighter-rouge&quot;&gt;accessOrder&lt;/code&gt;都默认为&lt;code class=&quot;highlighter-rouge&quot;&gt;false&lt;/code&gt;, 即默认以&lt;code class=&quot;highlighter-rouge&quot;&gt;insertion-order&lt;/code&gt;的顺序组织双向链表&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    public LinkedHashMap(int initialCapacity,
-                         float loadFactor,
-                         boolean accessOrder) {
-        super(initialCapacity, loadFactor);
-        this.accessOrder = accessOrder;
-    }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;重写了&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;newNode()&lt;/code&gt;函数, &lt;code class=&quot;highlighter-rouge&quot;&gt;newNode()&lt;/code&gt;在进行元素插入的时候会被&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap.putVal()&lt;/code&gt;调用, &lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;用自己的&lt;code class=&quot;highlighter-rouge&quot;&gt;Entry&lt;/code&gt;节点替换&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Node&lt;/code&gt;节点的同时, 进行双向链表的构建, 使得程序改动最小&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    Node&amp;lt;K,V&amp;gt; newNode(int hash, K key, V value, Node&amp;lt;K,V&amp;gt; e) {
-        LinkedHashMap.Entry&amp;lt;K,V&amp;gt; p =
-            new LinkedHashMap.Entry&amp;lt;K,V&amp;gt;(hash, key, value, e);
-        linkNodeLast(p); // 将节点插入到双向链表的末尾
-        return p;
-    }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;至于&lt;code class=&quot;highlighter-rouge&quot;&gt;linkNodeLast()&lt;/code&gt;函数, 即将节点插入到双向链表的末尾, 该方法比较简单, 这里就不再贴源码啦 !&lt;/p&gt;
-
-&lt;p&gt;那么当我们指定了&lt;code class=&quot;highlighter-rouge&quot;&gt;accessOrder&lt;/code&gt;为&lt;code class=&quot;highlighter-rouge&quot;&gt;true&lt;/code&gt;的时候, 即以元素访问顺序来组织双向链表的时候, 其实就只是在获取元素的时候, 将被访问的元素移动到链表末尾; 如下; 那么链表表头的元素就是最近没有被访问的元素, 这也是我们实现&lt;code class=&quot;highlighter-rouge&quot;&gt;LRU&lt;/code&gt;算法的依据(稍后会细讲)&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    public V get(Object key) {
-        Node&amp;lt;K,V&amp;gt; e;
-        if ((e = getNode(hash(key), key)) == null)
-            return null;
-        if (accessOrder) // 如果指定为按照元素访问顺序组织元素
-            afterNodeAccess(e); // 将元素移动到链表末尾
-        return e.value;
-    }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    void afterNodeAccess(Node&amp;lt;K,V&amp;gt; e) { // move node to last
-        // 省略具体细节
-        ...
-    }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;到这里, 我们对&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;遍历有序的原因有了较为详细的了解; 接下来要讲的是&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;的一个应用, 即用于实现&lt;code class=&quot;highlighter-rouge&quot;&gt;LRU&lt;/code&gt;算法的特性&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;三-lru算法&quot;&gt;三. LRU算法&lt;/h2&gt;
-
-&lt;p&gt;&lt;strong&gt;LRU算法&lt;/strong&gt;即&lt;code class=&quot;highlighter-rouge&quot;&gt;Least Recently Used&lt;/code&gt;, 其依据是&lt;strong&gt;如果数据最近被访问过, 那么其将来被访问的几率也更大&lt;/strong&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;中的&lt;code class=&quot;highlighter-rouge&quot;&gt;LruCache&lt;/code&gt;(内存缓存)内部就是利用&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;实现的&lt;/p&gt;
-
-&lt;p&gt;前面我们讲了, 当&lt;code class=&quot;highlighter-rouge&quot;&gt;accessOrder&lt;/code&gt;设置为&lt;code class=&quot;highlighter-rouge&quot;&gt;true&lt;/code&gt;, 即按照元素访问顺序组织数据的时候, 会在&lt;code class=&quot;highlighter-rouge&quot;&gt;get()&lt;/code&gt;方法中将被访问的元素移动到链表的末尾, 那么链表首部的元素就是最久没有访问的, 所以, 当要使用&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;实现&lt;code class=&quot;highlighter-rouge&quot;&gt;LRU&lt;/code&gt;的时候, 必须将&lt;code class=&quot;highlighter-rouge&quot;&gt;accessOrder&lt;/code&gt;置为&lt;code class=&quot;highlighter-rouge&quot;&gt;true&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;另外, 还需要我们自己去定义&lt;code class=&quot;highlighter-rouge&quot;&gt;LRU&lt;/code&gt;的实现规则, 即自己定义什么时候应该移除最久没有使用的元素; 此时我们需要去重写&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;removeEldestEntry()&lt;/code&gt;函数, &lt;code class=&quot;highlighter-rouge&quot;&gt;removeEldestEntry()&lt;/code&gt;是在我们插入一个元素完毕之后, 回调&lt;code class=&quot;highlighter-rouge&quot;&gt;afterNodeInsertion()&lt;/code&gt;中调用的, 如下; 但是&lt;code class=&quot;highlighter-rouge&quot;&gt;removeEldestEntry()&lt;/code&gt;默认返回&lt;code class=&quot;highlighter-rouge&quot;&gt;false&lt;/code&gt;, 所以需要我们自己去定义规则&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    void afterNodeInsertion(boolean evict) { // possibly remove eldest
-        LinkedHashMap.Entry&amp;lt;K,V&amp;gt; first;
-        if (evict &amp;amp;&amp;amp; (first = head) != null &amp;amp;&amp;amp; removeEldestEntry(first)) { // 插入元素之后, 判断是否需要移除最久没有访问的元素
-            K key = first.key;
-            removeNode(hash(key), key, null, false, true); // 移除链表首部的元素
-        }
-    }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;至于自定义规则, 比如: 约定最多在内存中缓存多少个元素, 超过该阈值之后, &lt;code class=&quot;highlighter-rouge&quot;&gt;removeEldestEntry()&lt;/code&gt;返回&lt;code class=&quot;highlighter-rouge&quot;&gt;true&lt;/code&gt;, 即将旧元素移除; 或者, 规定缓存占用多少内存, 当达到该阈值之后, 即进行旧元素移除; 当然, 这些都是后话, 具体的&lt;code class=&quot;highlighter-rouge&quot;&gt;LRU&lt;/code&gt;算法, 可以根据实际需求来定&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;四-总结&quot;&gt;四. 总结&lt;/h2&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;基于&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;, 总体上比较简单, 主要掌握上文说的两个主要特点即可, 不再赘述 !&lt;/p&gt;
-</description>
-        <pubDate>Tue, 28 Aug 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/</guid>
-        
-        <category>Java</category>
         
         
       </item>
