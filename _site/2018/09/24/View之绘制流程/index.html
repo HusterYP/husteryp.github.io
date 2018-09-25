@@ -10,9 +10,9 @@
     <meta name="keyword"  content="">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>Blog Template - 袁平 | HusterYP-Blog</title>
+    <title>View之绘制流程 - 袁平 | HusterYP-Blog</title>
 
-    <link rel="canonical" href="http://localhost:4000/2018/08/20/template/">
+    <link rel="canonical" href="http://localhost:4000/2018/09/24/View%E4%B9%8B%E7%BB%98%E5%88%B6%E6%B5%81%E7%A8%8B/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/css/bootstrap.min.css">
@@ -140,15 +140,17 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/tags/#Blog" title="Blog">Blog</a>
+                        <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                        <a class="tag" href="/tags/#View" title="View">View</a>
                         
                     </div>
-                    <h1>Blog Template</h1>
+                    <h1>View之绘制流程</h1>
                     
                     
-                    <h2 class="subheading">博客模板</h2>
+                    <h2 class="subheading">Android源码分析之View绘制流程</h2>
                     
-                    <span class="meta">Posted by 袁平 on August 20, 2018</span>
+                    <span class="meta">Posted by 袁平 on September 24, 2018</span>
                 </div>
             </div>
         </div>
@@ -166,24 +168,98 @@
                 col-md-10 col-md-offset-1
                 post-container">
 
-				<h3 id="blog-template">Blog Template</h3>
+				<h1 id="前言">前言</h1>
 
-<p>发布博客直接将<code class="highlighter-rouge">md</code>文件扔到<code class="highlighter-rouge">_post</code>文件夹下即可; 需要注意命名规范, 文件名需要以时间格式开头(参照<code class="highlighter-rouge">2018-08-20-template.md</code>命名)</p>
+<p><code class="highlighter-rouge">Android</code>源码分析之<code class="highlighter-rouge">View</code>系列之绘制流程</p>
 
-<p>本地博客测试: <code class="highlighter-rouge">jekyll serve</code></p>
+<hr />
 
-<p>博客首部</p>
+<h1 id="正文">正文</h1>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>---
-layout:     post
-title:      ""
-subtitle:   ""
-date:       2018-
-author:     "袁平"
-header-img: "img/tag-bg.jpg"
-tags:
-    - 
----
+<hr />
+
+<h2 id="一-概述">一. 概述</h2>
+
+<p><code class="highlighter-rouge">View</code>的绘制流程分为三大步: <code class="highlighter-rouge">measure</code>, <code class="highlighter-rouge">layout</code>, <code class="highlighter-rouge">draw</code>; <code class="highlighter-rouge">measure</code>即测量, 测量<code class="highlighter-rouge">View</code>的大小; <code class="highlighter-rouge">layout</code>即布局, 按照一定的规则排布<code class="highlighter-rouge">View</code>; <code class="highlighter-rouge">draw</code>即绘制, 绘制<code class="highlighter-rouge">View</code>的外形; 这三步是和我们自定义<code class="highlighter-rouge">View</code>息息相关的, 熟悉和掌握这三大流程, 我们才能随心所欲的定制<code class="highlighter-rouge">View</code>; 本文也将从这三个方面入手, 结合源码讲解</p>
+
+<p>在开始之前, 需要先了解一下<code class="highlighter-rouge">View</code>绘制的整体流程, 如下图;</p>
+
+<p><img src="/img/post/View/View绘制流程.png" alt="View绘制流程" /></p>
+
+<p><strong>注</strong>: 图片来自: https://www.jianshu.com/p/dc0b039e7c4f</p>
+
+<p>可以看出, 与<code class="highlighter-rouge">View</code>三大流程直接相关的是从<code class="highlighter-rouge">performTraversals()</code>开始的; 大致流程如下</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private void performTraversals() {
+    ...
+    int childWidthMeasureSpec = getRootMeasureSpec(mWidth, lp.width);
+    int childHeightMeasureSpec = getRootMeasureSpec(mHeight, lp.height);
+    performMeasure(childWidthMeasureSpec, childHeightMeasureSpec);
+    ...
+    performLayout(lp, mWidth, mHeight);
+    ...
+    performDraw();
+    ...
+}
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="二-measure过程">二. measure过程</h2>
+
+<h3 id="21-measurespec">2.1 MeasureSpec</h3>
+
+<p><code class="highlighter-rouge">MeasureSpec</code>是一个<code class="highlighter-rouge">32</code>位<code class="highlighter-rouge">int</code>类型的值, 是<code class="highlighter-rouge">SpecMode</code>和<code class="highlighter-rouge">SpecSize</code>的位组合; 高<code class="highlighter-rouge">2</code>位表示<code class="highlighter-rouge">SpecMode</code>, 低<code class="highlighter-rouge">30</code>位表示<code class="highlighter-rouge">SpecSize</code>, 这样设计其实是为了节约空间; 关于二者如何组合, 可以参见以下代码; 可以看出, 其实就是通过<code class="highlighter-rouge">MODE_MASK</code>掩码以及位操作实现将两个<code class="highlighter-rouge">int</code>类型整合为一个<code class="highlighter-rouge">32</code><code class="highlighter-rouge">int</code>类型的<code class="highlighter-rouge">MeasureSpec</code>; 当然, 要分别提取这两个值的话, 也可以很简单的用位操作实现, 代码比较简单, 就不贴啦~</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>        public static int makeMeasureSpec(@IntRange(from = 0, to = (1 &lt;&lt; MeasureSpec.MODE_SHIFT) - 1) int size,
+                                          @MeasureSpecMode int mode) {
+            if (sUseBrokenMakeMeasureSpec) {
+                return size + mode;
+            } else {
+                return (size &amp; ~MODE_MASK) | (mode &amp; MODE_MASK); // MODE_MASK  = 0x3 &lt;&lt; 30; 
+            }
+        }
+</code></pre></div></div>
+
+<p><code class="highlighter-rouge">SpecMode</code>即测量模式, 一共有三类:</p>
+
+<ol>
+  <li>
+    <p><strong>UNSPECIFIED</strong>: 父容器不对<code class="highlighter-rouge">View</code>有任何限制, 要多大给多大, 这种情况一般用于系统内部</p>
+  </li>
+  <li>
+    <p><strong>EXACTLY</strong>: 对应于<code class="highlighter-rouge">LayoutParams</code>中的<code class="highlighter-rouge">match_parent</code>和具体数值这两种模式</p>
+  </li>
+  <li>
+    <p><strong>AT_MOST</strong>: 父容器指定了一个可用大小即<code class="highlighter-rouge">SpecSize</code>, <code class="highlighter-rouge">View</code>的大小不能大于该值, 对应于<code class="highlighter-rouge">LayoutParams</code>中的<code class="highlighter-rouge">wrap_content</code></p>
+  </li>
+</ol>
+
+<p>从<code class="highlighter-rouge">SpecMode</code>的类型区别可以看出, <code class="highlighter-rouge">MeasureSpec</code>的确定受<code class="highlighter-rouge">LayoutParams</code>的影响, 但是也要分情况: 对于<code class="highlighter-rouge">RootView</code>即<code class="highlighter-rouge">DecorView</code>来说, 由于其没有父<code class="highlighter-rouge">View</code>, 所以<code class="highlighter-rouge">DecorView</code>的<code class="highlighter-rouge">MeasureSpec</code>由窗口尺寸和自身的<code class="highlighter-rouge">LayoutParams</code>共同决定; 对于普通<code class="highlighter-rouge">View</code>来说, 其<code class="highlighter-rouge">MeasureSpec</code>由父容器的<code class="highlighter-rouge">MeasureSpec</code>和自身的<code class="highlighter-rouge">LayoutParams</code>共同决定</p>
+
+<h3 id="21-decorview的measure过程">2.1 DecorView的measure过程</h3>
+
+<p>我们知道, <code class="highlighter-rouge">DecorView</code>是整个<code class="highlighter-rouge">View</code>树的<code class="highlighter-rouge">root</code>, 是一个<code class="highlighter-rouge">FrameLayout</code>, 我们首先来看<code class="highlighter-rouge">DecorView</code>的测量过程; 在<code class="highlighter-rouge">performTraversals()</code>中, 首先通过<code class="highlighter-rouge">getRootMeasureSpec()</code>来获取<code class="highlighter-rouge">MeasureSpec</code>, 如下;</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private static int getRootMeasureSpec(int windowSize, int rootDimension) {
+        int measureSpec;
+        switch (rootDimension) {
+
+        case ViewGroup.LayoutParams.MATCH_PARENT:
+            // Window can't resize. Force root view to be windowSize.
+            measureSpec = MeasureSpec.makeMeasureSpec(windowSize, MeasureSpec.EXACTLY);
+            break;
+        case ViewGroup.LayoutParams.WRAP_CONTENT:
+            // Window can resize. Set max size for root view.
+            measureSpec = MeasureSpec.makeMeasureSpec(windowSize, MeasureSpec.AT_MOST);
+            break;
+        default:
+            // Window wants to be an exact size. Force root view to be that size.
+            measureSpec = MeasureSpec.makeMeasureSpec(rootDimension, MeasureSpec.EXACTLY);
+            break;
+        }
+        return measureSpec;
+}
 </code></pre></div></div>
 
 
@@ -194,10 +270,10 @@ tags:
 
                 <ul class="pager">
                     
-                    
-                    <li class="next">
-                        <a href="/2018/08/20/AndroidStudio%E4%BB%A3%E7%90%86%E8%AE%BE%E7%BD%AE%E8%B8%A9%E5%9D%91/" data-toggle="tooltip" data-placement="top" title="AndroidStudio代理设置">Next Post &rarr;</a>
+                    <li class="previous">
+                        <a href="/2018/09/20/View%E4%B9%8B%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E6%9C%BA%E5%88%B6/" data-toggle="tooltip" data-placement="top" title="View之事件分发机制">&larr; Previous Post</a>
                     </li>
+                    
                     
                 </ul>
 
@@ -296,8 +372,8 @@ tags:
 <script type="text/javascript">
     /* * * CONFIGURATION VARIABLES * * */
     var disqus_shortname = "HusterYP";
-    var disqus_identifier = "/2018/08/20/template";
-    var disqus_url = "http://localhost:4000/2018/08/20/template/";
+    var disqus_identifier = "/2018/09/24/View之绘制流程";
+    var disqus_url = "http://localhost:4000/2018/09/24/View%E4%B9%8B%E7%BB%98%E5%88%B6%E6%B5%81%E7%A8%8B/";
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;

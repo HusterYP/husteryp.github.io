@@ -5,9 +5,116 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Thu, 20 Sep 2018 16:24:51 +0800</pubDate>
-    <lastBuildDate>Thu, 20 Sep 2018 16:24:51 +0800</lastBuildDate>
+    <pubDate>Tue, 25 Sep 2018 12:21:40 +0800</pubDate>
+    <lastBuildDate>Tue, 25 Sep 2018 12:21:40 +0800</lastBuildDate>
     <generator>Jekyll v3.8.3</generator>
+    
+      <item>
+        <title>View之绘制流程</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;源码分析之&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;系列之绘制流程&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;一-概述&quot;&gt;一. 概述&lt;/h2&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的绘制流程分为三大步: &lt;code class=&quot;highlighter-rouge&quot;&gt;measure&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;layout&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;draw&lt;/code&gt;; &lt;code class=&quot;highlighter-rouge&quot;&gt;measure&lt;/code&gt;即测量, 测量&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的大小; &lt;code class=&quot;highlighter-rouge&quot;&gt;layout&lt;/code&gt;即布局, 按照一定的规则排布&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;; &lt;code class=&quot;highlighter-rouge&quot;&gt;draw&lt;/code&gt;即绘制, 绘制&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的外形; 这三步是和我们自定义&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;息息相关的, 熟悉和掌握这三大流程, 我们才能随心所欲的定制&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;; 本文也将从这三个方面入手, 结合源码讲解&lt;/p&gt;
+
+&lt;p&gt;在开始之前, 需要先了解一下&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;绘制的整体流程, 如下图;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/View/View绘制流程.png&quot; alt=&quot;View绘制流程&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;注&lt;/strong&gt;: 图片来自: https://www.jianshu.com/p/dc0b039e7c4f&lt;/p&gt;
+
+&lt;p&gt;可以看出, 与&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;三大流程直接相关的是从&lt;code class=&quot;highlighter-rouge&quot;&gt;performTraversals()&lt;/code&gt;开始的; 大致流程如下&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private void performTraversals() {
+    ...
+    int childWidthMeasureSpec = getRootMeasureSpec(mWidth, lp.width);
+    int childHeightMeasureSpec = getRootMeasureSpec(mHeight, lp.height);
+    performMeasure(childWidthMeasureSpec, childHeightMeasureSpec);
+    ...
+    performLayout(lp, mWidth, mHeight);
+    ...
+    performDraw();
+    ...
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;二-measure过程&quot;&gt;二. measure过程&lt;/h2&gt;
+
+&lt;h3 id=&quot;21-measurespec&quot;&gt;2.1 MeasureSpec&lt;/h3&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;MeasureSpec&lt;/code&gt;是一个&lt;code class=&quot;highlighter-rouge&quot;&gt;32&lt;/code&gt;位&lt;code class=&quot;highlighter-rouge&quot;&gt;int&lt;/code&gt;类型的值, 是&lt;code class=&quot;highlighter-rouge&quot;&gt;SpecMode&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;SpecSize&lt;/code&gt;的位组合; 高&lt;code class=&quot;highlighter-rouge&quot;&gt;2&lt;/code&gt;位表示&lt;code class=&quot;highlighter-rouge&quot;&gt;SpecMode&lt;/code&gt;, 低&lt;code class=&quot;highlighter-rouge&quot;&gt;30&lt;/code&gt;位表示&lt;code class=&quot;highlighter-rouge&quot;&gt;SpecSize&lt;/code&gt;, 这样设计其实是为了节约空间; 关于二者如何组合, 可以参见以下代码; 可以看出, 其实就是通过&lt;code class=&quot;highlighter-rouge&quot;&gt;MODE_MASK&lt;/code&gt;掩码以及位操作实现将两个&lt;code class=&quot;highlighter-rouge&quot;&gt;int&lt;/code&gt;类型整合为一个&lt;code class=&quot;highlighter-rouge&quot;&gt;32&lt;/code&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;int&lt;/code&gt;类型的&lt;code class=&quot;highlighter-rouge&quot;&gt;MeasureSpec&lt;/code&gt;; 当然, 要分别提取这两个值的话, 也可以很简单的用位操作实现, 代码比较简单, 就不贴啦~&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;        public static int makeMeasureSpec(@IntRange(from = 0, to = (1 &amp;lt;&amp;lt; MeasureSpec.MODE_SHIFT) - 1) int size,
+                                          @MeasureSpecMode int mode) {
+            if (sUseBrokenMakeMeasureSpec) {
+                return size + mode;
+            } else {
+                return (size &amp;amp; ~MODE_MASK) | (mode &amp;amp; MODE_MASK); // MODE_MASK  = 0x3 &amp;lt;&amp;lt; 30; 
+            }
+        }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;SpecMode&lt;/code&gt;即测量模式, 一共有三类:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;UNSPECIFIED&lt;/strong&gt;: 父容器不对&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;有任何限制, 要多大给多大, 这种情况一般用于系统内部&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;EXACTLY&lt;/strong&gt;: 对应于&lt;code class=&quot;highlighter-rouge&quot;&gt;LayoutParams&lt;/code&gt;中的&lt;code class=&quot;highlighter-rouge&quot;&gt;match_parent&lt;/code&gt;和具体数值这两种模式&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;AT_MOST&lt;/strong&gt;: 父容器指定了一个可用大小即&lt;code class=&quot;highlighter-rouge&quot;&gt;SpecSize&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的大小不能大于该值, 对应于&lt;code class=&quot;highlighter-rouge&quot;&gt;LayoutParams&lt;/code&gt;中的&lt;code class=&quot;highlighter-rouge&quot;&gt;wrap_content&lt;/code&gt;&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;从&lt;code class=&quot;highlighter-rouge&quot;&gt;SpecMode&lt;/code&gt;的类型区别可以看出, &lt;code class=&quot;highlighter-rouge&quot;&gt;MeasureSpec&lt;/code&gt;的确定受&lt;code class=&quot;highlighter-rouge&quot;&gt;LayoutParams&lt;/code&gt;的影响, 但是也要分情况: 对于&lt;code class=&quot;highlighter-rouge&quot;&gt;RootView&lt;/code&gt;即&lt;code class=&quot;highlighter-rouge&quot;&gt;DecorView&lt;/code&gt;来说, 由于其没有父&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;, 所以&lt;code class=&quot;highlighter-rouge&quot;&gt;DecorView&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;MeasureSpec&lt;/code&gt;由窗口尺寸和自身的&lt;code class=&quot;highlighter-rouge&quot;&gt;LayoutParams&lt;/code&gt;共同决定; 对于普通&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;来说, 其&lt;code class=&quot;highlighter-rouge&quot;&gt;MeasureSpec&lt;/code&gt;由父容器的&lt;code class=&quot;highlighter-rouge&quot;&gt;MeasureSpec&lt;/code&gt;和自身的&lt;code class=&quot;highlighter-rouge&quot;&gt;LayoutParams&lt;/code&gt;共同决定&lt;/p&gt;
+
+&lt;h3 id=&quot;21-decorview的measure过程&quot;&gt;2.1 DecorView的measure过程&lt;/h3&gt;
+
+&lt;p&gt;我们知道, &lt;code class=&quot;highlighter-rouge&quot;&gt;DecorView&lt;/code&gt;是整个&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;树的&lt;code class=&quot;highlighter-rouge&quot;&gt;root&lt;/code&gt;, 是一个&lt;code class=&quot;highlighter-rouge&quot;&gt;FrameLayout&lt;/code&gt;, 我们首先来看&lt;code class=&quot;highlighter-rouge&quot;&gt;DecorView&lt;/code&gt;的测量过程; 在&lt;code class=&quot;highlighter-rouge&quot;&gt;performTraversals()&lt;/code&gt;中, 首先通过&lt;code class=&quot;highlighter-rouge&quot;&gt;getRootMeasureSpec()&lt;/code&gt;来获取&lt;code class=&quot;highlighter-rouge&quot;&gt;MeasureSpec&lt;/code&gt;, 如下;&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private static int getRootMeasureSpec(int windowSize, int rootDimension) {
+        int measureSpec;
+        switch (rootDimension) {
+
+        case ViewGroup.LayoutParams.MATCH_PARENT:
+            // Window can't resize. Force root view to be windowSize.
+            measureSpec = MeasureSpec.makeMeasureSpec(windowSize, MeasureSpec.EXACTLY);
+            break;
+        case ViewGroup.LayoutParams.WRAP_CONTENT:
+            // Window can resize. Set max size for root view.
+            measureSpec = MeasureSpec.makeMeasureSpec(windowSize, MeasureSpec.AT_MOST);
+            break;
+        default:
+            // Window wants to be an exact size. Force root view to be that size.
+            measureSpec = MeasureSpec.makeMeasureSpec(rootDimension, MeasureSpec.EXACTLY);
+            break;
+        }
+        return measureSpec;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+</description>
+        <pubDate>Mon, 24 Sep 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/09/24/View%E4%B9%8B%E7%BB%98%E5%88%B6%E6%B5%81%E7%A8%8B/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/09/24/View%E4%B9%8B%E7%BB%98%E5%88%B6%E6%B5%81%E7%A8%8B/</guid>
+        
+        <category>Android</category>
+        
+        <category>View</category>
+        
+        
+      </item>
     
       <item>
         <title>View之事件分发机制</title>
@@ -257,6 +364,8 @@
 &lt;h2 id=&quot;五-总结&quot;&gt;五. 总结&lt;/h2&gt;
 
 &lt;p&gt;到这里, &lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的事件分发和处理流程就分析结束啦~; 我们最开始讲&lt;strong&gt;事件分发之源&lt;/strong&gt;时讲&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;对事件的传递的时候, 如果&lt;code class=&quot;highlighter-rouge&quot;&gt;getWindow().superDispatchTouchEvent()&lt;/code&gt;返回&lt;code class=&quot;highlighter-rouge&quot;&gt;false&lt;/code&gt;的话, 就最终将事件交给&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;onTouchEvent()&lt;/code&gt;处理, 这种情况其实对应的是&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;都不进行事件处理, 那么就逐层回传咯~&lt;/p&gt;
+
+&lt;p&gt;当然理论学习完了, 就应该实际测试一下, 这里笔者写了一个测试的&lt;code class=&quot;highlighter-rouge&quot;&gt;Demo&lt;/code&gt;, &lt;a href=&quot;https://github.com/HusterYP/UI/blob/master/UIList/app/src/main/java/com/example/yuanping/uilist/touch/TouchActivity.java&quot;&gt;参见Github&lt;/a&gt;&lt;/p&gt;
 
 &lt;p&gt;最后将上述流程总结为下图:&lt;/p&gt;
 
@@ -1825,133 +1934,6 @@ private final LinkedHashMap&amp;lt;String, Entry&amp;gt; lruEntries = new Linked
         <pubDate>Tue, 28 Aug 2018 00:00:00 +0800</pubDate>
         <link>http://localhost:4000/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/</link>
         <guid isPermaLink="true">http://localhost:4000/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/</guid>
-        
-        <category>Java</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>Java集合框架之Set</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;&lt;a href=&quot;https://husteryp.github.io/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/&quot;&gt;前面&lt;/a&gt;我们对Java集合框架有了一个基本的认识, 这里我们从几大接口入手, 逐步讲解其实现类; 下面要讲解的是&lt;code class=&quot;highlighter-rouge&quot;&gt;Set&lt;/code&gt;的实现类, 即常用的&lt;code class=&quot;highlighter-rouge&quot;&gt;HashSet&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;TreeSet&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashSet&lt;/code&gt;&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;文章源码基于&lt;code class=&quot;highlighter-rouge&quot;&gt;JDK8&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;strong&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;集合框架系列博客&lt;/strong&gt;:&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;a href=&quot;https://husteryp.github.io/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/&quot;&gt;Java集合框架概述&lt;/a&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;a href=&quot;https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BList/&quot;&gt;Java集合框架之List&lt;/a&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;a href=&quot;https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/&quot;&gt;Java集合框架之HashMap&lt;/a&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;a href=&quot;https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BSet/&quot;&gt;Java集合框架之Set&lt;/a&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;a href=&quot;https://husteryp.github.io/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/&quot;&gt;Java集合框架之LinkedHashMap&lt;/a&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;a href=&quot;https://husteryp.github.io/2018/09/06/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BQueue/&quot;&gt;Java集合框架之Queue&lt;/a&gt;&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;一-概述&quot;&gt;一. 概述&lt;/h2&gt;
-
-&lt;p&gt;需要注意的是, 本文要讲的&lt;code class=&quot;highlighter-rouge&quot;&gt;Set&lt;/code&gt;的几个实现类内部都是基于&lt;code class=&quot;highlighter-rouge&quot;&gt;Map&lt;/code&gt;实现的, 比如: &lt;code class=&quot;highlighter-rouge&quot;&gt;HashSet&lt;/code&gt;基于&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;TreeSet&lt;/code&gt;基于&lt;code class=&quot;highlighter-rouge&quot;&gt;TreeMap&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashSet&lt;/code&gt;基于&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;Set&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;value&lt;/code&gt;实际上就是&lt;code class=&quot;highlighter-rouge&quot;&gt;Map&lt;/code&gt;中的&lt;code class=&quot;highlighter-rouge&quot;&gt;key&lt;/code&gt;, 依赖于&lt;code class=&quot;highlighter-rouge&quot;&gt;Map&lt;/code&gt;键值的唯一性实现&lt;code class=&quot;highlighter-rouge&quot;&gt;Set&lt;/code&gt;中元素的不可重复; 所以在学习&lt;code class=&quot;highlighter-rouge&quot;&gt;Set&lt;/code&gt;部分的时候, 只需要了解对应&lt;code class=&quot;highlighter-rouge&quot;&gt;Map&lt;/code&gt;的特点和实现就可以了; 因此, 本文也不会详细讲解各&lt;code class=&quot;highlighter-rouge&quot;&gt;Set&lt;/code&gt;实现类的代码细节, 而只是对每个实现类的特点进行一个总结&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;二-hashset&quot;&gt;二. HashSet&lt;/h2&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;HashSet&lt;/code&gt;内部是基于&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;实现的, 所以在讲解&lt;code class=&quot;highlighter-rouge&quot;&gt;HashSet&lt;/code&gt;之前, 需要先看一下&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;的实现, 可以参照&lt;a href=&quot;https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/&quot;&gt;Java集合框架之HashMap&lt;/a&gt;, 该篇文章中详细介绍了&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;的实现原理和特点, 推荐对&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;有了一个大致的了解之后再开始往下读 ~&lt;/p&gt;
-
-&lt;p&gt;总体而言, &lt;code class=&quot;highlighter-rouge&quot;&gt;HashSet&lt;/code&gt;的代码比较简单, 其实现&lt;code class=&quot;highlighter-rouge&quot;&gt;Set&lt;/code&gt;元素不重复性其实是利用&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;键值的唯一性; 当我们存放一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Value&lt;/code&gt;的时候, 其实是将该&lt;code class=&quot;highlighter-rouge&quot;&gt;Value&lt;/code&gt;当做&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;中的键值的,  而实现的各种常规操作, 比如: &lt;code class=&quot;highlighter-rouge&quot;&gt;add()&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;remove()&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;contains()&lt;/code&gt;等, 其实都是间接调用了&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;中的相应操作&lt;/p&gt;
-
-&lt;p&gt;所以, 这里不会去细讲&lt;code class=&quot;highlighter-rouge&quot;&gt;HashSet&lt;/code&gt;代码, 了解&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;之后, 其实是很简单的&lt;/p&gt;
-
-&lt;p&gt;这里只是贴一下&lt;code class=&quot;highlighter-rouge&quot;&gt;HashSet&lt;/code&gt;的特点:&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;没有重复元素, 允许&lt;code class=&quot;highlighter-rouge&quot;&gt;null&lt;/code&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;不保证&lt;code class=&quot;highlighter-rouge&quot;&gt;Set&lt;/code&gt;的遍历顺序, 不保证元素的存储数据(具体原因可以见上面博客对&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;的分析)&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;对&lt;code class=&quot;highlighter-rouge&quot;&gt;add()&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;remove()&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;contains()&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;size()&lt;/code&gt;方法提供常量时间&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;非同步, 可以使用&lt;code class=&quot;highlighter-rouge&quot;&gt;Collections.synchronizedSet(new HashSet(...));&lt;/code&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Iterator&lt;/code&gt;遍历的时候, 多线程抛出异常&lt;code class=&quot;highlighter-rouge&quot;&gt;ConcurrentModificationException&lt;/code&gt;(遍历过程中修改数据, 但是可以使用&lt;code class=&quot;highlighter-rouge&quot;&gt;Iterator&lt;/code&gt;自己提供的&lt;code class=&quot;highlighter-rouge&quot;&gt;remove()&lt;/code&gt;方法, 该方法不会造成异常)(原因参见&lt;a href=&quot;https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BList/&quot;&gt;Java集合框架之List&lt;/a&gt;中分析)&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;三-treeset&quot;&gt;三. TreeSet&lt;/h2&gt;
-
-&lt;p&gt;简要总结特点如下:&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;基于&lt;code class=&quot;highlighter-rouge&quot;&gt;TreeMap&lt;/code&gt;实现&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;TreeSet&lt;/code&gt;是一个有序的集合类, 默认为自然顺序, 也可根据提供的&lt;code class=&quot;highlighter-rouge&quot;&gt;Comparator&lt;/code&gt;排序&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;add()&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;remove()&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;contains()&lt;/code&gt;需要&lt;code class=&quot;highlighter-rouge&quot;&gt;logN&lt;/code&gt;时间(是因为&lt;code class=&quot;highlighter-rouge&quot;&gt;TreeMap&lt;/code&gt;是基于红黑树实现的)&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;非同步, 可以使用&lt;code class=&quot;highlighter-rouge&quot;&gt;Collections.synchronizedSortedSet(new TreeSet(...));&lt;/code&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Iterator&lt;/code&gt;抛异常: &lt;code class=&quot;highlighter-rouge&quot;&gt;ConcurrentModificationException&lt;/code&gt;&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;四-linkedhashset&quot;&gt;四. LinkedHashSet&lt;/h2&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashSet&lt;/code&gt;基于&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;, 建议参照&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;的源码分析: &lt;a href=&quot;https://husteryp.github.io/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/&quot;&gt;Java集合框架之LinkedHashMap&lt;/a&gt;&lt;/p&gt;
-
-&lt;p&gt;总结特点如下:&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;访问有序(&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;特点), 按照元素插入顺序访问(注意, 虽然&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashSet&lt;/code&gt;基于&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;实现, 而前面的文章分析了&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;有两种访问顺序, 但是&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashSet&lt;/code&gt;在构造&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;的时候使用的默认访问顺序, 即插入顺序(&lt;code class=&quot;highlighter-rouge&quot;&gt;accessOrder = false&lt;/code&gt;), 所以&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashSet&lt;/code&gt;的访问顺序只有一种, 即元素的插入顺序, 而且需要注意的是, 重复插入元素时是不会改变访问顺序的)&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;非同步: 可以使用&lt;code class=&quot;highlighter-rouge&quot;&gt;Collections.synchronizedSet(new LinkedHashSet(...));&lt;/code&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;对&lt;code class=&quot;highlighter-rouge&quot;&gt;add()&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;contains()&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;remove()&lt;/code&gt;提供常量时间(具体可以参见&lt;a href=&quot;https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/&quot;&gt;Java集合框架之HashMap&lt;/a&gt;中对&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;的分析)&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-</description>
-        <pubDate>Mon, 27 Aug 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BSet/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BSet/</guid>
         
         <category>Java</category>
         
