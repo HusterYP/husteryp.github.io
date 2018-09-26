@@ -207,9 +207,11 @@
 
 <h2 id="二-measure过程">二. measure过程</h2>
 
+<p>在开始讲解<code class="highlighter-rouge">measure</code>过程之前, 我们需要先了解一下<code class="highlighter-rouge">MeasureSpec</code>, 因为<code class="highlighter-rouge">MeasureSpec</code>对于<code class="highlighter-rouge">measure</code>过程的理解还是很重要的</p>
+
 <h3 id="21-measurespec">2.1 MeasureSpec</h3>
 
-<p><code class="highlighter-rouge">MeasureSpec</code>是一个<code class="highlighter-rouge">32</code>位<code class="highlighter-rouge">int</code>类型的值, 是<code class="highlighter-rouge">SpecMode</code>和<code class="highlighter-rouge">SpecSize</code>的位组合; 高<code class="highlighter-rouge">2</code>位表示<code class="highlighter-rouge">SpecMode</code>, 低<code class="highlighter-rouge">30</code>位表示<code class="highlighter-rouge">SpecSize</code>, 这样设计其实是为了节约空间; 关于二者如何组合, 可以参见以下代码; 可以看出, 其实就是通过<code class="highlighter-rouge">MODE_MASK</code>掩码以及位操作实现将两个<code class="highlighter-rouge">int</code>类型整合为一个<code class="highlighter-rouge">32</code><code class="highlighter-rouge">int</code>类型的<code class="highlighter-rouge">MeasureSpec</code>; 当然, 要分别提取这两个值的话, 也可以很简单的用位操作实现, 代码比较简单, 就不贴啦~</p>
+<p><code class="highlighter-rouge">MeasureSpec</code>是一个<code class="highlighter-rouge">32</code>位<code class="highlighter-rouge">int</code>类型的值, 是<code class="highlighter-rouge">SpecMode</code>和<code class="highlighter-rouge">SpecSize</code>的位组合; 高<code class="highlighter-rouge">2</code>位表示<code class="highlighter-rouge">SpecMode</code>, 低<code class="highlighter-rouge">30</code>位表示<code class="highlighter-rouge">SpecSize</code>, 这样设计其实是为了节约空间; 关于二者如何组合, 可以参见以下代码; 可以看出, 其实就是通过<code class="highlighter-rouge">MODE_MASK</code>掩码以及位操作实现将两个<code class="highlighter-rouge">int</code>类型整合为一个<code class="highlighter-rouge">32</code>位<code class="highlighter-rouge">int</code>类型的<code class="highlighter-rouge">MeasureSpec</code>; 当然, 要分别提取这两个值的话, 也可以很简单的用位操作实现, 代码比较简单, 就不贴啦~</p>
 
 <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>        public static int makeMeasureSpec(@IntRange(from = 0, to = (1 &lt;&lt; MeasureSpec.MODE_SHIFT) - 1) int size,
                                           @MeasureSpecMode int mode) {
@@ -235,11 +237,70 @@
   </li>
 </ol>
 
-<p>从<code class="highlighter-rouge">SpecMode</code>的类型区别可以看出, <code class="highlighter-rouge">MeasureSpec</code>的确定受<code class="highlighter-rouge">LayoutParams</code>的影响, 但是也要分情况: 对于<code class="highlighter-rouge">RootView</code>即<code class="highlighter-rouge">DecorView</code>来说, 由于其没有父<code class="highlighter-rouge">View</code>, 所以<code class="highlighter-rouge">DecorView</code>的<code class="highlighter-rouge">MeasureSpec</code>由窗口尺寸和自身的<code class="highlighter-rouge">LayoutParams</code>共同决定; 对于普通<code class="highlighter-rouge">View</code>来说, 其<code class="highlighter-rouge">MeasureSpec</code>由父容器的<code class="highlighter-rouge">MeasureSpec</code>和自身的<code class="highlighter-rouge">LayoutParams</code>共同决定</p>
+<p>从<code class="highlighter-rouge">SpecMode</code>的类型区别可以看出, <code class="highlighter-rouge">MeasureSpec</code>的确定受<code class="highlighter-rouge">LayoutParams</code>的影响, 但是也要分情况: 对于<code class="highlighter-rouge">RootView</code>即<code class="highlighter-rouge">DecorView</code>来说, 由于其没有父<code class="highlighter-rouge">View</code>, 所以<code class="highlighter-rouge">DecorView</code>的<code class="highlighter-rouge">MeasureSpec</code>由窗口尺寸和自身的<code class="highlighter-rouge">LayoutParams</code>共同决定; 对于普通<code class="highlighter-rouge">View</code>来说, 其<code class="highlighter-rouge">MeasureSpec</code>由父容器传递的<code class="highlighter-rouge">MeasureSpec</code>和自身的<code class="highlighter-rouge">LayoutParams</code>共同决定</p>
 
-<h3 id="21-decorview的measure过程">2.1 DecorView的measure过程</h3>
+<p>普通<code class="highlighter-rouge">View</code>的<code class="highlighter-rouge">MeasureSpec</code>创建规则见下表</p>
 
-<p>我们知道, <code class="highlighter-rouge">DecorView</code>是整个<code class="highlighter-rouge">View</code>树的<code class="highlighter-rouge">root</code>, 是一个<code class="highlighter-rouge">FrameLayout</code>, 我们首先来看<code class="highlighter-rouge">DecorView</code>的测量过程; 在<code class="highlighter-rouge">performTraversals()</code>中, 首先通过<code class="highlighter-rouge">getRootMeasureSpec()</code>来获取<code class="highlighter-rouge">MeasureSpec</code>, 如下;</p>
+<table>
+  <tbody>
+    <tr>
+      <td><strong>childLayoutParams</strong> \ <strong>parentSpecMode</strong></td>
+      <td><strong>EXACTLY</strong></td>
+      <td><strong>AT_MOST</strong></td>
+      <td><strong>UNSPECIFIED</strong></td>
+    </tr>
+    <tr>
+      <td><strong>dp/px</strong></td>
+      <td>EXACTLY<br />childSize</td>
+      <td>EXACTLY<br />childSize</td>
+      <td>EXACTLY<br />childSize</td>
+    </tr>
+    <tr>
+      <td><strong>match_parent</strong></td>
+      <td>EXACTLY<br />parentSize</td>
+      <td>AT_MOST<br />parentSize</td>
+      <td>UNSPECIFIED<br />0</td>
+    </tr>
+    <tr>
+      <td><strong>wrap_content</strong></td>
+      <td>AT_MOST<br />parentSize</td>
+      <td>AT_MOST<br />parentSize</td>
+      <td>UNSPECIFIED<br />0</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>注</strong>: 摘自«Android开发艺术探索»</p>
+
+<p>上面表格中展现的规则需要好好理解:</p>
+
+<ol>
+  <li>
+    <p>当<code class="highlighter-rouge">Child</code>尺寸是明确的值时, 即<code class="highlighter-rouge">layout_width</code>和<code class="highlighter-rouge">layout_height</code>有确定的值, 那么不管父<code class="highlighter-rouge">View</code>的<code class="highlighter-rouge">SpecMode</code>是什么, <code class="highlighter-rouge">Child</code>都保持规定尺寸不变; 这点比较好理解, 因为明确指定<code class="highlighter-rouge">Child</code>的尺寸之后, 我们肯定希望显示的也是指定尺寸</p>
+  </li>
+  <li>
+    <p>当<code class="highlighter-rouge">Child</code>的<code class="highlighter-rouge">layout_xxx</code>为<code class="highlighter-rouge">match_parent</code>时, 如果父<code class="highlighter-rouge">View</code>是确定尺寸, 那么<code class="highlighter-rouge">Child</code>的尺寸也能确定, 也就是父<code class="highlighter-rouge">View</code>尺寸, 所以为<code class="highlighter-rouge">EXACTLY, parentSize</code>也可以理解; 如果父<code class="highlighter-rouge">View</code>尺寸不确定, 此时父<code class="highlighter-rouge">View</code>只知道一个最大尺寸, 那么<code class="highlighter-rouge">Child</code>由于<code class="highlighter-rouge">match_parent</code>, 也只能知道一个最大尺寸, 而且该最大尺寸不应该超过<code class="highlighter-rouge">parentSize</code>, 所以为<code class="highlighter-rouge">AT_MOST, parentSize</code></p>
+  </li>
+  <li>
+    <p>当<code class="highlighter-rouge">Child</code>的<code class="highlighter-rouge">layout_xxx</code>为<code class="highlighter-rouge">wrap_content</code>, 即尺寸大小不确定的话, 那么不管父<code class="highlighter-rouge">View</code>是具有确定尺寸还是尺寸不确定, 反正<code class="highlighter-rouge">Child</code>的尺寸始终是不确定的, 所以此时应该为<code class="highlighter-rouge">AT_MOST</code>, 而且<code class="highlighter-rouge">Child</code>尺寸也不应该超过父<code class="highlighter-rouge">View</code>尺寸, 故综上为<code class="highlighter-rouge">AT_MOST, parentSize</code></p>
+  </li>
+</ol>
+
+<h3 id="22-decorview的measure过程">2.2 DecorView的measure过程</h3>
+
+<p>我们知道, <code class="highlighter-rouge">DecorView</code>是整个<code class="highlighter-rouge">View</code>树的<code class="highlighter-rouge">root</code>, 是一个<code class="highlighter-rouge">FrameLayout</code>, 我们首先来看<code class="highlighter-rouge">DecorView</code>的测量过程; 在<code class="highlighter-rouge">performTraversals()</code>中, 首先通过<code class="highlighter-rouge">getRootMeasureSpec()</code>来获取<code class="highlighter-rouge">MeasureSpec</code>, 如下; 结合上面<code class="highlighter-rouge">MeasureSpec</code>的构建规则可以理解<code class="highlighter-rouge">DecorView</code><code class="highlighter-rouge">MeasureSpec</code>的构建规则如下:</p>
+
+<ol>
+  <li>
+    <p>如果<code class="highlighter-rouge">DecorView</code>的<code class="highlighter-rouge">LayoutParams</code>为<code class="highlighter-rouge">MATCH_PARENT</code>, 由于<code class="highlighter-rouge">DecorView</code>没有父<code class="highlighter-rouge">View</code>, 所以其尺寸就为窗口尺寸, <code class="highlighter-rouge">SpecMode</code>为<code class="highlighter-rouge">EXACTLY</code></p>
+  </li>
+  <li>
+    <p>如果<code class="highlighter-rouge">DecorView</code>的<code class="highlighter-rouge">LayoutParams</code>为<code class="highlighter-rouge">WRAP_CONTENT</code>, 此时<code class="highlighter-rouge">DecorView</code>尺寸不确定, 最大尺寸不应该超过窗口尺寸, 所以为<code class="highlighter-rouge">AT_MOST, windowSize</code></p>
+  </li>
+  <li>
+    <p>如果<code class="highlighter-rouge">DecorView</code>明确规定了自己的尺寸, 那么就不受窗口尺寸的影响, 为<code class="highlighter-rouge">EXACTLY, rootDimension</code></p>
+  </li>
+</ol>
 
 <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private static int getRootMeasureSpec(int windowSize, int rootDimension) {
         int measureSpec;
@@ -261,6 +322,142 @@
         return measureSpec;
 }
 </code></pre></div></div>
+
+<p>构建好<code class="highlighter-rouge">DecorView</code>的<code class="highlighter-rouge">MeasureSpec</code>之后, 就直接传入了<code class="highlighter-rouge">performMeasure()</code>中, <code class="highlighter-rouge">performMeasure()</code>的代码如下; 可以看出, 接下来就是将<code class="highlighter-rouge">MeasureSpec</code>传递给<code class="highlighter-rouge">mView</code>进行测量, 而这里的<code class="highlighter-rouge">mView</code>其实就是<code class="highlighter-rouge">DecorView</code>, 而<code class="highlighter-rouge">measure()</code>方法是<code class="highlighter-rouge">final</code>的, 不可重写, 所以应该追溯到<code class="highlighter-rouge">View</code>(继承链为: <code class="highlighter-rouge">DecorView</code> –&gt; <code class="highlighter-rouge">FrameLayout</code> –&gt; <code class="highlighter-rouge">ViewGroup</code> –&gt; <code class="highlighter-rouge">View</code>)的<code class="highlighter-rouge">measure()</code>方法, 在<code class="highlighter-rouge">View</code>的<code class="highlighter-rouge">measure()</code>方法中, 则是去调用了<code class="highlighter-rouge">onMeausre()</code>, <code class="highlighter-rouge">onMeasure()</code>不是<code class="highlighter-rouge">final</code>的,
+所以我们应该去分析的是<code class="highlighter-rouge">DecorView</code>的<code class="highlighter-rouge">onMeasure()</code></p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private void performMeasure(int childWidthMeasureSpec, int childHeightMeasureSpec) {
+        if (mView == null) {
+            return;
+        }
+        Trace.traceBegin(Trace.TRACE_TAG_VIEW, "measure");
+        try {
+            mView.measure(childWidthMeasureSpec, childHeightMeasureSpec);
+        } finally {
+            Trace.traceEnd(Trace.TRACE_TAG_VIEW);
+        }
+}
+</code></pre></div></div>
+
+<p><code class="highlighter-rouge">DecorView</code>的在<code class="highlighter-rouge">onMeasure()</code>中将<code class="highlighter-rouge">MeasureSpec</code>进行处理和判断之后, 调用了<code class="highlighter-rouge">super.onMeasure()</code>, 即<code class="highlighter-rouge">FrameLayout</code>的<code class="highlighter-rouge">onMeasure()</code>; 如下, 可以看出, <code class="highlighter-rouge">FrameLayout</code>的<code class="highlighter-rouge">onMeasure()</code>方法中处理了<code class="highlighter-rouge">Margin</code>(<code class="highlighter-rouge">measureChildWithMargins()</code>)和<code class="highlighter-rouge">Padding</code>(<code class="highlighter-rouge">getPaddingXXX</code>), 而在<code class="highlighter-rouge">measureChildWithMargins()</code>中会去调用<code class="highlighter-rouge">child.measure()</code>, 将<code class="highlighter-rouge">MeasureSpec</code>往下传递(即递归测量), 这样就将测量工作传递到了子<code class="highlighter-rouge">View</code>中</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// DecorView.onMeasure()
+protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+    ...
+    super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+    ...
+}
+
+// FrameLayout.onMeasure()
+protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        int count = getChildCount();
+        for (int i = 0; i &lt; count; i++) {
+            final View child = getChildAt(i);
+            if (mMeasureAllChildren || child.getVisibility() != GONE) {
+                measureChildWithMargins(child, widthMeasureSpec, 0, heightMeasureSpec, 0);
+                final LayoutParams lp = (LayoutParams) child.getLayoutParams();
+                maxWidth = Math.max(maxWidth,
+                        child.getMeasuredWidth() + lp.leftMargin + lp.rightMargin);
+                maxHeight = Math.max(maxHeight,
+                        child.getMeasuredHeight() + lp.topMargin + lp.bottomMargin);
+                childState = combineMeasuredStates(childState, child.getMeasuredState());
+                if (measureMatchParentChildren) {
+                    if (lp.width == LayoutParams.MATCH_PARENT ||
+                            lp.height == LayoutParams.MATCH_PARENT) {
+                        mMatchParentChildren.add(child);
+                    }
+                }
+            }
+        }
+
+        // Account for padding too
+        maxWidth += getPaddingLeftWithForeground() + getPaddingRightWithForeground();
+        maxHeight += getPaddingTopWithForeground() + getPaddingBottomWithForeground();
+        ...
+}
+
+// FrameLayout.measureChildWithMargins()
+protected void measureChildWithMargins(View child,
+            int parentWidthMeasureSpec, int widthUsed,
+            int parentHeightMeasureSpec, int heightUsed) {
+            ....
+            child.measure(childWidthMeasureSpec, childHeightMeasureSpec);
+}
+</code></pre></div></div>
+
+<p>子<code class="highlighter-rouge">View</code>中的<code class="highlighter-rouge">measure</code>过程分为<code class="highlighter-rouge">ViewGroup</code>和<code class="highlighter-rouge">View</code>的测量过程</p>
+
+<h3 id="23-viewgroup的measure过程">2.3 ViewGroup的measure过程</h3>
+
+<p>我们来看子<code class="highlighter-rouge">View</code>是一个<code class="highlighter-rouge">ViewGroup</code>时的测量过程; 其实对于<code class="highlighter-rouge">ViewGroup</code>来说, 不同的<code class="highlighter-rouge">ViewGroup</code>有不同的布局规则, 比如<code class="highlighter-rouge">LinearLayout</code>, 有竖直布局和水平布局两种, 而这两种不同的布局测量方式也不同; 所以我们这里只是简单的看一下<code class="highlighter-rouge">ViewGroup</code>对子<code class="highlighter-rouge">View</code>的通用测量方式</p>
+
+<p>代码如下; 测量逻辑比较简单, 也是遍历所有的子<code class="highlighter-rouge">View</code>, 然后将<code class="highlighter-rouge">MeasureSpec</code>往下传递, 实现递归测量, 不做细讲啦~</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>protected void measureChildren(int widthMeasureSpec, int heightMeasureSpec) {
+        final int size = mChildrenCount;
+        final View[] children = mChildren;
+        for (int i = 0; i &lt; size; ++i) {
+            final View child = children[i];
+            if ((child.mViewFlags &amp; VISIBILITY_MASK) != GONE) {
+                measureChild(child, widthMeasureSpec, heightMeasureSpec);
+            }
+        }
+}
+
+
+protected void measureChild(View child, int parentWidthMeasureSpec,
+            int parentHeightMeasureSpec) {
+        final LayoutParams lp = child.getLayoutParams();
+            
+        // 获取child的MeasureSpec, 同时考虑Padding
+        final int childWidthMeasureSpec = getChildMeasureSpec(parentWidthMeasureSpec,
+                mPaddingLeft + mPaddingRight, lp.width);
+        final int childHeightMeasureSpec = getChildMeasureSpec(parentHeightMeasureSpec,
+                mPaddingTop + mPaddingBottom, lp.height);
+
+        child.measure(childWidthMeasureSpec, childHeightMeasureSpec); // 递归调用, 又回到了这里
+}
+</code></pre></div></div>
+
+<h3 id="24-view的measure过程">2.4 View的measure过程</h3>
+
+<p>这里的<code class="highlighter-rouge">View</code>不包括 <code class="highlighter-rouge">ViewGroup</code>啦~, 只是一个单纯的<code class="highlighter-rouge">View</code>控件而已; 其默认测量规则如下; 这里以<code class="highlighter-rouge">getSuggestedMinimumWidth()</code>为例, 这里的<code class="highlighter-rouge">mMinWidth</code>指的是<code class="highlighter-rouge">android:minWidth</code>属性, 默认为<code class="highlighter-rouge">0</code>, 如果设置了背景, 则返回背景宽度和指定<code class="highlighter-rouge">mMinWidth</code>中的最大值; 至于<code class="highlighter-rouge">getDefaultSize()</code>则是返回默认尺寸, 我们只需关心<code class="highlighter-rouge">AT_MOST</code>和<code class="highlighter-rouge">EXACTLY</code>两种情况即可(因为<code class="highlighter-rouge">UNSPECIFIED</code>一般用于系统, 不常用), 可以看出, <code class="highlighter-rouge">View</code>对于这两种情况默认都是返回的<code class="highlighter-rouge">specSize</code>, 即传入的尺寸,
+我们上面说了<code class="highlighter-rouge">AT_MOST</code>对应<code class="highlighter-rouge">wrap_content</code>模式, <code class="highlighter-rouge">EXACTLY</code>对应<code class="highlighter-rouge">match_parent</code>和</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        setMeasuredDimension(getDefaultSize(getSuggestedMinimumWidth(), widthMeasureSpec),
+                getDefaultSize(getSuggestedMinimumHeight(), heightMeasureSpec));
+}
+
+// 这里以Width为例
+protected int getSuggestedMinimumWidth() {
+        return (mBackground == null) ? mMinWidth : max(mMinWidth, mBackground.getMinimumWidth());
+}
+
+public static int getDefaultSize(int size, int measureSpec) {
+        int result = size;
+        int specMode = MeasureSpec.getMode(measureSpec);
+        int specSize = MeasureSpec.getSize(measureSpec);
+
+        switch (specMode) {
+        case MeasureSpec.UNSPECIFIED:
+            result = size;
+            break;
+        case MeasureSpec.AT_MOST:
+        case MeasureSpec.EXACTLY:
+            result = specSize;
+            break;
+        }
+        return result;
+}
+</code></pre></div></div>
+
+<p>https://www.jianshu.com/p/5a71014e7b1b</p>
+
+<p>在mView.measure()的时候调用getRootMeasureSpec获得两个MeasureSpec做为参数，getRootMeasureSpec的两个参数（mWidth, lp.width）mWith和mHeight 是屏幕的宽度和高度， lp是WindowManager.LayoutParams，它的lp.width和lp.height的默认值是MATCH_PARENT,所以通过getRootMeasureSpec 生成的测量规格MeasureSpec 的mode是MATCH_PARENT ，size是屏幕的高宽。
+因为DecorView 是一个FrameLayout 那么接下来会进入FrameLayout 的measure方法，measure的两个参数就是刚才getRootMeasureSpec的生成的两个MeasureSpec，DecorView的测量开始了。</p>
+
+<p>ViewRoot是一个LinearLayout ，ViewRoot.measure最终会执行的LinearLayout 的onMeasure 方</p>
 
 
                 <hr>
