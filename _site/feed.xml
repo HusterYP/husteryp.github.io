@@ -5,9 +5,286 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Wed, 26 Sep 2018 22:34:27 +0800</pubDate>
-    <lastBuildDate>Wed, 26 Sep 2018 22:34:27 +0800</lastBuildDate>
+    <pubDate>Thu, 27 Sep 2018 19:42:32 +0800</pubDate>
+    <lastBuildDate>Thu, 27 Sep 2018 19:42:32 +0800</lastBuildDate>
     <generator>Jekyll v3.8.3</generator>
+    
+      <item>
+        <title>Java内存区域与内存溢出异常</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;本文是对«深入理解Java虚拟机»第二章以及其他博客的阅读总结&lt;/p&gt;
+
+&lt;p&gt;重点是需要去理解各区域存储的是什么, 以此从底层理解对象的创建与引用等过程; 同时还需要明确的一点是各部分会产生的异常, 以及产生异常的原因&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;注&lt;/strong&gt;: 文中部分图片来自网络, 但是忘了出处, 侵删~&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;一-基本概念&quot;&gt;一. 基本概念&lt;/h2&gt;
+
+&lt;p&gt;在开始讲解之前, 需要先明确关于&lt;code class=&quot;highlighter-rouge&quot;&gt;JVM&lt;/code&gt;的一些基本概念&lt;/p&gt;
+
+&lt;p&gt;我们都知道, &lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;是一个跨平台的语言, &lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;跨平台的基本支撑其实就是&lt;code class=&quot;highlighter-rouge&quot;&gt;JVM&lt;/code&gt;对操作系统底层细节的屏蔽, 相当于加了一个中间层(计算机中的任何问题都可以加一个中间层解决~), &lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;不再像&lt;code class=&quot;highlighter-rouge&quot;&gt;C/C++&lt;/code&gt;等语言一样直接翻译为针对特殊平台的机器码, 而是翻译为字节码, 也即是我们的&lt;code class=&quot;highlighter-rouge&quot;&gt;class&lt;/code&gt;文件, 下图大概可以比较简明的概括了~; 字节码就相当于&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;世界中的汇编, 而&lt;code class=&quot;highlighter-rouge&quot;&gt;JVM&lt;/code&gt;则不是跨平台的, 只是不同平台的&lt;code class=&quot;highlighter-rouge&quot;&gt;JVM&lt;/code&gt;都能识别和运行标准格式的字节码文件而已&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/JVM/Java编译.png&quot; alt=&quot;Java编译&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;关于&lt;code class=&quot;highlighter-rouge&quot;&gt;JVM&lt;/code&gt;运行&lt;code class=&quot;highlighter-rouge&quot;&gt;class&lt;/code&gt;文件, 我觉得下图已经可以比较准确的表达了&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/JVM/JVM.png&quot; alt=&quot;JVM&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;我们下面要讲的就是&lt;code class=&quot;highlighter-rouge&quot;&gt;Runtime Data Area&lt;/code&gt;部分&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;二-运行时数据区&quot;&gt;二. 运行时数据区&lt;/h2&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;JVM&lt;/code&gt;会在执行&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;程序的时候把它所管理的内存划分为若干个不同的数据区, 如下:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/JVM/JVM内存区域.png&quot; alt=&quot;JVM&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;21-程序计数器&quot;&gt;2.1 程序计数器&lt;/h3&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;线程私有&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h4 id=&quot;211-存储数据类型&quot;&gt;2.1.1 存储数据类型&lt;/h4&gt;
+
+&lt;p&gt;指向下一条需要执行的字节码指令; 如果线程正在执行一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;方法, 该计数器记录的是正在执行的虚拟机字节码指令的地址; 如果正在执行&lt;code class=&quot;highlighter-rouge&quot;&gt;Native&lt;/code&gt;方法, 该计数器值则为空(&lt;code class=&quot;highlighter-rouge&quot;&gt;Undefined&lt;/code&gt;)&lt;/p&gt;
+
+&lt;h4 id=&quot;212-异常情况&quot;&gt;2.1.2 异常情况&lt;/h4&gt;
+
+&lt;p&gt;该区域是是唯一一个在&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;虚拟机中没有规定任何&lt;code class=&quot;highlighter-rouge&quot;&gt;OutOfMemoryError&lt;/code&gt;情况的区域&lt;/p&gt;
+
+&lt;h3 id=&quot;22-java虚拟机栈&quot;&gt;2.2 Java虚拟机栈&lt;/h3&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;线程私有&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h4 id=&quot;221-存储数据类型&quot;&gt;2.2.1 存储数据类型&lt;/h4&gt;
+
+&lt;p&gt;描述&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;方法执行的内存模型, 每个方法调用就对应着一个栈帧的入栈和出栈; 一个栈帧里面存储了局部变量表, 操作数栈, 动态链接, 方法出口等信息&lt;/p&gt;
+
+&lt;p&gt;局部变量表存储了编译器可知的各种基本数据类型, 对象引用, &lt;code class=&quot;highlighter-rouge&quot;&gt;returnAddress&lt;/code&gt;; 局部变量表的大小在编译期间即可确定, 运行期间大小不变&lt;/p&gt;
+
+&lt;h4 id=&quot;222-异常情况&quot;&gt;2.2.2 异常情况&lt;/h4&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;&lt;strong&gt;StackOverflowError&lt;/strong&gt;: 线程请求栈深度大于虚拟机允许深度&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;异常示例代码:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class JavaVMStackSOF {
+
+    private int stackLength = 1;
+
+    public void stackLeak() {
+        stackLength++;
+        stackLeak();
+    }
+
+    public static void main(String[] args) {
+        JavaVMStackSOF sof = new JavaVMStackSOF();
+        try {
+            sof.stackLeak();
+        } catch (Throwable e) {
+            System.out.println(&quot;Stack Length: &quot; + sof.stackLength);
+            throw e;
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;&lt;strong&gt;OutOfMemoryError&lt;/strong&gt;: 虚拟机栈动态扩展时无法申请到足够内存&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;异常示例代码:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class JavaVMStackOOM {
+
+    private void dontStop() {
+        while (true) {
+        }
+    }
+
+    public void stackLeakByThread() {
+        while (true) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    dontStop();
+                }
+            }).start();
+        }
+    }
+
+    public static void main(String[] args) {
+        JavaVMStackOOM oom = new JavaVMStackOOM();
+        oom.stackLeakByThread();
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;strong&gt;注&lt;/strong&gt;: 由于操作系统分配给每个进程的内存空间是有限制的, 所以如果是由于建立过多的线程导致内存溢出, 在不能减少线程数或者更换&lt;code class=&quot;highlighter-rouge&quot;&gt;64&lt;/code&gt;位虚拟机的情况下, 可以选择通过减少最大堆和减少栈容量来换取更多的线程&lt;/p&gt;
+
+&lt;h3 id=&quot;23-本地方法栈&quot;&gt;2.3 本地方法栈&lt;/h3&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;线程私有&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h4 id=&quot;231-存储数据类型&quot;&gt;2.3.1 存储数据类型&lt;/h4&gt;
+
+&lt;p&gt;和虚拟机栈类似, 只是本地方法栈提供的是&lt;code class=&quot;highlighter-rouge&quot;&gt;Native&lt;/code&gt;方法服务&lt;/p&gt;
+
+&lt;h4 id=&quot;232-异常情况&quot;&gt;2.3.2 异常情况&lt;/h4&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;StackOverflowError&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;OutOfMemoryError&lt;/code&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;24-java堆&quot;&gt;2.4 Java堆&lt;/h3&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;线程共享&lt;/li&gt;
+    &lt;li&gt;垃圾收集管理的主要区域&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;h4 id=&quot;241-存储数据类型&quot;&gt;2.4.1 存储数据类型&lt;/h4&gt;
+
+&lt;p&gt;几乎所有的对象实例都在这里分配&lt;/p&gt;
+
+&lt;h4 id=&quot;242-异常情况&quot;&gt;2.4.2 异常情况&lt;/h4&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;OutOfMemoryError&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;异常示例:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class JavaVMHeapOOM {
+
+    static class HeapOOM {
+    }
+
+    public static void main(String[] args) {
+        List&amp;lt;HeapOOM&amp;gt; list = new ArrayList();
+        while (true) {
+            list.add(new HeapOOM());
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;25-方法区&quot;&gt;2.5 方法区&lt;/h3&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;线程共享&lt;/li&gt;
+    &lt;li&gt;该区域的垃圾回收目标主要是针对常量池的回收和对类型的卸载&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;h4 id=&quot;251-存储数据类型&quot;&gt;2.5.1 存储数据类型&lt;/h4&gt;
+
+&lt;p&gt;存储已被虚拟机加载的类信息, 常量, 静态变量, 即使编译器编译后的代码等数据&lt;/p&gt;
+
+&lt;h4 id=&quot;252-运行时常量池&quot;&gt;2.5.2 运行时常量池&lt;/h4&gt;
+
+&lt;p&gt;运行时常量池是方法区的一部分, 但是&lt;code class=&quot;highlighter-rouge&quot;&gt;JDK6&lt;/code&gt;之后, 常量池被放入了堆中;&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Class&lt;/code&gt;文件中也有常量池部分, 即编译期生成的各种字面量和符号引用, 这部分将在类加载后进入方法区的运行时常量池中, 此外还会把翻译出来的直接引用也存储在运行时常量池中&lt;/p&gt;
+
+&lt;p&gt;运行时常量池相对于&lt;code class=&quot;highlighter-rouge&quot;&gt;Class&lt;/code&gt;文件常量池的另外一个最重要的特征是具备动态性, 即运行期间也可以将新的常量放入池中, 比如&lt;code class=&quot;highlighter-rouge&quot;&gt;String&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;intern()&lt;/code&gt;方法&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;String.intern()&lt;/code&gt;作用是: 如果字符串常量池中已经包含一个等于此&lt;code class=&quot;highlighter-rouge&quot;&gt;String&lt;/code&gt;对象的字符串, 则返回代表池中这个字符串的&lt;code class=&quot;highlighter-rouge&quot;&gt;String&lt;/code&gt;对象; 否则, 将此&lt;code class=&quot;highlighter-rouge&quot;&gt;String&lt;/code&gt;对象包含的字符串添加到常量池中, 并且返回此&lt;code class=&quot;highlighter-rouge&quot;&gt;String&lt;/code&gt;对象的引用&lt;/p&gt;
+
+&lt;p&gt;同样, 收方法区的限制, 当常量池无法再申请到内存时会抛出&lt;code class=&quot;highlighter-rouge&quot;&gt;OutOfMemoryError&lt;/code&gt;&lt;/p&gt;
+
+&lt;h4 id=&quot;253-异常情况&quot;&gt;2.5.3 异常情况&lt;/h4&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;OutOfMemoryError&lt;/code&gt;: 方法区无法满足内存分配需求&lt;/p&gt;
+
+&lt;p&gt;异常示例:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class RuntimeConstantPoolOOM {
+    public static void main(String[] args) {
+        List&amp;lt;String&amp;gt; list = new ArrayList&amp;lt;&amp;gt;();
+        int i = 0;
+        while (true) {
+            list.add(String.valueOf(i++).intern());
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;26-直接内存&quot;&gt;2.6 直接内存&lt;/h3&gt;
+
+&lt;p&gt;直接内存不是虚拟机运行时数据区的一部分, 但是也被频繁使用, 如: 在&lt;code class=&quot;highlighter-rouge&quot;&gt;JDK1.4&lt;/code&gt;中新加入了&lt;code class=&quot;highlighter-rouge&quot;&gt;NIO&lt;/code&gt;类, 引入了一种基于通道(&lt;code class=&quot;highlighter-rouge&quot;&gt;Chanel&lt;/code&gt;)和缓冲区(&lt;code class=&quot;highlighter-rouge&quot;&gt;Buffer&lt;/code&gt;)的&lt;code class=&quot;highlighter-rouge&quot;&gt;I/O&lt;/code&gt;方式, 它可以使用&lt;code class=&quot;highlighter-rouge&quot;&gt;Native&lt;/code&gt;函数库直接分配堆外内存, 然后通过一个存储在&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;堆中的&lt;code class=&quot;highlighter-rouge&quot;&gt;DirectByteBuffer&lt;/code&gt;对象作为这块内存的引用进行操作, 避免了在&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;堆和&lt;code class=&quot;highlighter-rouge&quot;&gt;Native&lt;/code&gt;堆中来回复制数据, 提高性能&lt;/p&gt;
+
+&lt;p&gt;同样会产生&lt;code class=&quot;highlighter-rouge&quot;&gt;OutOfMemoryError&lt;/code&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;三-常见问题&quot;&gt;三. 常见问题&lt;/h2&gt;
+
+&lt;p&gt;&lt;strong&gt;注&lt;/strong&gt;: 下文摘自文末参考链接, 权作个人笔记~&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;程序运行永远都是在栈中进行的，因而参数传递时, 只存在传递基本类型和对象引用的问题, 不会直接传对象本身;  但是传引用的错觉是如何造成的呢? 在运行栈中, 基本类型和引用的处理是一样的, 都是传值, 所以, 如果是传引用的方法调用, 也同时可以理解为“传引用值”的传值调用, 即引用的处理跟基本类型是完全一样的; 但是当进入被调用方法时, 被传递的这个引用的值, 被程序解释(或者查找)到堆中的对象, 这个时候才对应到真正的对象; 如果此时进行修改; 修改的是引用对应的对象; 而不是引用本身; 即: 修改的是堆中的数据; 所以这个修改是可以保持的了&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;我产生的对象不多呀, 为什么还会产生&lt;code class=&quot;highlighter-rouge&quot;&gt;OutOfMemory&lt;/code&gt;?&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;答: 你继承层次忒多了, &lt;code class=&quot;highlighter-rouge&quot;&gt;Heap&lt;/code&gt;中产生的对象是先产生父类, 然后才产生子类, 明白不?&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;OutOfMemory&lt;/code&gt;错误分几种?
+答: 分两种, 分别是&lt;code class=&quot;highlighter-rouge&quot;&gt;OutOfMemoryError:java heap size&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;OutOfMemoryError: PermGen space&lt;/code&gt;, 两种都是内存溢出, &lt;code class=&quot;highlighter-rouge&quot;&gt;heap size&lt;/code&gt;是说申请不到新的内存了, 这个很常见，检查应用或调整堆内存大小; &lt;code class=&quot;highlighter-rouge&quot;&gt;PermGenspace&lt;/code&gt;是因为永久存储区满了, 这个也很常见, 一般在热发布的环境中出现, 是因为每次发布应用系统都不重启, 久而久之永久存储区中的死对象太多导致新对象无法申请内存, 一般重新启动一下即可&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;为什么不建议在程序中显式的生命&lt;code class=&quot;highlighter-rouge&quot;&gt;System.gc()&lt;/code&gt;?
+答: 因为显式声明是做堆内存全扫描, 也就是&lt;code class=&quot;highlighter-rouge&quot;&gt;Full GC&lt;/code&gt;, 是需要停止所有的活动的(&lt;code class=&quot;highlighter-rouge&quot;&gt;Stop The World Collection&lt;/code&gt;), 你的应用能承受这个吗?&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;四-参考链接&quot;&gt;四. 参考链接&lt;/h2&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;http://www.importnew.com/1993.html&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;http://www.cnblogs.com/dolphin0520/p/3783345.html&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;http://hllvm.group.iteye.com/group/wiki/2905-JVM&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;http://hllvm.group.iteye.com/group/wiki/?show_full=true&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+</description>
+        <pubDate>Thu, 27 Sep 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/09/27/Java%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F%E4%B8%8E%E5%86%85%E5%AD%98%E6%BA%A2%E5%87%BA%E5%BC%82%E5%B8%B8/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/09/27/Java%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F%E4%B8%8E%E5%86%85%E5%AD%98%E6%BA%A2%E5%87%BA%E5%BC%82%E5%B8%B8/</guid>
+        
+        <category>Java</category>
+        
+        
+      </item>
     
       <item>
         <title>Java之IO流</title>
@@ -176,7 +453,7 @@ for (Path path : entries) {
       </item>
     
       <item>
-        <title>View之绘制流程</title>
+        <title>自定义View之View绘制流程</title>
         <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
 
 &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;源码分析之&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;系列之绘制流程&lt;/p&gt;
@@ -656,8 +933,8 @@ public void draw(Canvas canvas) {
 &lt;p&gt;到这里, &lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的整个绘制流程就讲解完成啦~, 当然这对于我们随心所欲的实现炫酷的自定义&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;还是第一步理论基础, 真正要做到还是需要靠自己多动手去画咯~&lt;/p&gt;
 </description>
         <pubDate>Mon, 24 Sep 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/09/24/View%E4%B9%8B%E7%BB%98%E5%88%B6%E6%B5%81%E7%A8%8B/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/09/24/View%E4%B9%8B%E7%BB%98%E5%88%B6%E6%B5%81%E7%A8%8B/</guid>
+        <link>http://localhost:4000/2018/09/24/%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B9%8BView%E7%BB%98%E5%88%B6%E6%B5%81%E7%A8%8B/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/09/24/%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B9%8BView%E7%BB%98%E5%88%B6%E6%B5%81%E7%A8%8B/</guid>
         
         <category>Android</category>
         
@@ -667,7 +944,7 @@ public void draw(Canvas canvas) {
       </item>
     
       <item>
-        <title>View之事件分发机制</title>
+        <title>自定义View之View事件分发机制</title>
         <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
 
 &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;源码分析之&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;系列之事件分发机制&lt;/p&gt;
@@ -922,8 +1199,8 @@ public void draw(Canvas canvas) {
 &lt;p&gt;&lt;img src=&quot;/img/post/View/View事件分发.png&quot; alt=&quot;View事件分发机制&quot; /&gt;&lt;/p&gt;
 </description>
         <pubDate>Thu, 20 Sep 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/09/20/View%E4%B9%8B%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E6%9C%BA%E5%88%B6/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/09/20/View%E4%B9%8B%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E6%9C%BA%E5%88%B6/</guid>
+        <link>http://localhost:4000/2018/09/20/%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B9%8BView%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E6%9C%BA%E5%88%B6/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/09/20/%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B9%8BView%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E6%9C%BA%E5%88%B6/</guid>
         
         <category>Android</category>
         
@@ -2170,178 +2447,6 @@ draweeView.setImageURI(uri);
         <pubDate>Sat, 01 Sep 2018 00:00:00 +0800</pubDate>
         <link>http://localhost:4000/2018/09/01/%E5%9B%BE%E7%89%87%E7%BC%93%E5%AD%98%E4%B9%8BPicasso%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
         <guid isPermaLink="true">http://localhost:4000/2018/09/01/%E5%9B%BE%E7%89%87%E7%BC%93%E5%AD%98%E4%B9%8BPicasso%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
-        
-        <category>Android</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>图片三级缓存之内存缓存和磁盘缓存</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;本文主要分析&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;中图片三级缓存中的前两级缓存, 即内存缓存(&lt;code class=&quot;highlighter-rouge&quot;&gt;LruCache&lt;/code&gt;)和磁盘缓存(&lt;code class=&quot;highlighter-rouge&quot;&gt;DiskLruCache&lt;/code&gt;), 分析其源码实现&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;一-lrucache&quot;&gt;一. LruCache&lt;/h2&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;LruCache&lt;/code&gt;常用作内存缓存, 也就是第一级缓存&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;LruCache&lt;/code&gt;内部使用了一个&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;实例, 所以在继续往下看之前, 建议先了解一下&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;的特性, 可以参见&lt;a href=&quot;https://husteryp.github.io/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/&quot;&gt;Java集合框架之LinkedHashMap&lt;/a&gt;, 该文章有讲解如何将&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;用作内存缓存以及&lt;code class=&quot;highlighter-rouge&quot;&gt;LRU&lt;/code&gt;算法的一些基本分析&lt;/p&gt;
-
-&lt;p&gt;&lt;strong&gt;LRU算法&lt;/strong&gt;即&lt;code class=&quot;highlighter-rouge&quot;&gt;Least Recently Used&lt;/code&gt;, 其依据是&lt;strong&gt;如果数据最近被访问过, 那么其将来被访问的几率也更大&lt;/strong&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;LruCache&lt;/code&gt;逻辑其实比较简单, 大致逻辑就是: 设定最大阈值(&lt;code class=&quot;highlighter-rouge&quot;&gt;maxSize&lt;/code&gt;), 当我们缓存一个新值的时候, 去判断是否超过该阈值, 如果超过了, 则移除最久未使用的缓存(这是利用的&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;的特性, 可以参考上面的链接); 这是&lt;code class=&quot;highlighter-rouge&quot;&gt;LruCache&lt;/code&gt;的一个大致流程与思路, 接下来我们会详细讲解一些较为细节的地方&lt;/p&gt;
-
-&lt;p&gt;先来看其构造函数: &lt;code class=&quot;highlighter-rouge&quot;&gt;LruCache&lt;/code&gt;只有一个构造函数, 需要传递一个最大的缓存阈值; 同时需要注意的是, 这里构造&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;的时候, 将&lt;code class=&quot;highlighter-rouge&quot;&gt;accessOrder&lt;/code&gt;标志位设置为&lt;code class=&quot;highlighter-rouge&quot;&gt;true&lt;/code&gt;了, 使得&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;通过访问顺序来构造双向链表, 这在我们讲解&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;源码的时候重点分析过, 这里不再赘述 !&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    public LruCache(int maxSize) {
-        if (maxSize &amp;lt;= 0) {
-            throw new IllegalArgumentException(&quot;maxSize &amp;lt;= 0&quot;);
-        }
-        this.maxSize = maxSize;
-        this.map = new LinkedHashMap&amp;lt;K, V&amp;gt;(0, 0.75f, true);
-    }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;当然, &lt;code class=&quot;highlighter-rouge&quot;&gt;LruCache&lt;/code&gt;还允许重新设置该阈值, 通过&lt;code class=&quot;highlighter-rouge&quot;&gt;trimToSize()&lt;/code&gt;函数实现, 如下; 实现思路也很简单, 就是通过遍历当前缓存值, 然后不断删除最久未使用的缓存, 直到缓存量在阈值之下&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;     public void trimToSize(int maxSize) {
-        while (true) {
-            K key;
-            V value;
-            synchronized (this) {
-                ...
-                if (size &amp;lt;= maxSize || map.isEmpty()) {
-                    break;
-                }
-
-                Map.Entry&amp;lt;K, V&amp;gt; toEvict = map.entrySet().iterator().next();
-                key = toEvict.getKey();
-                value = toEvict.getValue();
-                map.remove(key);
-                size -= safeSizeOf(key, value);
-                evictionCount++;
-            }
-
-            entryRemoved(true, key, value, null);
-        }
-    }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;在我们平时使用的时候, 需要重点关注的有两个方法, 一个是&lt;code class=&quot;highlighter-rouge&quot;&gt;sizeOf()&lt;/code&gt;, 另一个是&lt;code class=&quot;highlighter-rouge&quot;&gt;entryRemoved()&lt;/code&gt;; 这两个方法通常都会根据实际需要重写; 两个方法也很简单, 下面分别讲解&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;sizeOf()&lt;/code&gt;: 返回一个缓存条目的大小, 注意应该和&lt;code class=&quot;highlighter-rouge&quot;&gt;maxSize&lt;/code&gt;在一个量级(以便正确比较); 其默认返回&lt;code class=&quot;highlighter-rouge&quot;&gt;1&lt;/code&gt;, 单纯的表示缓存的条目数量, 代码很简单(只是&lt;code class=&quot;highlighter-rouge&quot;&gt;return 1&lt;/code&gt;而已), 这里就不贴啦 ~&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;entryRemoved()&lt;/code&gt;: 该方法有点意思, 默认是一个空方法, 没有做任何处理; 在发生&lt;code class=&quot;highlighter-rouge&quot;&gt;value&lt;/code&gt;缓存冲突的时候(&lt;code class=&quot;highlighter-rouge&quot;&gt;key&lt;/code&gt;重复, 冲突)和删除缓存条目的时候会调用(通过传入参数&lt;code class=&quot;highlighter-rouge&quot;&gt;evicted&lt;/code&gt;标志, &lt;code class=&quot;highlighter-rouge&quot;&gt;evicted == true&lt;/code&gt;表示为&lt;code class=&quot;highlighter-rouge&quot;&gt;value&lt;/code&gt;是被删除的, &lt;code class=&quot;highlighter-rouge&quot;&gt;evicted == false&lt;/code&gt;表示&lt;code class=&quot;highlighter-rouge&quot;&gt;value&lt;/code&gt;是因为&lt;code class=&quot;highlighter-rouge&quot;&gt;key&lt;/code&gt;冲突被挤出来的)&lt;/p&gt;
-
-&lt;p&gt;一般我们重写该方法是为了做一些旧数据的回收清理等特殊工作&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;protected void entryRemoved(boolean evicted, K key, V oldValue, V newValue) {}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;二-disklrucache&quot;&gt;二. DiskLruCache&lt;/h2&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;DiskLruCache&lt;/code&gt;常用作磁盘缓存, 也就是第二级缓存; 虽然其没有纳入&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;的官方&lt;code class=&quot;highlighter-rouge&quot;&gt;API&lt;/code&gt;, 但是受到了&lt;code class=&quot;highlighter-rouge&quot;&gt;Google&lt;/code&gt;的官方推荐; 源代码可以从&lt;a href=&quot;https://github.com/JakeWharton/DiskLruCache&quot;&gt;Github&lt;/a&gt;下载&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;DiskLruCache&lt;/code&gt;的基本思路是, 将文件缓存到磁盘上, 设定最大的缓存阈值, 超过该值的时候, 会在后台去清除旧缓存&lt;/p&gt;
-
-&lt;p&gt;需要注意的是, 这里旧文件的清除是在后台线程完成的(实际上是开了一个线程池去做该工作), 有时候缓存的文件总量会暂时超过最大阈值, 所以对缓存容量比较敏感的程序应该设置保守的缓存阈值&lt;/p&gt;
-
-&lt;p&gt;先来看一下&lt;code class=&quot;highlighter-rouge&quot;&gt;DiskLruCache&lt;/code&gt;的构造函数; 其只有一个构造函数, 如下; 其中&lt;code class=&quot;highlighter-rouge&quot;&gt;directory&lt;/code&gt;表示缓存目录; &lt;code class=&quot;highlighter-rouge&quot;&gt;appVersion&lt;/code&gt;表示应用版本号, 当该值改变时, &lt;code class=&quot;highlighter-rouge&quot;&gt;DiskLruCache&lt;/code&gt;会清除所有缓存, 默认需要从网上拉取新数据; &lt;code class=&quot;highlighter-rouge&quot;&gt;valueCount&lt;/code&gt;表示的是一个&lt;code class=&quot;highlighter-rouge&quot;&gt;key&lt;/code&gt;可以对应多少个文件, 通常都传入&lt;code class=&quot;highlighter-rouge&quot;&gt;1&lt;/code&gt;即可, 该值通常用于表示将一个大文件分成多个小文件存放, 存放的规则是, &lt;code class=&quot;highlighter-rouge&quot;&gt;key&lt;/code&gt;后面加上自增的索引(如&lt;code class=&quot;highlighter-rouge&quot;&gt;key1&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;key2&lt;/code&gt;等)(当然, 这些都是内部处理细节, 具体使用的时候可以不用管); &lt;code class=&quot;highlighter-rouge&quot;&gt;maxSize&lt;/code&gt;表示的是缓存阈值(&lt;code class=&quot;highlighter-rouge&quot;&gt;byte&lt;/code&gt;)&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private DiskLruCache(File directory, int appVersion, int valueCount, long maxSize) {
-    this.directory = directory;
-    this.appVersion = appVersion;
-    this.journalFile = new File(directory, JOURNAL_FILE);
-    this.journalFileTmp = new File(directory, JOURNAL_FILE_TEMP);
-    this.journalFileBackup = new File(directory, JOURNAL_FILE_BACKUP);
-    this.valueCount = valueCount;
-    this.maxSize = maxSize;
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;DiskLruCache&lt;/code&gt;的文件缓存依赖于日志文件, 即存储在同一文件夹下的名为&lt;code class=&quot;highlighter-rouge&quot;&gt;journal&lt;/code&gt;的文件, 在该文件中, 存储了每个文件缓存的信息;  在开始之前, 需要先了解一下该文件的格式, 因为后面会去读取该日志文件, 做判断; 关于该文件格式, 可以参考&lt;a href=&quot;https://blog.csdn.net/guolin_blog/article/details/28863651&quot;&gt;Android DiskLruCache完全解析，硬盘缓存的最佳方案&lt;/a&gt;&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;          libcore.io.DiskLruCache
-          1
-          100
-          2
-     
-          CLEAN 3400330d1dfc7f3f7f4b8d4d803dfcf6 832 21054
-          DIRTY 335c4c6028171cfddfbaae1a9c313c52
-          CLEAN 335c4c6028171cfddfbaae1a9c313c52 3934 2342
-          REMOVE 335c4c6028171cfddfbaae1a9c313c52
-          DIRTY 1ab96a171faeeee38496d8b330771a7a
-          CLEAN 1ab96a171faeeee38496d8b330771a7a 1600 234
-          READ 335c4c6028171cfddfbaae1a9c313c52
-          READ 3400330d1dfc7f3f7f4b8d4d803dfcf6
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;在&lt;code class=&quot;highlighter-rouge&quot;&gt;DiskLruCache&lt;/code&gt;中, 有三个重要的内部类, 一个是&lt;code class=&quot;highlighter-rouge&quot;&gt;Editor&lt;/code&gt;, 用于文件写入; 一个是&lt;code class=&quot;highlighter-rouge&quot;&gt;Entry&lt;/code&gt;, 表示一个文件信息节点; 还有一个是&lt;code class=&quot;highlighter-rouge&quot;&gt;Snapshot&lt;/code&gt;, 表示文件节点的快照, 其实就是为了防止数据更改, 对&lt;code class=&quot;highlighter-rouge&quot;&gt;Entry&lt;/code&gt;信息做了一层封装&lt;/p&gt;
-
-&lt;p&gt;其中, 在&lt;code class=&quot;highlighter-rouge&quot;&gt;Editor&lt;/code&gt;中有一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Entry&lt;/code&gt;成员变量, 在&lt;code class=&quot;highlighter-rouge&quot;&gt;Entry&lt;/code&gt;中有一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Editor&lt;/code&gt;成员变量, 这是为了考虑在多线程中使用的时候, 通过判断携带的是不是同一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Entry&lt;/code&gt;或者&lt;code class=&quot;highlighter-rouge&quot;&gt;Editor&lt;/code&gt;来判断是否是在同一个线程中操作同一个文件; 因为&lt;code class=&quot;highlighter-rouge&quot;&gt;DiskLruCache&lt;/code&gt;不允许多个线程去操作同一个文件&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public final class Editor {
-    private final Entry entry;
-    ...
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private final class Entry {
-    ...
-    private Editor currentEditor;
-    ...
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;另外, 这里还需要关注的一点是, &lt;code class=&quot;highlighter-rouge&quot;&gt;DiskLruCache&lt;/code&gt;是如何判断哪些文件是旧文件; 这里我们发现了一个熟悉的身影, 即&lt;code class=&quot;highlighter-rouge&quot;&gt;
-private final LinkedHashMap&amp;lt;String, Entry&amp;gt; lruEntries = new LinkedHashMap&amp;lt;String, Entry&amp;gt;(0, 0.75f, true);&lt;/code&gt;, 前面我们知道了&lt;code class=&quot;highlighter-rouge&quot;&gt;LruCache&lt;/code&gt;是利用&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;的访问特性来实现旧文件的判断和移除, 这里其实也是一样, 只不过这里存储的是&lt;code class=&quot;highlighter-rouge&quot;&gt;key&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;Entry&lt;/code&gt;; 这也是前面日志文件&lt;code class=&quot;highlighter-rouge&quot;&gt;journal&lt;/code&gt;的作用&lt;/p&gt;
-
-&lt;p&gt;在初始化的时候, 会先去&lt;code class=&quot;highlighter-rouge&quot;&gt;journal&lt;/code&gt;日志文件读取键值信息, 在&lt;code class=&quot;highlighter-rouge&quot;&gt;readJournal()&lt;/code&gt;中不断的去读取&lt;code class=&quot;highlighter-rouge&quot;&gt;journal&lt;/code&gt;文件, 然后调用&lt;code class=&quot;highlighter-rouge&quot;&gt;readJournalLine()&lt;/code&gt;构建信息, 存储在&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;中; 然后在&lt;code class=&quot;highlighter-rouge&quot;&gt;get()&lt;/code&gt;值或者判断旧文件去移除的时候, 就直接去查询&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedHashMap&lt;/code&gt;中的值就好了; 至于判断旧文件的原理, 和&lt;code class=&quot;highlighter-rouge&quot;&gt;LruCache&lt;/code&gt;一样, 可以参见&lt;a href=&quot;https://husteryp.github.io/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/&quot;&gt;Java集合框架之LinkedHashMap&lt;/a&gt;&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private void readJournal() throws IOException {
-    ...
-    while (true) {
-        try {
-          readJournalLine(reader.readLine());
-          lineCount++;
-        } catch (EOFException endOfJournal) {
-          break;
-        }
-    }
-    ...
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private void readJournalLine(String line) throws IOException {
-    ...
-    Entry entry = lruEntries.get(key);
-    if (entry == null) {
-      entry = new Entry(key);
-      lruEntries.put(key, entry);
-    }
-    ...
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;三-总结&quot;&gt;三. 总结&lt;/h2&gt;
-
-&lt;p&gt;到这里, 我们对内存缓存和磁盘缓存所需要使用到的两个类有了较为详细的了解, 之后该动手自己实践啦 !&lt;/p&gt;
-</description>
-        <pubDate>Fri, 31 Aug 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/08/31/%E5%9B%BE%E7%89%87%E4%B8%89%E7%BA%A7%E7%BC%93%E5%AD%98%E4%B9%8BLruCache%E5%92%8CDiskLurCache/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/08/31/%E5%9B%BE%E7%89%87%E4%B8%89%E7%BA%A7%E7%BC%93%E5%AD%98%E4%B9%8BLruCache%E5%92%8CDiskLurCache/</guid>
         
         <category>Android</category>
         

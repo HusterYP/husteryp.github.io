@@ -10,9 +10,9 @@
     <meta name="keyword"  content="">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>Java集合框架之LinkedHashMap - 袁平 | HusterYP-Blog</title>
+    <title>Java内存区域与内存溢出异常 - 袁平 | HusterYP-Blog</title>
 
-    <link rel="canonical" href="http://localhost:4000/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/">
+    <link rel="canonical" href="http://localhost:4000/2018/09/27/Java%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F%E4%B8%8E%E5%86%85%E5%AD%98%E6%BA%A2%E5%87%BA%E5%BC%82%E5%B8%B8/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/css/bootstrap.min.css">
@@ -143,12 +143,12 @@
                         <a class="tag" href="/tags/#Java" title="Java">Java</a>
                         
                     </div>
-                    <h1>Java集合框架之LinkedHashMap</h1>
+                    <h1>Java内存区域与内存溢出异常</h1>
                     
                     
-                    <h2 class="subheading">LinkedHashMap源码讲解</h2>
+                    <h2 class="subheading">深入理解Java虚拟机第二章总结</h2>
                     
-                    <span class="meta">Posted by 袁平 on August 28, 2018</span>
+                    <span class="meta">Posted by 袁平 on September 27, 2018</span>
                 </div>
             </div>
         </div>
@@ -168,37 +168,11 @@
 
 				<h1 id="前言">前言</h1>
 
-<blockquote>
-  <ol>
-    <li><a href="https://husteryp.github.io/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/">前面</a>我们对Java集合框架有了一个基本的认识; 本文将主要讲解<code class="highlighter-rouge">LinkedHashMap</code>的实现原理和处理细节</li>
-    <li><code class="highlighter-rouge">LinkedHashMap</code>继承于<code class="highlighter-rouge">HashMap</code>, 所以需要先对<code class="highlighter-rouge">HashMap</code>有一个基本的认识, 可以参见<a href="https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/">Java集合框架之HashMap</a></li>
-  </ol>
-</blockquote>
+<p>本文是对«深入理解Java虚拟机»第二章以及其他博客的阅读总结</p>
 
-<p>文章源码基于<code class="highlighter-rouge">JDK8</code></p>
+<p>重点是需要去理解各区域存储的是什么, 以此从底层理解对象的创建与引用等过程; 同时还需要明确的一点是各部分会产生的异常, 以及产生异常的原因</p>
 
-<p><strong><code class="highlighter-rouge">Java</code>集合框架系列博客</strong>:</p>
-
-<ol>
-  <li>
-    <p><a href="https://husteryp.github.io/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/">Java集合框架概述</a></p>
-  </li>
-  <li>
-    <p><a href="https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BList/">Java集合框架之List</a></p>
-  </li>
-  <li>
-    <p><a href="https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/">Java集合框架之HashMap</a></p>
-  </li>
-  <li>
-    <p><a href="https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BSet/">Java集合框架之Set</a></p>
-  </li>
-  <li>
-    <p><a href="https://husteryp.github.io/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/">Java集合框架之LinkedHashMap</a></p>
-  </li>
-  <li>
-    <p><a href="https://husteryp.github.io/2018/09/06/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BQueue/">Java集合框架之Queue</a></p>
-  </li>
-</ol>
+<p><strong>注</strong>: 文中部分图片来自网络, 但是忘了出处, 侵删~</p>
 
 <hr />
 
@@ -206,96 +180,257 @@
 
 <hr />
 
-<h2 id="一-概述">一. 概述</h2>
+<h2 id="一-基本概念">一. 基本概念</h2>
 
-<p><code class="highlighter-rouge">LinkedHashMap</code>继承于<code class="highlighter-rouge">HashMap</code>, 除了<code class="highlighter-rouge">HashMap</code>元素遍历无序, <code class="highlighter-rouge">LinkedHashMap</code>元素遍历有序以外, 具有<code class="highlighter-rouge">HashMap</code>的大多数特点; 另外, <code class="highlighter-rouge">LinkedHashMap</code>内部还有一个双向链表, 用于记录元素顺序(这也是保证其遍历有序的原因), 具体有两种顺序,  一个是插入顺序, 一个访问顺序; 同时, <code class="highlighter-rouge">LinkedHashMap</code>还可以用来实现<code class="highlighter-rouge">LRU</code>算法(<code class="highlighter-rouge">Least Recently Used</code>, 即最近最少使用算法); 本文将主要分析<code class="highlighter-rouge">LinkedHashMap</code>的两个大方面: 一个是遍历有序, 另一个是用于<code class="highlighter-rouge">LRU</code>算法的特性</p>
+<p>在开始讲解之前, 需要先明确关于<code class="highlighter-rouge">JVM</code>的一些基本概念</p>
+
+<p>我们都知道, <code class="highlighter-rouge">Java</code>是一个跨平台的语言, <code class="highlighter-rouge">Java</code>跨平台的基本支撑其实就是<code class="highlighter-rouge">JVM</code>对操作系统底层细节的屏蔽, 相当于加了一个中间层(计算机中的任何问题都可以加一个中间层解决~), <code class="highlighter-rouge">Java</code>不再像<code class="highlighter-rouge">C/C++</code>等语言一样直接翻译为针对特殊平台的机器码, 而是翻译为字节码, 也即是我们的<code class="highlighter-rouge">class</code>文件, 下图大概可以比较简明的概括了~; 字节码就相当于<code class="highlighter-rouge">Java</code>世界中的汇编, 而<code class="highlighter-rouge">JVM</code>则不是跨平台的, 只是不同平台的<code class="highlighter-rouge">JVM</code>都能识别和运行标准格式的字节码文件而已</p>
+
+<p><img src="/img/post/JVM/Java编译.png" alt="Java编译" /></p>
+
+<p>关于<code class="highlighter-rouge">JVM</code>运行<code class="highlighter-rouge">class</code>文件, 我觉得下图已经可以比较准确的表达了</p>
+
+<p><img src="/img/post/JVM/JVM.png" alt="JVM" /></p>
+
+<p>我们下面要讲的就是<code class="highlighter-rouge">Runtime Data Area</code>部分</p>
 
 <hr />
 
-<h2 id="二-遍历有序">二. 遍历有序</h2>
+<h2 id="二-运行时数据区">二. 运行时数据区</h2>
 
-<p><code class="highlighter-rouge">LinkedHashMap</code>遍历有序, 主要是因为其在<code class="highlighter-rouge">HashMap</code>的基础上, 增加了一个双向链表, 按照元素的插入顺序或者访问顺序, 将数据重新组织成一个双向链表; 根据标志位<code class="highlighter-rouge">final boolean accessOrder;</code>来决定是按照插入顺序(<code class="highlighter-rouge">insertion-order</code>, 此时需要<code class="highlighter-rouge">accessOrder = false</code>)还是访问顺序(<code class="highlighter-rouge">access-order</code>, 此时需要<code class="highlighter-rouge">accessOrder = true</code>)来组织</p>
+<p><code class="highlighter-rouge">JVM</code>会在执行<code class="highlighter-rouge">Java</code>程序的时候把它所管理的内存划分为若干个不同的数据区, 如下:</p>
 
-<p><code class="highlighter-rouge">LinkedHashMap</code>改写了<code class="highlighter-rouge">HashMap</code>的节点, 如下; 在其中增加了<code class="highlighter-rouge">before</code>和<code class="highlighter-rouge">after</code>域用于帮助组织双向链表</p>
+<p><img src="/img/post/JVM/JVM内存区域.png" alt="JVM" /></p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    static class Entry&lt;K,V&gt; extends HashMap.Node&lt;K,V&gt; {
-        Entry&lt;K,V&gt; before, after;
-        Entry(int hash, K key, V value, Node&lt;K,V&gt; next) {
-            super(hash, key, value, next);
+<h3 id="21-程序计数器">2.1 程序计数器</h3>
+
+<blockquote>
+  <p>线程私有</p>
+</blockquote>
+
+<h4 id="211-存储数据类型">2.1.1 存储数据类型</h4>
+
+<p>指向下一条需要执行的字节码指令; 如果线程正在执行一个<code class="highlighter-rouge">Java</code>方法, 该计数器记录的是正在执行的虚拟机字节码指令的地址; 如果正在执行<code class="highlighter-rouge">Native</code>方法, 该计数器值则为空(<code class="highlighter-rouge">Undefined</code>)</p>
+
+<h4 id="212-异常情况">2.1.2 异常情况</h4>
+
+<p>该区域是是唯一一个在<code class="highlighter-rouge">Java</code>虚拟机中没有规定任何<code class="highlighter-rouge">OutOfMemoryError</code>情况的区域</p>
+
+<h3 id="22-java虚拟机栈">2.2 Java虚拟机栈</h3>
+
+<blockquote>
+  <p>线程私有</p>
+</blockquote>
+
+<h4 id="221-存储数据类型">2.2.1 存储数据类型</h4>
+
+<p>描述<code class="highlighter-rouge">Java</code>方法执行的内存模型, 每个方法调用就对应着一个栈帧的入栈和出栈; 一个栈帧里面存储了局部变量表, 操作数栈, 动态链接, 方法出口等信息</p>
+
+<p>局部变量表存储了编译器可知的各种基本数据类型, 对象引用, <code class="highlighter-rouge">returnAddress</code>; 局部变量表的大小在编译期间即可确定, 运行期间大小不变</p>
+
+<h4 id="222-异常情况">2.2.2 异常情况</h4>
+
+<ol>
+  <li><strong>StackOverflowError</strong>: 线程请求栈深度大于虚拟机允许深度</li>
+</ol>
+
+<p>异常示例代码:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class JavaVMStackSOF {
+
+    private int stackLength = 1;
+
+    public void stackLeak() {
+        stackLength++;
+        stackLeak();
+    }
+
+    public static void main(String[] args) {
+        JavaVMStackSOF sof = new JavaVMStackSOF();
+        try {
+            sof.stackLeak();
+        } catch (Throwable e) {
+            System.out.println("Stack Length: " + sof.stackLength);
+            throw e;
         }
     }
+}
 </code></pre></div></div>
 
-<p>对于<code class="highlighter-rouge">accessOrder</code>值的指定只能在创建<code class="highlighter-rouge">LinkedHashMap</code>的时候, 也就是说<code class="highlighter-rouge">LinkedHashMap</code>并没有提供明确的<code class="highlighter-rouge">set()</code>方法来改变该值(一旦在构造函数中指定, 就无法改变); <code class="highlighter-rouge">LinkedHashMap</code>提供了如下构造函数可以用于指定<code class="highlighter-rouge">accessOrder</code>的值, 其余构造函数中, <code class="highlighter-rouge">accessOrder</code>都默认为<code class="highlighter-rouge">false</code>, 即默认以<code class="highlighter-rouge">insertion-order</code>的顺序组织双向链表</p>
+<ol>
+  <li><strong>OutOfMemoryError</strong>: 虚拟机栈动态扩展时无法申请到足够内存</li>
+</ol>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    public LinkedHashMap(int initialCapacity,
-                         float loadFactor,
-                         boolean accessOrder) {
-        super(initialCapacity, loadFactor);
-        this.accessOrder = accessOrder;
-    }
-</code></pre></div></div>
+<p>异常示例代码:</p>
 
-<p><code class="highlighter-rouge">LinkedHashMap</code>重写了<code class="highlighter-rouge">HashMap</code>的<code class="highlighter-rouge">newNode()</code>函数, <code class="highlighter-rouge">newNode()</code>在进行元素插入的时候会被<code class="highlighter-rouge">HashMap.putVal()</code>调用, <code class="highlighter-rouge">LinkedHashMap</code>用自己的<code class="highlighter-rouge">Entry</code>节点替换<code class="highlighter-rouge">HashMap</code><code class="highlighter-rouge">Node</code>节点的同时, 进行双向链表的构建, 使得程序改动最小</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class JavaVMStackOOM {
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    Node&lt;K,V&gt; newNode(int hash, K key, V value, Node&lt;K,V&gt; e) {
-        LinkedHashMap.Entry&lt;K,V&gt; p =
-            new LinkedHashMap.Entry&lt;K,V&gt;(hash, key, value, e);
-        linkNodeLast(p); // 将节点插入到双向链表的末尾
-        return p;
-    }
-</code></pre></div></div>
-
-<p>至于<code class="highlighter-rouge">linkNodeLast()</code>函数, 即将节点插入到双向链表的末尾, 该方法比较简单, 这里就不再贴源码啦 !</p>
-
-<p>那么当我们指定了<code class="highlighter-rouge">accessOrder</code>为<code class="highlighter-rouge">true</code>的时候, 即以元素访问顺序来组织双向链表的时候, 其实就只是在获取元素的时候, 将被访问的元素移动到链表末尾; 如下; 那么链表表头的元素就是最近没有被访问的元素, 这也是我们实现<code class="highlighter-rouge">LRU</code>算法的依据(稍后会细讲)</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    public V get(Object key) {
-        Node&lt;K,V&gt; e;
-        if ((e = getNode(hash(key), key)) == null)
-            return null;
-        if (accessOrder) // 如果指定为按照元素访问顺序组织元素
-            afterNodeAccess(e); // 将元素移动到链表末尾
-        return e.value;
-    }
-</code></pre></div></div>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    void afterNodeAccess(Node&lt;K,V&gt; e) { // move node to last
-        // 省略具体细节
-        ...
-    }
-</code></pre></div></div>
-
-<p>到这里, 我们对<code class="highlighter-rouge">LinkedHashMap</code>遍历有序的原因有了较为详细的了解; 接下来要讲的是<code class="highlighter-rouge">LinkedHashMap</code>的一个应用, 即用于实现<code class="highlighter-rouge">LRU</code>算法的特性</p>
-
-<hr />
-
-<h2 id="三-lru算法">三. LRU算法</h2>
-
-<p><strong>LRU算法</strong>即<code class="highlighter-rouge">Least Recently Used</code>, 其依据是<strong>如果数据最近被访问过, 那么其将来被访问的几率也更大</strong></p>
-
-<p><code class="highlighter-rouge">Android</code>中的<code class="highlighter-rouge">LruCache</code>(内存缓存)内部就是利用<code class="highlighter-rouge">LinkedHashMap</code>实现的</p>
-
-<p>前面我们讲了, 当<code class="highlighter-rouge">accessOrder</code>设置为<code class="highlighter-rouge">true</code>, 即按照元素访问顺序组织数据的时候, 会在<code class="highlighter-rouge">get()</code>方法中将被访问的元素移动到链表的末尾, 那么链表首部的元素就是最久没有访问的, 所以, 当要使用<code class="highlighter-rouge">LinkedHashMap</code>实现<code class="highlighter-rouge">LRU</code>的时候, 必须将<code class="highlighter-rouge">accessOrder</code>置为<code class="highlighter-rouge">true</code></p>
-
-<p>另外, 还需要我们自己去定义<code class="highlighter-rouge">LRU</code>的实现规则, 即自己定义什么时候应该移除最久没有使用的元素; 此时我们需要去重写<code class="highlighter-rouge">LinkedHashMap</code>的<code class="highlighter-rouge">removeEldestEntry()</code>函数, <code class="highlighter-rouge">removeEldestEntry()</code>是在我们插入一个元素完毕之后, 回调<code class="highlighter-rouge">afterNodeInsertion()</code>中调用的, 如下; 但是<code class="highlighter-rouge">removeEldestEntry()</code>默认返回<code class="highlighter-rouge">false</code>, 所以需要我们自己去定义规则</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    void afterNodeInsertion(boolean evict) { // possibly remove eldest
-        LinkedHashMap.Entry&lt;K,V&gt; first;
-        if (evict &amp;&amp; (first = head) != null &amp;&amp; removeEldestEntry(first)) { // 插入元素之后, 判断是否需要移除最久没有访问的元素
-            K key = first.key;
-            removeNode(hash(key), key, null, false, true); // 移除链表首部的元素
+    private void dontStop() {
+        while (true) {
         }
     }
+
+    public void stackLeakByThread() {
+        while (true) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    dontStop();
+                }
+            }).start();
+        }
+    }
+
+    public static void main(String[] args) {
+        JavaVMStackOOM oom = new JavaVMStackOOM();
+        oom.stackLeakByThread();
+    }
+}
 </code></pre></div></div>
 
-<p>至于自定义规则, 比如: 约定最多在内存中缓存多少个元素, 超过该阈值之后, <code class="highlighter-rouge">removeEldestEntry()</code>返回<code class="highlighter-rouge">true</code>, 即将旧元素移除; 或者, 规定缓存占用多少内存, 当达到该阈值之后, 即进行旧元素移除; 当然, 这些都是后话, 具体的<code class="highlighter-rouge">LRU</code>算法, 可以根据实际需求来定</p>
+<p><strong>注</strong>: 由于操作系统分配给每个进程的内存空间是有限制的, 所以如果是由于建立过多的线程导致内存溢出, 在不能减少线程数或者更换<code class="highlighter-rouge">64</code>位虚拟机的情况下, 可以选择通过减少最大堆和减少栈容量来换取更多的线程</p>
+
+<h3 id="23-本地方法栈">2.3 本地方法栈</h3>
+
+<blockquote>
+  <p>线程私有</p>
+</blockquote>
+
+<h4 id="231-存储数据类型">2.3.1 存储数据类型</h4>
+
+<p>和虚拟机栈类似, 只是本地方法栈提供的是<code class="highlighter-rouge">Native</code>方法服务</p>
+
+<h4 id="232-异常情况">2.3.2 异常情况</h4>
+
+<p><code class="highlighter-rouge">StackOverflowError</code>和<code class="highlighter-rouge">OutOfMemoryError</code></p>
+
+<h3 id="24-java堆">2.4 Java堆</h3>
+
+<blockquote>
+  <ol>
+    <li>线程共享</li>
+    <li>垃圾收集管理的主要区域</li>
+  </ol>
+</blockquote>
+
+<h4 id="241-存储数据类型">2.4.1 存储数据类型</h4>
+
+<p>几乎所有的对象实例都在这里分配</p>
+
+<h4 id="242-异常情况">2.4.2 异常情况</h4>
+
+<p><code class="highlighter-rouge">OutOfMemoryError</code></p>
+
+<p>异常示例:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class JavaVMHeapOOM {
+
+    static class HeapOOM {
+    }
+
+    public static void main(String[] args) {
+        List&lt;HeapOOM&gt; list = new ArrayList();
+        while (true) {
+            list.add(new HeapOOM());
+        }
+    }
+}
+</code></pre></div></div>
+
+<h3 id="25-方法区">2.5 方法区</h3>
+
+<blockquote>
+  <ol>
+    <li>线程共享</li>
+    <li>该区域的垃圾回收目标主要是针对常量池的回收和对类型的卸载</li>
+  </ol>
+</blockquote>
+
+<h4 id="251-存储数据类型">2.5.1 存储数据类型</h4>
+
+<p>存储已被虚拟机加载的类信息, 常量, 静态变量, 即使编译器编译后的代码等数据</p>
+
+<h4 id="252-运行时常量池">2.5.2 运行时常量池</h4>
+
+<p>运行时常量池是方法区的一部分, 但是<code class="highlighter-rouge">JDK6</code>之后, 常量池被放入了堆中;</p>
+
+<p><code class="highlighter-rouge">Class</code>文件中也有常量池部分, 即编译期生成的各种字面量和符号引用, 这部分将在类加载后进入方法区的运行时常量池中, 此外还会把翻译出来的直接引用也存储在运行时常量池中</p>
+
+<p>运行时常量池相对于<code class="highlighter-rouge">Class</code>文件常量池的另外一个最重要的特征是具备动态性, 即运行期间也可以将新的常量放入池中, 比如<code class="highlighter-rouge">String</code>的<code class="highlighter-rouge">intern()</code>方法</p>
+
+<p><code class="highlighter-rouge">String.intern()</code>作用是: 如果字符串常量池中已经包含一个等于此<code class="highlighter-rouge">String</code>对象的字符串, 则返回代表池中这个字符串的<code class="highlighter-rouge">String</code>对象; 否则, 将此<code class="highlighter-rouge">String</code>对象包含的字符串添加到常量池中, 并且返回此<code class="highlighter-rouge">String</code>对象的引用</p>
+
+<p>同样, 收方法区的限制, 当常量池无法再申请到内存时会抛出<code class="highlighter-rouge">OutOfMemoryError</code></p>
+
+<h4 id="253-异常情况">2.5.3 异常情况</h4>
+
+<p><code class="highlighter-rouge">OutOfMemoryError</code>: 方法区无法满足内存分配需求</p>
+
+<p>异常示例:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class RuntimeConstantPoolOOM {
+    public static void main(String[] args) {
+        List&lt;String&gt; list = new ArrayList&lt;&gt;();
+        int i = 0;
+        while (true) {
+            list.add(String.valueOf(i++).intern());
+        }
+    }
+}
+</code></pre></div></div>
+
+<h3 id="26-直接内存">2.6 直接内存</h3>
+
+<p>直接内存不是虚拟机运行时数据区的一部分, 但是也被频繁使用, 如: 在<code class="highlighter-rouge">JDK1.4</code>中新加入了<code class="highlighter-rouge">NIO</code>类, 引入了一种基于通道(<code class="highlighter-rouge">Chanel</code>)和缓冲区(<code class="highlighter-rouge">Buffer</code>)的<code class="highlighter-rouge">I/O</code>方式, 它可以使用<code class="highlighter-rouge">Native</code>函数库直接分配堆外内存, 然后通过一个存储在<code class="highlighter-rouge">Java</code>堆中的<code class="highlighter-rouge">DirectByteBuffer</code>对象作为这块内存的引用进行操作, 避免了在<code class="highlighter-rouge">Java</code>堆和<code class="highlighter-rouge">Native</code>堆中来回复制数据, 提高性能</p>
+
+<p>同样会产生<code class="highlighter-rouge">OutOfMemoryError</code></p>
 
 <hr />
 
-<h2 id="四-总结">四. 总结</h2>
+<h2 id="三-常见问题">三. 常见问题</h2>
 
-<p><code class="highlighter-rouge">LinkedHashMap</code>基于<code class="highlighter-rouge">HashMap</code>, 总体上比较简单, 主要掌握上文说的两个主要特点即可, 不再赘述 !</p>
+<p><strong>注</strong>: 下文摘自文末参考链接, 权作个人笔记~</p>
+
+<ol>
+  <li>
+    <p>程序运行永远都是在栈中进行的，因而参数传递时, 只存在传递基本类型和对象引用的问题, 不会直接传对象本身;  但是传引用的错觉是如何造成的呢? 在运行栈中, 基本类型和引用的处理是一样的, 都是传值, 所以, 如果是传引用的方法调用, 也同时可以理解为“传引用值”的传值调用, 即引用的处理跟基本类型是完全一样的; 但是当进入被调用方法时, 被传递的这个引用的值, 被程序解释(或者查找)到堆中的对象, 这个时候才对应到真正的对象; 如果此时进行修改; 修改的是引用对应的对象; 而不是引用本身; 即: 修改的是堆中的数据; 所以这个修改是可以保持的了</p>
+  </li>
+  <li>
+    <p>我产生的对象不多呀, 为什么还会产生<code class="highlighter-rouge">OutOfMemory</code>?</p>
+  </li>
+</ol>
+
+<p>答: 你继承层次忒多了, <code class="highlighter-rouge">Heap</code>中产生的对象是先产生父类, 然后才产生子类, 明白不?</p>
+
+<ol>
+  <li>
+    <p><code class="highlighter-rouge">OutOfMemory</code>错误分几种?
+答: 分两种, 分别是<code class="highlighter-rouge">OutOfMemoryError:java heap size</code>和<code class="highlighter-rouge">OutOfMemoryError: PermGen space</code>, 两种都是内存溢出, <code class="highlighter-rouge">heap size</code>是说申请不到新的内存了, 这个很常见，检查应用或调整堆内存大小; <code class="highlighter-rouge">PermGenspace</code>是因为永久存储区满了, 这个也很常见, 一般在热发布的环境中出现, 是因为每次发布应用系统都不重启, 久而久之永久存储区中的死对象太多导致新对象无法申请内存, 一般重新启动一下即可</p>
+  </li>
+  <li>
+    <p>为什么不建议在程序中显式的生命<code class="highlighter-rouge">System.gc()</code>?
+答: 因为显式声明是做堆内存全扫描, 也就是<code class="highlighter-rouge">Full GC</code>, 是需要停止所有的活动的(<code class="highlighter-rouge">Stop The World Collection</code>), 你的应用能承受这个吗?</p>
+  </li>
+</ol>
+
+<hr />
+
+<h2 id="四-参考链接">四. 参考链接</h2>
+
+<ol>
+  <li>
+    <p>http://www.importnew.com/1993.html</p>
+  </li>
+  <li>
+    <p>http://www.cnblogs.com/dolphin0520/p/3783345.html</p>
+  </li>
+  <li>
+    <p>http://hllvm.group.iteye.com/group/wiki/2905-JVM</p>
+  </li>
+  <li>
+    <p>http://hllvm.group.iteye.com/group/wiki/?show_full=true</p>
+  </li>
+</ol>
 
 
                 <hr>
@@ -306,13 +441,9 @@
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BSet/" data-toggle="tooltip" data-placement="top" title="Java集合框架之Set">&larr; Previous Post</a>
+                        <a href="/2018/09/25/Java%E4%B9%8BIO%E6%B5%81/" data-toggle="tooltip" data-placement="top" title="Java之IO流">&larr; Previous Post</a>
                     </li>
                     
-                    
-                    <li class="next">
-                        <a href="/2018/08/31/%E5%9B%BE%E7%89%87%E4%B8%89%E7%BA%A7%E7%BC%93%E5%AD%98%E4%B9%8BLruCache%E5%92%8CDiskLurCache/" data-toggle="tooltip" data-placement="top" title="图片三级缓存之内存缓存和磁盘缓存">Next Post &rarr;</a>
-                    </li>
                     
                 </ul>
 
@@ -411,8 +542,8 @@
 <script type="text/javascript">
     /* * * CONFIGURATION VARIABLES * * */
     var disqus_shortname = "HusterYP";
-    var disqus_identifier = "/2018/08/28/Java集合框架之LinkedHashMap";
-    var disqus_url = "http://localhost:4000/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/";
+    var disqus_identifier = "/2018/09/27/Java内存区域与内存溢出异常";
+    var disqus_url = "http://localhost:4000/2018/09/27/Java%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F%E4%B8%8E%E5%86%85%E5%AD%98%E6%BA%A2%E5%87%BA%E5%BC%82%E5%B8%B8/";
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;

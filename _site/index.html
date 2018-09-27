@@ -154,6 +154,44 @@
             ">
     			
 <div class="post-preview">
+    <a href="/2018/09/27/Java%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F%E4%B8%8E%E5%86%85%E5%AD%98%E6%BA%A2%E5%87%BA%E5%BC%82%E5%B8%B8/">
+        <h2 class="post-title">
+            Java内存区域与内存溢出异常
+        </h2>
+        
+        <h3 class="post-subtitle">
+            深入理解Java虚拟机第二章总结
+        </h3>
+        
+        <div class="post-content-preview">
+            前言
+
+本文是对«深入理解Java虚拟机»第二章以及其他博客的阅读总结
+
+重点是需要去理解各区域存储的是什么, 以此从底层理解对象的创建与引用等过程; 同时还需要明确的一点是各部分会产生的异常, 以及产生异常的原因
+
+注: 文中部分图片来自网络, 但是忘了出处, 侵删~
+
+
+
+正文
+
+
+
+一. 基本概念
+
+在开始讲解之前, 需要先明确关于JVM的一些基本概念
+
+我们都知道, Java是一个跨...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by 袁平 on September 27, 2018
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
     <a href="/2018/09/25/Java%E4%B9%8BIO%E6%B5%81/">
         <h2 class="post-title">
             Java之IO流
@@ -188,9 +226,9 @@ Java I/O流指的是java.io包和java.nio包提供的各种操作文件和输入
 <hr>
 
 <div class="post-preview">
-    <a href="/2018/09/24/View%E4%B9%8B%E7%BB%98%E5%88%B6%E6%B5%81%E7%A8%8B/">
+    <a href="/2018/09/24/%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B9%8BView%E7%BB%98%E5%88%B6%E6%B5%81%E7%A8%8B/">
         <h2 class="post-title">
-            View之绘制流程
+            自定义View之View绘制流程
         </h2>
         
         <h3 class="post-subtitle">
@@ -220,9 +258,9 @@ View的绘制流程分为三大步: measure, layout, draw; measure即测量, 测
 <hr>
 
 <div class="post-preview">
-    <a href="/2018/09/20/View%E4%B9%8B%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E6%9C%BA%E5%88%B6/">
+    <a href="/2018/09/20/%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B9%8BView%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E6%9C%BA%E5%88%B6/">
         <h2 class="post-title">
-            View之事件分发机制
+            自定义View之View事件分发机制
         </h2>
         
         <h3 class="post-subtitle">
@@ -490,42 +528,6 @@ Uri uri = Uri.parse("https://raw.githubuser...
 </div>
 <hr>
 
-<div class="post-preview">
-    <a href="/2018/08/31/%E5%9B%BE%E7%89%87%E4%B8%89%E7%BA%A7%E7%BC%93%E5%AD%98%E4%B9%8BLruCache%E5%92%8CDiskLurCache/">
-        <h2 class="post-title">
-            图片三级缓存之内存缓存和磁盘缓存
-        </h2>
-        
-        <h3 class="post-subtitle">
-            内存缓存用LruCache, 磁盘缓存用DiskLruCache
-        </h3>
-        
-        <div class="post-content-preview">
-            前言
-
-
-  本文主要分析Android中图片三级缓存中的前两级缓存, 即内存缓存(LruCache)和磁盘缓存(DiskLruCache), 分析其源码实现
-
-
-
-
-正文
-
-
-
-一. LruCache
-
-LruCache常用作内存缓存, 也就是第一级缓存
-
-LruCache内部使用了一个LinkedHashMap实例, 所以在继续往下看之前, 建议先了解一下LinkedHashMap的特性...
-        </div>
-    </a>
-    <p class="post-meta">
-        Posted by 袁平 on August 31, 2018
-    </p>
-</div>
-<hr>
-
 
 <!-- Pager -->
 
@@ -574,7 +576,7 @@ LruCache内部使用了一个LinkedHashMap实例, 所以在继续往下看之前
                             
                         
                             
-                                <a href="/tags/#Java" title="Java" rel="7">
+                                <a href="/tags/#Java" title="Java" rel="8">
                                     Java
                                 </a>
                             
