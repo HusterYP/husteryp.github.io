@@ -5,13 +5,399 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Thu, 27 Sep 2018 21:03:14 +0800</pubDate>
-    <lastBuildDate>Thu, 27 Sep 2018 21:03:14 +0800</lastBuildDate>
+    <pubDate>Fri, 28 Sep 2018 22:03:34 +0800</pubDate>
+    <lastBuildDate>Fri, 28 Sep 2018 22:03:34 +0800</lastBuildDate>
     <generator>Jekyll v3.8.3</generator>
     
       <item>
+        <title>Java垃圾收集器与内存分配策略</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;本文为«深入理解Java虚拟机»第三章以及部分博客内容总结, 权作个人笔记~&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;注&lt;/strong&gt;: 文中部分图片来自: http://hllvm.group.iteye.com/group/wiki/?show_full=true&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;一-对象是否死亡&quot;&gt;一. 对象是否死亡&lt;/h2&gt;
+
+&lt;p&gt;进行垃圾收集首先需要的就是判断对象是否死亡, 也就是是否可以清除收集, 下面将讲解判断对象是否死亡的方法&lt;/p&gt;
+
+&lt;h3 id=&quot;11-引用计数算法&quot;&gt;1.1 引用计数算法&lt;/h3&gt;
+
+&lt;h4 id=&quot;111-原理&quot;&gt;1.1.1 原理&lt;/h4&gt;
+
+&lt;p&gt;给对象添加一个引用计数, 每当有一个地方引用它, 计数器值就加&lt;code class=&quot;highlighter-rouge&quot;&gt;1&lt;/code&gt;; 当引用失效时, 计数器值就减&lt;code class=&quot;highlighter-rouge&quot;&gt;1&lt;/code&gt;; 任何时刻计数器值为&lt;code class=&quot;highlighter-rouge&quot;&gt;0&lt;/code&gt;的对象就是不可能再被使用的&lt;/p&gt;
+
+&lt;h4 id=&quot;112-优缺点&quot;&gt;1.1.2 优缺点&lt;/h4&gt;
+
+&lt;p&gt;&lt;strong&gt;优点&lt;/strong&gt;: 实现简单, 效率高&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;缺点&lt;/strong&gt;: 无法解决循环引用的问题, 如下;&lt;/p&gt;
+
+&lt;p&gt;主流&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;虚拟机中没有使用引用计数来管理内存的&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class ReferenceCountingGC {
+
+    public Object instance = null;
+    private final int _1MB = 1024 * 1024;
+    private byte[] bigSize = new byte[2 * _1MB]; // 占用内存, 以便GC日志中看清楚是否被回收过
+
+    public static void main(String[] args) {
+        ReferenceCountingGC objA = new ReferenceCountingGC();
+        ReferenceCountingGC objB = new ReferenceCountingGC();
+        objA.instance = objB;
+        objB.instance = objA;
+
+        objA = null;
+        objB = null;
+
+        System.gc();
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;12-可达性分析算法&quot;&gt;1.2 可达性分析算法&lt;/h3&gt;
+
+&lt;h4 id=&quot;121-原理&quot;&gt;1.2.1 原理&lt;/h4&gt;
+
+&lt;p&gt;通过一系列成为&lt;code class=&quot;highlighter-rouge&quot;&gt;GC Root&lt;/code&gt;的对象作为起始点, 从这些节点开始往下搜索, 搜索走过的路径称为引用链, 当一个对象到&lt;code class=&quot;highlighter-rouge&quot;&gt;GC Root&lt;/code&gt;没有任何引用链相连时, 则证明此对象是不可引用的; 如下图(&lt;a href=&quot;https://llag9810.github.io/2017/12/04/Java-%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0%EF%BC%88%E4%BA%8C%EF%BC%89/&quot;&gt;图片来自&lt;/a&gt;)&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/JVM/GcRoot.png&quot; alt=&quot;GC Root&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;可作为&lt;code class=&quot;highlighter-rouge&quot;&gt;GC Root&lt;/code&gt;的对象:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;虚拟机栈(栈帧中的本地变量表)中引用的对象&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;方法区中类静态属性引用的对象&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;方法区中常量引用的对象&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;本地方法栈中&lt;code class=&quot;highlighter-rouge&quot;&gt;JNI&lt;/code&gt;(&lt;code class=&quot;highlighter-rouge&quot;&gt;Native&lt;/code&gt;方法)引用的变量&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;使用可达性分析算法时, 至少需要经过两次标记过程才能宣告一个对象真正死亡: 如果对象在进行可达性分析后发现没有与&lt;code class=&quot;highlighter-rouge&quot;&gt;GC Root&lt;/code&gt;相连接的引用链, 那它会被第一次标记并且进行一次筛选, 筛选的条件是此对象是否有必要执行&lt;code class=&quot;highlighter-rouge&quot;&gt;finalize()&lt;/code&gt;方法, 当对象没有覆盖&lt;code class=&quot;highlighter-rouge&quot;&gt;finalize()&lt;/code&gt;放啊发, 或者&lt;code class=&quot;highlighter-rouge&quot;&gt;finalize()&lt;/code&gt;方法已经被虚拟机调用过, 虚拟机将这两种情况都视为没有必要执行(也就是说&lt;code class=&quot;highlighter-rouge&quot;&gt;finalize()&lt;/code&gt;方法最多执行一次, 这点需要注意~);
+如果这个对象被判定为有必要执行&lt;code class=&quot;highlighter-rouge&quot;&gt;finalize()&lt;/code&gt;方法, 那么这个对象将会放置在一个叫做&lt;code class=&quot;highlighter-rouge&quot;&gt;F-Queue&lt;/code&gt;的队列中, 并在稍后由一个由虚拟机自动建立, 低优先级的&lt;code class=&quot;highlighter-rouge&quot;&gt;Finalizer&lt;/code&gt;线程去执行它, 但并不承诺会等待&lt;code class=&quot;highlighter-rouge&quot;&gt;finalize()&lt;/code&gt;方法运行结束(这里也需要注意, 这是为了防止&lt;code class=&quot;highlighter-rouge&quot;&gt;finalize()&lt;/code&gt;中出现耗时操作甚至死循环); 在&lt;code class=&quot;highlighter-rouge&quot;&gt;finalize()&lt;/code&gt;中对象可以使自己再次加入引用链中, 逃脱&lt;code class=&quot;highlighter-rouge&quot;&gt;GC&lt;/code&gt;; &lt;strong&gt;但是不建议使用该方法来逃脱GC&lt;/strong&gt;&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class FinalizeEscapeGC {
+    public static FinalizeEscapeGC finalizeEscapeGC = null;
+
+    int count = 0;
+
+    public void isAlive() {
+        System.out.println(&quot;Yes, I am alive :) &quot;);
+    }
+
+    @Override
+    protected void finalize() throws Throwable {
+        super.finalize();
+        System.out.println(&quot;finalize method executed&quot;);
+        FinalizeEscapeGC.finalizeEscapeGC = this; // 再次进入引用链
+        // 经过验证, 虚拟机不会等待finalize()执行完毕
+//        while (true) {
+//            System.out.println(count++);
+//        }
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        finalizeEscapeGC = new FinalizeEscapeGC();
+        finalizeEscapeGC = null;
+        System.gc();
+        Thread.sleep(500);
+        if (finalizeEscapeGC == null) {
+            System.out.println(&quot;No, I am dead :(&quot;);
+        } else {
+            finalizeEscapeGC.isAlive();
+        }
+
+        finalizeEscapeGC = null;
+        System.gc();
+        Thread.sleep(500);
+        if (finalizeEscapeGC == null) {
+            System.out.println(&quot;No, I am dead :(&quot;);
+        } else {
+            finalizeEscapeGC.isAlive();
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;上述程序运行结果为: 可以看出, &lt;code class=&quot;highlighter-rouge&quot;&gt;finalize()&lt;/code&gt;确实被调用了, 而且只被调用了一次&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;finalize method executed
+Yes, I am alive :)
+No, I am dead :(
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;13-再谈引用&quot;&gt;1.3 再谈引用&lt;/h3&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;JDK1.2&lt;/code&gt;以前, &lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;引用很传统: 如果&lt;code class=&quot;highlighter-rouge&quot;&gt;reference&lt;/code&gt;类型的数据中存储的数值代表的是另一块内存的起始地址, 就称这块内存代表着一个引用&lt;/p&gt;
+
+&lt;p&gt;但是实际我们希望的是: 当内存空间还足够时, 能够保留在内存中; 当内存空间在进行垃圾收集后还是非常紧张, 则可以抛弃某些对象&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;JDK1.2&lt;/code&gt;之后, 扩充了引用概念:&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;注&lt;/strong&gt;: 以下引用强度递减&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;强引用: 类似&lt;code class=&quot;highlighter-rouge&quot;&gt;Object obj = new Object()&lt;/code&gt;的引用; 这类引用永远不会被垃圾收集器回收&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;软引用: 有用但非必需的对象; 在系统将要发生内存溢出之前, 将回收这部分对象, 如果回收之后内存仍然不够, 才会内存溢出&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;弱引用: 无论当前内存是否足够都会回收掉只被弱引用关联的对象&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;虚引用: 一个对象是否有虚引用的存在, 完全不会对其生存时间构成影响, 也无法通过一个虚引用来取得对象实例; 为一个对象设置虚引用关联的唯一目的是能在这个对象被收集器回收之前收到一个系统通知&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&quot;14-方法区回收&quot;&gt;1.4 方法区回收&lt;/h3&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;GC&lt;/code&gt;的主要区域是堆, 但是方法区也会进行&lt;code class=&quot;highlighter-rouge&quot;&gt;GC&lt;/code&gt;; 方法区的&lt;code class=&quot;highlighter-rouge&quot;&gt;GC&lt;/code&gt;主要是废弃常量和无用的类&lt;/p&gt;
+
+&lt;p&gt;废弃常量好理解, 和堆中对象回收一样, 没有引用即回收&lt;/p&gt;
+
+&lt;p&gt;无用类需要满足条件:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;该类的所有实例都已经被回收, 也就是&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;堆中不存在该类的任何实例&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;加载该类的&lt;code class=&quot;highlighter-rouge&quot;&gt;ClassLoader&lt;/code&gt;已经被回收&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;该类对应的&lt;code class=&quot;highlighter-rouge&quot;&gt;java.lang.Class&lt;/code&gt;对象没有在任何地方被引用, 无法在任何地方通过反射访问该类的方法&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;二-垃圾收集算法&quot;&gt;二. 垃圾收集算法&lt;/h2&gt;
+
+&lt;h3 id=&quot;21-标记-清除算法mark-sweep&quot;&gt;2.1 标记-清除算法(Mark-Sweep)&lt;/h3&gt;
+
+&lt;h4 id=&quot;211-原理&quot;&gt;2.1.1 原理&lt;/h4&gt;
+
+&lt;p&gt;先标记, 后回收咯&lt;/p&gt;
+
+&lt;p&gt;如下图:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/JVM/标记清除算法.png&quot; alt=&quot;标记清除算法&quot; /&gt;&lt;/p&gt;
+
+&lt;h4 id=&quot;212-优缺点&quot;&gt;2.1.2 优缺点&lt;/h4&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;标记和清除的效率都不高&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;产生大量不连续的内存碎片&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&quot;22-复制算法&quot;&gt;2.2 复制算法&lt;/h3&gt;
+
+&lt;p&gt;多用于新生代&lt;/p&gt;
+
+&lt;h4 id=&quot;221-原理&quot;&gt;2.2.1 原理&lt;/h4&gt;
+
+&lt;p&gt;将内存分成相等的两块, 每次只使用其中一块, 当这一块用完了, 就将还存活的对象复制到另一块, 然后把使用过的内存空间一次清掉&lt;/p&gt;
+
+&lt;p&gt;如下图:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/JVM/复制算法.png&quot; alt=&quot;复制算法&quot; /&gt;&lt;/p&gt;
+
+&lt;h4 id=&quot;222-优缺点&quot;&gt;2.2.2 优缺点&lt;/h4&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;效率高, 无碎片&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;每次可使用内存减半&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&quot;23-标记-整理算法&quot;&gt;2.3 标记-整理算法&lt;/h3&gt;
+
+&lt;p&gt;多用于老年代&lt;/p&gt;
+
+&lt;h4 id=&quot;231-原理&quot;&gt;2.3.1 原理&lt;/h4&gt;
+
+&lt;p&gt;让所有存活对象都向一端移动, 然后清理掉端边界以外的内存&lt;/p&gt;
+
+&lt;p&gt;如下图:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/JVM/标记整理算法.png&quot; alt=&quot;标记整理算法&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;24-分代收集算法&quot;&gt;2.4 分代收集算法&lt;/h3&gt;
+
+&lt;h4 id=&quot;241-分代&quot;&gt;2.4.1 分代&lt;/h4&gt;
+
+&lt;p&gt;分代的依据是: 不同对象的生命周期不同; 因此不同对象可以采用不同的回收方式, 以便提高回收效率; 因为如果每次都对整个堆进行回收遍历的话, 对于生命周期较长的对象而言, 实际上有很多次回收都是不必要和没用的&lt;/p&gt;
+
+&lt;p&gt;分代:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/JVM/分代.png&quot; alt=&quot;分代&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;分为年轻代(&lt;code class=&quot;highlighter-rouge&quot;&gt;Young Generation&lt;/code&gt;), 老年代(&lt;code class=&quot;highlighter-rouge&quot;&gt;Old Generation&lt;/code&gt;)和永久代(&lt;code class=&quot;highlighter-rouge&quot;&gt;Permanent Generation&lt;/code&gt;); 永久代主要存放的是&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;类的类信息, 与垃圾收集要收集的&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;对象关系不大; 年轻代和老年代的划分是对垃圾收集影响比较大的&lt;/p&gt;
+
+&lt;h4 id=&quot;242-原理&quot;&gt;2.4.2 原理&lt;/h4&gt;
+
+&lt;p&gt;新生代采用复制算法, 有老年代作空间担保; 老年代中因为对象存活率高, 没有额外空间对它进行分配担保, 就必须使用&lt;strong&gt;标记-清理&lt;/strong&gt;或者&lt;strong&gt;标记-整理&lt;/strong&gt;算法&lt;/p&gt;
+
+&lt;p&gt;关于分代收集算法更详细信息, 可以参见博客: http://hllvm.group.iteye.com/group/wiki/2863-JVM&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;三-内存分配与回收策略&quot;&gt;三. 内存分配与回收策略&lt;/h2&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;对象优先在&lt;code class=&quot;highlighter-rouge&quot;&gt;Eden&lt;/code&gt;分配, 当&lt;code class=&quot;highlighter-rouge&quot;&gt;Eden&lt;/code&gt;没有足够空间时, 将发起一次&lt;code class=&quot;highlighter-rouge&quot;&gt;Minor GC&lt;/code&gt;(指发生在新生代的&lt;code class=&quot;highlighter-rouge&quot;&gt;GC&lt;/code&gt;, 较为频繁, 但是速度也快)&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;大对象直接进入老年代, 这是为了防止在新生代的&lt;code class=&quot;highlighter-rouge&quot;&gt;Eden&lt;/code&gt;和两个&lt;code class=&quot;highlighter-rouge&quot;&gt;Survivor&lt;/code&gt;区之间发生大量的内存复制&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;长期存活的对象直接进入老年代; 虚拟机给每个对象定义一个年龄计数器, 如果对象在&lt;code class=&quot;highlighter-rouge&quot;&gt;Eden&lt;/code&gt;区出生并经过第一&lt;code class=&quot;highlighter-rouge&quot;&gt;Minor GC&lt;/code&gt;后仍然存活, 并且能被&lt;code class=&quot;highlighter-rouge&quot;&gt;Survivor&lt;/code&gt;区容纳, 将被移到&lt;code class=&quot;highlighter-rouge&quot;&gt;Survivor&lt;/code&gt;区中, 并且对象年龄设置为&lt;code class=&quot;highlighter-rouge&quot;&gt;1&lt;/code&gt;, 对象在&lt;code class=&quot;highlighter-rouge&quot;&gt;Survivor&lt;/code&gt;区中没度过一次&lt;code class=&quot;highlighter-rouge&quot;&gt;Minor GC&lt;/code&gt;, 年龄就增&lt;code class=&quot;highlighter-rouge&quot;&gt;1&lt;/code&gt;, 当其年龄达到一定程度(默认&lt;code class=&quot;highlighter-rouge&quot;&gt;15&lt;/code&gt;岁), 则移入老年代&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;动态对象年龄判定, 如果在&lt;code class=&quot;highlighter-rouge&quot;&gt;Survivor&lt;/code&gt;空间中相同年龄所有对象大小的总和大于&lt;code class=&quot;highlighter-rouge&quot;&gt;Survivor&lt;/code&gt;空间的一半, 年龄大于或等于该年龄的对象就可以直接进入老年代, 而不必等到年龄达到阈值&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h2 id=&quot;参考链接&quot;&gt;参考链接&lt;/h2&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;http://hllvm.group.iteye.com/group/wiki/?show_full=true&lt;/li&gt;
+&lt;/ol&gt;
+</description>
+        <pubDate>Fri, 28 Sep 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/09/28/Java%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8%E4%B8%8E%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E7%AD%96%E7%95%A5/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/09/28/Java%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8%E4%B8%8E%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E7%AD%96%E7%95%A5/</guid>
+        
+        <category>Java</category>
+        
+        
+      </item>
+    
+      <item>
         <title>自定义View之常用工具</title>
-        <description>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;本文将要讲解的是在自定义&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;中常用的一些工具类&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;一-canvas&quot;&gt;一. Canvas&lt;/h2&gt;
+
+&lt;p&gt;drawXXX: 绘制相关&lt;/p&gt;
+
+&lt;p&gt;clipXXX: 裁剪; 使用裁剪的时候, 通常需要配合save()和restore()一起使用, 否则之后所有的绘制都会被裁剪
+范围裁切有两个方法： clipRect() 和 clipPath()&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;几何变换(平移, 旋转, 伸缩等):&lt;/p&gt;
+
+&lt;p&gt;几何变换的使用大概分为三类：&lt;/p&gt;
+&lt;ol&gt;
+  &lt;li&gt;使用 Canvas 来做常见的二维变换；&lt;/li&gt;
+  &lt;li&gt;使用 Matrix 来做常见和不常见的二维变换；&lt;/li&gt;
+  &lt;li&gt;使用 Camera 来做三维变换。&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Matrix; 或者自带的translate(), rotate(), scale(), skew()(错切); 
+需要注意的是, Canvas自带的几何变换是倒序的, 比如: 如果translate()在rotate()前面, 则实际执行顺序是先rotate(), 再translate(); 
+Canvas自带的几何变换内部其实也是使用的Matrix
+Matrix可以自定义执行顺序, 通常Matrix的方法都是成对的, 比如: preTranslate()(往前插入)和postTranslate()(往后插入)
+Camare可以用于辅助Matrix计算; 比如: 如下代码&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;protected void onDraw(Canvas canvas) {
+    canvas.save();
+
+    camare.save();
+    camare.rotateX(30);
+    canvas.translate(centerX, centerY); // 注意这里的顺序要倒着, 因为上面说了, Canvas几何变换的顺序是倒着的
+    camare.applyToCanvas(canvas); // 同时, 由于camare执行旋转操作的时候, 是以原点为中心的, 所以, 如果这里不配合canvas的平移操作来使用的话, 最终图像是歪的; 但是camare又不支持设置中心, 所以就只能先将图像平移到原点, camare作用完之后再平移回原来的位置; 注意, 虽然Camare也有translate()方法, 但是Camare的变换是会带着整个三维坐标系一起的, 而且它在变换结束之后才会做投影, 而不是一旋转完就立即投影到Canvas上去, 这样如果用Camare做移动,
+    那么绘制出来的结果就完全不是预期的样子了(这里的解释不是很懂)
+    canvas.translate(-centerX, -centerY);
+    camare.restore();
+
+    canvas.restore();
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;Camare坐标系: 使用的是三维坐标系, 原点也是View左上角; x轴右正左负, y轴上正下负(注意y轴不一样咯, 和View坐标系相反), z轴垂直于View, 内正外负(朝屏幕里面为正, 朝屏幕外面为负); 还包含了一个虚拟的Camare对象, 即一个虚拟的相机, 默认在z轴负向, 即View坐标原点的正上方
+Camare的旋转方向没有规律, 见Download文件夹下照片
+Camare也是可以沿着x, y, z轴平移的, 比如沿着z轴平移, 就相当于将物体远离或者靠近相机, 即起到放大缩小的作用, 但是由于这种情况也可以直接使用Canvas的scale()等来做到, 所以实际开发中一般都用Canvas自带的方法来实现
+Camare还可以通过setLocation()来设置虚拟相机的位置, 这种的使用情况是, 比如进行旋转时会造成物体投影太大(因为相机离物体太近), 此时可以通过setLocation()来设置相机位置远离物体, 使投影缩小; 一般使用时都是沿着z轴移动Camare, 不常见沿着x, y轴移动的
+Camare变换的时候也需要save()和restore()&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;重写其他方法体现遮盖(联系draw过程, 如: 绘制前景, 绘制背景等)&lt;/p&gt;
+
+&lt;p&gt;drawColor: 可以用于填充背景或者设置半透明蒙版&lt;/p&gt;
+
+&lt;h2 id=&quot;二-paint&quot;&gt;二. Paint&lt;/h2&gt;
+
+&lt;p&gt;关于Paint, 请参见: https://hencoder.com/ui-1-2/&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;颜色: 
+setColor()&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;setShader(): 着色器, 着色器设置的是一个颜色方案，或者说是一套着色规则; 当设置了 Shader 之后，Paint 在绘制图形和文字时就不使用 setColor/ARGB() 设置的颜色了，而是使用  Shader 的方案中的颜色。LinearGradient RadialGradient SweepGradient BitmapShader ComposeShader&lt;/p&gt;
+
+&lt;p&gt;setColorFilter(): ColorFilter; 共有三个子类：LightingColorFilter PorterDuffColorFilter 和 ColorMatrixColorFilter&lt;/p&gt;
+
+&lt;p&gt;setXfermode(): Xfermode 指的是你要绘制的内容和 Canvas 的目标位置的内容应该怎样结合计算出最终的颜色; 唯一子类: PorterDuffXfermode&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;效果&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;抗锯齿、填充/轮廓、线条宽度等&lt;/p&gt;
+
+&lt;p&gt;setAntiAlias()&lt;/p&gt;
+
+&lt;p&gt;setStyle()&lt;/p&gt;
+
+&lt;p&gt;线条形状: setStrokeWidth(float width),  setStrokeCap(Paint.Cap cap), setStrokeJoin(Paint.Join join),  setStrokeMiter(float miter)&lt;/p&gt;
+
+&lt;p&gt;色彩优化: setDither(boolean dither) 和  setFilterBitmap(boolean filter)&lt;/p&gt;
+
+&lt;p&gt;setPathEffect(): PathEffect 分为两类，单一效果的 CornerPathEffect DiscretePathEffect DashPathEffect PathDashPathEffect ，和组合效果的 SumPathEffect ComposePathEffect&lt;/p&gt;
+
+&lt;p&gt;什么是硬件加速: https://developer.android.com/guide/topics/graphics/hardware-accel&lt;/p&gt;
+
+&lt;p&gt;setShadowLayer(): 在绘制层下方添加效果
+setMaskFilter(): 在绘制层上方添加效果; BlurMaskFilter 和 EmbossMaskFilter&lt;/p&gt;
+
+&lt;p&gt;获取绘制的 Path&lt;/p&gt;
+
+&lt;h3 id=&quot;drawtext相关&quot;&gt;drawText()相关&lt;/h3&gt;
+
 </description>
         <pubDate>Thu, 27 Sep 2018 00:00:00 +0800</pubDate>
         <link>http://localhost:4000/2018/09/27/%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B9%8B%E5%B8%B8%E7%94%A8%E5%B7%A5%E5%85%B7/</link>
@@ -1972,106 +2358,6 @@ draweeView.setImageURI(uri);
         <guid isPermaLink="true">http://localhost:4000/2018/09/06/Fresco/</guid>
         
         <category>Draft</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>大二下总结</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;p&gt;将一切交给时光, 相信一切都是最好的结局&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;一-概述&quot;&gt;一. 概述&lt;/h2&gt;
-
-&lt;p&gt;大二下学期可能是我大学生活中最刺激的一个阶段, 大概就是整整一个学期, 从周一到周末, 每天满课的那种; 更刺激的是一天考了三门(早中晚, 没毛病~)&lt;/p&gt;
-
-&lt;p&gt;上课期间, 学的主要是算法和&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;基础这部分; 暑假期间, 主要是做项目&lt;/p&gt;
-
-&lt;p&gt;总体感受: 稍显疲惫 ~&lt;/p&gt;
-
-&lt;h2 id=&quot;二-项目&quot;&gt;二. 项目&lt;/h2&gt;
-
-&lt;p&gt;项目部分主要是暑假接触到的两个项目, 一个与&lt;code class=&quot;highlighter-rouge&quot;&gt;OpenGL&lt;/code&gt;有关, 另一个是工具类&lt;code class=&quot;highlighter-rouge&quot;&gt;App&lt;/code&gt;&lt;/p&gt;
-
-&lt;h3 id=&quot;21特点&quot;&gt;2.1特点&lt;/h3&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;产品迭代快, 周期短&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;框架复用, 模块化明显: 广告, 打点, 使用逻辑等(后者复用前者的大部分, 除了使用逻辑改变了, 其余基本相同)(同一个框架填不同内容)&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;核心功能简单直接, 迭代快, 但注定消亡的也快&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;纯&lt;code class=&quot;highlighter-rouge&quot;&gt;Kotlin&lt;/code&gt;&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h3 id=&quot;22一点体会&quot;&gt;2.2一点体会&lt;/h3&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;公司业务紧跟市场&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;负载量大: 大概就是想摸鱼都没有水的那种 ~&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;对一个产品细节上感受: &lt;code class=&quot;highlighter-rouge&quot;&gt;The Best !&lt;/code&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;一个产品的总体流程&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h2 id=&quot;三-规划&quot;&gt;三. 规划&lt;/h2&gt;
-
-&lt;h3 id=&quot;31不足&quot;&gt;3.1不足&lt;/h3&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;知识点零碎, 构不成框架&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;新事物的把握不足&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;不够深入和全面&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h3 id=&quot;32安排&quot;&gt;3.2安排&lt;/h3&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;总结成文&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;具体安排新事物的学习时间&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;各方面的联系, 框架~&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;思考和内化&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-</description>
-        <pubDate>Sat, 01 Sep 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/09/01/%E5%A4%A7%E4%BA%8C%E4%B8%8B%E6%80%BB%E7%BB%93/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/09/01/%E5%A4%A7%E4%BA%8C%E4%B8%8B%E6%80%BB%E7%BB%93/</guid>
-        
-        <category>Hust</category>
         
         
       </item>
