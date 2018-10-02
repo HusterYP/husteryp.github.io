@@ -241,7 +241,7 @@
   </li>
 </ol>
 
-<p>使用可达性分析算法时, 至少需要经过两次标记过程才能宣告一个对象真正死亡: 如果对象在进行可达性分析后发现没有与<code class="highlighter-rouge">GC Root</code>相连接的引用链, 那它会被第一次标记并且进行一次筛选, 筛选的条件是此对象是否有必要执行<code class="highlighter-rouge">finalize()</code>方法, 当对象没有覆盖<code class="highlighter-rouge">finalize()</code>放啊发, 或者<code class="highlighter-rouge">finalize()</code>方法已经被虚拟机调用过, 虚拟机将这两种情况都视为没有必要执行(也就是说<code class="highlighter-rouge">finalize()</code>方法最多执行一次, 这点需要注意~);
+<p>使用可达性分析算法时, 至少需要经过两次标记过程才能宣告一个对象真正死亡: 如果对象在进行可达性分析后发现没有与<code class="highlighter-rouge">GC Root</code>相连接的引用链, 那它会被第一次标记并且进行一次筛选, 筛选的条件是此对象是否有必要执行<code class="highlighter-rouge">finalize()</code>方法, 当对象没有覆盖<code class="highlighter-rouge">finalize()</code>方法时, 或者<code class="highlighter-rouge">finalize()</code>方法已经被虚拟机调用过, 虚拟机将这两种情况都视为没有必要执行(也就是说<code class="highlighter-rouge">finalize()</code>方法最多执行一次, 这点需要注意~);
 如果这个对象被判定为有必要执行<code class="highlighter-rouge">finalize()</code>方法, 那么这个对象将会放置在一个叫做<code class="highlighter-rouge">F-Queue</code>的队列中, 并在稍后由一个由虚拟机自动建立, 低优先级的<code class="highlighter-rouge">Finalizer</code>线程去执行它, 但并不承诺会等待<code class="highlighter-rouge">finalize()</code>方法运行结束(这里也需要注意, 这是为了防止<code class="highlighter-rouge">finalize()</code>中出现耗时操作甚至死循环); 在<code class="highlighter-rouge">finalize()</code>中对象可以使自己再次加入引用链中, 逃脱<code class="highlighter-rouge">GC</code>; <strong>但是不建议使用该方法来逃脱GC</strong></p>
 
 <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class FinalizeEscapeGC {
@@ -423,7 +423,7 @@ No, I am dead :(
 
 <ol>
   <li>
-    <p>对象优先在<code class="highlighter-rouge">Eden</code>分配, 当<code class="highlighter-rouge">Eden</code>没有足够空间时, 将发起一次<code class="highlighter-rouge">Minor GC</code>(指发生在新生代的<code class="highlighter-rouge">GC</code>, 较为频繁, 但是速度也快)</p>
+    <p>对象优先在<code class="highlighter-rouge">Eden</code>分配, 当<code class="highlighter-rouge">Eden</code>没有足够空间时, 将发起一次<code class="highlighter-rouge">Minor GC</code>(<code class="highlighter-rouge">Minor GC</code>指发生在新生代的<code class="highlighter-rouge">GC</code>, 较为频繁, 但是速度也快; <code class="highlighter-rouge">Major GC</code>指的是发生在老年代的<code class="highlighter-rouge">GC</code>; <code class="highlighter-rouge">Full GC</code>指的是发生在整个堆空间的<code class="highlighter-rouge">GC</code>, 包括老年代和新生代)</p>
   </li>
   <li>
     <p>大对象直接进入老年代, 这是为了防止在新生代的<code class="highlighter-rouge">Eden</code>和两个<code class="highlighter-rouge">Survivor</code>区之间发生大量的内存复制</p>
@@ -434,9 +434,27 @@ No, I am dead :(
   <li>
     <p>动态对象年龄判定, 如果在<code class="highlighter-rouge">Survivor</code>空间中相同年龄所有对象大小的总和大于<code class="highlighter-rouge">Survivor</code>空间的一半, 年龄大于或等于该年龄的对象就可以直接进入老年代, 而不必等到年龄达到阈值</p>
   </li>
+  <li>
+    <p>空间分配担保: 因为新生代采用复制算法, 可能会出现复制空间不足的情况, 老年代可以为新生代作内存空间担保</p>
+  </li>
 </ol>
 
-<h2 id="参考链接">参考链接</h2>
+<h2 id="四-others">四. Others</h2>
+
+<blockquote>
+  <p>这里提一些其他的要点~</p>
+</blockquote>
+
+<ol>
+  <li>
+    <p><code class="highlighter-rouge">GC</code>时会发生<code class="highlighter-rouge">Stop the World</code>, 由此可以联想, 也有可能由于<code class="highlighter-rouge">GC</code>造成的<code class="highlighter-rouge">Android</code>白屏~</p>
+  </li>
+  <li>
+    <p>安全点和安全区: 引用关系不变; <code class="highlighter-rouge">GC</code>只有在程序执行达到安全点或者安全区的时候才能进行; 如何让所有线程都跑到最近的安全点? 有两种方法: 抢先式中断(<code class="highlighter-rouge">GC</code>时, 首先把所有线程全部中断, 如果发现有线程不在安全点上, 则恢复该线程, 让它跑到安全点)和主动式中断(<code class="highlighter-rouge">GC</code>时, 不直接对线程中断, 仅仅简单地设置一个标志, 各个线程执行时主动去轮询该标志, 发现该标志为真时就自己中断挂起)(多采用主动式中断)</p>
+  </li>
+</ol>
+
+<h2 id="五-参考链接">五. 参考链接</h2>
 
 <ol>
   <li>http://hllvm.group.iteye.com/group/wiki/?show_full=true</li>
@@ -451,9 +469,13 @@ No, I am dead :(
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/2018/09/27/%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B9%8B%E5%B8%B8%E7%94%A8%E5%B7%A5%E5%85%B7/" data-toggle="tooltip" data-placement="top" title="自定义View之常用工具">&larr; Previous Post</a>
+                        <a href="/2018/09/28/%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B9%8B%E5%B8%B8%E7%94%A8%E5%B7%A5%E5%85%B7/" data-toggle="tooltip" data-placement="top" title="自定义View常用工具">&larr; Previous Post</a>
                     </li>
                     
+                    
+                    <li class="next">
+                        <a href="/2018/10/02/Java%E7%B1%BB%E6%96%87%E4%BB%B6%E7%BB%93%E6%9E%84%E4%B8%8E%E7%B1%BB%E5%8A%A0%E8%BD%BD%E6%9C%BA%E5%88%B6/" data-toggle="tooltip" data-placement="top" title="Java类文件结构与类加载机制">Next Post &rarr;</a>
+                    </li>
                     
                 </ul>
 
@@ -494,7 +516,7 @@ No, I am dead :(
                             
         				
                             
-                				<a href="/tags/#Draft" title="Draft" rel="2">
+                				<a href="/tags/#Draft" title="Draft" rel="3">
                                     Draft
                                 </a>
                             
@@ -502,7 +524,7 @@ No, I am dead :(
                             
         				
                             
-                				<a href="/tags/#Java" title="Java" rel="9">
+                				<a href="/tags/#Java" title="Java" rel="10">
                                     Java
                                 </a>
                             

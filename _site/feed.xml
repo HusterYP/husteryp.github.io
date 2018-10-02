@@ -5,9 +5,522 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Fri, 28 Sep 2018 22:03:34 +0800</pubDate>
-    <lastBuildDate>Fri, 28 Sep 2018 22:03:34 +0800</lastBuildDate>
+    <pubDate>Tue, 02 Oct 2018 22:26:43 +0800</pubDate>
+    <lastBuildDate>Tue, 02 Oct 2018 22:26:43 +0800</lastBuildDate>
     <generator>Jekyll v3.8.3</generator>
+    
+      <item>
+        <title>Java类文件结构与类加载机制</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;本文是对«深入理解Java虚拟机»第六章第七章以及其他博客的总结, 权做笔记~&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;一-类文件结构&quot;&gt;一. 类文件结构&lt;/h2&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Class&lt;/code&gt;文件是一组以&lt;code class=&quot;highlighter-rouge&quot;&gt;8&lt;/code&gt;位字节为基础单位的二进制流, 当遇到需要占据&lt;code class=&quot;highlighter-rouge&quot;&gt;8&lt;/code&gt;位字节以上空间的数据项时, 则会按照高位在前的方式分割成若干个&lt;code class=&quot;highlighter-rouge&quot;&gt;8&lt;/code&gt;位字节进行存储&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Class&lt;/code&gt;文件格式采用一种类似于&lt;code class=&quot;highlighter-rouge&quot;&gt;C&lt;/code&gt;语言结构体的伪结构来存储数据, 这种伪结构中只有两种数据类型: 无符号数和表; 无符号数是基本数据类型, 以&lt;code class=&quot;highlighter-rouge&quot;&gt;u1&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;u2&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;u4&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;u8&lt;/code&gt;来分别代表&lt;code class=&quot;highlighter-rouge&quot;&gt;1&lt;/code&gt;个字节,&lt;code class=&quot;highlighter-rouge&quot;&gt;2&lt;/code&gt;个字节, &lt;code class=&quot;highlighter-rouge&quot;&gt;4&lt;/code&gt;个字节和&lt;code class=&quot;highlighter-rouge&quot;&gt;8&lt;/code&gt;个字节的无符号数, 无符号数可以用来描述数字, 索引引用, 数量值或者按照&lt;code class=&quot;highlighter-rouge&quot;&gt;UTF-8&lt;/code&gt;编码构成字符串值; 表由多个无符号数或者其他表作为数据项构成的复合数据类型, 以&lt;code class=&quot;highlighter-rouge&quot;&gt;_info&lt;/code&gt;结尾&lt;/p&gt;
+
+&lt;p&gt;由于&lt;code class=&quot;highlighter-rouge&quot;&gt;Class&lt;/code&gt;文件中没有分隔符, 所以哪个字节代表什么含义, 长度是多少, 先后顺序如何, 都被严格限定且不允许改变&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Class&lt;/code&gt;文件格式见下表&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;类型&lt;/th&gt;
+      &lt;th&gt;名称&lt;/th&gt;
+      &lt;th&gt;数量&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;u4&lt;/td&gt;
+      &lt;td&gt;magic&lt;/td&gt;
+      &lt;td&gt;1&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;u2&lt;/td&gt;
+      &lt;td&gt;minor_version&lt;/td&gt;
+      &lt;td&gt;1&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;u2&lt;/td&gt;
+      &lt;td&gt;major_version&lt;/td&gt;
+      &lt;td&gt;1&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;u2&lt;/td&gt;
+      &lt;td&gt;constant_pool_count&lt;/td&gt;
+      &lt;td&gt;1&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;cp_info&lt;/td&gt;
+      &lt;td&gt;constant_pool&lt;/td&gt;
+      &lt;td&gt;constant_pool_count-1&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;u2&lt;/td&gt;
+      &lt;td&gt;access_flags&lt;/td&gt;
+      &lt;td&gt;1&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;u2&lt;/td&gt;
+      &lt;td&gt;this_class&lt;/td&gt;
+      &lt;td&gt;1&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;u2&lt;/td&gt;
+      &lt;td&gt;super_class&lt;/td&gt;
+      &lt;td&gt;1&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;u2&lt;/td&gt;
+      &lt;td&gt;interfaces_count&lt;/td&gt;
+      &lt;td&gt;1&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;u2&lt;/td&gt;
+      &lt;td&gt;interfaces&lt;/td&gt;
+      &lt;td&gt;interfaces_count&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;u2&lt;/td&gt;
+      &lt;td&gt;fields_count&lt;/td&gt;
+      &lt;td&gt;1&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;field_info&lt;/td&gt;
+      &lt;td&gt;fields&lt;/td&gt;
+      &lt;td&gt;fields_count&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;u2&lt;/td&gt;
+      &lt;td&gt;methods_count&lt;/td&gt;
+      &lt;td&gt;1&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;method_info&lt;/td&gt;
+      &lt;td&gt;methods&lt;/td&gt;
+      &lt;td&gt;methods_count&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;u2&lt;/td&gt;
+      &lt;td&gt;attributes_count&lt;/td&gt;
+      &lt;td&gt;1&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;attribute_info&lt;/td&gt;
+      &lt;td&gt;attributes&lt;/td&gt;
+      &lt;td&gt;attributes_count&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;h3 id=&quot;11-简介&quot;&gt;1.1 简介&lt;/h3&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;魔数&lt;/strong&gt;: 每个&lt;code class=&quot;highlighter-rouge&quot;&gt;Class&lt;/code&gt;文件头&lt;code class=&quot;highlighter-rouge&quot;&gt;4&lt;/code&gt;个字节称为魔数, 唯一作用是确定该文件是否是一个能被虚拟机接受的&lt;code class=&quot;highlighter-rouge&quot;&gt;Class&lt;/code&gt;文件&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;版本号&lt;/strong&gt;: 紧接着魔数的四个字节存储的是&lt;code class=&quot;highlighter-rouge&quot;&gt;Class&lt;/code&gt;文件的版本号: 第&lt;code class=&quot;highlighter-rouge&quot;&gt;5&lt;/code&gt;和第&lt;code class=&quot;highlighter-rouge&quot;&gt;6&lt;/code&gt;个字节是次版本号(&lt;code class=&quot;highlighter-rouge&quot;&gt;Minor Version&lt;/code&gt;), 第&lt;code class=&quot;highlighter-rouge&quot;&gt;7&lt;/code&gt;和第&lt;code class=&quot;highlighter-rouge&quot;&gt;8&lt;/code&gt;个字节是主版本号(&lt;code class=&quot;highlighter-rouge&quot;&gt;Major Version&lt;/code&gt;); 虚拟机必须拒绝执行超过其版本号的&lt;code class=&quot;highlighter-rouge&quot;&gt;Class&lt;/code&gt;文件&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;常量池&lt;/strong&gt;: 紧接着主版本号之后的是常量池入口, 是一个表类型数据项; &lt;code class=&quot;highlighter-rouge&quot;&gt;Class&lt;/code&gt;文件中只有常量池的容量计数是从&lt;code class=&quot;highlighter-rouge&quot;&gt;1&lt;/code&gt;开始的; 常量池中主要存放两大类常量: 字面量和符号引用&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;字面量: 如: 文本字符串, 声明为&lt;code class=&quot;highlighter-rouge&quot;&gt;final&lt;/code&gt;的常量值等&lt;/li&gt;
+    &lt;li&gt;符号引用: 类和接口的全限定名; 字段的名称和描述符; 方法的名称和描述符&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;访问标志&lt;/strong&gt;: 常量池结束之后, 紧接着的两个字节代表访问标志; 用于表示一些类或者接口的层次信息&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;类索引, 父类索引和接口索引集合&lt;/strong&gt;: 用于确定类的继承关系; 除了&lt;code class=&quot;highlighter-rouge&quot;&gt;java.lang.Object&lt;/code&gt;之外, 所有的&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;类都有父类, 因此除了&lt;code class=&quot;highlighter-rouge&quot;&gt;java.lang.Object&lt;/code&gt;外, 所有&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;类的父类索引都不为&lt;code class=&quot;highlighter-rouge&quot;&gt;0&lt;/code&gt;&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;字段表&lt;/strong&gt;: 描述接口或者类中声明的变量; 字段包括类级变量以及实例级变量, 但不包括方法内部声明的局部变量&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;方法表&lt;/strong&gt;: 包括访问标志, 名称索引, 描述符索引, 属性表集合; 如果父类方法在子类中没有被重写, 方法表集合中就不会出现来自父类的方法信息, 但是, 同样的, 有可能会出现由编译器自动添加的方法, 最典型的便是类构造器&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;clinit&amp;gt;&lt;/code&gt;方法和实例构造器&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;init&amp;gt;&lt;/code&gt;方法&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;属性表&lt;/strong&gt;: &lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;虚拟机运行时会忽略掉它不认识的属性&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&quot;12-常见问题&quot;&gt;1.2 常见问题&lt;/h3&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;程序中如果定义了超过&lt;code class=&quot;highlighter-rouge&quot;&gt;64KB&lt;/code&gt;英文字符的变量或方法名, 将无法编译:&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;由于&lt;code class=&quot;highlighter-rouge&quot;&gt;Class&lt;/code&gt;文件中方法, 字段等都需要引用&lt;code class=&quot;highlighter-rouge&quot;&gt;CONSTANT_Utf8_info&lt;/code&gt;型常量来描述名称, 所以&lt;code class=&quot;highlighter-rouge&quot;&gt;CONSTANT_Utf8_info&lt;/code&gt;型常量的最大长度也就是&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;中方法, 字段名的最大长度; &lt;code class=&quot;highlighter-rouge&quot;&gt;u2&lt;/code&gt;类型能表达的最大值是&lt;code class=&quot;highlighter-rouge&quot;&gt;65535&lt;/code&gt;, 所以&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;程序中如果定义了超过&lt;code class=&quot;highlighter-rouge&quot;&gt;64KB&lt;/code&gt;英文字符的变量或方法名, 将无法编译&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;二-虚拟机类加载机制&quot;&gt;二. 虚拟机类加载机制&lt;/h2&gt;
+
+&lt;h3 id=&quot;21-类加载的时机&quot;&gt;2.1 类加载的时机&lt;/h3&gt;
+
+&lt;p&gt;类从被加载到虚拟机内存中开始, 到卸载出内存为止, 其生命周期如下图:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/JVM/类的生命周期.png&quot; alt=&quot;类的生命周期&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;其中, 加载, 验证, 准备, 初始化和卸载这五个阶段的顺序是确定的, 解析阶段则不一定: 在某些情况下, 可以在初始化阶段之后再&lt;strong&gt;开始&lt;/strong&gt;(注意, 是开始, 而不是&lt;em&gt;进行&lt;/em&gt;或者&lt;em&gt;完成&lt;/em&gt;)&lt;/p&gt;
+
+&lt;p&gt;遇到以下五种情况必须立即对类进行&lt;em&gt;初始化&lt;/em&gt;(而加载, 验证, 准备自然要在这之前完成):&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;遇到&lt;code class=&quot;highlighter-rouge&quot;&gt;new&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;getstatic&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;putstatic&lt;/code&gt;或&lt;code class=&quot;highlighter-rouge&quot;&gt;invokestatic&lt;/code&gt;这&lt;code class=&quot;highlighter-rouge&quot;&gt;4&lt;/code&gt;条字节码指令时, 如果类没有初始化, 需要出发初始化; 生成这&lt;code class=&quot;highlighter-rouge&quot;&gt;4&lt;/code&gt;条指令的常见&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;代码场景是: 使用&lt;code class=&quot;highlighter-rouge&quot;&gt;new&lt;/code&gt;关键字实例化对象的时候, 读取或设置一个类的静态字段的时候(注意: 被&lt;code class=&quot;highlighter-rouge&quot;&gt;final&lt;/code&gt;修饰, 已在编译期把结果放入常量池的静态字段除外(由此可见, 添加&lt;code class=&quot;highlighter-rouge&quot;&gt;final&lt;/code&gt;修饰可以避免不必要的类加载)), 以及调用一个类的静态方法的时候&lt;/li&gt;
+    &lt;li&gt;使用&lt;code class=&quot;highlighter-rouge&quot;&gt;java.lang.reflect&lt;/code&gt;包的方法对类进行反射调用的时候&lt;/li&gt;
+    &lt;li&gt;当初始化一个类, 如果发现其父类没有初始化, 则需先初始化其父类&lt;/li&gt;
+    &lt;li&gt;虚拟机启动时, 用户需要指定一个要执行的主类(&lt;code class=&quot;highlighter-rouge&quot;&gt;main()&lt;/code&gt;所在的类), 虚拟机会先初始化这个主类&lt;/li&gt;
+    &lt;li&gt;当使用&lt;code class=&quot;highlighter-rouge&quot;&gt;JDK1.7&lt;/code&gt;的动态语言支持(比如: &lt;code class=&quot;highlighter-rouge&quot;&gt;Groovy&lt;/code&gt;等)时, 如果一个&lt;code class=&quot;highlighter-rouge&quot;&gt;java.lang.invoke.MethodHandle&lt;/code&gt;实例最后的解析结果&lt;code class=&quot;highlighter-rouge&quot;&gt;REF_getStatic&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;REF_putStatic&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;REF_invokeStatic&lt;/code&gt;的方法句柄, 并且这个方法句柄所对应的类没有进行过初始化, 则需先触发其初始化&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;h3 id=&quot;22-主动引用与被动引用&quot;&gt;2.2 主动引用与被动引用&lt;/h3&gt;
+
+&lt;h4 id=&quot;221-构造函数-代码块-静态代码块的执行时机&quot;&gt;2.2.1 构造函数, 代码块, 静态代码块的执行时机&lt;/h4&gt;
+
+&lt;p&gt;考虑下列代码:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class Practice {
+
+    static {
+        System.out.println(&quot;Practice static code block&quot;);
+    }
+
+    {
+        System.out.println(&quot;Practice code block&quot;);
+    }
+
+    public Practice() {
+        System.out.println(&quot;Practice constructor&quot;);
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;当&lt;code class=&quot;highlighter-rouge&quot;&gt;new&lt;/code&gt;一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Practice&lt;/code&gt;对象时, 输出如下; 说明三者的执行顺序是: 静态代码块 –&amp;gt; 代码块 –&amp;gt; 构造函数&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Practice static code block
+Practice code block
+Practice constructor
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;关于三者的执行时机与作用:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;&lt;strong&gt;静态代码块&lt;/strong&gt;:&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;用于给类初始化, 随着类的加载而执行, 只执行一次&lt;/li&gt;
+    &lt;li&gt;在&lt;code class=&quot;highlighter-rouge&quot;&gt;main()&lt;/code&gt;函数之前执行&lt;/li&gt;
+    &lt;li&gt;一个类可以有多个静态代码块&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;&lt;strong&gt;代码块&lt;/strong&gt;:&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;实例对象相关, 给所有对象进行统一初始化(因为构造函数可以重载)&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;&lt;strong&gt;构造函数&lt;/strong&gt;:&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;初始化实例&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;h4 id=&quot;222-被动引用示例&quot;&gt;2.2.2 被动引用示例&lt;/h4&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;前面所说的触发初始化的五个场景对应叫做主动引用&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;通过子类引用父类的静态字段, 不会导致子类初始化: 对于静态字段, 只有直接定义这个字段的类才会被初始化&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class NotInitialization {
+    public static void main(String[] args) {
+        System.out.println(SubClass.value);  // 不会初始化子类~
+    }
+}
+
+class SuperClass {
+    static {
+        System.out.println(&quot;SuperClass init&quot;);
+    }
+
+    public static int value = 123;
+}
+
+class SubClass extends SuperClass{
+    static {
+        System.out.println(&quot;Child init&quot;);
+    }
+}
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;strong&gt;注&lt;/strong&gt;: 后文为节省篇幅, 将重用这里的&lt;code class=&quot;highlighter-rouge&quot;&gt;SuperClass&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;SubClass&lt;/code&gt;, 而不再重写~&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;通过数组定义来引用类, 不会触发此类的初始化: 虚拟机会为数组自动生成一个直接继承自&lt;code class=&quot;highlighter-rouge&quot;&gt;Object&lt;/code&gt;的子类; &lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;中对数组的访问比&lt;code class=&quot;highlighter-rouge&quot;&gt;C/C++&lt;/code&gt;更安全, 是因为这个类封装了数组元素的访问方法, 而&lt;code class=&quot;highlighter-rouge&quot;&gt;C/C++&lt;/code&gt;直接翻译为数组指针的移动&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class NotInitialization {
+    public static void main(String[] args) {
+        SuperClass[] sca = new SuperClass[0];
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;常量在编译阶段会存入被调用类的常量池中, 本质上并没有直接引用到常量的类, 因此不会出发定义常量的类的初始化: 在编译阶段经过常量传播优化, 已经将次&lt;code class=&quot;highlighter-rouge&quot;&gt;Hello World&lt;/code&gt;常量存储到了&lt;code class=&quot;highlighter-rouge&quot;&gt;NotInitialization&lt;/code&gt;类的常量池中了, 以后&lt;code class=&quot;highlighter-rouge&quot;&gt;Initialization&lt;/code&gt;对常量&lt;code class=&quot;highlighter-rouge&quot;&gt;ConstClass.HELLOWORLD&lt;/code&gt;的引用都被转化为&lt;code class=&quot;highlighter-rouge&quot;&gt;NotInitialization&lt;/code&gt;类对自身常量池的引用了~&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class NotInitialization {
+    public static void main(String[] args) {
+        System.out.println(ConstClass.CONST);
+    }
+}
+
+class ConstClass {
+    static {
+        System.out.println(&quot;ConstClass init&quot;);
+    }
+
+    public static final String HELLOWORLD=&quot;Hello World&quot;; // 注意这里不能从static来理解, 因为即使有static, 但是没有final的话仍然会触发ConstClass的初始化~
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;23-类的加载过程&quot;&gt;2.3 类的加载过程&lt;/h3&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;结合前面的图咯~&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h4 id=&quot;231-加载&quot;&gt;2.3.1 加载&lt;/h4&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;通过一个类的全限定名来获取定义此类的二进制字节流&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;将这个字节流所代表的静态存储结构转化为方法区的运行时数据结构&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;在内存中生成一个代表这个类的&lt;code class=&quot;highlighter-rouge&quot;&gt;java.lang.Class&lt;/code&gt;对象(该&lt;code class=&quot;highlighter-rouge&quot;&gt;Class&lt;/code&gt;对象并没有明确规定是在&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;堆中, 对于&lt;code class=&quot;highlighter-rouge&quot;&gt;HotSpot&lt;/code&gt;虚拟机而言, &lt;code class=&quot;highlighter-rouge&quot;&gt;Class&lt;/code&gt;对象比较特殊, 它虽然是对象, 但是存在于方法区中), 作为方法区这个类的各种数据的访问入口&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h4 id=&quot;232--验证&quot;&gt;2.3.2  验证&lt;/h4&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;文件格式验证:&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;是否以魔数&lt;code class=&quot;highlighter-rouge&quot;&gt;0xCAFEBABE&lt;/code&gt;开头&lt;/li&gt;
+    &lt;li&gt;主, 次版本号是否在当前虚拟机处理范围之内&lt;/li&gt;
+    &lt;li&gt;常量池的常量中是否有不被支持的类型
+….&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;元数据验证&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;是否有父类&lt;/li&gt;
+    &lt;li&gt;是否继承了不允许被继承的父类(被&lt;code class=&quot;highlighter-rouge&quot;&gt;final&lt;/code&gt;修饰的父类)&lt;/li&gt;
+    &lt;li&gt;如果这个类不是抽象类, 是否实现其父类或接口中要求实现的所有方法&lt;/li&gt;
+    &lt;li&gt;是否非法覆盖(&lt;code class=&quot;highlighter-rouge&quot;&gt;final&lt;/code&gt;方法), 重载是否正确
+…&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;字节码验证&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;对类的方法体进行校验分析, 保证被校验的类在运行时不会危害虚拟机&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;符号引用验证&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;符号引用中通过字符串描述的全限定名是否能找到对应的父类&lt;/li&gt;
+    &lt;li&gt;符号引用中的类, 字段, 方法的访问性是否可以被当前类访问&lt;/li&gt;
+    &lt;li&gt;指定类中是否存在符合方法的字段描述符以及简单名称所描述的方法和字段
+…&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;h4 id=&quot;233-准备&quot;&gt;2.3.3 准备&lt;/h4&gt;
+
+&lt;p&gt;正式为类变量分配内存并为其设置初始值&lt;/p&gt;
+
+&lt;h4 id=&quot;234-解析&quot;&gt;2.3.4 解析&lt;/h4&gt;
+
+&lt;p&gt;将常量池中的符号引用替换为直接引用&lt;/p&gt;
+
+&lt;h4 id=&quot;235-初始化&quot;&gt;2.3.5 初始化&lt;/h4&gt;
+
+&lt;p&gt;真正开始执行&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;程序代码(字节码)或者说初始化阶段是执行类构造器&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;clinit&amp;gt;()&lt;/code&gt;方法的过程&lt;/p&gt;
+
+&lt;h5 id=&quot;235-1-类构造器方法&quot;&gt;2.3.5-1 类构造器&lt;clinit&gt;()方法&lt;/clinit&gt;&lt;/h5&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;clinit&amp;gt;()&lt;/code&gt;方法是由编译器自动收集类中的所有类变量的赋值动作和静态语句块(&lt;code class=&quot;highlighter-rouge&quot;&gt;static&lt;/code&gt;代码块)中的语句合并产生的; 静态语句块只能访问到定义在静态语句块之前的变量, 定义在它之后的变量, 在前面的静态语句块可以赋值, 但是不能访问, 如下代码&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class Temp {
+    static {
+        value = 2;
+//        System.out.println(value); // 不能访问
+    }
+
+    static int value = 1;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;clinit&amp;gt;()&lt;/code&gt;方法与构造函数(&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;init&amp;gt;()&lt;/code&gt;)不同, 虚拟机会保证子类的&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;clinit&amp;gt;()&lt;/code&gt;方法执行之前, 父类的&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;clinit&amp;gt;()&lt;/code&gt;方法已经执行完毕; 因此在虚拟机中第一个被执行的&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;clinit&amp;gt;()&lt;/code&gt;方法的类肯定是&lt;code class=&quot;highlighter-rouge&quot;&gt;java.lang.Object&lt;/code&gt;&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;由于父类的&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;clinit&amp;gt;()&lt;/code&gt;方法先于子类的执行, 也就意味着父类中的静态语句块要先于子类的变量赋值操作; 注意如下代码;&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class SuperClass {
+    public static int A = 1;
+    static {
+        A = 2;
+    }
+}
+
+class SubClass extends SuperClass{
+    public static int B = A; // 注意这里的B应该为2, 而不是1
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;clinit&amp;gt;()&lt;/code&gt;方法对于类或接口来说不是必需的, 如果一个类没有静态语句块, 也没有对变量的赋值操作, 那么编译器可以不为这个类生成&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;clinit&amp;gt;()&lt;/code&gt;方法&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;接口中不能有静态语句块, 但是可以有变量的初始化赋值操作, 因此接口与类一样也会生成&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;clinit&amp;gt;()&lt;/code&gt;方法; 但接口与类不同的是, 执行接口的&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;clinit&amp;gt;()&lt;/code&gt;方法不需要先执行父接口的&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;clinit&amp;gt;()&lt;/code&gt;方法, 只有当父接口中定义的变量使用时, 父接口才会初始化; 另外, 接口的实现类在初始化时也一样不会执行接口的&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;clinit&amp;gt;()&lt;/code&gt;方法&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;虚拟机会保证一个类的&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;clinit&amp;gt;()&lt;/code&gt;方法在多线程环境中被正确的加锁, 同步; 只能有一个线程去执行&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;clinit&amp;gt;()&lt;/code&gt;&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&quot;24-类加载器&quot;&gt;2.4 类加载器&lt;/h3&gt;
+
+&lt;p&gt;任意一个类, 都是由加载它的类加载器和这个类本身一同确立其在&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;虚拟机中的唯一性; 更通俗一些是: 比较两个类是否&lt;em&gt;相等&lt;/em&gt;, 只有在这两个类是由同一个类加载器加载的前提下才有意义, 否则, 即使这两个类来自同一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Class&lt;/code&gt;文件, 被同一个虚拟机加载, 只要加载它们的类加载器不同, 那这两个类就必定不相等(这里所谓的相等, 包括代表&lt;code class=&quot;highlighter-rouge&quot;&gt;Class&lt;/code&gt;对象的&lt;code class=&quot;highlighter-rouge&quot;&gt;equals()&lt;/code&gt;方法, &lt;code class=&quot;highlighter-rouge&quot;&gt;isAssignableFrom()&lt;/code&gt;方法, &lt;code class=&quot;highlighter-rouge&quot;&gt;isInstance()&lt;/code&gt;方法的返回结果, 以及使用&lt;code class=&quot;highlighter-rouge&quot;&gt;instanceof&lt;/code&gt;关键字做对象所属关系判断等情况); 如下代码:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;import java.io.IOException;
+import java.io.InputStream;
+
+public class ClassLoaderTest {
+    public static void main(String[] args) throws Exception {
+        ClassLoader loader = new ClassLoader() {
+            @Override
+            public Class&amp;lt;?&amp;gt; loadClass(String name) throws ClassNotFoundException {
+                try {
+                    String fileName = name.substring(name.lastIndexOf(&quot;.&quot;) + 1) + &quot;.class&quot;;
+                    InputStream inputStream = getClass().getResourceAsStream(fileName);
+                    if (inputStream == null) {
+                        return super.loadClass(name);
+                    }
+                    byte[] bytes = new byte[inputStream.available()];
+                    inputStream.read(bytes);
+                    return defineClass(name, bytes, 0, bytes.length);
+                } catch (IOException e) {
+                }
+                return null;
+            }
+        };
+
+        Object obj = loader.loadClass(&quot;Practice&quot;).newInstance();
+        System.out.println(obj.getClass());
+        System.out.println(obj instanceof Practice); // 及时是Practice实例, 但是这里仍然返回false
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;25-双亲委派模型&quot;&gt;2.5 双亲委派模型&lt;/h3&gt;
+
+&lt;h4 id=&quot;251-类加载器分类&quot;&gt;2.5.1 类加载器分类&lt;/h4&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;启动类加载器(&lt;code class=&quot;highlighter-rouge&quot;&gt;Bootstrap ClassLoader&lt;/code&gt;): &lt;code class=&quot;highlighter-rouge&quot;&gt;C++&lt;/code&gt;实现, 虚拟机自身一部分&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;扩展类加载器(&lt;code class=&quot;highlighter-rouge&quot;&gt;Extension ClassLoader&lt;/code&gt;)&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;应用程序类加载器(&lt;code class=&quot;highlighter-rouge&quot;&gt;Application ClassLoader&lt;/code&gt;): 如果没有定义自己的类加载器, 则为程序中默认的类加载器&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h4 id=&quot;252-双亲委派模型含义&quot;&gt;2.5.2 双亲委派模型含义&lt;/h4&gt;
+
+&lt;p&gt;如下图; 双亲委派模型要求除了顶层的启动类加载器外, 其余的类加载器都应当有自己的父类加载器;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/JVM/双亲委派模型.png&quot; alt=&quot;双亲委派模型&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;如果一个类加载器收到了类加载的请求, 它首先不会自己去尝试加载这个类, 而是把这个请求委派给父类加载器去完成, 每一个层次的类加载器都是如此; 因此所有的加载请求最终都应该传送到顶层的启动类加载器中, 只有当父类加载器反馈自己无法完成这个加载请求(它的搜索范围中没有找到所需的类)时, 子加载器才会尝试自己去加载&lt;/p&gt;
+
+</description>
+        <pubDate>Tue, 02 Oct 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/10/02/Java%E7%B1%BB%E6%96%87%E4%BB%B6%E7%BB%93%E6%9E%84%E4%B8%8E%E7%B1%BB%E5%8A%A0%E8%BD%BD%E6%9C%BA%E5%88%B6/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/10/02/Java%E7%B1%BB%E6%96%87%E4%BB%B6%E7%BB%93%E6%9E%84%E4%B8%8E%E7%B1%BB%E5%8A%A0%E8%BD%BD%E6%9C%BA%E5%88%B6/</guid>
+        
+        <category>Java</category>
+        
+        
+      </item>
     
       <item>
         <title>Java垃圾收集器与内存分配策略</title>
@@ -86,7 +599,7 @@
   &lt;/li&gt;
 &lt;/ol&gt;
 
-&lt;p&gt;使用可达性分析算法时, 至少需要经过两次标记过程才能宣告一个对象真正死亡: 如果对象在进行可达性分析后发现没有与&lt;code class=&quot;highlighter-rouge&quot;&gt;GC Root&lt;/code&gt;相连接的引用链, 那它会被第一次标记并且进行一次筛选, 筛选的条件是此对象是否有必要执行&lt;code class=&quot;highlighter-rouge&quot;&gt;finalize()&lt;/code&gt;方法, 当对象没有覆盖&lt;code class=&quot;highlighter-rouge&quot;&gt;finalize()&lt;/code&gt;放啊发, 或者&lt;code class=&quot;highlighter-rouge&quot;&gt;finalize()&lt;/code&gt;方法已经被虚拟机调用过, 虚拟机将这两种情况都视为没有必要执行(也就是说&lt;code class=&quot;highlighter-rouge&quot;&gt;finalize()&lt;/code&gt;方法最多执行一次, 这点需要注意~);
+&lt;p&gt;使用可达性分析算法时, 至少需要经过两次标记过程才能宣告一个对象真正死亡: 如果对象在进行可达性分析后发现没有与&lt;code class=&quot;highlighter-rouge&quot;&gt;GC Root&lt;/code&gt;相连接的引用链, 那它会被第一次标记并且进行一次筛选, 筛选的条件是此对象是否有必要执行&lt;code class=&quot;highlighter-rouge&quot;&gt;finalize()&lt;/code&gt;方法, 当对象没有覆盖&lt;code class=&quot;highlighter-rouge&quot;&gt;finalize()&lt;/code&gt;方法时, 或者&lt;code class=&quot;highlighter-rouge&quot;&gt;finalize()&lt;/code&gt;方法已经被虚拟机调用过, 虚拟机将这两种情况都视为没有必要执行(也就是说&lt;code class=&quot;highlighter-rouge&quot;&gt;finalize()&lt;/code&gt;方法最多执行一次, 这点需要注意~);
 如果这个对象被判定为有必要执行&lt;code class=&quot;highlighter-rouge&quot;&gt;finalize()&lt;/code&gt;方法, 那么这个对象将会放置在一个叫做&lt;code class=&quot;highlighter-rouge&quot;&gt;F-Queue&lt;/code&gt;的队列中, 并在稍后由一个由虚拟机自动建立, 低优先级的&lt;code class=&quot;highlighter-rouge&quot;&gt;Finalizer&lt;/code&gt;线程去执行它, 但并不承诺会等待&lt;code class=&quot;highlighter-rouge&quot;&gt;finalize()&lt;/code&gt;方法运行结束(这里也需要注意, 这是为了防止&lt;code class=&quot;highlighter-rouge&quot;&gt;finalize()&lt;/code&gt;中出现耗时操作甚至死循环); 在&lt;code class=&quot;highlighter-rouge&quot;&gt;finalize()&lt;/code&gt;中对象可以使自己再次加入引用链中, 逃脱&lt;code class=&quot;highlighter-rouge&quot;&gt;GC&lt;/code&gt;; &lt;strong&gt;但是不建议使用该方法来逃脱GC&lt;/strong&gt;&lt;/p&gt;
 
 &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class FinalizeEscapeGC {
@@ -268,7 +781,7 @@ No, I am dead :(
 
 &lt;ol&gt;
   &lt;li&gt;
-    &lt;p&gt;对象优先在&lt;code class=&quot;highlighter-rouge&quot;&gt;Eden&lt;/code&gt;分配, 当&lt;code class=&quot;highlighter-rouge&quot;&gt;Eden&lt;/code&gt;没有足够空间时, 将发起一次&lt;code class=&quot;highlighter-rouge&quot;&gt;Minor GC&lt;/code&gt;(指发生在新生代的&lt;code class=&quot;highlighter-rouge&quot;&gt;GC&lt;/code&gt;, 较为频繁, 但是速度也快)&lt;/p&gt;
+    &lt;p&gt;对象优先在&lt;code class=&quot;highlighter-rouge&quot;&gt;Eden&lt;/code&gt;分配, 当&lt;code class=&quot;highlighter-rouge&quot;&gt;Eden&lt;/code&gt;没有足够空间时, 将发起一次&lt;code class=&quot;highlighter-rouge&quot;&gt;Minor GC&lt;/code&gt;(&lt;code class=&quot;highlighter-rouge&quot;&gt;Minor GC&lt;/code&gt;指发生在新生代的&lt;code class=&quot;highlighter-rouge&quot;&gt;GC&lt;/code&gt;, 较为频繁, 但是速度也快; &lt;code class=&quot;highlighter-rouge&quot;&gt;Major GC&lt;/code&gt;指的是发生在老年代的&lt;code class=&quot;highlighter-rouge&quot;&gt;GC&lt;/code&gt;; &lt;code class=&quot;highlighter-rouge&quot;&gt;Full GC&lt;/code&gt;指的是发生在整个堆空间的&lt;code class=&quot;highlighter-rouge&quot;&gt;GC&lt;/code&gt;, 包括老年代和新生代)&lt;/p&gt;
   &lt;/li&gt;
   &lt;li&gt;
     &lt;p&gt;大对象直接进入老年代, 这是为了防止在新生代的&lt;code class=&quot;highlighter-rouge&quot;&gt;Eden&lt;/code&gt;和两个&lt;code class=&quot;highlighter-rouge&quot;&gt;Survivor&lt;/code&gt;区之间发生大量的内存复制&lt;/p&gt;
@@ -279,9 +792,27 @@ No, I am dead :(
   &lt;li&gt;
     &lt;p&gt;动态对象年龄判定, 如果在&lt;code class=&quot;highlighter-rouge&quot;&gt;Survivor&lt;/code&gt;空间中相同年龄所有对象大小的总和大于&lt;code class=&quot;highlighter-rouge&quot;&gt;Survivor&lt;/code&gt;空间的一半, 年龄大于或等于该年龄的对象就可以直接进入老年代, 而不必等到年龄达到阈值&lt;/p&gt;
   &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;空间分配担保: 因为新生代采用复制算法, 可能会出现复制空间不足的情况, 老年代可以为新生代作内存空间担保&lt;/p&gt;
+  &lt;/li&gt;
 &lt;/ol&gt;
 
-&lt;h2 id=&quot;参考链接&quot;&gt;参考链接&lt;/h2&gt;
+&lt;h2 id=&quot;四-others&quot;&gt;四. Others&lt;/h2&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;这里提一些其他的要点~&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;GC&lt;/code&gt;时会发生&lt;code class=&quot;highlighter-rouge&quot;&gt;Stop the World&lt;/code&gt;, 由此可以联想, 也有可能由于&lt;code class=&quot;highlighter-rouge&quot;&gt;GC&lt;/code&gt;造成的&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;白屏~&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;安全点和安全区: 引用关系不变; &lt;code class=&quot;highlighter-rouge&quot;&gt;GC&lt;/code&gt;只有在程序执行达到安全点或者安全区的时候才能进行; 如何让所有线程都跑到最近的安全点? 有两种方法: 抢先式中断(&lt;code class=&quot;highlighter-rouge&quot;&gt;GC&lt;/code&gt;时, 首先把所有线程全部中断, 如果发现有线程不在安全点上, 则恢复该线程, 让它跑到安全点)和主动式中断(&lt;code class=&quot;highlighter-rouge&quot;&gt;GC&lt;/code&gt;时, 不直接对线程中断, 仅仅简单地设置一个标志, 各个线程执行时主动去轮询该标志, 发现该标志为真时就自己中断挂起)(多采用主动式中断)&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h2 id=&quot;五-参考链接&quot;&gt;五. 参考链接&lt;/h2&gt;
 
 &lt;ol&gt;
   &lt;li&gt;http://hllvm.group.iteye.com/group/wiki/?show_full=true&lt;/li&gt;
@@ -292,6 +823,35 @@ No, I am dead :(
         <guid isPermaLink="true">http://localhost:4000/2018/09/28/Java%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8%E4%B8%8E%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E7%AD%96%E7%95%A5/</guid>
         
         <category>Java</category>
+        
+        
+      </item>
+    
+      <item>
+        <title>自定义View常用工具</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;本文将要讲解的是在自定义&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;中常用的一些工具类&lt;/p&gt;
+
+&lt;p&gt;文中会部分涉及到对源码的讲解, 但是更多的还是倾向于应用~&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;一-概述&quot;&gt;一. 概述&lt;/h2&gt;
+
+&lt;p&gt;在开始讲解之前, 强烈推荐一个系列教程: &lt;a href=&quot;https://hencoder.com/ui-1-1/&quot;&gt;自定义View&lt;/a&gt;; 该教程对绘制过程的&lt;code class=&quot;highlighter-rouge&quot;&gt;API&lt;/code&gt;应用和讲解都很细致, 也有很多例子, 本文将不再重复该教程中已有的内容, 而是额外补充一些&lt;/p&gt;
+</description>
+        <pubDate>Fri, 28 Sep 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/09/28/%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B9%8B%E5%B8%B8%E7%94%A8%E5%B7%A5%E5%85%B7/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/09/28/%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B9%8B%E5%B8%B8%E7%94%A8%E5%B7%A5%E5%85%B7/</guid>
+        
+        <category>Android</category>
+        
+        <category>View</category>
         
         
       </item>
@@ -398,14 +958,93 @@ setMaskFilter(): 在绘制层上方添加效果; BlurMaskFilter 和 EmbossMaskFi
 
 &lt;h3 id=&quot;drawtext相关&quot;&gt;drawText()相关&lt;/h3&gt;
 
+&lt;h2 id=&quot;三-动画&quot;&gt;三. 动画&lt;/h2&gt;
+
+&lt;p&gt;动画可以分为两类：Animation 和 Transition；其中 Animation 又可以再分为 View Animation 和 Property Animation 两类： View Animation 是纯粹基于 framework 的绘制转变，比较简单
+Property Animation，属性动画，这是在 Android 3.0 开始引入的新的动画形式
+还有一类动画是 Transition。 Transition 这个词的本意是转换，在 Android 里指的是切换界面时的动画效果&lt;/p&gt;
+
+&lt;p&gt;一个动画需要考虑取消&lt;/p&gt;
+
+&lt;p&gt;以下介绍属性动画:&lt;/p&gt;
+
+&lt;p&gt;ViewPropertyAnimator: imageView.animate().translationX(500); 默认动画时长300ms, 默认插值器为AccelerateDecelerateInterpolator()(先加速后减速)
+view.setTranslationX()等方法内部没有调用invalidate()来实现重绘, 而是直接使用了硬件加速实现重绘, 这样更加高效, 但是好像自定义绘制不能用, 只能使用invalidate(), 为什么?&lt;/p&gt;
+
+&lt;p&gt;ObjectAnimator: 拼接出set方法名, 然后去调用set方法; 如果只是传入了一个值(ofXXX()有很多重载函数), 该值表示终止值, 但是起始值无法得到, 那么就还需要提供一个get方法来得到初始属性值&lt;/p&gt;
+
+&lt;p&gt;Interpolator: AccelerateDecelerateInterpolator, LinearInterpolator, AccelerateInterpolator, DecelerateInterpolator, AnticipateInterpolator, OvershootInterpolator, AnticipateOvershootInterpolator, BounceInterpolator, CycleInterpolator, PathInterpolator
+Android 5.0 （API 21）引入了三个新的 Interpolator 模型，并把它们加入了 support v4 包中: 
+FastOutLinearInInterpolator, FastOutSlowInInterpolator, LinearOutSlowInInterpolator&lt;/p&gt;
+
+&lt;p&gt;设置监听器: 
+ViewPropertyAnimator 用的是 setListener() 和 setUpdateListener() 方法, 要移除监听器时通过 set[Update]Listener(null) 填 null 值来移除; ViewPropertyAnimator 则独有 withStartAction() 和 withEndAction() 方法，可以设置一次性的动画开始或结束的监听&lt;/p&gt;
+
+&lt;p&gt;ObjectAnimator 则是用 addListener() 和 addUpdateListener() 来添加一个或多个监听器，移除监听器则是通过 remove[Update]Listener() 来指定移除对象; ObjectAnimator 支持使用 pause() 方法暂停，所以它还多了一个 addPauseListener() / removePauseListener() 的支持&lt;/p&gt;
+
+&lt;p&gt;AnimatorListener: onAnimationStart, onAnimationEnd, onAnimationCancel(当动画被通过 cancel() 方法取消时，这个方法被调用。
+需要说明一下的是，就算动画被取消，onAnimationEnd() 也会被调用。所以当动画被取消时，如果设置了 AnimatorListener，那么 onAnimationCancel() 和 onAnimationEnd() 都会被调用。onAnimationCancel() 会先于 onAnimationEnd() 被调用。), onAnimationRepeat(ViewPropertyAnimator 不支持重复，所以这个方法对 ViewPropertyAnimator 相当于无效)&lt;/p&gt;
+
+&lt;p&gt;ViewPropertyAnimator.withStartAction/EndAction(): ViewPropertyAnimator 的独有方法, 它们和 set/addListener() 中回调的 onAnimationStart() / onAnimationEnd() 相比起来的不同主要有两点：&lt;/p&gt;
+&lt;ol&gt;
+  &lt;li&gt;withStartAction() / withEndAction() 是一次性的，在动画执行结束后就自动弃掉了，就算之后再重用 ViewPropertyAnimator 来做别的动画，用它们设置的回调也不会再被调用。而 set/addListener() 所设置的  AnimatorListener 是持续有效的，当动画重复执行时，回调总会被调用。&lt;/li&gt;
+  &lt;li&gt;withEndAction() 设置的回调只有在动画正常结束时才会被调用，而在动画被取消时不会被执行。这点和 AnimatorListener.onAnimationEnd() 的行为是不一致的。&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;TypeEvaluator: 
+在需要的时候, 还可以自定义TypeEvaluator来实现自己针对某一特定属性值来设计自己的算法
+ObjectAnimator.setEvaluator()
+ArgbEvaluator&lt;/p&gt;
+
+&lt;p&gt;PropertyValuesHolder: 同一个动画中改变多个属性; ViewPropertyAnimator可以直接连用即可, 但是ObjectAnimator不能直接连用, 此时可以使用PropertyValuesHolder来同时在一个动画中改变多个属性&lt;/p&gt;
+
+&lt;p&gt;AnimatorSet 多个动画配合执行; 还可以定义动画的执行顺序&lt;/p&gt;
+
+&lt;p&gt;PropertyValuesHolders.ofKeyframe() 把同一个属性拆分&lt;/p&gt;
+
+&lt;p&gt;「关于复杂的属性关系来做动画」，就这么三种：
+使用 PropertyValuesHolder 来对多个属性同时做动画；
+使用 AnimatorSet 来同时管理调配多个动画；
+PropertyValuesHolder 的进阶使用：使用 PropertyValuesHolder.ofKeyframe() 来把一个属性拆分成多段，执行更加精细的属性动画。&lt;/p&gt;
+
+&lt;p&gt;ValueAnimator 最基本的轮子; ValueAnimator 是 ObjectAnimator 的父类，实际上，ValueAnimator 就是一个不能指定目标对象版本的 ObjectAnimator&lt;/p&gt;
+
+&lt;h2 id=&quot;四-硬件加速&quot;&gt;四. 硬件加速&lt;/h2&gt;
+
+&lt;p&gt;文档: https://developer.android.google.cn/guide/topics/graphics/hardware-accel&lt;/p&gt;
+
+&lt;p&gt;在 Android 里，硬件加速专指把 View 中绘制的计算工作交给 GPU 来处理。进一步地再明确一下，这个「绘制的计算工作」指的就是把绘制方法中的那些  Canvas.drawXXX() 变成实际的像素这件事&lt;/p&gt;
+
+&lt;p&gt;在硬件加速关闭的时候，Canvas 绘制的工作方式是：把要绘制的内容写进一个 Bitmap，然后在之后的渲染过程中，这个 Bitmap 的像素内容被直接用于渲染到屏幕。这种绘制方式的主要计算工作在于把绘制操作转换为像素的过程（例如由一句 Canvas.drawCircle() 来获得一个具体的圆的像素信息），这个过程的计算是由 CPU 来完成的
+而在硬件加速开启时，Canvas 的工作方式改变了：它只是把绘制的内容转换为 GPU 的操作保存了下来，然后就把它交给 GPU，最终由 GPU 来完成实际的显示工作(在硬件加速开启时，CPU 做的事只是把绘制工作转换成 GPU 的操作，这个工作量相对来说是非常小的。)&lt;/p&gt;
+
+&lt;p&gt;关闭硬件加速: view.setLayerType(LAYER_TYPE_SOFTWARE, null);&lt;/p&gt;
+
+&lt;p&gt;View Layer，又称为离屏缓冲（Off-screen Buffer），它的作用是单独启用一块地方来绘制这个 View ，而不是使用软件绘制的 Bitmap 或者通过硬件加速的 GPU; 当设置了 View Layer 的时候，它的绘制会被缓存下来，而且缓存的是最终的绘制结果&lt;/p&gt;
+
+&lt;p&gt;在进行移动、旋转等（无需调用 invalidate()）的属性动画的时候开启 Hardware Layer 将会极大地提升动画的效率，因为在动画过程中 View 本身并没有发生改变，只是它的位置或角度改变了，而这种改变是可以由 GPU 通过简单计算就完成的，并不需要重绘整个 View; (打开硬件加速: view.setLayerType(LAYER_TYPE_NONE, null);)&lt;/p&gt;
+
+&lt;p&gt;如果是使用 ViewPropertyAnimator, 如下代码; 不过一定要注意，只有你在对 translationX translationY rotation alpha 等无需调用 invalidate() 的属性做动画的时候，这种方法才适用，因为这种方法本身利用的就是当界面不发生时，缓存未更新所带来的时间的节省。所以简单地说——
+&lt;strong&gt;这种方式不适用于基于自定义属性绘制的动画&lt;/strong&gt;。一定记得这句话。&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;view.animate()
+        .rotationY(90)
+        .withLayer(); // withLayer() 可以自动完成上面这段代码的复杂操作
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;由于设置了 View Layer 后，View 在初次绘制时以及每次  invalidate() 后重绘时，需要进行两次的绘制工作（一次绘制到 Layer，一次从 Layer 绘制到显示屏），所以其实它的每次绘制的效率是被降低了的。所以一定要慎重使用 View Layer，在需要用到它的时候再去使用。&lt;/p&gt;
+
+&lt;p&gt;setLayerType(): 
+参数为 LAYER_TYPE_SOFTWARE 时，使用软件来绘制 View Layer，绘制到一个 Bitmap，并顺便关闭硬件加速；
+参数为 LAYER_TYPE_HARDWARE 时，使用 GPU 来绘制 View Layer，绘制到一个 OpenGL texture（如果硬件加速关闭，那么行为和  VIEW_TYPE_SOFTWARE 一致）；
+参数为 LAYER_TYPE_NONE 时，关闭 View Layer。&lt;/p&gt;
+
+&lt;p&gt;View Layer 可以加速无 invalidate() 时的刷新效率，但对于需要调用  invalidate() 的刷新无法加速&lt;/p&gt;
 </description>
         <pubDate>Thu, 27 Sep 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/09/27/%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B9%8B%E5%B8%B8%E7%94%A8%E5%B7%A5%E5%85%B7/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/09/27/%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B9%8B%E5%B8%B8%E7%94%A8%E5%B7%A5%E5%85%B7/</guid>
+        <link>http://localhost:4000/2018/09/27/%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B9%8B%E5%B8%B8%E7%94%A8%E5%B7%A5%E5%85%B7Draft/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/09/27/%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B9%8B%E5%B8%B8%E7%94%A8%E5%B7%A5%E5%85%B7Draft/</guid>
         
-        <category>Android</category>
-        
-        <category>View</category>
+        <category>Draft</category>
         
         
       </item>
@@ -2067,297 +2706,6 @@ public void draw(Canvas canvas) {
         <category>Linux</category>
         
         <category>操作系统</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>Java集合框架之Queue</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;&lt;a href=&quot;https://husteryp.github.io/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/&quot;&gt;前面&lt;/a&gt;我们对Java集合框架有了一个基本的认识, 这里我们从几大接口入手, 逐步讲解其实现类; 下面要讲解的是&lt;code class=&quot;highlighter-rouge&quot;&gt;Queue&lt;/code&gt;的实现类, 即&lt;code class=&quot;highlighter-rouge&quot;&gt;ArrayDeque&lt;/code&gt;&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;文章源码基于&lt;code class=&quot;highlighter-rouge&quot;&gt;JDK8&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;strong&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;集合框架系列博客&lt;/strong&gt;:&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;a href=&quot;https://husteryp.github.io/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/&quot;&gt;Java集合框架概述&lt;/a&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;a href=&quot;https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BList/&quot;&gt;Java集合框架之List&lt;/a&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;a href=&quot;https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/&quot;&gt;Java集合框架之HashMap&lt;/a&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;a href=&quot;https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BSet/&quot;&gt;Java集合框架之Set&lt;/a&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;a href=&quot;https://husteryp.github.io/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/&quot;&gt;Java集合框架之LinkedHashMap&lt;/a&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;a href=&quot;https://husteryp.github.io/2018/09/06/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BQueue/&quot;&gt;Java集合框架之Queue&lt;/a&gt;&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;一-概述&quot;&gt;一. 概述&lt;/h2&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ArrayDeque&lt;/code&gt;是一个双端队列, 内部使用数组实现, 既可以作为栈使用, 也可以作为队列使用(当作为栈使用时, 比&lt;code class=&quot;highlighter-rouge&quot;&gt;Stack&lt;/code&gt;快; 当作为队列使用时, 比&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedList&lt;/code&gt;快); 既然是双端队列, 那么自然支持首尾插入删除等操作; &lt;code class=&quot;highlighter-rouge&quot;&gt;ArrayDeque&lt;/code&gt;不是线程安全的, 不允许插入&lt;code class=&quot;highlighter-rouge&quot;&gt;null&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ArrayDeque&lt;/code&gt;内部使用&lt;code class=&quot;highlighter-rouge&quot;&gt;Object[] elements&lt;/code&gt;来容纳元素, 默认初始容量为&lt;code class=&quot;highlighter-rouge&quot;&gt;16&lt;/code&gt;, 需要注意的是, &lt;code class=&quot;highlighter-rouge&quot;&gt;ArrayDeque&lt;/code&gt;的容量大小需要为&lt;code class=&quot;highlighter-rouge&quot;&gt;2&lt;/code&gt;的整数幂次方, 这是为了使用位运算去代替普通的乘除运算来提高效率; 下面将从两个方面讲解其有关知识点: 即基本方法和扩容规则&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;二-基本方法&quot;&gt;二. 基本方法&lt;/h2&gt;
-
-&lt;h3 id=&quot;21-构造函数&quot;&gt;2.1 构造函数&lt;/h3&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ArrayDeque&lt;/code&gt;提供了三个构造函数, 这里只挑其中一个比较难的讲解; 如下, 该构造函数允许提供自定义初始容量, 但是并不是说, 我们传进去多少容量, 最初就会分配多少容量, 因为传进去的值还经过了&lt;code class=&quot;highlighter-rouge&quot;&gt;calculateSize()&lt;/code&gt;函数的处理; &lt;code class=&quot;highlighter-rouge&quot;&gt;calculateSize()&lt;/code&gt;函数的作用是, 找出不小于&lt;code class=&quot;highlighter-rouge&quot;&gt;numElements&lt;/code&gt;的最小的&lt;code class=&quot;highlighter-rouge&quot;&gt;2&lt;/code&gt;的整数次幂的整数, 因为上面已经说了, &lt;code class=&quot;highlighter-rouge&quot;&gt;ArrayDeque&lt;/code&gt;的容量需要都是&lt;code class=&quot;highlighter-rouge&quot;&gt;2&lt;/code&gt;的整数次幂; 这点和&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;的扩容规则比较相像, 具体分析可以参见&lt;a href=&quot;https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/&quot;&gt;Java集合框架之HashMap&lt;/a&gt;中对&lt;code class=&quot;highlighter-rouge&quot;&gt;HashMap&lt;/code&gt;扩容规则一节的讲解; 另外, 值得一提的是, &lt;code class=&quot;highlighter-rouge&quot;&gt;calculateSize()&lt;/code&gt;的时候还进行了边界值的判断, 一个是初始容量最小为&lt;code class=&quot;highlighter-rouge&quot;&gt;8&lt;/code&gt;, 最大不得超过&lt;code class=&quot;highlighter-rouge&quot;&gt;2^30&lt;/code&gt;, 如下代码;&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    private void allocateElements(int numElements) {
-        elements = new Object[calculateSize(numElements)];
-    }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    private static int calculateSize(int numElements) {
-        int initialCapacity = MIN_INITIAL_CAPACITY;  // 初始最小容量为8
-        // Find the best power of two to hold elements.
-        // Tests &quot;&amp;lt;=&quot; because arrays aren't kept full.
-        if (numElements &amp;gt;= initialCapacity) {
-            initialCapacity = numElements;
-            initialCapacity |= (initialCapacity &amp;gt;&amp;gt;&amp;gt;  1);
-            initialCapacity |= (initialCapacity &amp;gt;&amp;gt;&amp;gt;  2);
-            initialCapacity |= (initialCapacity &amp;gt;&amp;gt;&amp;gt;  4);
-            initialCapacity |= (initialCapacity &amp;gt;&amp;gt;&amp;gt;  8);
-            initialCapacity |= (initialCapacity &amp;gt;&amp;gt;&amp;gt; 16);
-            initialCapacity++;
-
-            if (initialCapacity &amp;lt; 0)   // Too many elements, must back off
-                initialCapacity &amp;gt;&amp;gt;&amp;gt;= 1;// Good luck allocating 2 ^ 30 elements // 最大容量为2^30
-        }
-        return initialCapacity;
-    }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h3 id=&quot;22-元素增删&quot;&gt;2.2 元素增删&lt;/h3&gt;
-
-&lt;p&gt;双端队列的难点在于数据元素增删的时候, 如何通过首尾指针的关系判断当前队列是满还是空, 以及插入和删除元素后首尾指针的变化情况; 在&lt;code class=&quot;highlighter-rouge&quot;&gt;ArrayDeque&lt;/code&gt;中的处理是, &lt;code class=&quot;highlighter-rouge&quot;&gt;head&lt;/code&gt;指针指向队列首元素, &lt;code class=&quot;highlighter-rouge&quot;&gt;tail&lt;/code&gt;指针指向队列尾元素的后一个位置, 那么比如在队列头部插入元素时,  通过判断&lt;code class=&quot;highlighter-rouge&quot;&gt;(head - 1) &amp;amp; (elements.length - 1) == tail&lt;/code&gt;为&lt;code class=&quot;highlighter-rouge&quot;&gt;true&lt;/code&gt;的时候队列就满了, 这样, 虽然双端队列在队列满和空的情况下, 都是&lt;code class=&quot;highlighter-rouge&quot;&gt;head == tail&lt;/code&gt;, 但是仍然能够分辨&lt;/p&gt;
-
-&lt;p&gt;下面我们通过具体的元素添加来看, 如下, 为在队列头添加元素, 这里需要注意的一点是先添加元素, 再判断队列是否已满, 这是因为上面我们说了, &lt;code class=&quot;highlighter-rouge&quot;&gt;ArrayDeque&lt;/code&gt;中&lt;code class=&quot;highlighter-rouge&quot;&gt;tail&lt;/code&gt;指针指向的是队尾元素的下一个位置, 一定是空位置, 否则在上一次添加元素的时候就会引起扩容了&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    public void addFirst(E e) {
-        if (e == null)
-            throw new NullPointerException();
-        elements[head = (head - 1) &amp;amp; (elements.length - 1)] = e;
-        if (head == tail)
-            doubleCapacity();
-    }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;这里讲一下&lt;code class=&quot;highlighter-rouge&quot;&gt;head = (head - 1) &amp;amp; (elements.length - 1)&lt;/code&gt;的运算规则, 比如, 当我们的数组容量为&lt;code class=&quot;highlighter-rouge&quot;&gt;8&lt;/code&gt;, 本次插入之前&lt;code class=&quot;highlighter-rouge&quot;&gt;head = 0&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;tail = 7&lt;/code&gt;的时候, 执行该插入操作, 通过&lt;code class=&quot;highlighter-rouge&quot;&gt;head = (head - 1) &amp;amp; (elements.length - 1)&lt;/code&gt;元素, 即 &lt;code class=&quot;highlighter-rouge&quot;&gt;-1 &amp;amp; 7&lt;/code&gt;, 转换为二进制就是(&lt;code class=&quot;highlighter-rouge&quot;&gt;1111 &amp;amp; 0111 = 0111&lt;/code&gt;), 最终运算结果为&lt;code class=&quot;highlighter-rouge&quot;&gt;7&lt;/code&gt;, 所以可以判断队列满了, 需要扩容 ~&lt;/p&gt;
-
-&lt;p&gt;其实这里使用位运算也是利用了数组容量为&lt;code class=&quot;highlighter-rouge&quot;&gt;2&lt;/code&gt;的整数次幂的特点&lt;/p&gt;
-
-&lt;p&gt;同理, 在队列尾插入元素也是一样的, 如下; 就不再分析啦~&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    public void addLast(E e) {
-        if (e == null)
-            throw new NullPointerException();
-        elements[tail] = e;
-        if ( (tail = (tail + 1) &amp;amp; (elements.length - 1)) == head)
-            doubleCapacity();
-    }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;对于删除元素来说, 这里举一个例子, 如下; 主要看&lt;code class=&quot;highlighter-rouge&quot;&gt;head&lt;/code&gt;指针的变化规则, 即&lt;code class=&quot;highlighter-rouge&quot;&gt;head = (h + 1) &amp;amp; (elements.length - 1);&lt;/code&gt;, 其实就是和插入元素相反的过程而已&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    public E pollFirst() {
-        int h = head;
-        E result = (E) elements[h];
-        // Element is null if deque empty
-        if (result == null)
-            return null;
-        elements[h] = null;     
-        head = (h + 1) &amp;amp; (elements.length - 1);
-        return result;
-    }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;三-扩容规则&quot;&gt;三. 扩容规则&lt;/h2&gt;
-
-&lt;p&gt;什么时候会扩容呢, 我们注意到, 上面我们讲解插入元素指针变化规则的时候, 当&lt;code class=&quot;highlighter-rouge&quot;&gt;head == tail&lt;/code&gt;也就是队列满了的时候, 会调用一个&lt;code class=&quot;highlighter-rouge&quot;&gt;doubleCapacity()&lt;/code&gt;
-函数, 其实该函数就是用于扩容的&lt;/p&gt;
-
-&lt;p&gt;那么根据上面的分析, 什么时候会发生扩容呢, 其实就是当队列满的时候; 扩容的规则又是怎样的呢, 从&lt;code class=&quot;highlighter-rouge&quot;&gt;doubleCapacity()&lt;/code&gt;的函数名我们猜测, 就是将数组容量加倍而已; 如下, 思路也比较简单, 就是创建一个扩容的新数组进行旧元素的复制罢了, 比较简单, 不再赘述&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    private void doubleCapacity() {
-        assert head == tail;
-        int p = head;
-        int n = elements.length;
-        int r = n - p; // number of elements to the right of p
-        int newCapacity = n &amp;lt;&amp;lt; 1; // 左移一位, 相当于容量加倍
-        if (newCapacity &amp;lt; 0)
-            throw new IllegalStateException(&quot;Sorry, deque too big&quot;); // 这是因为左移溢出之后会变成负值, 说明队列太大啦~
-        Object[] a = new Object[newCapacity];
-        System.arraycopy(elements, p, a, 0, r);
-        System.arraycopy(elements, 0, a, r, p);
-        elements = a;
-        head = 0;
-        tail = n;
-    }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h2 id=&quot;四-总结&quot;&gt;四. 总结&lt;/h2&gt;
-
-&lt;p&gt;到这里, &lt;code class=&quot;highlighter-rouge&quot;&gt;ArrayDeque&lt;/code&gt;的源码就分析完啦~; 最后笔者还想补充解释一点的是, 最开始我们提过, 当&lt;code class=&quot;highlighter-rouge&quot;&gt;ArrayDeque&lt;/code&gt;作为栈来使用的时候, 比&lt;code class=&quot;highlighter-rouge&quot;&gt;Stack&lt;/code&gt;要快, 关于&lt;code class=&quot;highlighter-rouge&quot;&gt;Stack&lt;/code&gt;, 我们在&lt;a href=&quot;https://husteryp.github.io/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/&quot;&gt;Java集合框架概述&lt;/a&gt;中粗略的提过, &lt;code class=&quot;highlighter-rouge&quot;&gt;Stack&lt;/code&gt;是&lt;code class=&quot;highlighter-rouge&quot;&gt;Java 2&lt;/code&gt;以前的几个遗留&lt;code class=&quot;highlighter-rouge&quot;&gt;API&lt;/code&gt;, 其内部也是使用数组实现的, 但是由于其加了锁, 支持多线程访问, 所以会比&lt;code class=&quot;highlighter-rouge&quot;&gt;ArrayDeque&lt;/code&gt;要慢; 当&lt;code class=&quot;highlighter-rouge&quot;&gt;ArrayDeque&lt;/code&gt;作为队列使用的时候,
-比&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedList&lt;/code&gt;要快是因为在&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedList&lt;/code&gt;内部是使用链表节点实现的, 不具备数组的索引定位, 当然也就是慢啦~&lt;/p&gt;
-
-</description>
-        <pubDate>Thu, 06 Sep 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/09/06/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BQueue/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/09/06/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BQueue/</guid>
-        
-        <category>Java</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>Fresco源码解析</title>
-        <description>&lt;h2 id=&quot;使用&quot;&gt;使用&lt;/h2&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;初始化Fresco: Fresco.initialize(this); 最好在Application中初始化, 多次初始化是无意义的&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;核心类为: SimpleDraweeView; 在layout中使用该类, 然后在代码中, 剩下的Fresco自动完成&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Uri uri = Uri.parse(&quot;https://raw.githubusercontent.com/facebook/fresco/gh-pages/static/logo.png&quot;);
-SimpleDraweeView draweeView = (SimpleDraweeView) findViewById(R.id.my_image_view);
-draweeView.setImageURI(uri);
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;Fresco会自动完成:
-    &lt;blockquote&gt;
-      &lt;ol&gt;
-        &lt;li&gt;显示占位图直到加载完成；&lt;/li&gt;
-        &lt;li&gt;下载图片；&lt;/li&gt;
-        &lt;li&gt;缓存图片；&lt;/li&gt;
-        &lt;li&gt;图片不再显示时，从内存中移除；&lt;/li&gt;
-      &lt;/ol&gt;
-    &lt;/blockquote&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h2 id=&quot;关键概念&quot;&gt;关键概念&lt;/h2&gt;
-
-&lt;h3 id=&quot;一-drawees&quot;&gt;一. Drawees&lt;/h3&gt;
-
-&lt;p&gt;分为三个主要部分, 有点像MVC模式&lt;/p&gt;
-
-&lt;h4 id=&quot;11-draweeview&quot;&gt;1.1 DraweeView&lt;/h4&gt;
-
-&lt;p&gt;一般情况下使用SimpleDraweeView即可&lt;/p&gt;
-
-&lt;h4 id=&quot;12-draweehierarchy&quot;&gt;1.2 DraweeHierarchy&lt;/h4&gt;
-
-&lt;p&gt;用于组织和维护最终绘制和呈现的 Drawable 对象, 可通过它来自定义图片显示效果&lt;/p&gt;
-
-&lt;h4 id=&quot;13-draweecontroller&quot;&gt;1.3 DraweeController&lt;/h4&gt;
-
-&lt;p&gt;负责和 image loader 交互（ Fresco 中默认为 image pipeline, 当然你也可以指定别的), 对所要显示的图片做更多的控制&lt;/p&gt;
-
-&lt;p&gt;如果你还需要对Uri加载到的图片做一些额外的处理，那么你会需要这个类&lt;/p&gt;
-
-&lt;h4 id=&quot;14-draweecontrollerbuilder&quot;&gt;1.4 DraweeControllerBuilder&lt;/h4&gt;
-
-&lt;p&gt;由 DraweeControllerBuilder 采用 Builder 模式创建，创建之后，不可修改&lt;/p&gt;
-
-&lt;h4 id=&quot;15-listeners&quot;&gt;1.5 Listeners&lt;/h4&gt;
-
-&lt;p&gt;使用 ControllerListener 的一个场景就是设置一个 Listener监听图片的下载。&lt;/p&gt;
-
-&lt;h3 id=&quot;二-image-pipeline&quot;&gt;二. Image Pipeline&lt;/h3&gt;
-
-&lt;p&gt;负责图片的获取和管理&lt;/p&gt;
-
-&lt;p&gt;压缩后的文件缓存在本地存储中，Bitmap数据缓存在内存中。Image pipeline 会首先从内存中搜寻图片，然后是磁盘缓存，再然后是网络或其他来源&lt;/p&gt;
-
-&lt;p&gt;在5.0系统以下，Image Pipeline 使用 pinned purgeables 将Bitmap数据避开Java堆内存，存在ashmem中。这要求图片不使用时，要显式地释放内存。&lt;/p&gt;
-
-&lt;p&gt;SimpleDraweeView自动处理了这个释放过程，所以没有特殊情况，尽量使用SimpleDraweeView，在特殊的场合，如果有需要，也可以直接控制Image Pipeline&lt;/p&gt;
-
-&lt;p&gt;Image pipeline 默认有3个线程池:&lt;/p&gt;
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;3个线程用于网络下载&lt;/li&gt;
-    &lt;li&gt;2个线程用于磁盘操作: 本地文件的读取，磁盘缓存操作。&lt;/li&gt;
-    &lt;li&gt;2个线程用于CPU相关的操作: 解码，转换，以及后处理等后台操作。&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;h2 id=&quot;uri格式&quot;&gt;URI格式&lt;/h2&gt;
-
-&lt;p&gt;&lt;a href=&quot;https://www.fresco-cn.org/docs/supported-uris.html&quot;&gt;URI支持格式&lt;/a&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;drawee的各种效果配置fresco支持的各种图片层级&quot;&gt;Drawee的各种效果配置(Fresco支持的各种图片层级)&lt;/h2&gt;
-
-&lt;p&gt;&lt;a href=&quot;https://www.fresco-cn.org/docs/drawee-branches.html&quot;&gt;参见文档&lt;/a&gt;&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;设置要加载的图&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;占位图(Placeholder)&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;设置加载失败占位图&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;点击重新加载图&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;显示进度条&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;背景&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;设置叠加图(Overlay)&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;设置按压状态下的叠加图&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h2 id=&quot;缓存策略&quot;&gt;缓存策略&lt;/h2&gt;
-
-&lt;p&gt;&lt;a href=&quot;https://www.fresco-cn.org/docs/caching.html&quot;&gt;参见文档&lt;/a&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;a href=&quot;https://www.fresco-cn.org/docs/getting-started.html&quot;&gt;文档&lt;/a&gt;&lt;/p&gt;
-</description>
-        <pubDate>Thu, 06 Sep 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/09/06/Fresco/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/09/06/Fresco/</guid>
-        
-        <category>Draft</category>
         
         
       </item>

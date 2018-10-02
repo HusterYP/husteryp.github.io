@@ -10,9 +10,9 @@
     <meta name="keyword"  content="">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>自定义View之常用工具 - 袁平 | HusterYP-Blog</title>
+    <title>自定义View常用工具 - 袁平 | HusterYP-Blog</title>
 
-    <link rel="canonical" href="http://localhost:4000/2018/09/27/%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B9%8B%E5%B8%B8%E7%94%A8%E5%B7%A5%E5%85%B7/">
+    <link rel="canonical" href="http://localhost:4000/2018/09/28/%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B9%8B%E5%B8%B8%E7%94%A8%E5%B7%A5%E5%85%B7/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/css/bootstrap.min.css">
@@ -145,12 +145,12 @@
                         <a class="tag" href="/tags/#View" title="View">View</a>
                         
                     </div>
-                    <h1>自定义View之常用工具</h1>
+                    <h1>自定义View常用工具</h1>
                     
                     
-                    <h2 class="subheading">介绍自定义View中常用的工具类</h2>
+                    <h2 class="subheading">总结自定义View中的常用工具类</h2>
                     
-                    <span class="meta">Posted by 袁平 on September 27, 2018</span>
+                    <span class="meta">Posted by 袁平 on September 28, 2018</span>
                 </div>
             </div>
         </div>
@@ -172,102 +172,17 @@
 
 <p>本文将要讲解的是在自定义<code class="highlighter-rouge">View</code>中常用的一些工具类</p>
 
+<p>文中会部分涉及到对源码的讲解, 但是更多的还是倾向于应用~</p>
+
 <hr />
 
 <h1 id="正文">正文</h1>
 
 <hr />
 
-<h2 id="一-canvas">一. Canvas</h2>
+<h2 id="一-概述">一. 概述</h2>
 
-<p>drawXXX: 绘制相关</p>
-
-<p>clipXXX: 裁剪; 使用裁剪的时候, 通常需要配合save()和restore()一起使用, 否则之后所有的绘制都会被裁剪
-范围裁切有两个方法： clipRect() 和 clipPath()</p>
-
-<hr />
-
-<p>几何变换(平移, 旋转, 伸缩等):</p>
-
-<p>几何变换的使用大概分为三类：</p>
-<ol>
-  <li>使用 Canvas 来做常见的二维变换；</li>
-  <li>使用 Matrix 来做常见和不常见的二维变换；</li>
-  <li>使用 Camera 来做三维变换。</li>
-</ol>
-
-<p>Matrix; 或者自带的translate(), rotate(), scale(), skew()(错切); 
-需要注意的是, Canvas自带的几何变换是倒序的, 比如: 如果translate()在rotate()前面, 则实际执行顺序是先rotate(), 再translate(); 
-Canvas自带的几何变换内部其实也是使用的Matrix
-Matrix可以自定义执行顺序, 通常Matrix的方法都是成对的, 比如: preTranslate()(往前插入)和postTranslate()(往后插入)
-Camare可以用于辅助Matrix计算; 比如: 如下代码</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>protected void onDraw(Canvas canvas) {
-    canvas.save();
-
-    camare.save();
-    camare.rotateX(30);
-    canvas.translate(centerX, centerY); // 注意这里的顺序要倒着, 因为上面说了, Canvas几何变换的顺序是倒着的
-    camare.applyToCanvas(canvas); // 同时, 由于camare执行旋转操作的时候, 是以原点为中心的, 所以, 如果这里不配合canvas的平移操作来使用的话, 最终图像是歪的; 但是camare又不支持设置中心, 所以就只能先将图像平移到原点, camare作用完之后再平移回原来的位置; 注意, 虽然Camare也有translate()方法, 但是Camare的变换是会带着整个三维坐标系一起的, 而且它在变换结束之后才会做投影, 而不是一旋转完就立即投影到Canvas上去, 这样如果用Camare做移动,
-    那么绘制出来的结果就完全不是预期的样子了(这里的解释不是很懂)
-    canvas.translate(-centerX, -centerY);
-    camare.restore();
-
-    canvas.restore();
-}
-</code></pre></div></div>
-<p>Camare坐标系: 使用的是三维坐标系, 原点也是View左上角; x轴右正左负, y轴上正下负(注意y轴不一样咯, 和View坐标系相反), z轴垂直于View, 内正外负(朝屏幕里面为正, 朝屏幕外面为负); 还包含了一个虚拟的Camare对象, 即一个虚拟的相机, 默认在z轴负向, 即View坐标原点的正上方
-Camare的旋转方向没有规律, 见Download文件夹下照片
-Camare也是可以沿着x, y, z轴平移的, 比如沿着z轴平移, 就相当于将物体远离或者靠近相机, 即起到放大缩小的作用, 但是由于这种情况也可以直接使用Canvas的scale()等来做到, 所以实际开发中一般都用Canvas自带的方法来实现
-Camare还可以通过setLocation()来设置虚拟相机的位置, 这种的使用情况是, 比如进行旋转时会造成物体投影太大(因为相机离物体太近), 此时可以通过setLocation()来设置相机位置远离物体, 使投影缩小; 一般使用时都是沿着z轴移动Camare, 不常见沿着x, y轴移动的
-Camare变换的时候也需要save()和restore()</p>
-
-<hr />
-
-<p>重写其他方法体现遮盖(联系draw过程, 如: 绘制前景, 绘制背景等)</p>
-
-<p>drawColor: 可以用于填充背景或者设置半透明蒙版</p>
-
-<h2 id="二-paint">二. Paint</h2>
-
-<p>关于Paint, 请参见: https://hencoder.com/ui-1-2/</p>
-
-<ol>
-  <li>颜色: 
-setColor()</li>
-</ol>
-
-<p>setShader(): 着色器, 着色器设置的是一个颜色方案，或者说是一套着色规则; 当设置了 Shader 之后，Paint 在绘制图形和文字时就不使用 setColor/ARGB() 设置的颜色了，而是使用  Shader 的方案中的颜色。LinearGradient RadialGradient SweepGradient BitmapShader ComposeShader</p>
-
-<p>setColorFilter(): ColorFilter; 共有三个子类：LightingColorFilter PorterDuffColorFilter 和 ColorMatrixColorFilter</p>
-
-<p>setXfermode(): Xfermode 指的是你要绘制的内容和 Canvas 的目标位置的内容应该怎样结合计算出最终的颜色; 唯一子类: PorterDuffXfermode</p>
-
-<ol>
-  <li>效果</li>
-</ol>
-
-<p>抗锯齿、填充/轮廓、线条宽度等</p>
-
-<p>setAntiAlias()</p>
-
-<p>setStyle()</p>
-
-<p>线条形状: setStrokeWidth(float width),  setStrokeCap(Paint.Cap cap), setStrokeJoin(Paint.Join join),  setStrokeMiter(float miter)</p>
-
-<p>色彩优化: setDither(boolean dither) 和  setFilterBitmap(boolean filter)</p>
-
-<p>setPathEffect(): PathEffect 分为两类，单一效果的 CornerPathEffect DiscretePathEffect DashPathEffect PathDashPathEffect ，和组合效果的 SumPathEffect ComposePathEffect</p>
-
-<p>什么是硬件加速: https://developer.android.com/guide/topics/graphics/hardware-accel</p>
-
-<p>setShadowLayer(): 在绘制层下方添加效果
-setMaskFilter(): 在绘制层上方添加效果; BlurMaskFilter 和 EmbossMaskFilter</p>
-
-<p>获取绘制的 Path</p>
-
-<h3 id="drawtext相关">drawText()相关</h3>
-
+<p>在开始讲解之前, 强烈推荐一个系列教程: <a href="https://hencoder.com/ui-1-1/">自定义View</a>; 该教程对绘制过程的<code class="highlighter-rouge">API</code>应用和讲解都很细致, 也有很多例子, 本文将不再重复该教程中已有的内容, 而是额外补充一些</p>
 
 
                 <hr>
@@ -278,7 +193,7 @@ setMaskFilter(): 在绘制层上方添加效果; BlurMaskFilter 和 EmbossMaskFi
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/2018/09/27/Java%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F%E4%B8%8E%E5%86%85%E5%AD%98%E6%BA%A2%E5%87%BA%E5%BC%82%E5%B8%B8/" data-toggle="tooltip" data-placement="top" title="Java内存区域与内存溢出异常">&larr; Previous Post</a>
+                        <a href="/2018/09/27/%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B9%8B%E5%B8%B8%E7%94%A8%E5%B7%A5%E5%85%B7Draft/" data-toggle="tooltip" data-placement="top" title="自定义View之常用工具">&larr; Previous Post</a>
                     </li>
                     
                     
@@ -325,7 +240,7 @@ setMaskFilter(): 在绘制层上方添加效果; BlurMaskFilter 和 EmbossMaskFi
                             
         				
                             
-                				<a href="/tags/#Draft" title="Draft" rel="2">
+                				<a href="/tags/#Draft" title="Draft" rel="3">
                                     Draft
                                 </a>
                             
@@ -333,7 +248,7 @@ setMaskFilter(): 在绘制层上方添加效果; BlurMaskFilter 和 EmbossMaskFi
                             
         				
                             
-                				<a href="/tags/#Java" title="Java" rel="9">
+                				<a href="/tags/#Java" title="Java" rel="10">
                                     Java
                                 </a>
                             
@@ -383,8 +298,8 @@ setMaskFilter(): 在绘制层上方添加效果; BlurMaskFilter 和 EmbossMaskFi
 <script type="text/javascript">
     /* * * CONFIGURATION VARIABLES * * */
     var disqus_shortname = "HusterYP";
-    var disqus_identifier = "/2018/09/27/自定义View之常用工具";
-    var disqus_url = "http://localhost:4000/2018/09/27/%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B9%8B%E5%B8%B8%E7%94%A8%E5%B7%A5%E5%85%B7/";
+    var disqus_identifier = "/2018/09/28/自定义View之常用工具";
+    var disqus_url = "http://localhost:4000/2018/09/28/%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B9%8B%E5%B8%B8%E7%94%A8%E5%B7%A5%E5%85%B7/";
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;

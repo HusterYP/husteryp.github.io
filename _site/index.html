@@ -154,6 +154,40 @@
             ">
     			
 <div class="post-preview">
+    <a href="/2018/10/02/Java%E7%B1%BB%E6%96%87%E4%BB%B6%E7%BB%93%E6%9E%84%E4%B8%8E%E7%B1%BB%E5%8A%A0%E8%BD%BD%E6%9C%BA%E5%88%B6/">
+        <h2 class="post-title">
+            Java类文件结构与类加载机制
+        </h2>
+        
+        <h3 class="post-subtitle">
+            深入理解Java虚拟机第六章第七章总结
+        </h3>
+        
+        <div class="post-content-preview">
+            前言
+
+本文是对«深入理解Java虚拟机»第六章第七章以及其他博客的总结, 权做笔记~
+
+
+
+正文
+
+
+
+一. 类文件结构
+
+Class文件是一组以8位字节为基础单位的二进制流, 当遇到需要占据8位字节以上空间的数据项时, 则会按照高位在前的方式分割成若干个8位字节进行存储
+
+Class文件格式采用一种类似于C语言结构体的伪结构来存储数据, 这种伪结构中只有两种数据类型: 无符号数和表; 无...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by 袁平 on October 2, 2018
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
     <a href="/2018/09/28/Java%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8%E4%B8%8E%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E7%AD%96%E7%95%A5/">
         <h2 class="post-title">
             Java垃圾收集器与内存分配策略
@@ -190,7 +224,42 @@
 <hr>
 
 <div class="post-preview">
-    <a href="/2018/09/27/%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B9%8B%E5%B8%B8%E7%94%A8%E5%B7%A5%E5%85%B7/">
+    <a href="/2018/09/28/%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B9%8B%E5%B8%B8%E7%94%A8%E5%B7%A5%E5%85%B7/">
+        <h2 class="post-title">
+            自定义View常用工具
+        </h2>
+        
+        <h3 class="post-subtitle">
+            总结自定义View中的常用工具类
+        </h3>
+        
+        <div class="post-content-preview">
+            前言
+
+本文将要讲解的是在自定义View中常用的一些工具类
+
+文中会部分涉及到对源码的讲解, 但是更多的还是倾向于应用~
+
+
+
+正文
+
+
+
+一. 概述
+
+在开始讲解之前, 强烈推荐一个系列教程: 自定义View; 该教程对绘制过程的API应用和讲解都很细致, 也有很多例子, 本文将不再重复该教程中已有的内容, 而是额外补充一些
+
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by 袁平 on September 28, 2018
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
+    <a href="/2018/09/27/%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B9%8B%E5%B8%B8%E7%94%A8%E5%B7%A5%E5%85%B7Draft/">
         <h2 class="post-title">
             自定义View之常用工具
         </h2>
@@ -449,78 +518,6 @@ Handler算是我们平时开发中比较常用的一个, Handler所代表的是A
 </div>
 <hr>
 
-<div class="post-preview">
-    <a href="/2018/09/06/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BQueue/">
-        <h2 class="post-title">
-            Java集合框架之Queue
-        </h2>
-        
-        <h3 class="post-subtitle">
-            Queue的实现类
-        </h3>
-        
-        <div class="post-content-preview">
-            前言
-
-
-  前面我们对Java集合框架有了一个基本的认识, 这里我们从几大接口入手, 逐步讲解其实现类; 下面要讲解的是Queue的实现类, 即ArrayDeque
-
-
-文章源码基于JDK8
-
-Java集合框架系列博客:
-
-
-  
-    Java集合框架概述
-  
-  
-    Java集合框架之List
-  
-  
-    Java集合框架之HashMap
-  
-  
-    Java...
-        </div>
-    </a>
-    <p class="post-meta">
-        Posted by 袁平 on September 6, 2018
-    </p>
-</div>
-<hr>
-
-<div class="post-preview">
-    <a href="/2018/09/06/Fresco/">
-        <h2 class="post-title">
-            Fresco源码解析
-        </h2>
-        
-        <h3 class="post-subtitle">
-            图片加载之Fresco
-        </h3>
-        
-        <div class="post-content-preview">
-            使用
-
-
-  
-    初始化Fresco: Fresco.initialize(this); 最好在Application中初始化, 多次初始化是无意义的
-  
-  
-    核心类为: SimpleDraweeView; 在layout中使用该类, 然后在代码中, 剩下的Fresco自动完成
-  
-
-
-Uri uri = Uri.parse("https://raw.githubuser...
-        </div>
-    </a>
-    <p class="post-meta">
-        Posted by 袁平 on September 6, 2018
-    </p>
-</div>
-<hr>
-
 
 <!-- Pager -->
 
@@ -561,7 +558,7 @@ Uri uri = Uri.parse("https://raw.githubuser...
                             
                         
                             
-                                <a href="/tags/#Draft" title="Draft" rel="2">
+                                <a href="/tags/#Draft" title="Draft" rel="3">
                                     Draft
                                 </a>
                             
@@ -569,7 +566,7 @@ Uri uri = Uri.parse("https://raw.githubuser...
                             
                         
                             
-                                <a href="/tags/#Java" title="Java" rel="9">
+                                <a href="/tags/#Java" title="Java" rel="10">
                                     Java
                                 </a>
                             
