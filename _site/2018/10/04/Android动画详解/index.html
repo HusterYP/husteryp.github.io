@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Hello-World">
+    <meta name="keyword"  content="">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>Android动画详解 - 袁平 | HusterYP-Blog</title>
+
+    <link rel="canonical" href="http://localhost:4000/2018/10/04/Android%E5%8A%A8%E7%94%BB%E8%AF%A6%E8%A7%A3/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    <!-- Pygments Github CSS -->
+    <link rel="stylesheet" href="/css/syntax.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="http://cdn.staticfile.org/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">袁平</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/about/">About</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/tags/">Tags</a>
+                    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Image to hack wechat -->
+<!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="/img/tag-bg.jpg" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/img/tag-bg.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                    </div>
+                    <h1>Android动画详解</h1>
+                    
+                    
+                    <h2 class="subheading">总结Android动画及源码实现</h2>
+                    
+                    <span class="meta">Posted by 袁平 on October 4, 2018</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+				<h1 id="前言">前言</h1>
+
+<p><code class="highlighter-rouge">Android</code>动画也是<code class="highlighter-rouge">Android</code>系统中一个很重要的模块, 在平时开发中, 为了做出炫酷的效果, 动画可以说是必不可少的; 本文将总结<code class="highlighter-rouge">Android</code>中与动画相关的部分, 文中部分内容整理自文末参考链接, 权作笔记~</p>
+
+<p>需要声明的是文章不会详细通过源码去讲解各种动画的实现细节, 因为相对来说, 动画的熟练使用更为重要, 所以本文只是提一下关键的动画源码部分</p>
+
+<hr />
+
+<h1 id="正文">正文</h1>
+
+<hr />
+
+<h2 id="一-概述">一. 概述</h2>
+
+<p><code class="highlighter-rouge">Android</code>中动画分为三大类: <code class="highlighter-rouge">View</code>动画, <code class="highlighter-rouge">Transition</code>(过渡动画), 属性动画; 下文也将从这三个方面进行总结和讲解</p>
+
+<p>动画的本质实际上就是将作用对象的属性值在一段时间内缓慢的改变, 将每一个小的时间片段对应的属性值改变作用到对象并进行不断重绘, 造成肉眼看起来的的动画效果~</p>
+
+<hr />
+
+<h2 id="二-view动画">二. View动画</h2>
+
+<h3 id="21-基本使用总结">2.1 基本使用总结</h3>
+
+<p><code class="highlighter-rouge">View</code>动画分为四种, 如下表:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>名称</th>
+      <th>标签</th>
+      <th>子类</th>
+      <th>效果</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>平移动画</td>
+      <td>&lt;translate&gt;</td>
+      <td>TranslateAnimation</td>
+      <td>移动</td>
+    </tr>
+    <tr>
+      <td>缩放动画</td>
+      <td>&lt;scale&gt;</td>
+      <td>ScaleAnimation</td>
+      <td>缩放</td>
+    </tr>
+    <tr>
+      <td>旋转动画</td>
+      <td>&lt;rotate&gt;</td>
+      <td>RotateAnimation</td>
+      <td>旋转</td>
+    </tr>
+    <tr>
+      <td>透明度</td>
+      <td>&lt;alpha&gt;</td>
+      <td>AlphaAnimation</td>
+      <td>透明度</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>注</strong>: 动画中还有一种叫<strong>帧动画</strong>, 这里也归为<code class="highlighter-rouge">View</code>动画中, 后文单独讲解</p>
+
+<p><code class="highlighter-rouge">View</code>动画可以使用<code class="highlighter-rouge">xml</code>描述, 也可以使用代码描述(即使用上表中的四个子类); 使用<code class="highlighter-rouge">xml</code>描述的语法格式如下:</p>
+
+<p><strong>注</strong>: 位置为<code class="highlighter-rouge">res/anim/filename.xml</code></p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">&lt;?xml version="1.0" encoding="utf-8"?&gt;</span>
+<span class="nt">&lt;set</span> <span class="na">xmlns:android=</span><span class="s">"http://schemas.android.com/apk/res/android"</span>
+    <span class="na">android:interpolator=</span><span class="s">"@[package:]anim/interpolator_resource"</span>
+    <span class="na">android:shareInterpolator=</span><span class="s">"[true | false]"</span>
+    <span class="na">android:fillAfter=</span><span class="s">"[true | false]"</span>
+    <span class="na">android:duration=</span><span class="s">"int"</span>
+    <span class="na">android:repeatMode=</span><span class="s">"[reverse | restart]"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;alpha</span>
+        <span class="na">android:fromAlpha=</span><span class="s">"float"</span>
+        <span class="na">android:toAlpha=</span><span class="s">"float"</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;scale</span>
+        <span class="na">android:fromXScale=</span><span class="s">"float"</span>
+        <span class="na">android:toXScale=</span><span class="s">"float"</span>
+        <span class="na">android:fromYScale=</span><span class="s">"float"</span>
+        <span class="na">android:toYScale=</span><span class="s">"float"</span>
+        <span class="na">android:pivotX=</span><span class="s">"float"</span>
+        <span class="na">android:pivotY=</span><span class="s">"float"</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;translate</span>
+        <span class="na">android:fromXDelta=</span><span class="s">"float"</span>
+        <span class="na">android:toXDelta=</span><span class="s">"float"</span>
+        <span class="na">android:fromYDelta=</span><span class="s">"float"</span>
+        <span class="na">android:toYDelta=</span><span class="s">"float"</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;rotate</span>
+        <span class="na">android:fromDegrees=</span><span class="s">"float"</span>
+        <span class="na">android:toDegrees=</span><span class="s">"float"</span>
+        <span class="na">android:pivotX=</span><span class="s">"float"</span>
+        <span class="na">android:pivotY=</span><span class="s">"float"</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;set&gt;</span>
+        ...
+    <span class="nt">&lt;/set&gt;</span>
+<span class="nt">&lt;/set&gt;</span>
+</code></pre></div></div>
+
+<p><strong>解释</strong>:</p>
+
+<ol>
+  <li>
+    <p><code class="highlighter-rouge">&lt;set&gt;</code>代表<code class="highlighter-rouge">AnimationSet</code>, 可以包含若干动画</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">android:shareInterpolator</code>: 表示集合中的动画是否和集合共享同一个插值器; 如果集合不指定插值器, 那么子动画需要单独指定或者使用默认插值器</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">android:pivotX</code>: 轴点<code class="highlighter-rouge">x</code>坐标</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">android:pivotY</code>: 轴点<code class="highlighter-rouge">y</code>坐标</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">android:fillAfter</code>: 动画结束之后, <code class="highlighter-rouge">View</code>是否停留在结束位置, <code class="highlighter-rouge">true</code>表示停留在结束位置, <code class="highlighter-rouge">false</code>表示不停留</p>
+  </li>
+</ol>
+
+<p>在代码中使用<code class="highlighter-rouge">View</code>动画:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Button button = findViewById(R.id.button);
+Animatoin animation = AnimationUtils.loadAnimation(this, R.anim.animation_item);
+button.startAnimation(animation);
+</code></pre></div></div>
+
+<h3 id="22-自定义view动画">2.2 自定义View动画</h3>
+
+<p><code class="highlighter-rouge">TranslateAnimation</code>, <code class="highlighter-rouge">ScaleAnimation</code>, <code class="highlighter-rouge">RotateAnimation</code>, 和<code class="highlighter-rouge">AlphaAnimation</code>都继承自<code class="highlighter-rouge">Animation</code>; 如果要自定义<code class="highlighter-rouge">View</code>动画的话, 也需要继承<code class="highlighter-rouge">Animation</code>, 并重写<code class="highlighter-rouge">Animation.initialize()</code>和<code class="highlighter-rouge">Animation.applyTransformation()</code>方法; <code class="highlighter-rouge">initialize()</code>顾名思义就是进行一些初始化工作, 比如设置属性的初始值等, <code class="highlighter-rouge">applyTransformation()</code>就是根据时间的流失量来计算出当前时间片段所对应的属性值, 并设置到对应的作用对象(对于<code class="highlighter-rouge">View</code>动画来说该对象就是<code class="highlighter-rouge">View</code>); 这里的设置往往是通过<code class="highlighter-rouge">Matrix</code>来作用的, 如下以<code class="highlighter-rouge">TranslateAnimation.applyTransformation()</code>为例</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>@Override
+protected void applyTransformation(float interpolatedTime, Transformation t) {
+        float dx = mFromXDelta;
+        float dy = mFromYDelta;
+        if (mFromXDelta != mToXDelta) {
+            dx = mFromXDelta + ((mToXDelta - mFromXDelta) * interpolatedTime);  // 通过时间流失量计算出x的改变量
+        }
+        if (mFromYDelta != mToYDelta) {
+            dy = mFromYDelta + ((mToYDelta - mFromYDelta) * interpolatedTime);  // 通过时间流失量计算出y的改变量
+        }
+        t.getMatrix().setTranslate(dx, dy);  // 通过Matrix作用到对象
+}
+</code></pre></div></div>
+
+<p>上述代码其实也可以当做自定义<code class="highlighter-rouge">View</code>动画的模板代码, 自定义<code class="highlighter-rouge">View</code>动画时, 可以使用<code class="highlighter-rouge">Camera</code>来配合计算改变量; 关于<code class="highlighter-rouge">Camera</code>和<code class="highlighter-rouge">Matrix</code>的使用, 可以参见<a href="https://hencoder.com/ui-1-4/">博客</a></p>
+
+<h3 id="23-帧动画">2.3 帧动画</h3>
+
+<p>帧动画就是顺序播放一组预先定义好的图片, 系统提供了<code class="highlighter-rouge">AnimationDrawable</code>来使用帧动画</p>
+
+<p><code class="highlighter-rouge">xml</code>定义如下:</p>
+
+<p><strong>注</strong>: 位置为<code class="highlighter-rouge">/res/drawable/filename.xml</code></p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">&lt;?xml version="1.0" encoding="utf-8"?&gt;</span>
+<span class="nt">&lt;animation-list</span> <span class="na">xmlns:android=</span><span class="s">"http://schemas.android.com/apk/res/android"</span>
+    <span class="na">android:oneshot=</span><span class="s">"false"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;item</span> <span class="na">android:drawable=</span><span class="s">"@drawable/item"</span> <span class="na">android:duration=</span><span class="s">"100"</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;item</span> <span class="na">android:drawable=</span><span class="s">"@drawable/item"</span> <span class="na">android:duration=</span><span class="s">"100"</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;item</span> <span class="na">android:drawable=</span><span class="s">"@drawable/item"</span> <span class="na">android:duration=</span><span class="s">"100"</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;item</span> <span class="na">android:drawable=</span><span class="s">"@drawable/item"</span> <span class="na">android:duration=</span><span class="s">"100"</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;/animation-list&gt;</span>
+</code></pre></div></div>
+
+<p>使用帧动画时, 当图片较多或者较大时可能引起<code class="highlighter-rouge">OOM</code></p>
+
+<hr />
+
+<h2 id="三-transition过渡动画">三. Transition(过渡动画)</h2>
+
+<p>过渡动画其实是用于控制<code class="highlighter-rouge">ViewGroup</code>的<code class="highlighter-rouge">Item</code>的出场效果, 或者<code class="highlighter-rouge">Activity</code>之间的切换效果等</p>
+
+<h3 id="31-layoutanimation">3.1 LayoutAnimation</h3>
+
+<p><code class="highlighter-rouge">xml</code>实现格式如下:</p>
+
+<p><strong>注</strong>: 位置为<code class="highlighter-rouge">/res/anim/anim_layout.xml</code></p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">&lt;?xml version="1.0" encoding="utf-8"?&gt;</span>
+<span class="nt">&lt;layoutAnimation</span> <span class="na">xmlns:android=</span><span class="s">"http://schemas.android.com/apk/res/android"</span>
+    <span class="na">android:delay=</span><span class="s">"0.5"</span>
+    <span class="na">android:animationOrder=</span><span class="s">"[normal | reverse | random]"</span>
+    <span class="na">android:animation=</span><span class="s">"@anim/anim_item"</span><span class="nt">/&gt;</span>
+</code></pre></div></div>
+
+<p><strong>解释</strong>:</p>
+
+<ol>
+  <li>
+    <p><code class="highlighter-rouge">android:delay</code>: 子元素延迟多少时间执行动画; 比如子元素入场动画时间周期为<code class="highlighter-rouge">300ms</code>, 那么<code class="highlighter-rouge">0.5</code>表示每个每个子元素都需要延迟<code class="highlighter-rouge">150ms</code>才能播放入场动画, 总体来说, 第一个子元素延迟<code class="highlighter-rouge">150ms</code>开始播放动画, 第二个子元素延迟<code class="highlighter-rouge">300ms</code>开始播放动画, 以此类推</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">android:animationOrder</code>: <code class="highlighter-rouge">normal</code>表示顺序显示, 即排在前面的子元素先开始动画; <code class="highlighter-rouge">reverse</code>表示逆向显示; <code class="highlighter-rouge">random</code>表示随机显示</p>
+  </li>
+</ol>
+
+<p>当定义好<code class="highlighter-rouge">layoutAnimation</code>之后, 在布局文件中就可以通过<code class="highlighter-rouge">ViewGroup</code>的属性<code class="highlighter-rouge">android:layoutAnimation="@anim/anim_layout"</code>来指定入场动画了~</p>
+
+<p>代码实现, 格式如下: 即通过<code class="highlighter-rouge">LayoutAnimationController</code>实现</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ListView listView = findViewById(R.id.list);
+Animation animation = AnimationUtils.loadAnimation(this, R.anim.anim_item);
+LayoutAnimationController controller = new LayoutAnimationController(animation);
+controller.setDelay(0.5f);
+controller.setOrder(LayoutAnimationController.ORDER_NORMAL);
+listView.setLayoutAnimation(controller);
+</code></pre></div></div>
+
+<h3 id="32-activity的切换效果">3.2 Activity的切换效果</h3>
+
+<ol>
+  <li>当启动一个<code class="highlighter-rouge">Activity</code>的时候, 可以按照如下方式为其添加自定义的切换效果:</li>
+</ol>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Intent intent = new Intent(this, AnimActivity.class);
+startActivity(intent);
+overridePendingTransition(R.anim.enter_anim, R.anim.exit_anim);
+</code></pre></div></div>
+
+<ol>
+  <li>当<code class="highlighter-rouge">Activity</code>退出时, 可以如下添加切换效果:</li>
+</ol>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(R.anim.enter_anim, R.anim.exit_anim);
+    }
+</code></pre></div></div>
+
+<p>可以看出, 都是使用<code class="highlighter-rouge">overridePendingTransition()</code>来指定切换动画, 同时需要注意的是这个方法必须在<code class="highlighter-rouge">startActivity(intent)</code>或者<code class="highlighter-rouge">finish()</code>之后被调用才能生效</p>
+
+<ol>
+  <li>为<code class="highlighter-rouge">Fragment</code>添加切换动画: 可以通过<code class="highlighter-rouge">FragmentTransaction.setCustomAnimations()</code>来添加切换动画; 需要注意的是该动画必须是<code class="highlighter-rouge">View</code>动画, 不能用属性动画(因为属性动画在<code class="highlighter-rouge">API 11</code>引入, <code class="highlighter-rouge">Fragment</code>也是<code class="highlighter-rouge">API 11</code>才引入的)</li>
+</ol>
+
+<hr />
+
+<h2 id="四-属性动画">四. 属性动画</h2>
+
+<p>属性动画是在<code class="highlighter-rouge">Android 3.0</code>(<code class="highlighter-rouge">API 11</code>)开始引入的; 属性动画可以用<code class="highlighter-rouge">xml</code>实现, 也可以用代码实现, 但是一般都是用代码实现</p>
+
+<h3 id="41-基本使用">4.1 基本使用</h3>
+
+<h4 id="411-viewpropertyanimator">4.1.1 ViewPropertyAnimator</h4>
+
+<p>操作<code class="highlighter-rouge">View</code>属性值, 可以通过<code class="highlighter-rouge">View.animate()</code>来获取一个<code class="highlighter-rouge">ViewPropertyAnimator</code>对象, 然后就可以通过<code class="highlighter-rouge">ViewPropertyAnimator</code>来操作该对象的属性值了~  可以操作的属性值参见下图(图片来源, 参见文末参考链接):</p>
+
+<p><img src="/img/post/Animation/ViewPropertyAnimator属性动画.png" alt="ViewPropertyAnimator" /></p>
+
+<p>使用示例如<code class="highlighter-rouge">View.animate().setDuration(500).alpha(0.5);</code></p>
+
+<h4 id="412-objectanimator">4.1.2 ObjectAnimator</h4>
+
+<p>也是针对<code class="highlighter-rouge">View</code>的特定属性, 同时还要求该属性提供了对应的<code class="highlighter-rouge">set</code>和<code class="highlighter-rouge">get</code>方法, 基本使用如下; 因为<code class="highlighter-rouge">ObjectAnimator</code>是通过属性的<code class="highlighter-rouge">set</code>方法来不断改变属性值的, 所以<code class="highlighter-rouge">set</code>方法是一定需要的, 至于<code class="highlighter-rouge">get</code>方法只是用于获取动画开始的初始值的, 如果明确指定了初始值的话, 也可以提供<code class="highlighter-rouge">get</code>方法(如果没有提供<code class="highlighter-rouge">get</code>方法, 同时又没有指定初始值的话, 将<code class="highlighter-rouge">Crash</code>; 如果没有<code class="highlighter-rouge">set</code>方法, 不会<code class="highlighter-rouge">Crash</code>, 只是没有效果而已)</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ObjectAnimator animator = ObjectAnimator.ofFloat(view, "alpha", 0, 65);
+animator.start();
+</code></pre></div></div>
+
+<p>如果一个属性没有<code class="highlighter-rouge">set</code>方法的话, 解决方法有以下三种:</p>
+
+<ol>
+  <li>
+    <p>如果有权限的话, 自己给对象加上<code class="highlighter-rouge">set</code>和<code class="highlighter-rouge">get</code>方法</p>
+  </li>
+  <li>
+    <p>用一个类来包装原始对象, 间接为其提供<code class="highlighter-rouge">set</code>和<code class="highlighter-rouge">get</code>方法</p>
+  </li>
+  <li>
+    <p>采用<code class="highlighter-rouge">ValueAnimator</code>, 监听动画过程, 自己实现属性改变</p>
+  </li>
+</ol>
+
+<h3 id="42-插值器">4.2 插值器</h3>
+
+<p>所谓插值器就是属性改变的速度, 系统提供了如下插值器:</p>
+
+<table>
+  <tbody>
+    <tr>
+      <td>AccelerateDecelerateInterpolator</td>
+      <td>LinearInterpolator</td>
+      <td>AccelerateInterpolator</td>
+    </tr>
+    <tr>
+      <td>DecelerateInterpolator</td>
+      <td>AnticipateInterpolator</td>
+      <td>OvershootInterpolator</td>
+    </tr>
+    <tr>
+      <td>AnticipateOvershootInterpolator</td>
+      <td>BounceInterpolator</td>
+      <td>CycleInterpolator</td>
+    </tr>
+    <tr>
+      <td>PathInterpolator</td>
+      <td> </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">FastOutLinearInInterpolator</code></td>
+      <td><code class="highlighter-rouge">FastOutSlowInInterpolator</code></td>
+      <td><code class="highlighter-rouge">LinearOutSlowInInterpolator</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<p>其中<code class="highlighter-rouge">FastOutLinearInInterpolator</code>, <code class="highlighter-rouge">FastOutSlowInInterpolator</code>, <code class="highlighter-rouge">LinearOutSlowInInterpolator</code>是<code class="highlighter-rouge">Android 5.0(API 21)</code>引入的三个新的 <code class="highlighter-rouge">Interpolator</code>模型, 并把它们加入了<code class="highlighter-rouge">support v4</code>包中</p>
+
+<p>关于各种插值器的讲解, 可以参见<a href="https://hencoder.com/ui-1-6/">博客</a>, 该博客讲的比较详细, 此处不再赘述~</p>
+
+<h3 id="43-估值器">4.3 估值器</h3>
+
+<p>估值器即<code class="highlighter-rouge">TypeEvaluator</code>, 作用是根据当前属性改变的百分比来计算改变后的属性值, 用于协助插值器实现非线性运动; 系统提供了如下估值器:</p>
+
+<table>
+  <tbody>
+    <tr>
+      <td>IntEvaluator</td>
+      <td>IntArrayEvaluator</td>
+      <td>FloatEvaluator</td>
+    </tr>
+    <tr>
+      <td>FloatArrayEvaluator</td>
+      <td>ArgbEvaluator</td>
+      <td>PointFEvaluator</td>
+    </tr>
+    <tr>
+      <td>RectEvaluator</td>
+      <td> </td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<p>如果要对其他类型做动画(非<code class="highlighter-rouge">int</code>, <code class="highlighter-rouge">float</code>, <code class="highlighter-rouge">Color</code>), 那么需要自定义类型估值算法, 即继承<code class="highlighter-rouge">TypeEvaluator</code>自己实现其<code class="highlighter-rouge">evaluate()</code>方法即可</p>
+
+<p>估值器基本使用如下:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ObjectAnimator anim = ObjectAnimator.ofObject(view, "alpha", new FloatEvaluator(), 0, 1);
+</code></pre></div></div>
+
+<h3 id="44-监听器">4.4 监听器</h3>
+
+<p><code class="highlighter-rouge">ViewPropertyAnimator</code>和<code class="highlighter-rouge">ObjectAnimator</code>设置监听器的方法如下表:</p>
+
+<table>
+  <tbody>
+    <tr>
+      <td>ViewPropertyAnimator</td>
+      <td>setListener()</td>
+      <td>setUpdateListener()</td>
+      <td>withStartAction()</td>
+      <td>withEndAction()</td>
+    </tr>
+    <tr>
+      <td>ObjectAnimator</td>
+      <td>addListener()</td>
+      <td>addUpdateListener()</td>
+      <td>addPauseListener()</td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>注</strong>:</p>
+
+<ol>
+  <li>
+    <p><code class="highlighter-rouge">ViewPropertyAnimator</code>可以通过<code class="highlighter-rouge">setListener()</code>和<code class="highlighter-rouge">setUpdateListener()</code>来设置监听器, 移除监听器可以通过<code class="highlighter-rouge">setListener(null)</code>和<code class="highlighter-rouge">setUpdateListener(null)</code>来移除; <code class="highlighter-rouge">ViewPropertyAnimator</code>独有的<code class="highlighter-rouge">withStartAction()</code>和<code class="highlighter-rouge">withEndAction()</code> 方法, 可以设置<strong>一次性</strong>(动画结束后就自动弃掉了, 即一次有效)的动画开始或结束的监听</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">ObjectAnimator</code>则是用<code class="highlighter-rouge">addListener()</code>和<code class="highlighter-rouge">addUpdateListener()</code>来添加一个或多个监听器, 移除监听器则是通过<code class="highlighter-rouge">removeListener()</code>和<code class="highlighter-rouge">removeUpdateListener()</code>来指定移除对象; <code class="highlighter-rouge">ObjectAnimator</code>支持使用<code class="highlighter-rouge">pause()</code>方法暂停, 所以它还多了一个 <code class="highlighter-rouge">addPauseListener()</code>和<code class="highlighter-rouge">removePauseListener()</code>的支持</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">ViewPropertyAnimator.withStartAction/EndAction()</code>是<code class="highlighter-rouge">ViewPropertyAnimator</code>的独有方法, 它们和<code class="highlighter-rouge">set/addListener()</code>中回调的 <code class="highlighter-rouge">onAnimationStart()</code>和<code class="highlighter-rouge">onAnimationEnd()</code>相比起来的不同主要有两点:</p>
+  </li>
+</ol>
+
+<blockquote>
+  <ol>
+    <li><code class="highlighter-rouge">withStartAction()</code>和<code class="highlighter-rouge">withEndAction()</code>是一次性的, 在动画执行结束后就自动弃掉了, 就算之后再重用<code class="highlighter-rouge">ViewPropertyAnimator</code> 来做别的动画, 用它们设置的回调也不会再被调用; 而<code class="highlighter-rouge">set/addListener()</code>所设置的<code class="highlighter-rouge">AnimatorListener</code>是持续有效的, 当动画重复执行时, 回调总会被调用</li>
+    <li><code class="highlighter-rouge">withEndAction()</code>设置的回调只有在动画正常结束时才会被调用, 而在动画被取消时不会被执行; 这点和<code class="highlighter-rouge">AnimatorListener.onAnimationEnd()</code> 的行为是不一致的</li>
+  </ol>
+</blockquote>
+
+<p>监听器方法有:</p>
+
+<table>
+  <tbody>
+    <tr>
+      <td><strong>AnimatorListener</strong></td>
+      <td>onAnimationStart()</td>
+      <td>onAnimationEnd()</td>
+      <td>onAnimationCancel()</td>
+      <td>onAnimationRepeat()</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>注</strong>: 即使动画通过<code class="highlighter-rouge">cancle()</code>方法取消, <code class="highlighter-rouge">onAnimationEnd()</code>也会被调用; 所以当动画被取消时, 如果设置了<code class="highlighter-rouge">AnimatorListener</code>, 那么 <code class="highlighter-rouge">onAnimationCancel()</code>和<code class="highlighter-rouge">onAnimationEnd()</code>都会被调用; <code class="highlighter-rouge">onAnimationCancel()</code>会先于<code class="highlighter-rouge">onAnimationEnd()</code>被调用; 由于<code class="highlighter-rouge">ViewPropertyAnimator</code>不支持重复, 所以这个方法对<code class="highlighter-rouge">ViewPropertyAnimator</code>相当于无效</p>
+
+<hr />
+
+<h2 id="五-动画注意事项">五. 动画注意事项</h2>
+
+<ol>
+  <li>
+    <p>避免使用帧动画, 易造成<code class="highlighter-rouge">OOM</code></p>
+  </li>
+  <li>
+    <p>动画需要考虑暂停和取消; 属性动画中有一类无线循环的动画, 这类动画在<code class="highlighter-rouge">Activity</code>退出时要及时停止, 否则将导致<code class="highlighter-rouge">Activity</code>无法释放从而造成内存泄露; 通过验证后发现<code class="highlighter-rouge">View</code>动画无此问题</p>
+  </li>
+  <li>
+    <p>使用<code class="highlighter-rouge">View</code>动画之后可能会出现<code class="highlighter-rouge">View</code>无法隐藏的现象, 即<code class="highlighter-rouge">setVisibility(View.GONE)</code>失效了, 此时可以使用<code class="highlighter-rouge">view.clearAnimation()</code>来清除<code class="highlighter-rouge">View</code>动画即可</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">Android 3.0</code>以前系统, 不管是<code class="highlighter-rouge">View</code>动画还是属性动画, 都只是作用于<code class="highlighter-rouge">View</code>内容(因为<code class="highlighter-rouge">Android 3.0</code>以前, 属性动画底层其实也是通过<code class="highlighter-rouge">View</code>动画实现的), 新位置无法触发单击事件; 从<code class="highlighter-rouge">3.0</code>开始, 属性动画的单击事件触发位置为移动后的位置, 但是<code class="highlighter-rouge">View</code>动画仍然在原位置</p>
+  </li>
+</ol>
+
+<hr />
+
+<h2 id="六-参考">六. 参考</h2>
+
+<ol>
+  <li>
+    <p>«Android开发艺术探索»</p>
+  </li>
+  <li>
+    <p><a href="https://hencoder.com/ui-1-6/">属性动画 Property Animation</a></p>
+  </li>
+</ol>
+
+
+                <hr>
+
+                
+
+
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/2018/10/02/JVM%E4%B9%8B%E7%B1%BB%E6%96%87%E4%BB%B6%E7%BB%93%E6%9E%84%E4%B8%8E%E7%B1%BB%E5%8A%A0%E8%BD%BD%E6%9C%BA%E5%88%B6/" data-toggle="tooltip" data-placement="top" title="Java类文件结构与类加载机制">&larr; Previous Post</a>
+                    </li>
+                    
+                    
+                </ul>
+
+
+                
+
+                
+                <!-- disqus 评论框 start -->
+                <div class="comment">
+                    <div id="disqus_thread" class="disqus-thread"></div>
+                </div>
+                <!-- disqus 评论框 end -->
+                
+
+            </div>
+
+    <!-- Sidebar Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+        				
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#Algorithm" title="Algorithm" rel="2">
+                                    Algorithm
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#Draft" title="Draft" rel="3">
+                                    Draft
+                                </a>
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#Java" title="Java" rel="10">
+                                    Java
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#Android" title="Android" rel="6">
+                                    Android
+                                </a>
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#View" title="View" rel="2">
+                                    View
+                                </a>
+                            
+        				
+        			</div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+                <hr>
+                <h5>FRIENDS</h5>
+                <ul class="list-inline">
+                    
+                        <li><a href="https://tech.meituan.com/archives">美团点评</a></li>
+                    
+                </ul>
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+
+<!-- disqus 公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = "HusterYP";
+    var disqus_identifier = "/2018/10/04/Android动画详解";
+    var disqus_url = "http://localhost:4000/2018/10/04/Android%E5%8A%A8%E7%94%BB%E8%AF%A6%E8%A7%A3/";
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<!-- disqus 公共JS代码 end -->
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("http://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                    
+                    
+
+                    <!-- add Weibo, Zhihu by Hux, add target = "_blank" to <a> by Hux -->
+                    
+                    
+
+
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/HusterYP">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; 袁平 2018
+                    <br>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js "></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/js/bootstrap.min.js "></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js "></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("http://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+
+
+<!-- Baidu Tongji -->
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>
