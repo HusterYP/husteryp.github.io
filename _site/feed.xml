@@ -5,9 +5,610 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Thu, 04 Oct 2018 20:36:28 +0800</pubDate>
-    <lastBuildDate>Thu, 04 Oct 2018 20:36:28 +0800</lastBuildDate>
+    <pubDate>Mon, 08 Oct 2018 18:57:57 +0800</pubDate>
+    <lastBuildDate>Mon, 08 Oct 2018 18:57:57 +0800</lastBuildDate>
     <generator>Jekyll v3.8.3</generator>
+    
+      <item>
+        <title>排序算法</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;排序算法总结, 分析各种排序算法的时间复杂度, 空间复杂度, 使用场景和优化等方面&lt;/p&gt;
+
+&lt;p&gt;包括: 选择排序, 归并排序, 插入排序, 冒泡排序, 快排, 堆排, 基数排序, 希尔排序, 计数排序, 桶排序&lt;/p&gt;
+
+&lt;p&gt;文中代码使用&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;实现, &lt;code class=&quot;highlighter-rouge&quot;&gt;C/C++&lt;/code&gt;实现可以参见: https://github.com/HusterYP/DataStructure&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;一-选择排序&quot;&gt;一. 选择排序&lt;/h2&gt;
+
+&lt;h3 id=&quot;11-基本思路&quot;&gt;1.1 基本思路&lt;/h3&gt;
+
+&lt;p&gt;找到数组中的最小元素, 将它和数组的第一个元素交换, 然后在剩下元素中找到最小元素和数组第二个元素交换, 如此往复, 直到有序&lt;/p&gt;
+
+&lt;h3 id=&quot;12-主要代码&quot;&gt;1.2 主要代码&lt;/h3&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public static void sort(int[] noSort) {
+        if (noSort == null || noSort.length &amp;lt;= 0) // 边界条件
+            return;
+        int N = noSort.length;
+        for (int i = 0; i &amp;lt; N; i++) {
+            int min = i;
+            for (int j = i + 1; j &amp;lt; N; j++) {
+                if (Utils.less(noSort[min], noSort[j]) &amp;lt; 0) // 注意此处比较条件, 不要写成noSort[i]和noSort[j]比较了
+                    min = j;
+            }
+            Utils.exch(noSort, i, min);
+        }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;13-特点&quot;&gt;1.3 特点&lt;/h3&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;时间复杂度&lt;/strong&gt;: &lt;code class=&quot;highlighter-rouge&quot;&gt;O(N^2)&lt;/code&gt;; 需要进行&lt;code class=&quot;highlighter-rouge&quot;&gt;(N-1)+(N-2)+...+1 = (N-1)*N/2&lt;/code&gt;次比较和&lt;code class=&quot;highlighter-rouge&quot;&gt;N&lt;/code&gt;次交换&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;临界时间&lt;/strong&gt;: 选择排序的最好情况与最坏情况时间相同, 同其时间复杂度分析(也可以说没有最好最坏情况)&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;空间复杂度&lt;/strong&gt;: &lt;code class=&quot;highlighter-rouge&quot;&gt;1&lt;/code&gt;; 需要一个临时变量&lt;code class=&quot;highlighter-rouge&quot;&gt;min&lt;/code&gt;&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;稳定性&lt;/strong&gt;: 不稳定的; 如&lt;code class=&quot;highlighter-rouge&quot;&gt;[5, 5, 2]&lt;/code&gt;&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;二-插入排序&quot;&gt;二. 插入排序&lt;/h2&gt;
+
+&lt;h3 id=&quot;21-基本思路&quot;&gt;2.1 基本思路&lt;/h3&gt;
+
+&lt;p&gt;从第一个元素开始, 该元素可认为已经被排序, 取出下一个元素, 在已排序元素序列中从后往前开始扫描, 插入到相应位置&lt;/p&gt;
+
+&lt;h3 id=&quot;22-主要代码&quot;&gt;2.2 主要代码&lt;/h3&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public static void sort(int[] noSort) {
+        if (noSort == null || noSort.length &amp;lt;= 0)
+            return;
+        int N = noSort.length;
+        for (int i = 1; i &amp;lt; N; i++) {
+            int index = i;
+            while (index &amp;gt; 0 &amp;amp;&amp;amp; Utils.less(noSort[index], noSort[index - 1])) {
+                Utils.exch(noSort, index, index - 1);
+                index--;
+            }
+        }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;23-特点&quot;&gt;2.3 特点&lt;/h3&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;时间复杂度&lt;/strong&gt;: &lt;code class=&quot;highlighter-rouge&quot;&gt;O(N^2)&lt;/code&gt;; 平均情况下需要&lt;code class=&quot;highlighter-rouge&quot;&gt;N^2 / 4&lt;/code&gt;次比较和&lt;code class=&quot;highlighter-rouge&quot;&gt;N^2 / 4&lt;/code&gt;次交换&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;临界情况&lt;/strong&gt;: 最好情况是, 所有数据有序, 此时需要&lt;code class=&quot;highlighter-rouge&quot;&gt;N-1&lt;/code&gt;次比较和&lt;code class=&quot;highlighter-rouge&quot;&gt;0&lt;/code&gt;次交换; 最坏情况是所有数据逆序有序, 此时需要&lt;code class=&quot;highlighter-rouge&quot;&gt;N^2 / 2&lt;/code&gt;次比较和&lt;code class=&quot;highlighter-rouge&quot;&gt;N^2 / 2&lt;/code&gt;次交换(注意, 其实平均情况就是最坏情况对半, 因为每个位置每个元素出现几率相同)&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;适用情况&lt;/strong&gt;: 对于部分有序的数组, 插入排序的效率很高; 部分有序数组:&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;数组中每个元素距离它的最终位置都不远&lt;/li&gt;
+    &lt;li&gt;一个有序的大数组接一个小数组&lt;/li&gt;
+    &lt;li&gt;数组中只有几个元素的位置不正确&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;空间复杂度&lt;/strong&gt;: &lt;code class=&quot;highlighter-rouge&quot;&gt;1&lt;/code&gt;&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;稳定性&lt;/strong&gt;: 稳定&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;三-希尔排序&quot;&gt;三. 希尔排序&lt;/h2&gt;
+
+&lt;p&gt;插入排序的改进&lt;/p&gt;
+
+&lt;h3 id=&quot;31-基本思路&quot;&gt;3.1 基本思路&lt;/h3&gt;
+
+&lt;p&gt;使数组中任意间隔为&lt;code class=&quot;highlighter-rouge&quot;&gt;h&lt;/code&gt;的数组都是有序的, 称为&lt;code class=&quot;highlighter-rouge&quot;&gt;h&lt;/code&gt;有序数组; 类似插入排序, 但使用不同增量, 因为在插入排序中讲解适用性的时候说过, 插入排序在用于小数组的时候(可以理解为部分有序数组的第一种情况)很有效, 希尔排序就是将一个大数组按照&lt;code class=&quot;highlighter-rouge&quot;&gt;h&lt;/code&gt;间隔分为许多小数组, 然后分别对这些小数组进行插入排序, 部分有序之后对整体进行插入排序(&lt;code class=&quot;highlighter-rouge&quot;&gt;h=1&lt;/code&gt;), 此时即有序; 而这两种情况都适用于插入排序&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;h&lt;/code&gt;的选择, &lt;code class=&quot;highlighter-rouge&quot;&gt;1/2*(3^k-1)&lt;/code&gt;, 从&lt;code class=&quot;highlighter-rouge&quot;&gt;N/3&lt;/code&gt;递减至&lt;code class=&quot;highlighter-rouge&quot;&gt;1&lt;/code&gt;, 如下代码&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;int h = 1;
+while(h &amp;lt; N/3)
+    h = h * 3 + 1;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;32-基本代码&quot;&gt;3.2 基本代码&lt;/h3&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public static void sort(int[] noSort) {
+        if (noSort == null || noSort.length &amp;lt;= 0)
+            return;
+        int N = noSort.length;
+        int h = 1;
+        while (h &amp;lt; N / 3)
+            h = h * 3 + 1;
+        while (h &amp;gt;= 1) {
+            for (int i = h; i &amp;lt; N; i++) {
+                for (int j = i; j &amp;gt;= h &amp;amp;&amp;amp; Utils.less(noSort[j], noSort[j - h]); j -= h)
+                    Utils.exch(noSort, j, j - h);
+            }
+            h = h / 3;
+        }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;33-特点&quot;&gt;3.3 特点&lt;/h3&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;时间复杂度&lt;/strong&gt;: 优于插入排序; 取决于&lt;code class=&quot;highlighter-rouge&quot;&gt;h&lt;/code&gt;的取值&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;空间复杂度&lt;/strong&gt;: &lt;code class=&quot;highlighter-rouge&quot;&gt;1&lt;/code&gt;(&lt;code class=&quot;highlighter-rouge&quot;&gt;h&lt;/code&gt;)&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;稳定性&lt;/strong&gt;: 不稳定&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;适用情况&lt;/strong&gt;: 希尔排序也可以用于大数组, 对任意排序(不一定是随机的)的数组表现也很好; 可以先考虑使用希尔排序, 然后再考虑是否值得将它替换为更加复杂的排序算法&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;四-冒泡排序&quot;&gt;四. 冒泡排序&lt;/h2&gt;
+
+&lt;h3 id=&quot;41-基本思路&quot;&gt;4.1 基本思路&lt;/h3&gt;
+
+&lt;p&gt;比较相邻元素, 如果第一个比第二个大, 就交换他们两个, 遍历所有元素, 一趟之后, 最后一个元素为最大元素; 对剩余元素重复该步骤(除了最后一个)&lt;/p&gt;
+
+&lt;h3 id=&quot;42-主要代码&quot;&gt;4.2 主要代码&lt;/h3&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public static void sort(int[] noSort) {
+        if (noSort == null || noSort.length &amp;lt;= 0)
+            return;
+        int N = noSort.length;
+        for (int i = N; i &amp;gt; 0; i--) {
+            for (int j = 0; j &amp;lt; i - 1; j++) {
+                if (Utils.less(noSort[j + 1], noSort[j]))
+                    Utils.exch(noSort, j, j + 1);
+            }
+        }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;43-特点&quot;&gt;4.3 特点&lt;/h3&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;时间复杂度&lt;/strong&gt;: &lt;code class=&quot;highlighter-rouge&quot;&gt;O(N^2)&lt;/code&gt;&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;空间复杂度&lt;/strong&gt;: &lt;code class=&quot;highlighter-rouge&quot;&gt;0&lt;/code&gt;&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;稳定性&lt;/strong&gt;: 稳定&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;改进&lt;/strong&gt;: 添加标志位, 如果一趟遍历中没有交换, 说明已经有序, 直接退出即可&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public static void sort(int[] noSort) {
+        if (noSort == null || noSort.length &amp;lt;= 0)
+            return;
+        int N = noSort.length;
+        boolean isChange = true;
+        for (int i = N; i &amp;gt; 0 &amp;amp;&amp;amp; isChange; i--) {
+            isChange = false;
+            for (int j = 0; j &amp;lt; i - 1; j++) {
+                if (Utils.less(noSort[j + 1], noSort[j])) {
+                    Utils.exch(noSort, j, j + 1);
+                    isChange = true;
+                }
+            }
+        }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;五-归并排序&quot;&gt;五. 归并排序&lt;/h2&gt;
+
+&lt;h3 id=&quot;51-基本思路&quot;&gt;5.1 基本思路&lt;/h3&gt;
+
+&lt;p&gt;递归排序, 先将一个数组分成两半分别排序, 然后将结果归并起来&lt;/p&gt;
+
+&lt;h3 id=&quot;52-主要代码&quot;&gt;5.2 主要代码&lt;/h3&gt;
+
+&lt;p&gt;&lt;strong&gt;自顶向下的归并排序:&lt;/strong&gt;&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class MergeSort {
+    private static int[] aux; // 辅助数组
+
+    public static void sort(int[] noSort) {
+        if (noSort == null || noSort.length &amp;lt;= 0)
+            return;
+        aux = new int[noSort.length];
+        sort(noSort, 0, noSort.length - 1);
+    }
+
+    public static void sort(int[] noSort, int low, int high) {
+        if (high &amp;lt;= low)
+            return;
+        int mid = low + (high - low) / 2;
+        sort(noSort, low, mid); // 将左半边数组排序
+        sort(noSort, mid + 1, high); // 将右半边数组排序
+        merge(noSort, low, mid, high); // 将数组归并
+    }
+
+    public static void merge(int[] noSort, int low, int mid, int high) {
+        int i = low;
+        int j = mid + 1;
+        for (int k = low; k &amp;lt;= high; k++) {
+            aux[k] = noSort[k];
+        }
+
+        for (int k = low; k &amp;lt;= high; k++) {
+            if (i &amp;gt; mid)
+                noSort[k] = aux[j++]; // 如果左边用完
+            else if (j &amp;gt; high)
+                noSort[k] = aux[i++]; // 如果右边用完
+            else if (Utils.less(aux[j], aux[i]))
+                noSort[k] = aux[j++];
+            else
+                noSort[k] = aux[i++];
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;strong&gt;自底向下的归并排序:&lt;/strong&gt;&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public static void sortBU(int[] noSort) {
+        int N = noSort.length;
+        aux = new int[N];
+        for (int sz = 1; sz &amp;lt; N; sz = sz + sz) {
+            for (int low = 0; low &amp;lt; N - sz; low += sz + sz)
+                merge(noSort, low, low + sz - 1, Math.min(low + sz + sz - 1, N - 1));
+        }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;53-特点&quot;&gt;5.3 特点&lt;/h3&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;时间复杂度&lt;/strong&gt;: &lt;code class=&quot;highlighter-rouge&quot;&gt;O(NlogN)&lt;/code&gt;; 归并排序是一种渐进最优的基于比较的排序算法; 能够保证&lt;code class=&quot;highlighter-rouge&quot;&gt;O(NlogN)&lt;/code&gt;的时间复杂度(即最坏情况最好情况都相同)&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;空间复杂度&lt;/strong&gt;: 需要与&lt;code class=&quot;highlighter-rouge&quot;&gt;N&lt;/code&gt;成正比的额外数组空间&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;稳定性&lt;/strong&gt;: 稳定&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;两种归并方式的区别&lt;/strong&gt;: 自底向上的归并方式比较适合用链表组织的数据, 此时只需要重新组织链表链接就能将链表原地排序, 不需要额外空间&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&quot;54-改进&quot;&gt;5.4 改进&lt;/h3&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;对小规模子数组使用插入排序&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;测试数组是否已经有序: 如果&lt;code class=&quot;highlighter-rouge&quot;&gt;noSort[mid] &amp;lt; noSort[mid+1]&lt;/code&gt;说明数组有序, 可以跳过本次&lt;code class=&quot;highlighter-rouge&quot;&gt;merge()&lt;/code&gt;了&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;不将元素复制到辅助数组: 可以节省将元素复制到辅助数组所用的时间(但是空间不行), 即进行交替归并即可(可以添加一个标志位标识最终结果存储在哪个数组)&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;六-快排&quot;&gt;六. 快排&lt;/h2&gt;
+
+&lt;h3 id=&quot;61-基本思路&quot;&gt;6.1 基本思路&lt;/h3&gt;
+
+&lt;p&gt;对于某个&lt;code class=&quot;highlighter-rouge&quot;&gt;j&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;a[j]&lt;/code&gt;已经排定, &lt;code class=&quot;highlighter-rouge&quot;&gt;a[low]&lt;/code&gt;到&lt;code class=&quot;highlighter-rouge&quot;&gt;a[j-1]&lt;/code&gt;中的所有元素都不大于&lt;code class=&quot;highlighter-rouge&quot;&gt;a[j]&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;a[j+1]&lt;/code&gt;到&lt;code class=&quot;highlighter-rouge&quot;&gt;a[high]&lt;/code&gt;中的所有元素都不小于&lt;code class=&quot;highlighter-rouge&quot;&gt;a[j]&lt;/code&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;62-主要代码&quot;&gt;6.2 主要代码&lt;/h3&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class QuickSort {
+
+    public static void sort(int[] noSort) {
+        if (noSort == null || noSort.length &amp;lt;= 0)
+            return;
+        sort(noSort, 0, noSort.length - 1);
+    }
+
+    private static void sort(int[] noSort, int low, int high) {
+        if (high &amp;lt;= low)
+            return;
+        int j = partition(noSort, low, high);
+        sort(noSort, low, j - 1);
+        sort(noSort, j + 1, high);
+    }
+
+    private static int partition(int[] noSort, int low, int high) {
+        int i = low;
+        int j = high + 1;
+        int temp = noSort[low];
+        while (true) {
+            while (Utils.less(noSort[++i], temp))
+                if (i == high)
+                    break;
+            while (Utils.less(temp, noSort[--j]))
+                if (j == low)
+                    break;
+            if (i &amp;gt;= j)
+                break;
+            Utils.exch(noSort, i, j);
+        }
+        Utils.exch(noSort, low, j);
+        return j;
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;63-特点&quot;&gt;6.3 特点&lt;/h3&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;时间复杂度&lt;/strong&gt;: &lt;code class=&quot;highlighter-rouge&quot;&gt;O(NlogN)&lt;/code&gt;; 比归并和希尔排序都快&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;临界情况&lt;/strong&gt;: 依赖于切分情况; 最好情况是每次都能将数组对半分; 最坏情况是第一次从最小元素切分, 第二次第二小元素切分, 如此这般, 每次调用都只能移除一个元素, 造成最坏情况(可以在开始排序之前, 现将待排序数组打乱(&lt;code class=&quot;highlighter-rouge&quot;&gt;shuffle()&lt;/code&gt;))&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;空间复杂度&lt;/strong&gt;: &lt;code class=&quot;highlighter-rouge&quot;&gt;logN&lt;/code&gt;&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;稳定性&lt;/strong&gt;: 不稳定&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&quot;64-算法改进&quot;&gt;6.4 算法改进&lt;/h3&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;小数组时切换到插入排序&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;三取样切分: 使用子数组的一小部分元素的中位数来切分数组, 这样切分更好, 但代价是需要计算中位数; 将取样大小设置为&lt;code class=&quot;highlighter-rouge&quot;&gt;3&lt;/code&gt;并用大小居中的元素切分的效果更好; 还可以将取样元素放在数组末尾作为&lt;strong&gt;哨兵&lt;/strong&gt;, 这样可以避免临界值判断&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;熵最优排序: 当含有大量重复元素的时候, 快排的递归性会使元素全部重复的子元素经常出现, 这就有很大的改进潜力, 将线性对数级的性能提高到线性级别; 一个简单的想法是将数组切分为三部分, 即小于, 等于和大于(荷兰国旗问题); 基本思路是: 维护一个指针&lt;code class=&quot;highlighter-rouge&quot;&gt;lt&lt;/code&gt;使得&lt;code class=&quot;highlighter-rouge&quot;&gt;a[low..lt-1]&lt;/code&gt;中的元素都小于&lt;code class=&quot;highlighter-rouge&quot;&gt;v&lt;/code&gt;(切分元素), 一个指针&lt;code class=&quot;highlighter-rouge&quot;&gt;gt&lt;/code&gt;使得&lt;code class=&quot;highlighter-rouge&quot;&gt;a[gt+1..hi]&lt;/code&gt;中的元素都大于&lt;code class=&quot;highlighter-rouge&quot;&gt;v&lt;/code&gt;, 一个指针&lt;code class=&quot;highlighter-rouge&quot;&gt;i&lt;/code&gt;使得&lt;code class=&quot;highlighter-rouge&quot;&gt;a[lt..i-1]&lt;/code&gt;中元素都等于&lt;code class=&quot;highlighter-rouge&quot;&gt;v&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;a[i..gt-1]&lt;/code&gt;中元素都还未确定, 一开始&lt;code class=&quot;highlighter-rouge&quot;&gt;i&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;low&lt;/code&gt;相等:&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;a[i]&lt;/code&gt;小于&lt;code class=&quot;highlighter-rouge&quot;&gt;v&lt;/code&gt;, 将&lt;code class=&quot;highlighter-rouge&quot;&gt;a[lt]&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;a[i]&lt;/code&gt;交换, &lt;code class=&quot;highlighter-rouge&quot;&gt;lt&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;i&lt;/code&gt;加一&lt;/li&gt;
+    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;a[i]&lt;/code&gt;大于&lt;code class=&quot;highlighter-rouge&quot;&gt;v&lt;/code&gt;, 将&lt;code class=&quot;highlighter-rouge&quot;&gt;a[gt]&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;a[i]&lt;/code&gt;交换, 将&lt;code class=&quot;highlighter-rouge&quot;&gt;gt&lt;/code&gt;减一&lt;/li&gt;
+    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;a[i]&lt;/code&gt;等于&lt;code class=&quot;highlighter-rouge&quot;&gt;v&lt;/code&gt;, 将&lt;code class=&quot;highlighter-rouge&quot;&gt;i&lt;/code&gt;加一&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;&lt;strong&gt;三向切分改进代码如下:&lt;/strong&gt; 三向切分的最坏情况是所有元素都不同; 在包含大量重复元素时, 其能将对数级别的时间降低到线性级别&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public static void sort3Way(int[] noSort, int low, int high) {
+        if (high &amp;lt;= low)
+            return;
+        int lt = low;
+        int i = low + 1;
+        int gt = high;
+        int temp = noSort[low];
+        while (i &amp;lt; gt) { // 找出重复元素
+            if (noSort[i] &amp;lt; temp)
+                Utils.exch(noSort, lt++, i++);
+            else if (noSort[i] &amp;gt; temp)
+                Utils.exch(noSort, i, gt--);
+            else
+                i++;
+        }
+        sort3Way(noSort, low, lt - 1);
+        sort3Way(noSort, gt + 1, high);
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;七-堆排&quot;&gt;七. 堆排&lt;/h2&gt;
+
+&lt;h3 id=&quot;71-基本思路&quot;&gt;7.1 基本思路&lt;/h3&gt;
+
+&lt;p&gt;堆是一个二叉树的每个节点都大于等于(或小于等于)它的两个子节点; 分为大顶堆和小顶堆&lt;/p&gt;
+
+&lt;h3 id=&quot;72-主要代码&quot;&gt;7.2 主要代码&lt;/h3&gt;
+
+&lt;p&gt;&lt;strong&gt;注&lt;/strong&gt;: 摘自&lt;a href=&quot;https://zh.wikipedia.org/wiki/%E5%A0%86%E6%8E%92%E5%BA%8F#Java&quot;&gt;Wiki&lt;/a&gt;&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class HeapSort {
+
+    public static void sort(int[] arr) {
+        /*
+         *  第一步：将数组堆化
+         *  beginIndex = 第一个非叶子节点。
+         *  从第一个非叶子节点开始即可。无需从最后一个叶子节点开始。
+         *  叶子节点可以看作已符合堆要求的节点，根节点就是它自己且自己以下值为最大。
+         */
+        int len = arr.length - 1;
+        int beginIndex = (len - 1) &amp;gt;&amp;gt; 1;
+        for (int i = beginIndex; i &amp;gt;= 0; i--) {
+            maxHeapify(arr, i, len);
+        }
+
+        /*
+         * 第二步：对堆化数据排序
+         * 每次都是移出最顶层的根节点A[0]，与最尾部节点位置调换，同时遍历长度 - 1。
+         * 然后从新整理被换到根节点的末尾元素，使其符合堆的特性。
+         * 直至未排序的堆长度为 0。
+         */
+        for (int i = len; i &amp;gt; 0; i--) {
+            Utils.exch(arr, 0, i);
+            maxHeapify(arr, 0, i - 1);
+        }
+    }
+
+    /**
+     * 调整索引为 index 处的数据，使其符合堆的特性。
+     *
+     * @param index 需要堆化处理的数据的索引
+     * @param len   未排序的堆（数组）的长度
+     */
+    private static void maxHeapify(int[] arr, int index, int len) {
+        int li = (index &amp;lt;&amp;lt; 1) + 1; // 左子节点索引
+        int ri = li + 1;           // 右子节点索引
+        int cMax = li;             // 子节点值最大索引，默认左子节点。
+
+        if (li &amp;gt; len) return;       // 左子节点索引超出计算范围，直接返回。
+        if (ri &amp;lt;= len &amp;amp;&amp;amp; arr[ri] &amp;gt; arr[li]) // 先判断左右子节点，哪个较大。
+            cMax = ri;
+        if (arr[cMax] &amp;gt; arr[index]) {
+            Utils.exch(arr, cMax, index);
+            maxHeapify(arr, cMax, len);  // 则需要继续判断换下后的父节点是否符合堆的特性。
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;73-特点&quot;&gt;7.3 特点&lt;/h3&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;时间复杂度&lt;/strong&gt;: 堆排序是唯一能够同时最优的利用空间和时间的方法, 在最坏情况下它也能保证&lt;code class=&quot;highlighter-rouge&quot;&gt;O(NlogN)&lt;/code&gt;的时间复杂度和恒定空间&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;空间复杂度&lt;/strong&gt;: &lt;code class=&quot;highlighter-rouge&quot;&gt;O(1)&lt;/code&gt;&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;适用场景&lt;/strong&gt;: 在空间十分紧张(如嵌入式设别或低成本的移动设备中)十分流行, 但是由于其数据变更比较频繁, 因此无法利用缓存(缓存命中率比较低), 在现代系统的许多应用中很少使用&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;稳定性&lt;/strong&gt;: 不稳定&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;使用堆还可以实现优先队列, 使得当有大量数据时, 可用较少空间即可从中筛选出指定数量的最大(小)&lt;code class=&quot;highlighter-rouge&quot;&gt;K&lt;/code&gt;个数据&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;八-小结&quot;&gt;八. 小结&lt;/h2&gt;
+
+&lt;p&gt;上面介绍的七个排序算法都是基于&lt;strong&gt;比较&lt;/strong&gt;的, 这里再以表的形式总结如下:&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;排序算法&lt;/th&gt;
+      &lt;th&gt;是否稳定&lt;/th&gt;
+      &lt;th&gt;是否为原地排序&lt;/th&gt;
+      &lt;th&gt;时间复杂度&lt;/th&gt;
+      &lt;th&gt;空间复杂度&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;选择排序&lt;/td&gt;
+      &lt;td&gt;否&lt;/td&gt;
+      &lt;td&gt;是&lt;/td&gt;
+      &lt;td&gt;N^2&lt;/td&gt;
+      &lt;td&gt;1&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;插入排序&lt;/td&gt;
+      &lt;td&gt;是&lt;/td&gt;
+      &lt;td&gt;是&lt;/td&gt;
+      &lt;td&gt;介于N和N^2之间&lt;/td&gt;
+      &lt;td&gt;1&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;希尔排序&lt;/td&gt;
+      &lt;td&gt;否&lt;/td&gt;
+      &lt;td&gt;是&lt;/td&gt;
+      &lt;td&gt;未知(NlogN / N^(5/6) ?)&lt;/td&gt;
+      &lt;td&gt;1&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;快排&lt;/td&gt;
+      &lt;td&gt;否&lt;/td&gt;
+      &lt;td&gt;是&lt;/td&gt;
+      &lt;td&gt;NlogN&lt;/td&gt;
+      &lt;td&gt;logN&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;三向快排&lt;/td&gt;
+      &lt;td&gt;否&lt;/td&gt;
+      &lt;td&gt;是&lt;/td&gt;
+      &lt;td&gt;介于N和NlogN之间&lt;/td&gt;
+      &lt;td&gt;logN&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;归并排序&lt;/td&gt;
+      &lt;td&gt;是&lt;/td&gt;
+      &lt;td&gt;否&lt;/td&gt;
+      &lt;td&gt;NlogN&lt;/td&gt;
+      &lt;td&gt;N&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;堆排&lt;/td&gt;
+      &lt;td&gt;否&lt;/td&gt;
+      &lt;td&gt;是&lt;/td&gt;
+      &lt;td&gt;NlogN&lt;/td&gt;
+      &lt;td&gt;1&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;下面要介绍的是线性排序; 有这样一个结论是: 没有任何基于比较的算法能够保证使用少于&lt;code class=&quot;highlighter-rouge&quot;&gt;log(N!) ~ NlogN&lt;/code&gt;次比较将长度为&lt;code class=&quot;highlighter-rouge&quot;&gt;N&lt;/code&gt;的数组排序; 所以这也决定了上面基于比较的排序算法的上界;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;九-计数排序&quot;&gt;九. 计数排序&lt;/h2&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://blog.csdn.net/liyuming0000/article/details/46913357&quot;&gt;参考博客&lt;/a&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;十-基数排序&quot;&gt;十. 基数排序&lt;/h2&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://www.cnblogs.com/skywang12345/p/3603669.html&quot;&gt;参考博客&lt;/a&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;十一-桶排序&quot;&gt;十一. 桶排序&lt;/h2&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://hxraid.iteye.com/blog/647759&quot;&gt;参考博客&lt;/a&gt;&lt;/p&gt;
+
+</description>
+        <pubDate>Sat, 06 Oct 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/10/06/%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/10/06/%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95/</guid>
+        
+        <category>Algorithm</category>
+        
+        
+      </item>
     
       <item>
         <title>Android动画详解</title>
@@ -3016,116 +3617,6 @@ public void draw(Canvas canvas) {
         <guid isPermaLink="true">http://localhost:4000/2018/09/15/Handler/</guid>
         
         <category>Android</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>Linux开机启动流程</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Linux开机启动流程&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;文中实验基于&lt;code class=&quot;highlighter-rouge&quot;&gt;CentOS6.4&lt;/code&gt;版本（&lt;code class=&quot;highlighter-rouge&quot;&gt;CentOS6.x&lt;/code&gt;版本都可以，但是&lt;code class=&quot;highlighter-rouge&quot;&gt;CentOS7.x&lt;/code&gt;版本会有所区别）&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;一-启动流程&quot;&gt;一. 启动流程&lt;/h2&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;开关电源（&lt;code class=&quot;highlighter-rouge&quot;&gt;SMPS&lt;/code&gt;）在开机之后将&lt;code class=&quot;highlighter-rouge&quot;&gt;AC&lt;/code&gt;信号转换为&lt;code class=&quot;highlighter-rouge&quot;&gt;DC&lt;/code&gt;信号，然后&lt;code class=&quot;highlighter-rouge&quot;&gt;SMPS&lt;/code&gt;会进行电压的检测，如果正常，&lt;code class=&quot;highlighter-rouge&quot;&gt;SMPS&lt;/code&gt;将会发送&lt;code class=&quot;highlighter-rouge&quot;&gt;POWER GOOD&lt;/code&gt; 信号给主板定时器，主板定时器接收到&lt;code class=&quot;highlighter-rouge&quot;&gt;POWER GOOD&lt;/code&gt;信号之后，将会停止发送&lt;code class=&quot;highlighter-rouge&quot;&gt;reset&lt;/code&gt;指令给&lt;code class=&quot;highlighter-rouge&quot;&gt;CPU&lt;/code&gt;，这意味着电脑可以正常启动&lt;/li&gt;
-  &lt;li&gt;在&lt;code class=&quot;highlighter-rouge&quot;&gt;CPU&lt;/code&gt;的设置中有一些值是固定的，这样&lt;code class=&quot;highlighter-rouge&quot;&gt;CPU&lt;/code&gt;才知道从哪里开始读取指令，在&lt;code class=&quot;highlighter-rouge&quot;&gt;X86&lt;/code&gt;计算机中，第一条指令是&lt;code class=&quot;highlighter-rouge&quot;&gt; FFFF:0000h &lt;/code&gt;，指向&lt;code class=&quot;highlighter-rouge&quot;&gt;ROM&lt;/code&gt;的最后一个字节，该指令因为只有一个字节，所以只是简单的包含一个跳转指令，该跳转指令指向的是&lt;code class=&quot;highlighter-rouge&quot;&gt;BIOS&lt;/code&gt;所在的地址（&lt;code class=&quot;highlighter-rouge&quot;&gt;EPROM&lt;/code&gt;或者&lt;code class=&quot;highlighter-rouge&quot;&gt;ROM&lt;/code&gt;中）&lt;/li&gt;
-  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;BIOS&lt;/code&gt;就是基本输入输出系统，其功能主要有两个：&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;POST：&lt;code class=&quot;highlighter-rouge&quot;&gt;Power On Self Test&lt;/code&gt;；硬件自检；即在&lt;code class=&quot;highlighter-rouge&quot;&gt;BIOS&lt;/code&gt;中有一个硬件设备的列表，为了检测某一个硬件设备是否可用，就发送一个电脉冲给每一个设备，如果该脉冲被设备返回，说明设备可用，否则，不可用；如果有新的硬件接入，那么会使用同样的检测过程，同时会更新&lt;code class=&quot;highlighter-rouge&quot;&gt;BIOS&lt;/code&gt;中的列表，用于下次启动过程&lt;/li&gt;
-    &lt;li&gt;选择第一个启动设备：&lt;code class=&quot;highlighter-rouge&quot;&gt; BIOS&lt;/code&gt;会根据&lt;code class=&quot;highlighter-rouge&quot;&gt;CMOS&lt;/code&gt;里面的记录的启动顺序以及上一步硬件自检过程中，设备的可用装态，确定最终的可启动设备顺序，具体的过程是&lt;code class=&quot;highlighter-rouge&quot;&gt;BIOS&lt;/code&gt;将磁盘的第一扇区（磁盘最开始的&lt;code class=&quot;highlighter-rouge&quot;&gt;512&lt;/code&gt;字节）载入内存，放在 &lt;code class=&quot;highlighter-rouge&quot;&gt;0X0000:0X7C00&lt;/code&gt;处，然后检查这个扇区的最后两个字节是不是&lt;code class=&quot;highlighter-rouge&quot;&gt;55AA&lt;/code&gt;，如果是则认为这是一个有效的启动扇区，如果不是就会尝试下一个启动介 质，如果找到可以启动的程序就会从这一介质启动，如果所有的启动介质都判断过后仍然没有找到可启动的程序那么&lt;code class=&quot;highlighter-rouge&quot;&gt;BIOS&lt;/code&gt;会给出错误提示&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;&lt;strong&gt;注&lt;/strong&gt;： 我们平时所说的更改&lt;code class=&quot;highlighter-rouge&quot;&gt;BIOS&lt;/code&gt;设置，实际上是错的，我们更改的只是&lt;code class=&quot;highlighter-rouge&quot;&gt;CMOS&lt;/code&gt;中存储的设置，&lt;code class=&quot;highlighter-rouge&quot;&gt;BIOS&lt;/code&gt;中信息不能被用户改变，需要厂商提供闪存程序&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;&lt;strong&gt;MBR&lt;/strong&gt;：&lt;code class=&quot;highlighter-rouge&quot;&gt;BIOS&lt;/code&gt;确定好第一个启动设备之后，去该设备磁盘的第一个扇区读取最开始的&lt;code class=&quot;highlighter-rouge&quot;&gt;512&lt;/code&gt;字节到内存（通过硬件的&lt;code class=&quot;highlighter-rouge&quot;&gt;INT 13&lt;/code&gt;中断功能来读取的），该&lt;code class=&quot;highlighter-rouge&quot;&gt;512&lt;/code&gt;字节就是&lt;code class=&quot;highlighter-rouge&quot;&gt;MBR&lt;/code&gt;，即主引导记录；这&lt;code class=&quot;highlighter-rouge&quot;&gt;512&lt;/code&gt;字节中有&lt;code class=&quot;highlighter-rouge&quot;&gt;446&lt;/code&gt;字节才是正真的主引导加载代码（&lt;code class=&quot;highlighter-rouge&quot;&gt;Boot Loader&lt;/code&gt;，即可以安装引导加载程序的地方），还有&lt;code class=&quot;highlighter-rouge&quot;&gt;64&lt;/code&gt;字节用于存放磁盘分区表信息，以及最后两个字节用于校验（&lt;code class=&quot;highlighter-rouge&quot;&gt;55AA&lt;/code&gt;)是否为有效的启动扇区；每个分区需要&lt;code class=&quot;highlighter-rouge&quot;&gt;16&lt;/code&gt;个字节用于存储分区的开始，结束位置，分区类型等（由于每个分区信息需要&lt;code class=&quot;highlighter-rouge&quot;&gt;16&lt;/code&gt;个字节，所以对于采用&lt;code class=&quot;highlighter-rouge&quot;&gt;MBR&lt;/code&gt;型分区结构的硬盘(其磁盘卷标类型为&lt;code class=&quot;highlighter-rouge&quot;&gt;MS-DOS&lt;/code&gt;)，最多只能识别&lt;code class=&quot;highlighter-rouge&quot;&gt;4&lt;/code&gt;个主要分区。所以对于一个采用此种分区结构的硬盘来说，想要得到&lt;code class=&quot;highlighter-rouge&quot;&gt;4&lt;/code&gt;个以上的主要分区是不可能的。这里就需要引出了扩展分区。扩展分区也是主分区（&lt;code class=&quot;highlighter-rouge&quot;&gt;Primary partition&lt;/code&gt;）的一种，但它与主分区的不同在于理论上可以划分为无数个逻辑分区，每一个逻辑分区都有一个和&lt;code class=&quot;highlighter-rouge&quot;&gt;MBR&lt;/code&gt;结构类似的扩展引导记录(&lt;code class=&quot;highlighter-rouge&quot;&gt;EBR&lt;/code&gt;) ）（&lt;code class=&quot;highlighter-rouge&quot;&gt; MBR&lt;/code&gt;分区方案无法支持超过&lt;code class=&quot;highlighter-rouge&quot;&gt;2TB&lt;/code&gt;容量的磁盘。因为这一方案用&lt;code class=&quot;highlighter-rouge&quot;&gt;4&lt;/code&gt;个字节存储分区的总扇区数，最大能表示&lt;code class=&quot;highlighter-rouge&quot;&gt;2&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;32&lt;/code&gt;次方的扇区个数，按每扇区&lt;code class=&quot;highlighter-rouge&quot;&gt;512&lt;/code&gt;字节计算，每个分区最大不能超过&lt;code class=&quot;highlighter-rouge&quot;&gt;2TB&lt;/code&gt;，如果磁盘容量超过&lt;code class=&quot;highlighter-rouge&quot;&gt;2TB&lt;/code&gt;，那分区的起始位置 就无法表示了）&lt;/li&gt;
-  &lt;li&gt;继续之前，我们先看一下&lt;code class=&quot;highlighter-rouge&quot;&gt;MBR&lt;/code&gt;的信息，这里以&lt;code class=&quot;highlighter-rouge&quot;&gt;CentOS6.4&lt;/code&gt;为例（后文不再声明），使用命令&lt;code class=&quot;highlighter-rouge&quot;&gt;dd if=/dev/sda of=mbr bs=512 count=1&lt;/code&gt;，将第一个扇区的&lt;code class=&quot;highlighter-rouge&quot;&gt;512&lt;/code&gt;字节内容转存到&lt;code class=&quot;highlighter-rouge&quot;&gt;mbr&lt;/code&gt;文件中，其中&lt;code class=&quot;highlighter-rouge&quot;&gt;bs&lt;/code&gt;表示大小；然后可以通过&lt;code class=&quot;highlighter-rouge&quot;&gt;file mbr&lt;/code&gt;来查看分区信息等，输出如下；其中&lt;code class=&quot;highlighter-rouge&quot;&gt;partition x&lt;/code&gt;表示第&lt;code class=&quot;highlighter-rouge&quot;&gt;x&lt;/code&gt;个分区的信息，上面说了，使用&lt;code class=&quot;highlighter-rouge&quot;&gt;MBR&lt;/code&gt;时最多只能有四个分区，而且这四个分区中最多只能有一个活动分区，也就是下面被标记为&lt;code class=&quot;highlighter-rouge&quot;&gt;active&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;partition 1&lt;/code&gt;&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt; x86 boot sector; partition 1: ID=0x83, active, starthead 32, startsector 2048, 19451904 sectors; partition 2: ID=0x5, starthead 254, startsector 19455998, 2093058 sectors, code offset 0x63
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;&lt;strong&gt;Grub–Stage1&lt;/strong&gt;：&lt;code class=&quot;highlighter-rouge&quot;&gt;MBR&lt;/code&gt;中的前&lt;code class=&quot;highlighter-rouge&quot;&gt;446&lt;/code&gt;字节存储着引导加载程序，即&lt;code class=&quot;highlighter-rouge&quot;&gt;Boot Loader&lt;/code&gt;，这里以&lt;code class=&quot;highlighter-rouge&quot;&gt;Grub&lt;/code&gt;为例；&lt;code class=&quot;highlighter-rouge&quot;&gt;Grub&lt;/code&gt;有两个阶段（实际上应该是三个阶段，后面会解释），实际上这&lt;code class=&quot;highlighter-rouge&quot;&gt;446&lt;/code&gt;字节中存储的只是&lt;code class=&quot;highlighter-rouge&quot;&gt;Grub&lt;/code&gt;的第一阶段，因为&lt;code class=&quot;highlighter-rouge&quot;&gt;446&lt;/code&gt;字节的空间实在有限，做不了太多事情；&lt;code class=&quot;highlighter-rouge&quot;&gt;Grub&lt;/code&gt;第一阶段的作用主要是加载第二阶段&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;&lt;strong&gt;注&lt;/strong&gt;：&lt;code class=&quot;highlighter-rouge&quot;&gt;GRUB&lt;/code&gt;实际上分为三个阶段：&lt;code class=&quot;highlighter-rouge&quot;&gt;stage1 -- stage1.5 -- stage2&lt;/code&gt;）&lt;code class=&quot;highlighter-rouge&quot;&gt;stage1&lt;/code&gt;是存储在&lt;code class=&quot;highlighter-rouge&quot;&gt;MBR&lt;/code&gt;前&lt;code class=&quot;highlighter-rouge&quot;&gt;446&lt;/code&gt;字节中的引导加载程序；&lt;code class=&quot;highlighter-rouge&quot;&gt;stage1.5&lt;/code&gt;位于&lt;code class=&quot;highlighter-rouge&quot;&gt;MBR GAP&lt;/code&gt;（&lt;code class=&quot;highlighter-rouge&quot;&gt;MBR GAP&lt;/code&gt;：扇区编号从0开始，但是真正的磁盘分区一般是从第63个扇区开始的，也就是说从1-63扇区是空闲的（第0个扇区存储&lt;code class=&quot;highlighter-rouge&quot;&gt;MBR&lt;/code&gt;），这段空间叫做&lt;code class=&quot;highlighter-rouge&quot;&gt;MBR GAP&lt;/code&gt;），因为&lt;code class=&quot;highlighter-rouge&quot;&gt;stage2&lt;/code&gt;的配置文件（&lt;code class=&quot;highlighter-rouge&quot;&gt;/boot/grub/grub.conf&lt;/code&gt;）存储于磁盘上，但是读取文件系统需要驱动，&lt;code class=&quot;highlighter-rouge&quot;&gt;MBR GA&lt;/code&gt;P中主要存储的就是读取文件系统的&lt;code class=&quot;highlighter-rouge&quot;&gt;driver&lt;/code&gt;，&lt;code class=&quot;highlighter-rouge&quot;&gt;stage1&lt;/code&gt;读取该部分内容之后，就可以去读取&lt;code class=&quot;highlighter-rouge&quot;&gt;grub&lt;/code&gt;配置文件，即&lt;code class=&quot;highlighter-rouge&quot;&gt;stage2&lt;/code&gt;的内容&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;&lt;strong&gt;Grub–Stage2&lt;/strong&gt;：&lt;code class=&quot;highlighter-rouge&quot;&gt;stage1&lt;/code&gt;加载&lt;code class=&quot;highlighter-rouge&quot;&gt;stage2&lt;/code&gt;的配置文件，主要是&lt;code class=&quot;highlighter-rouge&quot;&gt;/boot/grub/grub.conf&lt;/code&gt;，这里我们先看一下&lt;code class=&quot;highlighter-rouge&quot;&gt;grub.conf&lt;/code&gt;的内容，如下&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;default=0&lt;/code&gt;：这个必须和下面的&lt;code class=&quot;highlighter-rouge&quot;&gt;title&lt;/code&gt;对应，在配置文件中有几个&lt;code class=&quot;highlighter-rouge&quot;&gt;title&lt;/code&gt;，启动的时候就会有几个菜单可以选择；&lt;code class=&quot;highlighter-rouge&quot;&gt;default=0&lt;/code&gt;表示使用第一个&lt;code class=&quot;highlighter-rouge&quot;&gt;title&lt;/code&gt;选项来启动，&lt;code class=&quot;highlighter-rouge&quot;&gt;default&lt;/code&gt;表示在读秒时间结束前都没有按键，则使用默认选项启动&lt;/li&gt;
-    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;timeout=5&lt;/code&gt;：读秒时间，如果&lt;code class=&quot;highlighter-rouge&quot;&gt;5&lt;/code&gt;秒钟内没有按键，则使用默认选项启动；当然可以自行调整时间&lt;/li&gt;
-    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;splashimage=(hd0,0)/grub/splash.xpm.gz&lt;/code&gt;：&lt;code class=&quot;highlighter-rouge&quot;&gt;CentOS&lt;/code&gt;启动的时候，后台不是黑白而是彩色变化的，就是这个文件提供的后台图示&lt;/li&gt;
-    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;hidemenu&lt;/code&gt;：是否显示提示菜单，默认是&lt;code class=&quot;highlighter-rouge&quot;&gt;hide&lt;/code&gt;的，但是笔者这里将这个选项注释掉了，在选择开机启动项的时候还会显示提示菜单&lt;/li&gt;
-    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;title&lt;/code&gt;：这部分指定的是菜单选项，开机时有多少个&lt;code class=&quot;highlighter-rouge&quot;&gt;title&lt;/code&gt;就会有多少个菜单选项；每一个&lt;code class=&quot;highlighter-rouge&quot;&gt;title&lt;/code&gt;下的内容，一个是指定&lt;code class=&quot;highlighter-rouge&quot;&gt;kernel&lt;/code&gt;文件及设置，另一个是指定&lt;code class=&quot;highlighter-rouge&quot;&gt;initrd&lt;/code&gt;位置&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/Linux_Boot/grub_conf.png&quot; alt=&quot;grub.conf&quot; /&gt;&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;&lt;strong&gt;Kernel&lt;/strong&gt;加载：&lt;code class=&quot;highlighter-rouge&quot;&gt;Boot Loade&lt;/code&gt;根据用户的选项，去加载相应的磁盘映像到内存，内核是一个压缩文件，解压缩后，内核会再一次进行测试与驱动周边设备；之后，内核需要去加载各个模块，&lt;code class=&quot;highlighter-rouge&quot;&gt;Linux&lt;/code&gt;内核可以动态加载内核模块，这些内核模块放置在&lt;code class=&quot;highlighter-rouge&quot;&gt;/lib/modules/&lt;/code&gt;目录下，由于模块放置到磁盘根目录下，所以内核要去读取这些模块的话，需要挂载到根目录，这样才能读取内核模块加载驱动程序的功能，但是内核根本不认识&lt;code class=&quot;highlighter-rouge&quot;&gt;SATA&lt;/code&gt;磁盘，所以需要加载&lt;code class=&quot;highlighter-rouge&quot;&gt;SATA&lt;/code&gt;磁盘的驱动程序，否则根本无法挂载根目录，但是&lt;code class=&quot;highlighter-rouge&quot;&gt;SATA&lt;/code&gt;的驱动程序是在&lt;code class=&quot;highlighter-rouge&quot;&gt;/lib/modules/&lt;/code&gt;内，这就出现了两难的问题，所以为了去挂载根目录，就出现了&lt;code class=&quot;highlighter-rouge&quot;&gt;initrd&lt;/code&gt;这个东西&lt;/li&gt;
-  &lt;li&gt;&lt;strong&gt;initrd&lt;/strong&gt;：虚拟文件系统，一般位于&lt;code class=&quot;highlighter-rouge&quot;&gt;/boot/initrd&lt;/code&gt;，&lt;code class=&quot;highlighter-rouge&quot;&gt;Boot Loader&lt;/code&gt;在将内核加载到内存的同时，也会将&lt;code class=&quot;highlighter-rouge&quot;&gt;initrd&lt;/code&gt;加载到内存中，并仿真成为一个根目录；&lt;code class=&quot;highlighter-rouge&quot;&gt;initrd&lt;/code&gt;的作用就是去加载必要的驱动，以便内核可以访问真正的根文件系统（如：磁盘控制器驱动，文件系统驱动（&lt;code class=&quot;highlighter-rouge&quot;&gt;ext3&lt;/code&gt;，&lt;code class=&quot;highlighter-rouge&quot;&gt;ext4&lt;/code&gt;等）），然后去挂载真正的根文件系统，进行根切换操作，用真正的根文件系统进行启动；&lt;code class=&quot;highlighter-rouge&quot;&gt;initrd&lt;/code&gt;完成上述任务之后，会清除掉自己在内存中的痕迹，让出空间&lt;/li&gt;
-  &lt;li&gt;内核及其必要模块加载完毕之后，会主动执行第一个程序，即&lt;code class=&quot;highlighter-rouge&quot;&gt;/sbin/init&lt;/code&gt;，这也是第一个启动的进程；&lt;code class=&quot;highlighter-rouge&quot;&gt;/sbin/init&lt;/code&gt;的主要功能是根据其配置文件（&lt;code class=&quot;highlighter-rouge&quot;&gt;/etc/inittab&lt;/code&gt;）去准备软件的执行环境（系统服务等）；这里我们看一下其配置文件&lt;code class=&quot;highlighter-rouge&quot;&gt;/etc/inittab&lt;/code&gt;的内容；如下；前面的注释是对该配置文件的描述，在笔者的该系统中，&lt;code class=&quot;highlighter-rouge&quot;&gt;inittab&lt;/code&gt;中只有一项配置，即运行级别（&lt;code class=&quot;highlighter-rouge&quot;&gt;runlevel&lt;/code&gt;）的设置，所谓的&lt;code class=&quot;highlighter-rouge&quot;&gt;run level&lt;/code&gt;就是&lt;code class=&quot;highlighter-rouge&quot;&gt;Linux&lt;/code&gt;会根据&lt;code class=&quot;highlighter-rouge&quot;&gt;run level&lt;/code&gt;的设置来启动不同的服务，让&lt;code class=&quot;highlighter-rouge&quot;&gt;Linux&lt;/code&gt;的运行环境不同；至于&lt;code class=&quot;highlighter-rouge&quot;&gt;run level&lt;/code&gt;，分为七个等级：如下；&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;0 -- halt&lt;/code&gt;：系统直接关机&lt;/li&gt;
-    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;1 -- single user mode&lt;/code&gt;：单用户维护模式，用在系统出问题时的维护&lt;/li&gt;
-    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;2 -- Multi-user， without NFS&lt;/code&gt;：类似下面的&lt;code class=&quot;highlighter-rouge&quot;&gt;level 3&lt;/code&gt;，只是没有&lt;code class=&quot;highlighter-rouge&quot;&gt;NFS&lt;/code&gt;服务&lt;/li&gt;
-    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;3 -- Full multi-user mode&lt;/code&gt;：完整含有网络功能的纯文本模式&lt;/li&gt;
-    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;4 -- unused&lt;/code&gt;：系统保留功能&lt;/li&gt;
-    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;5 -- X11&lt;/code&gt;：与&lt;code class=&quot;highlighter-rouge&quot;&gt;level 3&lt;/code&gt;类似，但是加载使用&lt;code class=&quot;highlighter-rouge&quot;&gt;X Window&lt;/code&gt;&lt;/li&gt;
-    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;6 -- reboot&lt;/code&gt;：重新启动&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;这里笔者将运行级别设置为&lt;code class=&quot;highlighter-rouge&quot;&gt;3&lt;/code&gt;，所以是以纯文本形式启动，即纯命令行模式&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/Linux_Boot/inittab.png&quot; alt=&quot;grub.conf&quot; /&gt;&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;到这里系统就启动起来啦 ~ ，这也是系统启动的大致流程 ~&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;二-参考链接&quot;&gt;二. 参考链接&lt;/h2&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;鸟哥私房菜基础学习篇第三版&lt;/li&gt;
-  &lt;li&gt;https://www.slashroot.in/linux-booting-process-step-step-tutorial-understanding-linux-boot-sequence&lt;/li&gt;
-  &lt;li&gt;https://www.linuxnix.com/linux-booting-process-explained/&lt;/li&gt;
-&lt;/ol&gt;
-</description>
-        <pubDate>Tue, 11 Sep 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/09/11/Linux%E5%BC%80%E6%9C%BA%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/09/11/Linux%E5%BC%80%E6%9C%BA%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/</guid>
-        
-        <category>Linux</category>
-        
-        <category>操作系统</category>
         
         
       </item>
