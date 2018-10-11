@@ -199,3 +199,36 @@ setLayerType():
 参数为 LAYER_TYPE_NONE 时，关闭 View Layer。
 
 View Layer 可以加速无 invalidate() 时的刷新效率，但对于需要调用  invalidate() 的刷新无法加速
+
+
+## 五. 布局
+
+[参考博客](https://hencoder.com/ui-2-1/)
+
+onMeasure()测量完成之后通过setMeasuredDimension()来设置的测量尺寸只是该View的一个期望尺寸, 表示View觉得自己这么大比较合适, 之后它的父View就会根据这个期望尺寸再去判断(只是一个参考), 至于最终父View是允许子View就这么大, 还是要求再去测量一次, 还是说直接重新指派一个新的尺寸, 由父View决定, 最终会通过layout参数传递
+
+布局过程自定义方式: 
+> 1. 重写 onMeasure() 来修改已有的 View 的尺寸；
+> 2. 重写 onMeasure() 来全新定制自定义 View 的尺寸；
+> 3. 重写 onMeasure() 和 onLayout() 来全新定制自定义 ViewGroup 的内部布局
+
+父View对子View的尺寸限制:
+> 1. 这个限制怎么来的: 开发者对子View的要求
+> 2. 子View的onMeasure应该怎么做来让自己符合这个限制: 使用resolveSize()方法(resolveSize()方法内部其实就是通过三种mode的不同情况来返回是使用子View的测量值, 还是父View的限制值)
+
+全新定制自定义View: 
+> 1. 通过onMeasure()重新去计算(不用调用super.onMeasure()了)
+> 2. 将计算出来的结果通过resolveSize()过滤一遍, 使得其符合父View的限制, 之后再通过setMeasureDimension()来设置即可
+
+onMeasure()的重写:
+> 1. 调用每个子View的measure(), 让子View自我测量
+> 2. 根据子View给出的尺寸, 得出子View的位置, 并保存它们的尺寸和位置
+> 3. 根据子View的位置和尺寸计算出自己的尺寸, 并用setMeasureDimesion()保存
+
+关于保存子View位置的两点说明:
+> 1. 不是所有的Layout都需要保存子View的位置(因为有的Layout可以在布局阶段实时推出子View的位置, 比如LinearLayout)
+> 2. 有些时候对某些子View需要重复测量两次或多次才能得到正确的尺寸和位置
+
+![onMeasure模板](/img/post/View/onMeasure模板.png)
+
+![onLayout模板](/img/post/View/onLayout模板.png)
