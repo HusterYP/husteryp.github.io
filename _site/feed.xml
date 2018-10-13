@@ -5,9 +5,344 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Mon, 08 Oct 2018 18:57:57 +0800</pubDate>
-    <lastBuildDate>Mon, 08 Oct 2018 18:57:57 +0800</lastBuildDate>
+    <pubDate>Sat, 13 Oct 2018 14:58:40 +0800</pubDate>
+    <lastBuildDate>Sat, 13 Oct 2018 14:58:40 +0800</lastBuildDate>
     <generator>Jekyll v3.8.3</generator>
+    
+      <item>
+        <title>OpenGL笔记</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;阅读OpenGL中文文档笔记&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://learnopengl-cn.github.io/01%20Getting%20started/01%20OpenGL/&quot;&gt;中文文档&lt;/a&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;一-入门&quot;&gt;一. &lt;a href=&quot;https://learnopengl-cn.github.io/01%20Getting%20started/01%20OpenGL/&quot;&gt;入门&lt;/a&gt;&lt;/h2&gt;
+
+&lt;h3 id=&quot;11-opengl&quot;&gt;1.1 OpenGL&lt;/h3&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;什么是OpenGL: 并不是API, 而是一个规范; OpenGL规范严格规定了每个函数该如何执行，以及它们的输出值。至于内部具体每个函数是如何实现(Implement)的，将由OpenGL库的开发者自行决定; OpenGL基于显卡, 所以OpenGL API大多由显卡厂商提供&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;核心模式与立即渲染模式&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;立即渲染模式(固定渲染管线): 用于早期OpenGL; 封装性好, 使用方便, 但是效率低, 灵活性不够&lt;/li&gt;
+    &lt;li&gt;核心模式: 从OpenGL3.2开始, 规范文档开始废弃立即渲染模式; 当使用OpenGL的核心模式时，OpenGL迫使我们使用现代的函数。当我们试图使用一个已废弃的函数时，OpenGL会抛出一个错误并终止绘图&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;状态机: OpenGL状态通常被成为OpenGL上下文; OpenGL本质上是一个大状态机(理解状态函数和状态使用函数)&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&quot;12-hello-window&quot;&gt;1.2 Hello Window&lt;/h3&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;视口: ViewPort; OpenGL渲染窗口的尺寸大小&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;双缓冲: 应用程序使用单缓冲绘图时可能会存在图像闪烁的问题。 这是因为生成的图像不是一下子被绘制出来的，而是按照从左到右，由上而下逐像素地绘制而成的。最终图像不是在瞬间显示给用户，而是通过一步一步生成的，这会导致渲染的结果很不真实。为了规避这些问题，我们应用双缓冲渲染窗口应用程序。前缓冲保存着最终输出的图像，它会在屏幕上显示；而所有的的渲染指令都会在后缓冲上绘制。当所有的渲染指令执行完毕后，我们交换(Swap)前缓冲和后缓冲，这样图像就立即呈显出来，之前提到的不真实感就消除了&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&quot;13-hello-三角形&quot;&gt;1.3 Hello 三角形&lt;/h3&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;图形渲染管线: 又称为管线; 指的是一堆原始图形数据途经一个输送管道，期间经过各种变化处理最终出现在屏幕的过程;  在OpenGL中，任何事物都在3D空间中，而屏幕和窗口却是2D像素数组，这导致OpenGL的大部分工作都是关于把3D坐标转变为适应你屏幕的2D像素; 3D坐标转为2D坐标的处理过程是由OpenGL的图形渲染管线管理的; 图形渲染管线可以被划分为两个主要部分：第一部分把你的3D坐标转换为2D坐标，第二部分是把2D坐标转变为实际的有颜色的像素&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;着色器: 图形渲染管线可以被划分为几个阶段，每个阶段将会把前一个阶段的输出作为输入。所有这些阶段都是高度专门化的（它们都有一个特定的函数），并且很容易并行执行。正是由于它们具有并行执行的特性，当今大多数显卡都有成千上万的小处理核心，它们在GPU上为每一个（渲染管线）阶段运行各自的小程序，从而在图形渲染管线中快速处理你的数据。这些小程序叫做着色器; 而且因为它们运行在GPU上，所以它们可以给我们节约宝贵的CPU时间&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;如下为每个图形渲染管线的抽象展示; 其中蓝色部分是可以注入自定义着色器的部分&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/图形渲染管线.png&quot; alt=&quot;图形渲染管线&quot; /&gt;&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;图元(Primitive): 为了让OpenGL知道我们的坐标和颜色值构成的到底是什么，OpenGL需要你去指定这些数据所表示的渲染类型。我们是希望把这些数据渲染成一系列的点？一系列的三角形？还是仅仅是一个长长的线？做出的这些提示叫做图元(Primitive)，任何一个绘制指令的调用都将把图元传递给OpenGL。这是其中的几个：GL_POINTS、GL_TRIANGLES、GL_LINE_STRIP。&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;一个顶点(Vertex)是一个3D坐标的数据的集合。而顶点数据是用顶点属性(Vertex Attribute)表示的，它可以包含任何我们想用的数据&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;顶点着色器(Vertex Shader): 顶点着色器主要的目的是把3D坐标转为另一种3D坐标, 同时顶点着色器允许我们对顶点属性进行一些基本处理&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;图元装配(Primitive Assembly): 将顶点着色器输出的所有顶点作为输入（如果是GL_POINTS，那么就是一个顶点），并所有的点装配成指定图元的形状; 图元装配阶段的输出会传递给几何着色器(Geometry Shader)。几何着色器把图元形式的一系列顶点的集合作为输入，它可以通过产生新顶点构造出新的（或是其它的）图元来生成其他形状&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;光栅化阶段: 几何着色器的输出会被传入光栅化阶段(Rasterization Stage)，这里它会把图元映射为最终屏幕上相应的像素，生成供片段着色器(Fragment Shader)使用的片段(Fragment)。在片段着色器运行之前会执行裁切(Clipping)。裁切会丢弃超出你的视图以外的所有像素，用来提升执行效率&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;片段着色器: 片段着色器的主要目的是计算一个像素的最终颜色，这也是所有OpenGL高级效果产生的地方。通常，片段着色器包含3D场景的数据（比如光照、阴影、光的颜色等等），这些数据可以被用来计算最终像素的颜色&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;在所有对应颜色值确定以后，最终的对象将会被传到最后一个阶段，我们叫做Alpha测试和混合(Blending)阶段。这个阶段检测片段的对应的深度（和模板(Stencil)）值（后面会讲），用它们来判断这个像素是其它物体的前面还是后面，决定是否应该丢弃。这个阶段也会检查alpha值（alpha值定义了一个物体的透明度）并对物体进行混合(Blend)。所以，即使在片段着色器中计算出来了一个像素输出的颜色，在渲染多个三角形的时候最后的像素颜色也可能完全不同。&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;标准化设备坐标: 开始绘制图形之前，我们必须先给OpenGL输入一些顶点数据。OpenGL是一个3D图形库，所以我们在OpenGL中指定的所有坐标都是3D坐标（x、y和z）。OpenGL不是简单地把所有的3D坐标变换为屏幕上的2D像素；OpenGL仅当3D坐标在3个轴（x、y和z）上都为-1.0到1.0的范围内时才处理它。所有在所谓的标准化设备坐标(Normalized Device Coordinates)范围内的坐标才会最终呈现在屏幕上（在这个范围以外的坐标都不会显示）&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/标准化设备坐标.png&quot; alt=&quot;标准化设备坐标&quot; /&gt;&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;深度: 通常深度可以理解为z坐标，它代表一个像素在空间中和你的距离，如果离你远就可能被别的像素遮挡，你就看不到它了，它会被丢弃，以节省资源。&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;着色器程序: 着色器程序对象(Shader Program Object)是多个着色器合并之后并最终链接完成的版本。如果要使用刚才编译的着色器我们必须把它们链接(Link)为一个着色器程序对象，然后在渲染对象的时候激活这个着色器程序。已激活着色器程序的着色器将在我们发送渲染调用的时候被使用&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;glVertexAttribPointer&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/glVertexAttribPointer.png&quot; alt=&quot;glVertexAttribPointer&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;14-glsl&quot;&gt;1.4 GLSL&lt;/h3&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;着色器只是一种把输入转化为输出的程序。着色器也是一种非常独立的程序，因为它们之间不能相互通信&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;GLSL基本数据类型: int, float, double, uint, bool&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;容器类型: Vector, Matrix&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;如果我们打算从一个着色器向另一个着色器发送数据，我们必须在发送方着色器中声明一个输出，在接收方着色器中声明一个类似的输入。当类型和名字都一样的时候，OpenGL就会把两个变量链接到一起，它们之间就能发送数据了（这是在链接程序对象时完成的）&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Uniform: Uniform是一种从CPU中的应用向GPU中的着色器发送数据的方式, 但uniform和顶点属性有些不同。首先，uniform是全局的(Global)。全局意味着uniform变量必须在每个着色器程序对象中都是独一无二的，而且它可以被着色器程序的任意着色器在任意阶段访问。第二，无论你把uniform值设置成什么，uniform会一直保存它们的数据，直到它们被重置或更新。&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;如果你声明了一个uniform却在GLSL代码中没用过，编译器会静默移除这个变量，导致最后编译出的版本中并不会包含它，这可能导致几个非常麻烦的错误，记住这点！&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&quot;15-纹理&quot;&gt;1.5 纹理&lt;/h3&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;纹理: 纹理是一个2D图片（甚至也有1D和3D的纹理），它可以用来添加物体的细节&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;为了能够把纹理映射(Map)到三角形上，我们需要指定三角形的每个顶点各自对应纹理的哪个部分。这样每个顶点就会关联着一个纹理坐标(Texture Coordinate)，用来标明该从纹理图像的哪个部分采样（译注：采集片段颜色）。之后在图形的其它片段上进行片段插值(Fragment Interpolation)。&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;采样: 使用纹理坐标获取纹理颜色叫做采样&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;纹理坐标起始于(0, 0)，也就是纹理图片的左下角，终始于(1, 1)，即纹理图片的右上角; 如下图&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/纹理坐标.png&quot; alt=&quot;纹理坐标&quot; /&gt;&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;纹理环绕方式: 纹理坐标的范围通常是从(0, 0)到(1, 1)，那如果我们把纹理坐标设置在范围之外会发生什么？OpenGL默认的行为是重复这个纹理图像&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/纹理环绕方式.png&quot; alt=&quot;纹理环绕方式&quot; /&gt;&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;纹理过滤: 纹理坐标不依赖于分辨率(Resolution)，它可以是任意浮点值，所以OpenGL需要知道怎样将纹理像素(Texture Pixel，也叫Texel，译注1)映射到纹理坐标(Texture Pixel也叫Texel，你可以想象你打开一张.jpg格式图片，不断放大你会发现它是由无数像素点组成的，这个点就是纹理像素；注意不要和纹理坐标搞混，纹理坐标是你给模型顶点设置的那个数组，OpenGL以这个顶点的纹理坐标数据去查找纹理图像上的像素，然后进行采样提取纹理像素的颜色); 纹理过滤主要有两种: GL_NEAREST和GL_LINEAR; 当进行放大(Magnify)和缩小(Minify)操作的时候可以设置纹理过滤的选项(使用glTexParameteri())&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;邻近过滤(GL_NEAREST): 默认纹理过滤方式; 当设置为GL_NEAREST的时候，OpenGL会选择中心点最接近纹理坐标的那个像素&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;线性过滤(GL_LINEAR): 会基于纹理坐标附近的纹理像素，计算出一个插值，近似出这些纹理像素之间的颜色。一个纹理像素的中心距离纹理坐标越近，那么这个纹理像素的颜色对最终的样本颜色的贡献越大(GL_LINEAR可以产生更真实的输出)&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;多级渐远纹理: 简单来说就是一系列的纹理图像，后一个纹理图像是前一个的二分之一; 多级渐远纹理背后的理念很简单：距观察者的距离超过一定的阈值，OpenGL会使用不同的多级渐远纹理，即最适合物体的距离的那个。由于距离远，解析度不高也不会被用户注意到。同时，多级渐远纹理另一加分之处是它的性能非常好(glGenerateMipmaps())&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;纹理单元: 一个纹理的位置值通常称为一个纹理单元(Texture Unit)。一个纹理的默认纹理单元是0，它是默认的激活纹理单元; 纹理单元的主要目的是让我们在着色器中可以使用多于一个的纹理。通过把纹理单元赋值给采样器，我们可以一次绑定多个纹理，只要我们首先激活对应的纹理单元&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&quot;15-变换&quot;&gt;1.5 变换&lt;/h3&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;向量: 有大小和方向; 其实就是一个&lt;code class=&quot;highlighter-rouge&quot;&gt;N*1&lt;/code&gt;的矩阵&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;向量运算:&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;向量与标量运算&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/向量与标量运算.png&quot; alt=&quot;向量与标量运算&quot; /&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;向量取反: 个分量都取反&lt;/li&gt;
+    &lt;li&gt;向量之间加减: 各分量之间对应加减&lt;/li&gt;
+    &lt;li&gt;向量乘积&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;点乘: 点乘是通过将对应分量逐个相乘，然后再把所得积相加来计算的&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/点乘.png&quot; alt=&quot;点乘&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/点乘2.png&quot; alt=&quot;点乘2&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;叉乘:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/叉乘.png&quot; alt=&quot;叉乘&quot; /&gt;&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;矩阵运算&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;矩阵与标量运算&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/矩阵与标量运算.png&quot; alt=&quot;矩阵与标量运算&quot; /&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;矩阵之间加减: 对应项加减即可&lt;/li&gt;
+    &lt;li&gt;矩阵数乘: 将该数和矩阵每一项想乘&lt;/li&gt;
+    &lt;li&gt;矩阵相乘: 只有当左侧矩阵的列数与右侧矩阵的行数相等，两个矩阵才能相乘; 矩阵相乘不遵守交换律&lt;/li&gt;
+    &lt;li&gt;矩阵与向量相乘:&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;缩放:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/矩阵与向量运算之缩放.png&quot; alt=&quot;矩阵与向量运算&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;位移:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/矩阵与向量运算之位移.png&quot; alt=&quot;矩阵与向量运算&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;沿x轴旋转:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/矩阵与向量运算之沿x轴旋转.png&quot; alt=&quot;沿x轴旋转&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;沿y轴旋转:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/矩阵与向量运算之沿y轴旋转.png&quot; alt=&quot;沿y轴旋转&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;沿z轴旋转:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/矩阵与向量运算之沿z轴旋转.png&quot; alt=&quot;沿z轴旋转&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;16-坐标系统&quot;&gt;1.6 坐标系统&lt;/h3&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;将坐标变换为标准化设备坐标，接着再转化为屏幕坐标的过程通常是分步进行的，也就是类似于流水线那样子。在流水线中，物体的顶点在最终转化为屏幕坐标之前还会被变换到多个坐标系统(Coordinate System)。将物体的坐标变换到几个过渡坐标系(Intermediate Coordinate System)的优点在于，在这些特定的坐标系统中，一些操作或运算更加方便和容易&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;对我们来说比较重要的有五类坐标系统&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;局部空间(Local Space，或者称为物体空间(Object Space))&lt;/li&gt;
+    &lt;li&gt;世界空间(World Space)&lt;/li&gt;
+    &lt;li&gt;观察空间(View Space，或者称为视觉空间(Eye Space))&lt;/li&gt;
+    &lt;li&gt;裁剪空间(Clip Space)&lt;/li&gt;
+    &lt;li&gt;屏幕空间(Screen Space)&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;为了将坐标从一个坐标系变换到另一个坐标系，我们需要用到几个变换矩阵，最重要的几个分别是模型(Model)、观察(View)、投影(Projection)三个矩阵&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;顶点坐标起始于局部空间(Local Space)，在这里它称为局部坐标(Local Coordinate)，它在之后会变为世界坐标(World Coordinate)，观察坐标(View Coordinate)，裁剪坐标(Clip Coordinate)，并最后以屏幕坐标(Screen Coordinate)的形式结束; 如下图&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/坐标系统.png&quot; alt=&quot;坐标系统&quot; /&gt;&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;之所以将顶点变换到各个不同的空间的原因是有些操作在特定的坐标系统中才有意义且更方便。例如，当需要对物体进行修改的时候，在局部空间中来操作会更说得通；如果要对一个物体做出一个相对于其它物体位置的操作时，在世界坐标系中来做这个才更说得通，等等&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;局部空间: 物体所在的坐标空间，即对象最开始所在的地方&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;世界空间: 物体的坐标将会从局部变换到世界空间；该变换是由模型矩阵(Model Matrix)实现的&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;观察空间: 观察空间经常被人们称之OpenGL的摄像机(Camera); 观察空间是将世界空间坐标转化为用户视野前方的坐标而产生的结果; 因此观察空间就是从摄像机的视角所观察到的空间; 这通常用一个观察矩阵(View Matrix)完成，它被用来将世界坐标变换到观察空间&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;裁剪空间:  在一个顶点着色器运行的最后，OpenGL期望所有的坐标都能落在一个特定的范围内，且任何在这个范围之外的点都应该被裁剪掉(Clipped)。被裁剪掉的坐标就会被忽略，所以剩下的坐标就将变为屏幕上可见的片段。这也就是裁剪空间(Clip Space)名字的由来; 为了将顶点坐标从观察变换到裁剪空间，我们需要定义一个投影矩阵(Projection
+Matrix)，它指定了一个范围的坐标(如果只是图元(Primitive)，例如三角形，的一部分超出了裁剪体积(Clipping Volume)，则OpenGL会重新构建这个三角形为一个或多个三角形让其能够适合这个裁剪范围)(一旦所有顶点被变换到裁剪空间，最终的操作——透视除法(Perspective Division)将会执行，在这个过程中我们将位置向量的x，y，z分量分别除以向量的齐次w分量；透视除法是将4D裁剪空间坐标变换为3D标准化设备坐标的过程。这一步会在每一个顶点着色器运行的最后被自动执行)&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;透视投影: 离你越远的东西看起来更小; 使用透视投影矩阵来完成的; 一旦坐标在裁剪空间内之后，透视除法就会被应用到裁剪空间坐标上, 即将顶点坐标中的每个分量除以w分量&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;一个顶点坐标会根据以下过程被变换到裁剪坐标(注意矩阵运算的顺序是相反的（记住我们需要从右往左阅读矩阵的乘法)): 最后的顶点应该被赋值到顶点着色器中的gl_Position，OpenGL将会自动进行透视除法和裁剪&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/裁剪坐标.png&quot; alt=&quot;裁剪坐标&quot; /&gt;&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;OpenGL存储深度信息在一个叫做Z缓冲(Z-buffer)的缓冲中，它允许OpenGL决定何时覆盖一个像素而何时不覆盖&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Z缓冲(深度缓冲): 深度值存储在每个片段里面（作为片段的z值），当片段想要输出它的颜色时，OpenGL会将它的深度值和z缓冲进行比较，如果当前的片段在其它片段之后，它将会被丢弃，否则将会覆盖。这个过程称为深度测试(Depth Testing)，它是由OpenGL自动完成的&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&quot;17-摄像机&quot;&gt;1.7 摄像机&lt;/h3&gt;
+
+&lt;p&gt;https://learnopengl-cn.github.io/01%20Getting%20started/09%20Camera/&lt;/p&gt;
+</description>
+        <pubDate>Sat, 13 Oct 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/10/13/OpenGL%E7%AC%94%E8%AE%B0/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/10/13/OpenGL%E7%AC%94%E8%AE%B0/</guid>
+        
+        <category>OpenGL</category>
+        
+        <category>Android</category>
+        
+        
+      </item>
     
       <item>
         <title>排序算法</title>
@@ -2060,6 +2395,58 @@ PropertyValuesHolder 的进阶使用：使用 PropertyValuesHolder.ofKeyframe() 
 参数为 LAYER_TYPE_NONE 时，关闭 View Layer。&lt;/p&gt;
 
 &lt;p&gt;View Layer 可以加速无 invalidate() 时的刷新效率，但对于需要调用  invalidate() 的刷新无法加速&lt;/p&gt;
+
+&lt;h2 id=&quot;五-布局&quot;&gt;五. 布局&lt;/h2&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://hencoder.com/ui-2-1/&quot;&gt;参考博客&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;onMeasure()测量完成之后通过setMeasuredDimension()来设置的测量尺寸只是该View的一个期望尺寸, 表示View觉得自己这么大比较合适, 之后它的父View就会根据这个期望尺寸再去判断(只是一个参考), 至于最终父View是允许子View就这么大, 还是要求再去测量一次, 还是说直接重新指派一个新的尺寸, 由父View决定, 最终会通过layout参数传递&lt;/p&gt;
+
+&lt;p&gt;布局过程自定义方式:&lt;/p&gt;
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;重写 onMeasure() 来修改已有的 View 的尺寸；&lt;/li&gt;
+    &lt;li&gt;重写 onMeasure() 来全新定制自定义 View 的尺寸；&lt;/li&gt;
+    &lt;li&gt;重写 onMeasure() 和 onLayout() 来全新定制自定义 ViewGroup 的内部布局&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;父View对子View的尺寸限制:&lt;/p&gt;
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;这个限制怎么来的: 开发者对子View的要求&lt;/li&gt;
+    &lt;li&gt;子View的onMeasure应该怎么做来让自己符合这个限制: 使用resolveSize()方法(resolveSize()方法内部其实就是通过三种mode的不同情况来返回是使用子View的测量值, 还是父View的限制值)&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;全新定制自定义View:&lt;/p&gt;
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;通过onMeasure()重新去计算(不用调用super.onMeasure()了)&lt;/li&gt;
+    &lt;li&gt;将计算出来的结果通过resolveSize()过滤一遍, 使得其符合父View的限制, 之后再通过setMeasureDimension()来设置即可&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;onMeasure()的重写:&lt;/p&gt;
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;调用每个子View的measure(), 让子View自我测量&lt;/li&gt;
+    &lt;li&gt;根据子View给出的尺寸, 得出子View的位置, 并保存它们的尺寸和位置&lt;/li&gt;
+    &lt;li&gt;根据子View的位置和尺寸计算出自己的尺寸, 并用setMeasureDimesion()保存&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;关于保存子View位置的两点说明:&lt;/p&gt;
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;不是所有的Layout都需要保存子View的位置(因为有的Layout可以在布局阶段实时推出子View的位置, 比如LinearLayout)&lt;/li&gt;
+    &lt;li&gt;有些时候对某些子View需要重复测量两次或多次才能得到正确的尺寸和位置&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/View/onMeasure模板.png&quot; alt=&quot;onMeasure模板&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/View/onLayout模板.png&quot; alt=&quot;onLayout模板&quot; /&gt;&lt;/p&gt;
 </description>
         <pubDate>Thu, 27 Sep 2018 00:00:00 +0800</pubDate>
         <link>http://localhost:4000/2018/09/27/%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B9%8B%E5%B8%B8%E7%94%A8%E5%B7%A5%E5%85%B7Draft/</link>
@@ -3266,357 +3653,6 @@ public void draw(Canvas canvas) {
         <category>Android</category>
         
         <category>View</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>Handler</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Android消息机制分析&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Handler源码分析&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;一-概述&quot;&gt;一. 概述&lt;/h2&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;算是我们平时开发中比较常用的一个, &lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;所代表的是&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;中重要的一部分, 即消息机制; 本文将分析&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;的运行机制&lt;/p&gt;
-
-&lt;h3 id=&quot;11-使用场景&quot;&gt;1.1 使用场景&lt;/h3&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;线程切换: 这个是使用&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;最常见和最频繁的场景了; 我们都知道, &lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;线程中不允许执行耗时操作, 那么当我们需要先去获取数据(耗时)再进行&lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;展示或者交互的时候, 线程切换就必不可少了&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;任务延时: 即在未来某个时刻再执行任务, 这个主要是通过&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler.postDelayed()&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler.sendMessageDelayed()&lt;/code&gt;完成的(实际上&lt;code class=&quot;highlighter-rouge&quot;&gt;postDelayed()&lt;/code&gt;也是通过&lt;code class=&quot;highlighter-rouge&quot;&gt;sendMessageDelayed()&lt;/code&gt;完成的)&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h3 id=&quot;12-为什么会有handler&quot;&gt;1.2 为什么会有Handler&lt;/h3&gt;
-
-&lt;p&gt;我们都知道&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;的作用主要是用于切换线程, 那么为什么会出现&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;喃; 我们以&lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;线程中执行耗时操作为例, 对于耗时操作, 特别是在需要实时交互的应用中, 肯定是需要设计为多线程的, 那么&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;设计之初为什么不使用多线程去访问&lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;呢, 最致命的一点就是, 多线程存在并发访问的不确定性, 这就会造成&lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;表现的不可预期性, 造成用户体验极差; 当然, 对于多线程并发的问题还是有很多方式去避免和解决的, 最常见的一个就是加锁, 那么为什么不采用多线程访问,
-对&lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;加锁的方式实现呢, 一个是加锁会使&lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;逻辑变得复杂, 另一个是加锁会降低效率, 阻塞某些线程的执行&lt;/p&gt;
-
-&lt;p&gt;所以, 基于很多方面的考虑, 特别是对于&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;应用这样交互性很强的场景而言, 使得需要去实现自己的一套异步通信机制, 需要达到的目标是, 线程之间的独立性保持和数据交互的便利性, 这也是&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;实现的&lt;/p&gt;
-
-&lt;h3 id=&quot;13-概述&quot;&gt;1.3 概述&lt;/h3&gt;
-
-&lt;p&gt;在&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;消息机制中, 有非常重要的几个部分, 也是我们分析的切入点:&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;MessageQueue&lt;/strong&gt;: 单链表, 实现消息存储; 是&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;层和&lt;code class=&quot;highlighter-rouge&quot;&gt;Native&lt;/code&gt;层的连接纽带&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;Looper&lt;/strong&gt;: 无限循环查询是否有新消息&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;Handler&lt;/strong&gt;: 消息接受和分发处理的中转站&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;以下是我们使用&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;最常见的一种写法, 我们通常会重写&lt;code class=&quot;highlighter-rouge&quot;&gt;handleMessage()&lt;/code&gt;来实现自己的逻辑; 当在其他线程中通过&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler.sendMessage()&lt;/code&gt;来发送消息时, 我们就会在&lt;code class=&quot;highlighter-rouge&quot;&gt;handleMessage()&lt;/code&gt;中接收到该消息&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    private final Handler mHandler = new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-            // do somthing with msg
-            super.handleMessage(msg);
-        }
-    };
-
-    new Thread() {
-        @Override
-        public void run() {
-           mHandler.sendEmptyMessage(0);
-        }
-    }.start();
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;进行线程切换和消息传递的一个大致流程是, 当我们通过&lt;code class=&quot;highlighter-rouge&quot;&gt;sendMessage()&lt;/code&gt;发送消息的时候, &lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;负责存储该消息, &lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;会无限循环的去检查&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;中是否有消息, 如果有则调用&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;dispatchMessage()&lt;/code&gt;进行消息分发, 最终会回到&lt;code class=&quot;highlighter-rouge&quot;&gt;handleMessage&lt;/code&gt;中进行处理&lt;/p&gt;
-
-&lt;p&gt;在开始讲解之前, 需要先明确几个结论(在稍后会验证): 每个线程都可以有自己的&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;, 但是默认没有创建(除了&lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;线程外); &lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;是创建&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;所必须的(否则会抛异常); &lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;是一一对应的关系, 也就是说每个线程会有自己的&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;; &lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;在哪个线程中创建就在哪个线程中处理消息, 其他线程发送的消息存储在对应&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;所对应的&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;中&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;二-构造函数&quot;&gt;二. 构造函数&lt;/h2&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;提供了七个构造函数, 如下表&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;Handler()&lt;/td&gt;
-      &lt;td&gt;Handler(Callback callback)&lt;/td&gt;
-      &lt;td&gt;Handler(Looper looper)&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;Handler(Looper looper, Callback callback)&lt;/td&gt;
-      &lt;td&gt;Handler(boolean async)&lt;/td&gt;
-      &lt;td&gt;Handler(Callback callback, boolean async)&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;Handler(Looper looper, Callback callback, boolean async)&lt;/td&gt;
-      &lt;td&gt; &lt;/td&gt;
-      &lt;td&gt; &lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;这七个构造函数最常用的是默认构造函数(即不带参数那个), 其他几个, 一类是带&lt;code class=&quot;highlighter-rouge&quot;&gt;Callback&lt;/code&gt;的, 是提供的消息处理函数, 我们使用&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;一般都会重写其&lt;code class=&quot;highlighter-rouge&quot;&gt;handleMessage()&lt;/code&gt;方法来处理消息, 但是也可以不重写&lt;code class=&quot;highlighter-rouge&quot;&gt;handleMessage()&lt;/code&gt;, 而是在构造&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;的时候传入一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Callback&lt;/code&gt;回调, &lt;code class=&quot;highlighter-rouge&quot;&gt;Callback&lt;/code&gt;是&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;中的一个接口, 如下; 另一类是带标志位&lt;code class=&quot;highlighter-rouge&quot;&gt;async&lt;/code&gt;的, 是设置消息是否为异步处理, &lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;中的消息默认是同步处理的&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    public interface Callback {
-        public boolean handleMessage(Message msg);
-    }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;这里我们以构造函数&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler(Callback callback, boolean async)&lt;/code&gt;进行分析, 如下; 可以看出, 这里的&lt;code class=&quot;highlighter-rouge&quot;&gt;mLooper&lt;/code&gt;是通过&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper.myLooper()&lt;/code&gt;获取的, 如果我们获取为&lt;code class=&quot;highlighter-rouge&quot;&gt;null&lt;/code&gt;也就是说当前线程没有&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;的话, 会抛出异常, 这个异常也是我们大多数初学者会遇到的; 这里也验证了上面所说的, &lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;是&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;构造所必须的, 如果当前线程没有&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;的话, 会抛异常(至于为什么说是当前线程, 接下来马上分析~)&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    public Handler(Callback callback, boolean async) {
-        ...
-        mLooper = Looper.myLooper();
-        if (mLooper == null) {
-            throw new RuntimeException(
-                &quot;Can't create handler inside thread &quot; + Thread.currentThread()
-                        + &quot; that has not called Looper.prepare()&quot;);
-        }
-        mQueue = mLooper.mQueue;
-        mCallback = callback;
-        mAsynchronous = async;
-    }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;那么&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper.myLooper()&lt;/code&gt;又是如何获取当前线程的&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;的呢; 如下, 可以看出是通过&lt;code class=&quot;highlighter-rouge&quot;&gt;sThreadLocal&lt;/code&gt;获取的, &lt;code class=&quot;highlighter-rouge&quot;&gt;sThreadLocal&lt;/code&gt;是一个&lt;code class=&quot;highlighter-rouge&quot;&gt;ThreadLocal&lt;/code&gt;类型的实例&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    public static @Nullable Looper myLooper() {
-        return sThreadLocal.get();
-    }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ThreadLocal&lt;/code&gt;不是一个线程, 而是用于在每个线程中存储数据的, &lt;code class=&quot;highlighter-rouge&quot;&gt;ThreadLocal&lt;/code&gt;可以在不同的线程中互不干扰的存储并提供数据; 那么它是如何实现在不同线程中互不干扰的存取数据的呢, 我们先来看其&lt;code class=&quot;highlighter-rouge&quot;&gt;set()&lt;/code&gt;方法, 可以看出, 其实际上会先去检查当前线程是否持有&lt;code class=&quot;highlighter-rouge&quot;&gt;ThreadLocalMap&lt;/code&gt;, 如果有的话, 直接将&lt;code class=&quot;highlighter-rouge&quot;&gt;value&lt;/code&gt;存储进去即可, 否则, 初始化当前线程的&lt;code class=&quot;highlighter-rouge&quot;&gt;ThreadLocalMap&lt;/code&gt;然后再存放值, 这样就可以根据不同的线程来存取各自线程的值了&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    public void set(T value) {
-        Thread t = Thread.currentThread();
-        ThreadLocalMap map = getMap(t);
-        if (map != null)
-            map.set(this, value);
-        else
-            createMap(t, value);
-    }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;那么我们要构造&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;就必须获取当前线程的&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;, 那么我们又是什么时候构造和存储的&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;喃; 前面我们说了, 每个线程都可以有自己的&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;, 但是除了&lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;线程以外都默认没有创建; 我们先来看&lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;线程中是什么时候创建的&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;线程就是&lt;code class=&quot;highlighter-rouge&quot;&gt;ActivityThread&lt;/code&gt;, 在其&lt;code class=&quot;highlighter-rouge&quot;&gt;main()&lt;/code&gt;函数中, 我们发现了如下与&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;相关的语句, 这实际上是开启了主线程的消息处理(因为要处理各种事件, 所以一开始就开启了)&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public static void main(String[] args) {
-    ...
-    Looper.prepareMainLooper();
-    ...
-    Looper.loop();
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;我们继续看&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper.prepareMainLooper()&lt;/code&gt;, 其中实际上是调用了&lt;code class=&quot;highlighter-rouge&quot;&gt;prepare()&lt;/code&gt;, 如下; 这里我们看到了熟悉的&lt;code class=&quot;highlighter-rouge&quot;&gt;ThreadLocal.set()&lt;/code&gt;, 而且存储的是一个新的&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;, 那么这里就将线程和各自的&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;联系起来了, 我们在&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;构造函数中获取的也就是和各个线程相关的&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;了&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    private static void prepare(boolean quitAllowed) {
-        if (sThreadLocal.get() != null) {
-            throw new RuntimeException(&quot;Only one Looper may be created per thread&quot;);
-        }
-        sThreadLocal.set(new Looper(quitAllowed));
-    }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;到这里我们知道了, &lt;code class=&quot;highlighter-rouge&quot;&gt;perpare&lt;/code&gt;实际上是在准备&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;, 那么&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper.loop()&lt;/code&gt;又是在做啥呢, 其实&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper.loop()&lt;/code&gt;是开启消息处理循环, 前面我们说了&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;不断的去检测&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;中是否有消息, 实际上就是在&lt;code class=&quot;highlighter-rouge&quot;&gt;loop()&lt;/code&gt;中开启的&lt;/p&gt;
-
-&lt;p&gt;这里我们暂时不讲&lt;code class=&quot;highlighter-rouge&quot;&gt;loop()&lt;/code&gt;, 而是放到后面讲消息处理的时候讲; 我们平时使用&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;的时候, 大多是在&lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;
-线程中创建的, 因为上面我们已经看到了, &lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;线程中默认是创建了&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;的, 所以不需要我们再去手动创建, 但是我们如何在子线程中构造和使用&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;呢; 其实在&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;的文档中已经给出了示例, 如下; 其实, 和上面&lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;线程中&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;的处理过程差不多, 只是由于&lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;线程的特殊性, 所以单独给它准备了一个方法~(实际上是做一些其他特殊判断和处理)&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class LooperThread extends Thread {
-      public Handler mHandler;
-
-      public void run() {
-          Looper.prepare();
- 
-          mHandler = new Handler() {
-              public void handleMessage(Message msg) {
-                  // process incoming messages here
-              }
-          };
-
-          Looper.loop();
-      }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;hr /&gt;
-
-&lt;h3 id=&quot;三-消息发送&quot;&gt;三. 消息发送&lt;/h3&gt;
-
-&lt;p&gt;当我们需要通过&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;发送消息时, 可以使用两个系列, 一个是&lt;code class=&quot;highlighter-rouge&quot;&gt;postXXX&lt;/code&gt;系列, 一个&lt;code class=&quot;highlighter-rouge&quot;&gt;sendXXX&lt;/code&gt;系列&lt;/p&gt;
-
-&lt;p&gt;&lt;strong&gt;postXXX&lt;/strong&gt;: &lt;code class=&quot;highlighter-rouge&quot;&gt;post&lt;/code&gt;系列主要是发送一个自定义的&lt;code class=&quot;highlighter-rouge&quot;&gt;Runnable&lt;/code&gt;事件, 然后去执行(延迟执行)自定义事件&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;post(Runnable r)&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;postAtTime(Runnable r, long uptimeMillis)&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;postAtTime(Runnable r, Object token, long uptimeMillis)&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;postDelayed(Runnable r, long delayMillis)&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;postDelayed(Runnable r, Object token, long delayMillis)&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;postAtFrontOfQueue(Runnable r)&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;&lt;strong&gt;sendXXX&lt;/strong&gt;: &lt;code class=&quot;highlighter-rouge&quot;&gt;send&lt;/code&gt;系列主要是发送封装的一个&lt;code class=&quot;highlighter-rouge&quot;&gt;msg&lt;/code&gt;, 然后根据&lt;code class=&quot;highlighter-rouge&quot;&gt;msg&lt;/code&gt;带的&lt;code class=&quot;highlighter-rouge&quot;&gt;tag&lt;/code&gt;或者数据在&lt;code class=&quot;highlighter-rouge&quot;&gt;handleMessage()&lt;/code&gt;中进行处理&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;sendMessage(Message msg)&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;sendEmptyMessage(int what)&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;sendEmptyMessageDelayed(int what, long delayMillis)&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;sendEmptyMessageAtTime(int what, long uptimeMillis)&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;sendMessageDelayed(Message msg, long delayMillis)&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;sendMessageAtTime(Message msg, long uptimeMillis)&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;sendMessageAtFrontOfQueue(Message msg)&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;但是, 实际上&lt;code class=&quot;highlighter-rouge&quot;&gt;post&lt;/code&gt;系列最终还是将&lt;code class=&quot;highlighter-rouge&quot;&gt;Runnable&lt;/code&gt;事件封装为了一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Message&lt;/code&gt;对象交给了&lt;code class=&quot;highlighter-rouge&quot;&gt;send&lt;/code&gt;系列处理, 而不管是&lt;code class=&quot;highlighter-rouge&quot;&gt;postXXX&lt;/code&gt;还是&lt;code class=&quot;highlighter-rouge&quot;&gt;sendXXX&lt;/code&gt;, 最终转到的都是&lt;code class=&quot;highlighter-rouge&quot;&gt;enqueueMessage()&lt;/code&gt;进行处理; 另外, 不管是&lt;code class=&quot;highlighter-rouge&quot;&gt;post&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;Runnable&lt;/code&gt;还是&lt;code class=&quot;highlighter-rouge&quot;&gt;send&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;int what&lt;/code&gt;等其他类型, 其实最终都会将每一条消息封装为一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Message&lt;/code&gt;对象进行传递&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;四-消息存储&quot;&gt;四. 消息存储&lt;/h2&gt;
-
-&lt;p&gt;前面我们说过, &lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;会对发送的消息进行存储, 这一步就是在&lt;code class=&quot;highlighter-rouge&quot;&gt;enqueueMessage()&lt;/code&gt;中处理的; 如下; 需要注意的是这里传入的&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;是在创建&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;时创建, 也就是说和&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;相关, 因为涉及到多线程的处理, 所以需要清楚&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;的来源, 不然消息处理的时候就混了~&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    private boolean enqueueMessage(MessageQueue queue, Message msg, long uptimeMillis) {
-        msg.target = this;
-        if (mAsynchronous) {
-            msg.setAsynchronous(true);
-        }
-        return queue.enqueueMessage(msg, uptimeMillis);
-    }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;这里我们简单看一下&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;中&lt;code class=&quot;highlighter-rouge&quot;&gt;Message&lt;/code&gt;的组织方式, 如下, &lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue.enqueueMessage()&lt;/code&gt;, 可以看出是很明显的单链表的存储方式, 之所以用单链表, 是因为单链表在增加和删除节点上有优势&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;boolean enqueueMessage(Message msg, long when) {
-    ...
-    needWake = mBlocked &amp;amp;&amp;amp; p.target == null &amp;amp;&amp;amp; msg.isAsynchronous();
-    Message prev;
-    for (;;) {
-        prev = p;
-        p = p.next;
-        if (p == null || when &amp;lt; p.when) {
-            break;
-        }
-        if (needWake &amp;amp;&amp;amp; p.isAsynchronous()) {
-            needWake = false;
-        }
-    }
-    msg.next = p; // invariant: p == prev.next
-    prev.next = msg;
-    ...
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;五-消息处理&quot;&gt;五. 消息处理&lt;/h2&gt;
-
-&lt;p&gt;还记得前面我们还有一个问题没有解决吗, 就是&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper.loop()&lt;/code&gt;过程, &lt;code class=&quot;highlighter-rouge&quot;&gt;Looper.loop()&lt;/code&gt;过程实际上就是开启循环处理消息的过程~&lt;/p&gt;
-
-&lt;p&gt;该函数如下; 首先获取消息处理线程的&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;, 前面我们已经看到了, &lt;code class=&quot;highlighter-rouge&quot;&gt;Looper.loop()&lt;/code&gt;是在消息处理线程中调用的, 所以这里获取到的, 也就是消息处理线程, 即创建&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;的线程; 之后获取对应线程的消息队列, 即&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;, 需要注意这里的&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;关联的, 而&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;的获取是通过&lt;code class=&quot;highlighter-rouge&quot;&gt;Thread.currentThread()&lt;/code&gt;来判断和获取的, 那么这里就能获取到和对应&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;相关联的&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;, 当我们在不同线程中调用&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler.sendMsg&lt;/code&gt;的时候, 插入的也是和该&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;关联的&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;, 这样, 一整条完整的线就串成了:  不同的线程往需要发送消息的线程的&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;中插入&lt;code class=&quot;highlighter-rouge&quot;&gt;Message&lt;/code&gt;, 而和线程关联的&lt;code class=&quot;highlighter-rouge&quot;&gt;Looper&lt;/code&gt;又从该&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;中不断获取&lt;code class=&quot;highlighter-rouge&quot;&gt;Message&lt;/code&gt;处理, 这样就完成了线程的切换 !!&lt;/p&gt;
-
-&lt;p&gt;接下来就是用一个死循环(&lt;code class=&quot;highlighter-rouge&quot;&gt;for&lt;/code&gt;)开始消息处理了; 逻辑也比较简单, 其实就是不断的从&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;中获取消息(&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue.next()&lt;/code&gt;), 然后回调&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler.dispatchMessage(msg)&lt;/code&gt;分发, 需要注意的是, 这里的&lt;code class=&quot;highlighter-rouge&quot;&gt;msg.target&lt;/code&gt;实际上是存储的对应&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;的引用&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public static void loop() {
-    final Looper me = myLooper();
-    ...
-    final MessageQueue queue = me.mQueue;
-    ...
-
-     for (;;) {
-        Message msg = queue.next(); // might block
-        // 如果消息为null, 不处理咯
-        if (msg == null) {
-            // No message indicates that the message queue is quitting.
-            return;
-        }
-        ...
-        msg.target.dispatchMessage(msg);
-     }
-
-}
-
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;我们看一下&lt;code class=&quot;highlighter-rouge&quot;&gt;dispatchMessage&lt;/code&gt;的处理逻辑, 如下; 逻辑也很简单, 就是消息处理的优先级: 如果&lt;code class=&quot;highlighter-rouge&quot;&gt;Message&lt;/code&gt;自身设置了&lt;code class=&quot;highlighter-rouge&quot;&gt;Callback&lt;/code&gt;, 就直接执行&lt;code class=&quot;highlighter-rouge&quot;&gt;Message&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;Callback&lt;/code&gt;(这种情况对应前面说的&lt;code class=&quot;highlighter-rouge&quot;&gt;post(Runnable)&lt;/code&gt;的情况); 如果构造&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;的时候设置了&lt;code class=&quot;highlighter-rouge&quot;&gt;Callback&lt;/code&gt;那么交给该&lt;code class=&quot;highlighter-rouge&quot;&gt;Callback&lt;/code&gt;处理, 否则回调&lt;code class=&quot;highlighter-rouge&quot;&gt;handleMessage()&lt;/code&gt;处理&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    public void dispatchMessage(Message msg) {
-        if (msg.callback != null) {
-            handleCallback(msg);
-        } else {
-            if (mCallback != null) {
-                if (mCallback.handleMessage(msg)) {
-                    return;
-                }
-            }
-            handleMessage(msg);
-        }
-    }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;这里还要注意的一点是从&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;中获取消息时, 即&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue.next()&lt;/code&gt;, 这是一个阻塞方法, 也就是说当&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;中没有消息的时候, 会阻塞在这里, 直到&lt;code class=&quot;highlighter-rouge&quot;&gt;MessageQueue&lt;/code&gt;中再次存储消息&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;六-总结&quot;&gt;六. 总结&lt;/h2&gt;
-
-&lt;p&gt;到这里&lt;code class=&quot;highlighter-rouge&quot;&gt;Handler&lt;/code&gt;的整个&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;层面的运行机制我们就讲解完啦~ , 到这里我们对整个&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;的消息传递和处理机制也有了比较详细的了解了; 为加深记忆, 可以对着源码自己再过一遍过程~&lt;/p&gt;
-
-</description>
-        <pubDate>Sat, 15 Sep 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/09/15/Handler/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/09/15/Handler/</guid>
-        
-        <category>Android</category>
         
         
       </item>

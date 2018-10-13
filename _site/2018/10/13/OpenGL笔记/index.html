@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Hello-World">
+    <meta name="keyword"  content="">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>OpenGL笔记 - 袁平 | HusterYP-Blog</title>
+
+    <link rel="canonical" href="http://localhost:4000/2018/10/13/OpenGL%E7%AC%94%E8%AE%B0/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    <!-- Pygments Github CSS -->
+    <link rel="stylesheet" href="/css/syntax.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="http://cdn.staticfile.org/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">袁平</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/about/">About</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/tags/">Tags</a>
+                    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Image to hack wechat -->
+<!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="/img/tag-bg.jpg" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/img/tag-bg.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/#OpenGL" title="OpenGL">OpenGL</a>
+                        
+                        <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                    </div>
+                    <h1>OpenGL笔记</h1>
+                    
+                    
+                    <h2 class="subheading">文档阅读笔记</h2>
+                    
+                    <span class="meta">Posted by 袁平 on October 13, 2018</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+				<h1 id="前言">前言</h1>
+
+<p>阅读OpenGL中文文档笔记</p>
+
+<p><a href="https://learnopengl-cn.github.io/01%20Getting%20started/01%20OpenGL/">中文文档</a></p>
+
+<hr />
+
+<h1 id="正文">正文</h1>
+
+<hr />
+
+<h2 id="一-入门">一. <a href="https://learnopengl-cn.github.io/01%20Getting%20started/01%20OpenGL/">入门</a></h2>
+
+<h3 id="11-opengl">1.1 OpenGL</h3>
+
+<ol>
+  <li>
+    <p>什么是OpenGL: 并不是API, 而是一个规范; OpenGL规范严格规定了每个函数该如何执行，以及它们的输出值。至于内部具体每个函数是如何实现(Implement)的，将由OpenGL库的开发者自行决定; OpenGL基于显卡, 所以OpenGL API大多由显卡厂商提供</p>
+  </li>
+  <li>
+    <p>核心模式与立即渲染模式</p>
+  </li>
+</ol>
+
+<blockquote>
+  <ol>
+    <li>立即渲染模式(固定渲染管线): 用于早期OpenGL; 封装性好, 使用方便, 但是效率低, 灵活性不够</li>
+    <li>核心模式: 从OpenGL3.2开始, 规范文档开始废弃立即渲染模式; 当使用OpenGL的核心模式时，OpenGL迫使我们使用现代的函数。当我们试图使用一个已废弃的函数时，OpenGL会抛出一个错误并终止绘图</li>
+  </ol>
+</blockquote>
+
+<ol>
+  <li>状态机: OpenGL状态通常被成为OpenGL上下文; OpenGL本质上是一个大状态机(理解状态函数和状态使用函数)</li>
+</ol>
+
+<h3 id="12-hello-window">1.2 Hello Window</h3>
+
+<ol>
+  <li>
+    <p>视口: ViewPort; OpenGL渲染窗口的尺寸大小</p>
+  </li>
+  <li>
+    <p>双缓冲: 应用程序使用单缓冲绘图时可能会存在图像闪烁的问题。 这是因为生成的图像不是一下子被绘制出来的，而是按照从左到右，由上而下逐像素地绘制而成的。最终图像不是在瞬间显示给用户，而是通过一步一步生成的，这会导致渲染的结果很不真实。为了规避这些问题，我们应用双缓冲渲染窗口应用程序。前缓冲保存着最终输出的图像，它会在屏幕上显示；而所有的的渲染指令都会在后缓冲上绘制。当所有的渲染指令执行完毕后，我们交换(Swap)前缓冲和后缓冲，这样图像就立即呈显出来，之前提到的不真实感就消除了</p>
+  </li>
+</ol>
+
+<h3 id="13-hello-三角形">1.3 Hello 三角形</h3>
+
+<ol>
+  <li>
+    <p>图形渲染管线: 又称为管线; 指的是一堆原始图形数据途经一个输送管道，期间经过各种变化处理最终出现在屏幕的过程;  在OpenGL中，任何事物都在3D空间中，而屏幕和窗口却是2D像素数组，这导致OpenGL的大部分工作都是关于把3D坐标转变为适应你屏幕的2D像素; 3D坐标转为2D坐标的处理过程是由OpenGL的图形渲染管线管理的; 图形渲染管线可以被划分为两个主要部分：第一部分把你的3D坐标转换为2D坐标，第二部分是把2D坐标转变为实际的有颜色的像素</p>
+  </li>
+  <li>
+    <p>着色器: 图形渲染管线可以被划分为几个阶段，每个阶段将会把前一个阶段的输出作为输入。所有这些阶段都是高度专门化的（它们都有一个特定的函数），并且很容易并行执行。正是由于它们具有并行执行的特性，当今大多数显卡都有成千上万的小处理核心，它们在GPU上为每一个（渲染管线）阶段运行各自的小程序，从而在图形渲染管线中快速处理你的数据。这些小程序叫做着色器; 而且因为它们运行在GPU上，所以它们可以给我们节约宝贵的CPU时间</p>
+  </li>
+  <li>
+    <p>如下为每个图形渲染管线的抽象展示; 其中蓝色部分是可以注入自定义着色器的部分</p>
+  </li>
+</ol>
+
+<p><img src="/img/post/OpenGL/图形渲染管线.png" alt="图形渲染管线" /></p>
+
+<ol>
+  <li>
+    <p>图元(Primitive): 为了让OpenGL知道我们的坐标和颜色值构成的到底是什么，OpenGL需要你去指定这些数据所表示的渲染类型。我们是希望把这些数据渲染成一系列的点？一系列的三角形？还是仅仅是一个长长的线？做出的这些提示叫做图元(Primitive)，任何一个绘制指令的调用都将把图元传递给OpenGL。这是其中的几个：GL_POINTS、GL_TRIANGLES、GL_LINE_STRIP。</p>
+  </li>
+  <li>
+    <p>一个顶点(Vertex)是一个3D坐标的数据的集合。而顶点数据是用顶点属性(Vertex Attribute)表示的，它可以包含任何我们想用的数据</p>
+  </li>
+  <li>
+    <p>顶点着色器(Vertex Shader): 顶点着色器主要的目的是把3D坐标转为另一种3D坐标, 同时顶点着色器允许我们对顶点属性进行一些基本处理</p>
+  </li>
+  <li>
+    <p>图元装配(Primitive Assembly): 将顶点着色器输出的所有顶点作为输入（如果是GL_POINTS，那么就是一个顶点），并所有的点装配成指定图元的形状; 图元装配阶段的输出会传递给几何着色器(Geometry Shader)。几何着色器把图元形式的一系列顶点的集合作为输入，它可以通过产生新顶点构造出新的（或是其它的）图元来生成其他形状</p>
+  </li>
+  <li>
+    <p>光栅化阶段: 几何着色器的输出会被传入光栅化阶段(Rasterization Stage)，这里它会把图元映射为最终屏幕上相应的像素，生成供片段着色器(Fragment Shader)使用的片段(Fragment)。在片段着色器运行之前会执行裁切(Clipping)。裁切会丢弃超出你的视图以外的所有像素，用来提升执行效率</p>
+  </li>
+  <li>
+    <p>片段着色器: 片段着色器的主要目的是计算一个像素的最终颜色，这也是所有OpenGL高级效果产生的地方。通常，片段着色器包含3D场景的数据（比如光照、阴影、光的颜色等等），这些数据可以被用来计算最终像素的颜色</p>
+  </li>
+  <li>
+    <p>在所有对应颜色值确定以后，最终的对象将会被传到最后一个阶段，我们叫做Alpha测试和混合(Blending)阶段。这个阶段检测片段的对应的深度（和模板(Stencil)）值（后面会讲），用它们来判断这个像素是其它物体的前面还是后面，决定是否应该丢弃。这个阶段也会检查alpha值（alpha值定义了一个物体的透明度）并对物体进行混合(Blend)。所以，即使在片段着色器中计算出来了一个像素输出的颜色，在渲染多个三角形的时候最后的像素颜色也可能完全不同。</p>
+  </li>
+  <li>
+    <p>标准化设备坐标: 开始绘制图形之前，我们必须先给OpenGL输入一些顶点数据。OpenGL是一个3D图形库，所以我们在OpenGL中指定的所有坐标都是3D坐标（x、y和z）。OpenGL不是简单地把所有的3D坐标变换为屏幕上的2D像素；OpenGL仅当3D坐标在3个轴（x、y和z）上都为-1.0到1.0的范围内时才处理它。所有在所谓的标准化设备坐标(Normalized Device Coordinates)范围内的坐标才会最终呈现在屏幕上（在这个范围以外的坐标都不会显示）</p>
+  </li>
+</ol>
+
+<p><img src="/img/post/OpenGL/标准化设备坐标.png" alt="标准化设备坐标" /></p>
+
+<ol>
+  <li>
+    <p>深度: 通常深度可以理解为z坐标，它代表一个像素在空间中和你的距离，如果离你远就可能被别的像素遮挡，你就看不到它了，它会被丢弃，以节省资源。</p>
+  </li>
+  <li>
+    <p>着色器程序: 着色器程序对象(Shader Program Object)是多个着色器合并之后并最终链接完成的版本。如果要使用刚才编译的着色器我们必须把它们链接(Link)为一个着色器程序对象，然后在渲染对象的时候激活这个着色器程序。已激活着色器程序的着色器将在我们发送渲染调用的时候被使用</p>
+  </li>
+  <li>
+    <p>glVertexAttribPointer</p>
+  </li>
+</ol>
+
+<p><img src="/img/post/OpenGL/glVertexAttribPointer.png" alt="glVertexAttribPointer" /></p>
+
+<h3 id="14-glsl">1.4 GLSL</h3>
+
+<ol>
+  <li>
+    <p>着色器只是一种把输入转化为输出的程序。着色器也是一种非常独立的程序，因为它们之间不能相互通信</p>
+  </li>
+  <li>
+    <p>GLSL基本数据类型: int, float, double, uint, bool</p>
+  </li>
+  <li>
+    <p>容器类型: Vector, Matrix</p>
+  </li>
+  <li>
+    <p>如果我们打算从一个着色器向另一个着色器发送数据，我们必须在发送方着色器中声明一个输出，在接收方着色器中声明一个类似的输入。当类型和名字都一样的时候，OpenGL就会把两个变量链接到一起，它们之间就能发送数据了（这是在链接程序对象时完成的）</p>
+  </li>
+  <li>
+    <p>Uniform: Uniform是一种从CPU中的应用向GPU中的着色器发送数据的方式, 但uniform和顶点属性有些不同。首先，uniform是全局的(Global)。全局意味着uniform变量必须在每个着色器程序对象中都是独一无二的，而且它可以被着色器程序的任意着色器在任意阶段访问。第二，无论你把uniform值设置成什么，uniform会一直保存它们的数据，直到它们被重置或更新。</p>
+  </li>
+  <li>
+    <p>如果你声明了一个uniform却在GLSL代码中没用过，编译器会静默移除这个变量，导致最后编译出的版本中并不会包含它，这可能导致几个非常麻烦的错误，记住这点！</p>
+  </li>
+</ol>
+
+<h3 id="15-纹理">1.5 纹理</h3>
+
+<ol>
+  <li>
+    <p>纹理: 纹理是一个2D图片（甚至也有1D和3D的纹理），它可以用来添加物体的细节</p>
+  </li>
+  <li>
+    <p>为了能够把纹理映射(Map)到三角形上，我们需要指定三角形的每个顶点各自对应纹理的哪个部分。这样每个顶点就会关联着一个纹理坐标(Texture Coordinate)，用来标明该从纹理图像的哪个部分采样（译注：采集片段颜色）。之后在图形的其它片段上进行片段插值(Fragment Interpolation)。</p>
+  </li>
+  <li>
+    <p>采样: 使用纹理坐标获取纹理颜色叫做采样</p>
+  </li>
+  <li>
+    <p>纹理坐标起始于(0, 0)，也就是纹理图片的左下角，终始于(1, 1)，即纹理图片的右上角; 如下图</p>
+  </li>
+</ol>
+
+<p><img src="/img/post/OpenGL/纹理坐标.png" alt="纹理坐标" /></p>
+
+<ol>
+  <li>纹理环绕方式: 纹理坐标的范围通常是从(0, 0)到(1, 1)，那如果我们把纹理坐标设置在范围之外会发生什么？OpenGL默认的行为是重复这个纹理图像</li>
+</ol>
+
+<p><img src="/img/post/OpenGL/纹理环绕方式.png" alt="纹理环绕方式" /></p>
+
+<ol>
+  <li>
+    <p>纹理过滤: 纹理坐标不依赖于分辨率(Resolution)，它可以是任意浮点值，所以OpenGL需要知道怎样将纹理像素(Texture Pixel，也叫Texel，译注1)映射到纹理坐标(Texture Pixel也叫Texel，你可以想象你打开一张.jpg格式图片，不断放大你会发现它是由无数像素点组成的，这个点就是纹理像素；注意不要和纹理坐标搞混，纹理坐标是你给模型顶点设置的那个数组，OpenGL以这个顶点的纹理坐标数据去查找纹理图像上的像素，然后进行采样提取纹理像素的颜色); 纹理过滤主要有两种: GL_NEAREST和GL_LINEAR; 当进行放大(Magnify)和缩小(Minify)操作的时候可以设置纹理过滤的选项(使用glTexParameteri())</p>
+  </li>
+  <li>
+    <p>邻近过滤(GL_NEAREST): 默认纹理过滤方式; 当设置为GL_NEAREST的时候，OpenGL会选择中心点最接近纹理坐标的那个像素</p>
+  </li>
+  <li>
+    <p>线性过滤(GL_LINEAR): 会基于纹理坐标附近的纹理像素，计算出一个插值，近似出这些纹理像素之间的颜色。一个纹理像素的中心距离纹理坐标越近，那么这个纹理像素的颜色对最终的样本颜色的贡献越大(GL_LINEAR可以产生更真实的输出)</p>
+  </li>
+  <li>
+    <p>多级渐远纹理: 简单来说就是一系列的纹理图像，后一个纹理图像是前一个的二分之一; 多级渐远纹理背后的理念很简单：距观察者的距离超过一定的阈值，OpenGL会使用不同的多级渐远纹理，即最适合物体的距离的那个。由于距离远，解析度不高也不会被用户注意到。同时，多级渐远纹理另一加分之处是它的性能非常好(glGenerateMipmaps())</p>
+  </li>
+  <li>
+    <p>纹理单元: 一个纹理的位置值通常称为一个纹理单元(Texture Unit)。一个纹理的默认纹理单元是0，它是默认的激活纹理单元; 纹理单元的主要目的是让我们在着色器中可以使用多于一个的纹理。通过把纹理单元赋值给采样器，我们可以一次绑定多个纹理，只要我们首先激活对应的纹理单元</p>
+  </li>
+</ol>
+
+<h3 id="15-变换">1.5 变换</h3>
+
+<ol>
+  <li>
+    <p>向量: 有大小和方向; 其实就是一个<code class="highlighter-rouge">N*1</code>的矩阵</p>
+  </li>
+  <li>
+    <p>向量运算:</p>
+  </li>
+</ol>
+
+<blockquote>
+  <ol>
+    <li>向量与标量运算</li>
+  </ol>
+</blockquote>
+
+<p><img src="/img/post/OpenGL/向量与标量运算.png" alt="向量与标量运算" /></p>
+
+<blockquote>
+  <ol>
+    <li>向量取反: 个分量都取反</li>
+    <li>向量之间加减: 各分量之间对应加减</li>
+    <li>向量乘积</li>
+  </ol>
+</blockquote>
+
+<p>点乘: 点乘是通过将对应分量逐个相乘，然后再把所得积相加来计算的</p>
+
+<p><img src="/img/post/OpenGL/点乘.png" alt="点乘" /></p>
+
+<p><img src="/img/post/OpenGL/点乘2.png" alt="点乘2" /></p>
+
+<p>叉乘:</p>
+
+<p><img src="/img/post/OpenGL/叉乘.png" alt="叉乘" /></p>
+
+<ol>
+  <li>矩阵运算</li>
+</ol>
+
+<blockquote>
+  <ol>
+    <li>矩阵与标量运算</li>
+  </ol>
+</blockquote>
+
+<p><img src="/img/post/OpenGL/矩阵与标量运算.png" alt="矩阵与标量运算" /></p>
+
+<blockquote>
+  <ol>
+    <li>矩阵之间加减: 对应项加减即可</li>
+    <li>矩阵数乘: 将该数和矩阵每一项想乘</li>
+    <li>矩阵相乘: 只有当左侧矩阵的列数与右侧矩阵的行数相等，两个矩阵才能相乘; 矩阵相乘不遵守交换律</li>
+    <li>矩阵与向量相乘:</li>
+  </ol>
+</blockquote>
+
+<p>缩放:</p>
+
+<p><img src="/img/post/OpenGL/矩阵与向量运算之缩放.png" alt="矩阵与向量运算" /></p>
+
+<p>位移:</p>
+
+<p><img src="/img/post/OpenGL/矩阵与向量运算之位移.png" alt="矩阵与向量运算" /></p>
+
+<p>沿x轴旋转:</p>
+
+<p><img src="/img/post/OpenGL/矩阵与向量运算之沿x轴旋转.png" alt="沿x轴旋转" /></p>
+
+<p>沿y轴旋转:</p>
+
+<p><img src="/img/post/OpenGL/矩阵与向量运算之沿y轴旋转.png" alt="沿y轴旋转" /></p>
+
+<p>沿z轴旋转:</p>
+
+<p><img src="/img/post/OpenGL/矩阵与向量运算之沿z轴旋转.png" alt="沿z轴旋转" /></p>
+
+<h3 id="16-坐标系统">1.6 坐标系统</h3>
+
+<ol>
+  <li>
+    <p>将坐标变换为标准化设备坐标，接着再转化为屏幕坐标的过程通常是分步进行的，也就是类似于流水线那样子。在流水线中，物体的顶点在最终转化为屏幕坐标之前还会被变换到多个坐标系统(Coordinate System)。将物体的坐标变换到几个过渡坐标系(Intermediate Coordinate System)的优点在于，在这些特定的坐标系统中，一些操作或运算更加方便和容易</p>
+  </li>
+  <li>
+    <p>对我们来说比较重要的有五类坐标系统</p>
+  </li>
+</ol>
+
+<blockquote>
+  <ol>
+    <li>局部空间(Local Space，或者称为物体空间(Object Space))</li>
+    <li>世界空间(World Space)</li>
+    <li>观察空间(View Space，或者称为视觉空间(Eye Space))</li>
+    <li>裁剪空间(Clip Space)</li>
+    <li>屏幕空间(Screen Space)</li>
+  </ol>
+</blockquote>
+
+<ol>
+  <li>
+    <p>为了将坐标从一个坐标系变换到另一个坐标系，我们需要用到几个变换矩阵，最重要的几个分别是模型(Model)、观察(View)、投影(Projection)三个矩阵</p>
+  </li>
+  <li>
+    <p>顶点坐标起始于局部空间(Local Space)，在这里它称为局部坐标(Local Coordinate)，它在之后会变为世界坐标(World Coordinate)，观察坐标(View Coordinate)，裁剪坐标(Clip Coordinate)，并最后以屏幕坐标(Screen Coordinate)的形式结束; 如下图</p>
+  </li>
+</ol>
+
+<p><img src="/img/post/OpenGL/坐标系统.png" alt="坐标系统" /></p>
+
+<ol>
+  <li>
+    <p>之所以将顶点变换到各个不同的空间的原因是有些操作在特定的坐标系统中才有意义且更方便。例如，当需要对物体进行修改的时候，在局部空间中来操作会更说得通；如果要对一个物体做出一个相对于其它物体位置的操作时，在世界坐标系中来做这个才更说得通，等等</p>
+  </li>
+  <li>
+    <p>局部空间: 物体所在的坐标空间，即对象最开始所在的地方</p>
+  </li>
+  <li>
+    <p>世界空间: 物体的坐标将会从局部变换到世界空间；该变换是由模型矩阵(Model Matrix)实现的</p>
+  </li>
+  <li>
+    <p>观察空间: 观察空间经常被人们称之OpenGL的摄像机(Camera); 观察空间是将世界空间坐标转化为用户视野前方的坐标而产生的结果; 因此观察空间就是从摄像机的视角所观察到的空间; 这通常用一个观察矩阵(View Matrix)完成，它被用来将世界坐标变换到观察空间</p>
+  </li>
+  <li>
+    <p>裁剪空间:  在一个顶点着色器运行的最后，OpenGL期望所有的坐标都能落在一个特定的范围内，且任何在这个范围之外的点都应该被裁剪掉(Clipped)。被裁剪掉的坐标就会被忽略，所以剩下的坐标就将变为屏幕上可见的片段。这也就是裁剪空间(Clip Space)名字的由来; 为了将顶点坐标从观察变换到裁剪空间，我们需要定义一个投影矩阵(Projection
+Matrix)，它指定了一个范围的坐标(如果只是图元(Primitive)，例如三角形，的一部分超出了裁剪体积(Clipping Volume)，则OpenGL会重新构建这个三角形为一个或多个三角形让其能够适合这个裁剪范围)(一旦所有顶点被变换到裁剪空间，最终的操作——透视除法(Perspective Division)将会执行，在这个过程中我们将位置向量的x，y，z分量分别除以向量的齐次w分量；透视除法是将4D裁剪空间坐标变换为3D标准化设备坐标的过程。这一步会在每一个顶点着色器运行的最后被自动执行)</p>
+  </li>
+  <li>
+    <p>透视投影: 离你越远的东西看起来更小; 使用透视投影矩阵来完成的; 一旦坐标在裁剪空间内之后，透视除法就会被应用到裁剪空间坐标上, 即将顶点坐标中的每个分量除以w分量</p>
+  </li>
+  <li>
+    <p>一个顶点坐标会根据以下过程被变换到裁剪坐标(注意矩阵运算的顺序是相反的（记住我们需要从右往左阅读矩阵的乘法)): 最后的顶点应该被赋值到顶点着色器中的gl_Position，OpenGL将会自动进行透视除法和裁剪</p>
+  </li>
+</ol>
+
+<p><img src="/img/post/OpenGL/裁剪坐标.png" alt="裁剪坐标" /></p>
+
+<ol>
+  <li>
+    <p>OpenGL存储深度信息在一个叫做Z缓冲(Z-buffer)的缓冲中，它允许OpenGL决定何时覆盖一个像素而何时不覆盖</p>
+  </li>
+  <li>
+    <p>Z缓冲(深度缓冲): 深度值存储在每个片段里面（作为片段的z值），当片段想要输出它的颜色时，OpenGL会将它的深度值和z缓冲进行比较，如果当前的片段在其它片段之后，它将会被丢弃，否则将会覆盖。这个过程称为深度测试(Depth Testing)，它是由OpenGL自动完成的</p>
+  </li>
+</ol>
+
+<h3 id="17-摄像机">1.7 摄像机</h3>
+
+<p>https://learnopengl-cn.github.io/01%20Getting%20started/09%20Camera/</p>
+
+
+                <hr>
+
+                
+
+
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/2018/10/06/%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95/" data-toggle="tooltip" data-placement="top" title="排序算法">&larr; Previous Post</a>
+                    </li>
+                    
+                    
+                </ul>
+
+
+                
+
+                
+                <!-- disqus 评论框 start -->
+                <div class="comment">
+                    <div id="disqus_thread" class="disqus-thread"></div>
+                </div>
+                <!-- disqus 评论框 end -->
+                
+
+            </div>
+
+    <!-- Sidebar Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+        				
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#Algorithm" title="Algorithm" rel="3">
+                                    Algorithm
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#Draft" title="Draft" rel="3">
+                                    Draft
+                                </a>
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#Java" title="Java" rel="10">
+                                    Java
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#Android" title="Android" rel="7">
+                                    Android
+                                </a>
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#View" title="View" rel="2">
+                                    View
+                                </a>
+                            
+        				
+                            
+        				
+        			</div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+                <hr>
+                <h5>FRIENDS</h5>
+                <ul class="list-inline">
+                    
+                        <li><a href="https://tech.meituan.com/archives">美团点评</a></li>
+                    
+                </ul>
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+
+<!-- disqus 公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = "HusterYP";
+    var disqus_identifier = "/2018/10/13/OpenGL笔记";
+    var disqus_url = "http://localhost:4000/2018/10/13/OpenGL%E7%AC%94%E8%AE%B0/";
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<!-- disqus 公共JS代码 end -->
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("http://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                    
+                    
+
+                    <!-- add Weibo, Zhihu by Hux, add target = "_blank" to <a> by Hux -->
+                    
+                    
+
+
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/HusterYP">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; 袁平 2018
+                    <br>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js "></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/js/bootstrap.min.js "></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js "></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("http://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+
+
+<!-- Baidu Tongji -->
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>
