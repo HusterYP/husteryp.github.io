@@ -5,9 +5,267 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Sun, 14 Oct 2018 21:06:01 +0800</pubDate>
-    <lastBuildDate>Sun, 14 Oct 2018 21:06:01 +0800</lastBuildDate>
+    <pubDate>Mon, 29 Oct 2018 17:55:45 +0800</pubDate>
+    <lastBuildDate>Mon, 29 Oct 2018 17:55:45 +0800</lastBuildDate>
     <generator>Jekyll v3.8.3</generator>
+    
+      <item>
+        <title>编译器笔记与实验记录</title>
+        <description>&lt;h1 id=&quot;序言&quot;&gt;序言&lt;/h1&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;编译器,教程: http://mooc.study.163.com/learn/1000002001?tid=1000003000#/learn/content?type=detail&amp;amp;id=1000023001&amp;amp;cid=1000019000&lt;/li&gt;
+  &lt;li&gt;配套网站: http://staff.ustc.edu.cn/~bjhua/courses/compiler/2014/&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;一-编译器介绍&quot;&gt;一. 编译器介绍&lt;/h2&gt;
+&lt;ul&gt;
+  &lt;li&gt;概念: 编译器是一个程序,核心功能是把源程序代码翻译成为目标代码&lt;/li&gt;
+  &lt;li&gt;编译器核心功能如下图: 其中&lt;strong&gt;静态计算&lt;/strong&gt;表示的是经过编译器后, 目标程序和源程序的功能需要相同&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/Compiler/编译器核心功能.png&quot; alt=&quot;编译器核心功能&quot; /&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;解释器: 也是处理程序的一种程序;(解释器是在线的方式,也就是说解释器解释程序之后实际上还会执行该程序,而编译器只是生成可执行文件,称为离线形式, 编译器输出为可执行程序, 而解释器输出为程序执行结果)&lt;/li&gt;
+  &lt;li&gt;结构: 前端–&amp;gt;代码优化–&amp;gt;后端; 词法分析–&amp;gt;语法分析–&amp;gt;语义分析–&amp;gt;代码生成; (流水线模式)&lt;/li&gt;
+  &lt;li&gt;编译器结构: 如下图(一个没有优化的编译器结构)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/Compiler/一个没有优化的编译器结构.png&quot; alt=&quot;一个没有优化的编译器&quot; /&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;栈式计算机: 如:JVM&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;二-词法分析&quot;&gt;二. 词法分析&lt;/h2&gt;
+&lt;ul&gt;
+  &lt;li&gt;编译器可以分为一个前端和后端, 前端又可细分为如下:&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/Compiler/前端.png&quot; alt=&quot;前端&quot; /&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;作用: 字符流–&amp;gt;词法分析–&amp;gt;记号流; (字符,关键字的切分等)&lt;/li&gt;
+  &lt;li&gt;记号流: 编译器内部定义的数据结构, 编码所识别出的词法单元; 如下是一个&lt;code class=&quot;highlighter-rouge&quot;&gt;C&lt;/code&gt;语言实现的记号流的数据结构&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/Compiler/记号流的数据结构.png&quot; alt=&quot;记号流&quot; /&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;词法分析的实现方法:
+    &lt;blockquote&gt;
+      &lt;ol&gt;
+        &lt;li&gt;手工编码实现方法: 是目前非常流行的实现方法,如:GCC,LLVM&lt;/li&gt;
+        &lt;li&gt;词法分析器的自动生成器: 可以快速成型,但是难以控制细节&lt;/li&gt;
+      &lt;/ol&gt;
+    &lt;/blockquote&gt;
+  &lt;/li&gt;
+  &lt;li&gt;手工分析法: 转移图(实际上有点类似状态转移,需要注意的是有的地方需要回滚(回滚的实现: 一个可以通过文件指针的回退,另一个是可以将文件内容读取到一个字符数组中,然后需要回退时将索引减一即可))&lt;/li&gt;
+  &lt;li&gt;关键字表算法: 对给定语言的所有关键字构造一个Hash表,也就是对所有的标识符和关键字,先统一按标识符的转移图进行识别,识别完成后,再进一步查表看是否是关键字(关键字的完美Hash表: 完美哈希函数是没有冲突的的哈希函数，也就是，函数 H 将 N 个 KEY 值映射到 M 个整数上，这里 M&amp;gt;=N ，而且，对于任意的 KEY1 ，KEY2 ，H( KEY1 ) != H( KEY2 ) ，并且，如果 M = = N ，则 H 是最小完美哈希函数（Minimal Perfect Hash Function，简称MPHF)&lt;a href=&quot;https://www.ibm.com/developerworks/cn/linux/l-gperf.html&quot;&gt;参考博文&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;自动生成法(生成器): 通过一些转换工具,如: lex,flex,jlex等将正则表达式转换为词法分析器; 需要用到:
+    &lt;blockquote&gt;
+      &lt;ol&gt;
+        &lt;li&gt;正则&lt;/li&gt;
+        &lt;li&gt;有限状态自动机: 输入的串是否能被状态机接受(DFA(确定的),NFA(不确定的))&lt;/li&gt;
+        &lt;li&gt;正则表达式到&lt;code class=&quot;highlighter-rouge&quot;&gt;NFA&lt;/code&gt;是&lt;code class=&quot;highlighter-rouge&quot;&gt;Thompson&lt;/code&gt;算法,从&lt;code class=&quot;highlighter-rouge&quot;&gt;NFA&lt;/code&gt;到&lt;code class=&quot;highlighter-rouge&quot;&gt;DFA&lt;/code&gt;是子集构造算法,从DFA到词法分析器是Hopcraft最小化算法&lt;/li&gt;
+      &lt;/ol&gt;
+    &lt;/blockquote&gt;
+  &lt;/li&gt;
+  &lt;li&gt;DFA: 确定状态有限自动机(只有一个状态)(词法分析器是一个DFA); NFA: 非确定有限状态自动机(有多个状态)&lt;/li&gt;
+  &lt;li&gt;正则表达式转换为词法分析器:&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/Compiler/正则表达式转换为词法分析器.png&quot; alt=&quot;正则表达式转换为词法分析器&quot; /&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;DFA最小化算法: Hopcroft算法&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+        <pubDate>Sun, 28 Oct 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/10/28/Compiler/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/10/28/Compiler/</guid>
+        
+        <category>Compiler</category>
+        
+        
+      </item>
+    
+      <item>
+        <title>数字图像处理</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;数字图像处理笔记&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;可以使用Utrapdit软件查看图片的ASIIC值(可以看任何文件的ASIIC值)&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h2 id=&quot;一-第一讲-数字图像处理概述&quot;&gt;一. 第一讲 数字图像处理概述&lt;/h2&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;图形和图像的区别:&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;图形: 一条指令; 比如一条直线的表示&lt;/li&gt;
+    &lt;li&gt;图像: 大矩阵, 里面的数据是每一点的颜色值&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;宽高相乘就是图像的像素&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;图像空间分辨率和灰度级分辨率(表用多少位表示)&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;jpg是压缩格式; 网上的视屏也是经过压缩后传输再解压缩播放的&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;二-第二讲-图像存储格式&quot;&gt;二. 第二讲 图像存储格式&lt;/h2&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;单色图像(黑白图像): 一位;&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;8位索引图像: 有一个颜色表和一个像颜色表的序号的数据矩阵&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;8位索引灰度图像: 颜色表中的RGB相等&lt;/li&gt;
+    &lt;li&gt;8位伪彩色索引图像: 颜色表中的RGB值不等&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;彩色图像: 分为伪彩色和真彩色(每个像素24位, RGB各占8位);&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;BMP, GIF, TIF, JPEG&lt;/p&gt;
+    &lt;blockquote&gt;
+      &lt;ol&gt;
+        &lt;li&gt;GIF: 主要用于不同平台上交流和传输, 而不是作为文件的存储格式&lt;/li&gt;
+        &lt;li&gt;TIF: 最复杂&lt;/li&gt;
+      &lt;/ol&gt;
+    &lt;/blockquote&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;三-第三讲-bmp位图文件的存储格式&quot;&gt;三. 第三讲 BMP位图文件的存储格式&lt;/h2&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;BMP文件组成:&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;位图文件头结构: BITMAPFILEHEADER&lt;/li&gt;
+    &lt;li&gt;位图信息头结构: BITMAPINFOHEADER&lt;/li&gt;
+    &lt;li&gt;位图颜色表: RGBQUAD(有的可能没有颜色表, 具体有没有, 参见第二讲)&lt;/li&gt;
+    &lt;li&gt;位图像素数据&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;BMP文件头: 14个字节&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;typedef struct tagBITMAPFILEHEADER
+{
+    WORD bfType; // BM: BMP文件标识(前两个字节), 一个字节是B, 一个字节是M
+    DWORD bfSize; // 文件大小
+    WORD bfReserved1; // 0
+    WORD bfReserved2; // 0
+    DWORD bfOffBits; // 位图数据的起始位置
+} BITMAPFILEHEDADER; 
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;BMP信息头结构: 40个字节&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;typedef struct tagBITMAPINFOHEADER
+{
+    DWORD biSize; // 本结构的大小: 40个字节
+    LONG biWidth; // 位图宽度, 像素为单位
+    LONG biHeight; // 位图高度, 像素为单位
+    WORD biPlanes; // 位平面数, 是标准的一般是1
+    WORD biBitCount; // 每个像素所需的位数
+    DWORD biCompression; // 位图压缩类型: BMP位图一般不压缩, 取0
+    DWORD biSizeImage; // 位图大小
+    LONG biXpelsPerMeter; // 水平分辨率(像素点/米)
+    LONG biYPelsPerMeter; // 垂直分辨率(像素点/米)
+    DWORD biCIrUsed; // 颜色数: 如果是标准颜色, 如16, 24, 256等位颜色, 则是0; 如果是自己定义, 则需要将颜色数写在这
+    DWORD biCIrImportant; // 重要的颜色数
+} BITMAPINFOHEADER;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;颜色表:&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;typedef struct tagRGBQUAD 
+{
+    BYTE rgbBlue; // 蓝色
+    BYTE rgbGreen; // 绿色
+    BYTE rgbRed; // 红色
+    BYTE rgbReserved; // 保留字节; 0
+} RGBQUAD;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;位图信息 – BITMAPINFO结构: 图像显示时作为参数传入函数&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;struct tagBITMAPINFO
+{
+    BITMAPINFOHEADER bmiHeader;
+    RGBQUAD bmiColors[1]; // 颜色表(上的第一项)
+} BITMAPINFO;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;四-几何变换基础&quot;&gt;四. 几何变换基础&lt;/h2&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;讲解平移, 缩放, 旋转, 镜像等的矩阵和原理&lt;/p&gt;
+&lt;/blockquote&gt;
+</description>
+        <pubDate>Mon, 22 Oct 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/10/22/%E6%95%B0%E5%AD%97%E5%9B%BE%E5%83%8F%E5%A4%84%E7%90%86/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/10/22/%E6%95%B0%E5%AD%97%E5%9B%BE%E5%83%8F%E5%A4%84%E7%90%86/</guid>
+        
+        <category>数字图像处理</category>
+        
+        
+      </item>
     
       <item>
         <title>OpenGL笔记</title>
@@ -311,11 +569,14 @@
 Matrix)，它指定了一个范围的坐标(如果只是图元(Primitive)，例如三角形，的一部分超出了裁剪体积(Clipping Volume)，则OpenGL会重新构建这个三角形为一个或多个三角形让其能够适合这个裁剪范围)(一旦所有顶点被变换到裁剪空间，最终的操作——透视除法(Perspective Division)将会执行，在这个过程中我们将位置向量的x，y，z分量分别除以向量的齐次w分量；透视除法是将4D裁剪空间坐标变换为3D标准化设备坐标的过程。这一步会在每一个顶点着色器运行的最后被自动执行)&lt;/p&gt;
   &lt;/li&gt;
   &lt;li&gt;
-    &lt;p&gt;透视投影: 离你越远的东西看起来更小; 使用透视投影矩阵来完成的; 一旦坐标在裁剪空间内之后，透视除法就会被应用到裁剪空间坐标上, 即将顶点坐标中的每个分量除以w分量&lt;/p&gt;
+    &lt;p&gt;透视投影: 离你越远的东西看起来更小; 使用透视投影矩阵来完成的; 一旦坐标在裁剪空间内之后，透视除法就会被应用到裁剪空间坐标上, 即将顶点坐标中的每个分量除以w分量; 透视投影如下图; 位于视景体之内的物体被投影到金字塔的顶点, 也就是照相机或观察点的位置; 靠近观察点的物体看上去更大一些, 因为和远处的物体相比, 它占据了视景体中相对较大的区域(实际上从相机(观察点)的角度看顶面和底面, 其占据的空间大小相同, 都是视口大小); 平截头体的四个侧面, 顶面和底面对应与视景体的6个裁剪平面, 位于这些平面之外的物体将被裁剪掉, 不会出现在最终的图像中;&lt;/p&gt;
   &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;一个顶点坐标会根据以下过程被变换到裁剪坐标(注意矩阵运算的顺序是相反的（记住我们需要从右往左阅读矩阵的乘法)): 最后的顶点应该被赋值到顶点着色器中的gl_Position，OpenGL将会自动进行透视除法和裁剪&lt;/p&gt;
-  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/透视投影.png&quot; alt=&quot;透视投影&quot; /&gt;&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;一个顶点坐标会根据以下过程被变换到裁剪坐标(注意矩阵运算的顺序是相反的（记住我们需要从右往左阅读矩阵的乘法)): 最后的顶点应该被赋值到顶点着色器中的gl_Position，OpenGL将会自动进行透视除法和裁剪&lt;/li&gt;
 &lt;/ol&gt;
 
 &lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/裁剪坐标.png&quot; alt=&quot;裁剪坐标&quot; /&gt;&lt;/p&gt;
@@ -326,6 +587,12 @@ Matrix)，它指定了一个范围的坐标(如果只是图元(Primitive)，例�
   &lt;/li&gt;
   &lt;li&gt;
     &lt;p&gt;Z缓冲(深度缓冲): 深度值存储在每个片段里面（作为片段的z值），当片段想要输出它的颜色时，OpenGL会将它的深度值和z缓冲进行比较，如果当前的片段在其它片段之后，它将会被丢弃，否则将会覆盖。这个过程称为深度测试(Depth Testing)，它是由OpenGL自动完成的&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;视景体 : 管线会确定的一个可视空间区域, 由 上平面(up), 下平面(down), 左平面(left), 右平面(right), 远平面(far), 近平面(near) 六个平面组成&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;视景体与投影 : 视景体内的物体会投影到近平面, 视景体之外的内容会被裁减掉, 例如眼睛看不到的范围就是处于视景体外即被裁减掉的&lt;/p&gt;
   &lt;/li&gt;
 &lt;/ol&gt;
 
@@ -562,7 +829,6 @@ Matrix)，它指定了一个范围的坐标(如果只是图元(Primitive)，例�
 
 &lt;p&gt;验证代码参见: &lt;a href=&quot;https://github.com/HusterYP/UI/blob/master/UIList/app/src/main/java/com/example/yuanping/uilist/lifecycle/ReadMe.md&quot;&gt;Github&lt;/a&gt;&lt;/p&gt;
 
-&lt;p&gt;看: https://developer.android.com/topic/libraries/architecture/lifecycle#java&lt;/p&gt;
 </description>
         <pubDate>Sat, 13 Oct 2018 00:00:00 +0800</pubDate>
         <link>http://localhost:4000/2018/10/13/Activity%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F/</link>
@@ -2959,663 +3225,6 @@ PropertyValuesHolder 的进阶使用：使用 PropertyValuesHolder.ofKeyframe() 
         <guid isPermaLink="true">http://localhost:4000/2018/09/27/JVM%E4%B9%8B%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F%E4%B8%8E%E5%86%85%E5%AD%98%E6%BA%A2%E5%87%BA%E5%BC%82%E5%B8%B8/</guid>
         
         <category>Java</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>Java之IO流</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;p&gt;本文将讲解&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;中一个比较重要的模块–&lt;code class=&quot;highlighter-rouge&quot;&gt;I/O&lt;/code&gt;流&lt;/p&gt;
-
-&lt;p&gt;以下内容是对&lt;strong&gt;Java核心技术卷II&lt;/strong&gt;的总结, 权做个人笔记~&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;一-概述&quot;&gt;一. 概述&lt;/h2&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Java I/O&lt;/code&gt;流指的是&lt;code class=&quot;highlighter-rouge&quot;&gt;java.io&lt;/code&gt;包和&lt;code class=&quot;highlighter-rouge&quot;&gt;java.nio&lt;/code&gt;包提供的各种操作文件和输入输出等的&lt;code class=&quot;highlighter-rouge&quot;&gt;API&lt;/code&gt;, 具体可以分为两大类: 一类是面向字节的, 一类是面向字符的; 面向字节的&lt;code class=&quot;highlighter-rouge&quot;&gt;API&lt;/code&gt;是以&lt;code class=&quot;highlighter-rouge&quot;&gt;InputStream&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;OutputStream&lt;/code&gt;类为基类, 每次以一个字节为单位进行读写操作; 面向字符的&lt;code class=&quot;highlighter-rouge&quot;&gt;API&lt;/code&gt;指的是以&lt;code class=&quot;highlighter-rouge&quot;&gt;Reader&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;Writer&lt;/code&gt;为基类, 每次以两个字节为单位进行读写操作, 面向字符的&lt;code class=&quot;highlighter-rouge&quot;&gt;API&lt;/code&gt;主要是针对文本操作设计的&lt;/p&gt;
-
-&lt;p&gt;可以参见下图:&lt;/p&gt;
-
-&lt;p&gt;&lt;strong&gt;面向字节&lt;/strong&gt;:&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/Java_IO/面向字节.png&quot; alt=&quot;面向字节&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;strong&gt;面向字符&lt;/strong&gt;:&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/Java_IO/面向字符.png&quot; alt=&quot;面向字符&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;strong&gt;注&lt;/strong&gt;: &lt;a href=&quot;https://blog.csdn.net/zhoupenglei/article/details/46312405&quot;&gt;图片来源&lt;/a&gt;&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;二-重要概念&quot;&gt;二. 重要概念&lt;/h2&gt;
-
-&lt;h3 id=&quot;21-流嵌套&quot;&gt;2.1 流嵌套&lt;/h3&gt;
-
-&lt;p&gt;即将不同功能的流嵌套起来, 过滤; 比如: &lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;中流默认是不被缓冲区缓存的, 也就是说每个&lt;code class=&quot;highlighter-rouge&quot;&gt;read()&lt;/code&gt;的调用都会请求操作系统再分发一个字节, 相比之下, 请求一个数据块并将其置于缓冲区中会显得更加高效, 如果我们想使用缓冲机制, 以及用于文件输入方法, 可以使用&lt;code class=&quot;highlighter-rouge&quot;&gt;            BufferedInputStream inputStream = new BufferedInputStream(new FileInputStream(&quot;file&quot;));&lt;/code&gt;&lt;/p&gt;
-
-&lt;h3 id=&quot;22-glob模式匹配&quot;&gt;2.2 Glob模式匹配&lt;/h3&gt;
-
-&lt;p&gt;即使用正则筛选文件, 如筛选文件后缀名为&lt;code class=&quot;highlighter-rouge&quot;&gt;java&lt;/code&gt;的文件: &lt;code class=&quot;highlighter-rouge&quot;&gt;DirectoryStream&amp;lt;Path&amp;gt; entries = Files.newDirectoryStream(Paths.get(&quot;/&quot;), &quot;*.java&quot;);&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Glob&lt;/code&gt;模式见下表:&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;模式&lt;/th&gt;
-      &lt;th&gt;描述&lt;/th&gt;
-      &lt;th&gt;示例&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;*&lt;/td&gt;
-      &lt;td&gt;匹配路径组成部分中0个或多个字符&lt;/td&gt;
-      &lt;td&gt;*.java匹配当前目录中的所有Java文件&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;**&lt;/td&gt;
-      &lt;td&gt;匹配跨目录边界的0个或多个字符&lt;/td&gt;
-      &lt;td&gt;**.java匹配在所有子目录中的Java文件&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;?&lt;/td&gt;
-      &lt;td&gt;匹配一个字符&lt;/td&gt;
-      &lt;td&gt;????.java匹配所有四个字符的Java文件&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;[…]&lt;/td&gt;
-      &lt;td&gt;匹配一个字符集合&lt;/td&gt;
-      &lt;td&gt;Test[0-9A-F].java匹配Testx.java, 其中x是一个十六进制数字&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;{…}&lt;/td&gt;
-      &lt;td&gt;匹配由逗号隔开的多个可选项之一&lt;/td&gt;
-      &lt;td&gt;*.{java, class}匹配所有的Java文件和类class文件&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;\&lt;/td&gt;
-      &lt;td&gt;转移上述任意模式中的字符&lt;/td&gt;
-      &lt;td&gt;&lt;em&gt;*&lt;/em&gt;匹配所有文件名中包含*的文件&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;h3 id=&quot;23-常用工具类&quot;&gt;2.3 常用工具类&lt;/h3&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;&lt;strong&gt;Files&lt;/strong&gt;: 使得读写文件和操作文件及文件夹变得简单; 旧的&lt;code class=&quot;highlighter-rouge&quot;&gt;File&lt;/code&gt;类中有一个方法可以用来获取一个目录下的所有文件构成的数组, 但是当目录中包含大量文件时, 这个方法的性能非常低, &lt;code class=&quot;highlighter-rouge&quot;&gt;Files&lt;/code&gt;类设计了一个方法可以产生&lt;code class=&quot;highlighter-rouge&quot;&gt;Iterable&lt;/code&gt;对象, 如下示例代码:&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;DirectoryStream&amp;lt;Path&amp;gt; entries = Files.newDirectoryStream(Paths.get(&quot;/&quot;));
-Iterator&amp;lt;Path&amp;gt; iterator = entries.iterator();
-for (Path path : entries) {
-    System.out.println(path);
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;&lt;strong&gt;Paths&lt;/strong&gt;: &lt;code class=&quot;highlighter-rouge&quot;&gt;Paths&lt;/code&gt;可以用来构造&lt;code class=&quot;highlighter-rouge&quot;&gt;Path&lt;/code&gt;对象: &lt;code class=&quot;highlighter-rouge&quot;&gt;Paths.get(args)&lt;/code&gt;, 可以接收一个或多个字符串, 并将它们用默认文件系统分隔符连接起来&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h3 id=&quot;24-内存映射文件&quot;&gt;2.4 内存映射文件&lt;/h3&gt;
-
-&lt;p&gt;大多数操作系统都可以利用虚拟内存实现来将一个文件或者文件的一部分”映射”到内存中, 然后这个文件就可以当做是内存数组一样的访问, 中比传统的文件操作要快得多; 如: &lt;code class=&quot;highlighter-rouge&quot;&gt;FileChannel&lt;/code&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;25-易忘类&quot;&gt;2.5 易忘类&lt;/h2&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;InputStreamReader&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;OutputStreamWriter&lt;/code&gt;: 可以指定编码&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;PrintWriter&lt;/code&gt;: 以文本格式写出数据&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;RandomAccessFile&lt;/code&gt;: 在任何位置查找或写入数据; 可以用于实现断点续传&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;DataInputStream&lt;/code&gt;: 读取数字&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ObjectInputStream&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;ObjectOutputStream&lt;/code&gt;: 读取对象&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h3 id=&quot;26-文件操作处理效率&quot;&gt;2.6 文件操作处理效率&lt;/h3&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;方法&lt;/th&gt;
-      &lt;th&gt;时间&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;普通输入流&lt;/td&gt;
-      &lt;td&gt;110s&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;带缓冲的输入流&lt;/td&gt;
-      &lt;td&gt;9.9s&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;随机方访问文件&lt;/td&gt;
-      &lt;td&gt;162s&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;内存映射文件&lt;/td&gt;
-      &lt;td&gt;7.2s&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-</description>
-        <pubDate>Tue, 25 Sep 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/09/25/Java%E4%B9%8BIO%E6%B5%81/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/09/25/Java%E4%B9%8BIO%E6%B5%81/</guid>
-        
-        <category>Java</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>自定义View之View绘制流程</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;源码分析之&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;系列之绘制流程&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;一-概述&quot;&gt;一. 概述&lt;/h2&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的绘制流程分为三大步: &lt;code class=&quot;highlighter-rouge&quot;&gt;measure&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;layout&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;draw&lt;/code&gt;; &lt;code class=&quot;highlighter-rouge&quot;&gt;measure&lt;/code&gt;即测量, 测量&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的大小; &lt;code class=&quot;highlighter-rouge&quot;&gt;layout&lt;/code&gt;即布局, 按照一定的规则排布&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;; &lt;code class=&quot;highlighter-rouge&quot;&gt;draw&lt;/code&gt;即绘制, 绘制&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的外形; 这三步是和我们自定义&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;息息相关的, 熟悉和掌握这三大流程, 我们才能随心所欲的定制&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;; 本文也将从这三个方面入手, 结合源码讲解&lt;/p&gt;
-
-&lt;p&gt;在开始之前, 需要先了解一下&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;绘制的整体流程, 如下图;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/View/View绘制流程.png&quot; alt=&quot;View绘制流程&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;strong&gt;注&lt;/strong&gt;: 图片来自: https://www.jianshu.com/p/dc0b039e7c4f&lt;/p&gt;
-
-&lt;p&gt;可以看出, 与&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;三大流程直接相关的是从&lt;code class=&quot;highlighter-rouge&quot;&gt;performTraversals()&lt;/code&gt;开始的; 大致流程如下&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private void performTraversals() {
-    ...
-    int childWidthMeasureSpec = getRootMeasureSpec(mWidth, lp.width);
-    int childHeightMeasureSpec = getRootMeasureSpec(mHeight, lp.height);
-    performMeasure(childWidthMeasureSpec, childHeightMeasureSpec);
-    ...
-    performLayout(lp, mWidth, mHeight);
-    ...
-    performDraw();
-    ...
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;二-measure过程&quot;&gt;二. measure过程&lt;/h2&gt;
-
-&lt;p&gt;在开始讲解&lt;code class=&quot;highlighter-rouge&quot;&gt;measure&lt;/code&gt;过程之前, 我们需要先了解一下&lt;code class=&quot;highlighter-rouge&quot;&gt;MeasureSpec&lt;/code&gt;, 因为&lt;code class=&quot;highlighter-rouge&quot;&gt;MeasureSpec&lt;/code&gt;对于&lt;code class=&quot;highlighter-rouge&quot;&gt;measure&lt;/code&gt;过程的理解还是很重要的&lt;/p&gt;
-
-&lt;h3 id=&quot;21-measurespec&quot;&gt;2.1 MeasureSpec&lt;/h3&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;MeasureSpec&lt;/code&gt;是一个&lt;code class=&quot;highlighter-rouge&quot;&gt;32&lt;/code&gt;位&lt;code class=&quot;highlighter-rouge&quot;&gt;int&lt;/code&gt;类型的值, 是&lt;code class=&quot;highlighter-rouge&quot;&gt;SpecMode&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;SpecSize&lt;/code&gt;的位组合; 高&lt;code class=&quot;highlighter-rouge&quot;&gt;2&lt;/code&gt;位表示&lt;code class=&quot;highlighter-rouge&quot;&gt;SpecMode&lt;/code&gt;, 低&lt;code class=&quot;highlighter-rouge&quot;&gt;30&lt;/code&gt;位表示&lt;code class=&quot;highlighter-rouge&quot;&gt;SpecSize&lt;/code&gt;, 这样设计其实是为了节约空间; 关于二者如何组合, 可以参见以下代码; 可以看出, 其实就是通过&lt;code class=&quot;highlighter-rouge&quot;&gt;MODE_MASK&lt;/code&gt;掩码以及位操作实现将两个&lt;code class=&quot;highlighter-rouge&quot;&gt;int&lt;/code&gt;类型整合为一个&lt;code class=&quot;highlighter-rouge&quot;&gt;32&lt;/code&gt;位&lt;code class=&quot;highlighter-rouge&quot;&gt;int&lt;/code&gt;类型的&lt;code class=&quot;highlighter-rouge&quot;&gt;MeasureSpec&lt;/code&gt;; 当然, 要分别提取这两个值的话, 也可以很简单的用位操作实现, 代码比较简单, 就不贴啦~&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;        public static int makeMeasureSpec(@IntRange(from = 0, to = (1 &amp;lt;&amp;lt; MeasureSpec.MODE_SHIFT) - 1) int size,
-                                          @MeasureSpecMode int mode) {
-            if (sUseBrokenMakeMeasureSpec) {
-                return size + mode;
-            } else {
-                return (size &amp;amp; ~MODE_MASK) | (mode &amp;amp; MODE_MASK); // MODE_MASK  = 0x3 &amp;lt;&amp;lt; 30; 
-            }
-        }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;SpecMode&lt;/code&gt;即测量模式, 一共有三类:&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;UNSPECIFIED&lt;/strong&gt;: 父容器不对&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;有任何限制, 要多大给多大, 这种情况一般用于系统内部&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;EXACTLY&lt;/strong&gt;: 对应于&lt;code class=&quot;highlighter-rouge&quot;&gt;LayoutParams&lt;/code&gt;中的&lt;code class=&quot;highlighter-rouge&quot;&gt;match_parent&lt;/code&gt;和具体数值这两种模式&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;AT_MOST&lt;/strong&gt;: 父容器指定了一个可用大小即&lt;code class=&quot;highlighter-rouge&quot;&gt;SpecSize&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的大小不能大于该值, 对应于&lt;code class=&quot;highlighter-rouge&quot;&gt;LayoutParams&lt;/code&gt;中的&lt;code class=&quot;highlighter-rouge&quot;&gt;wrap_content&lt;/code&gt;&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;从&lt;code class=&quot;highlighter-rouge&quot;&gt;SpecMode&lt;/code&gt;的类型区别可以看出, &lt;code class=&quot;highlighter-rouge&quot;&gt;MeasureSpec&lt;/code&gt;的确定受&lt;code class=&quot;highlighter-rouge&quot;&gt;LayoutParams&lt;/code&gt;的影响, 但是也要分情况: 对于&lt;code class=&quot;highlighter-rouge&quot;&gt;RootView&lt;/code&gt;即&lt;code class=&quot;highlighter-rouge&quot;&gt;DecorView&lt;/code&gt;来说, 由于其没有父&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;, 所以&lt;code class=&quot;highlighter-rouge&quot;&gt;DecorView&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;MeasureSpec&lt;/code&gt;由窗口尺寸和自身的&lt;code class=&quot;highlighter-rouge&quot;&gt;LayoutParams&lt;/code&gt;共同决定; 对于普通&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;来说, 其&lt;code class=&quot;highlighter-rouge&quot;&gt;MeasureSpec&lt;/code&gt;由父容器传递的&lt;code class=&quot;highlighter-rouge&quot;&gt;MeasureSpec&lt;/code&gt;和自身的&lt;code class=&quot;highlighter-rouge&quot;&gt;LayoutParams&lt;/code&gt;共同决定&lt;/p&gt;
-
-&lt;p&gt;普通&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;MeasureSpec&lt;/code&gt;创建规则见下表&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;strong&gt;childLayoutParams&lt;/strong&gt; \ &lt;strong&gt;parentSpecMode&lt;/strong&gt;&lt;/td&gt;
-      &lt;td&gt;&lt;strong&gt;EXACTLY&lt;/strong&gt;&lt;/td&gt;
-      &lt;td&gt;&lt;strong&gt;AT_MOST&lt;/strong&gt;&lt;/td&gt;
-      &lt;td&gt;&lt;strong&gt;UNSPECIFIED&lt;/strong&gt;&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;strong&gt;dp/px&lt;/strong&gt;&lt;/td&gt;
-      &lt;td&gt;EXACTLY&lt;br /&gt;childSize&lt;/td&gt;
-      &lt;td&gt;EXACTLY&lt;br /&gt;childSize&lt;/td&gt;
-      &lt;td&gt;EXACTLY&lt;br /&gt;childSize&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;strong&gt;match_parent&lt;/strong&gt;&lt;/td&gt;
-      &lt;td&gt;EXACTLY&lt;br /&gt;parentSize&lt;/td&gt;
-      &lt;td&gt;AT_MOST&lt;br /&gt;parentSize&lt;/td&gt;
-      &lt;td&gt;UNSPECIFIED&lt;br /&gt;0&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;strong&gt;wrap_content&lt;/strong&gt;&lt;/td&gt;
-      &lt;td&gt;AT_MOST&lt;br /&gt;parentSize&lt;/td&gt;
-      &lt;td&gt;AT_MOST&lt;br /&gt;parentSize&lt;/td&gt;
-      &lt;td&gt;UNSPECIFIED&lt;br /&gt;0&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;&lt;strong&gt;注&lt;/strong&gt;: 摘自«Android开发艺术探索»&lt;/p&gt;
-
-&lt;p&gt;上面表格中展现的规则需要好好理解:&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;当&lt;code class=&quot;highlighter-rouge&quot;&gt;Child&lt;/code&gt;尺寸是明确的值时, 即&lt;code class=&quot;highlighter-rouge&quot;&gt;layout_width&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;layout_height&lt;/code&gt;有确定的值, 那么不管父&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;SpecMode&lt;/code&gt;是什么, &lt;code class=&quot;highlighter-rouge&quot;&gt;Child&lt;/code&gt;都保持规定尺寸不变; 这点比较好理解, 因为明确指定&lt;code class=&quot;highlighter-rouge&quot;&gt;Child&lt;/code&gt;的尺寸之后, 我们肯定希望显示的也是指定尺寸&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;当&lt;code class=&quot;highlighter-rouge&quot;&gt;Child&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;layout_xxx&lt;/code&gt;为&lt;code class=&quot;highlighter-rouge&quot;&gt;match_parent&lt;/code&gt;时, 如果父&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;是确定尺寸, 那么&lt;code class=&quot;highlighter-rouge&quot;&gt;Child&lt;/code&gt;的尺寸也能确定, 也就是父&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;尺寸, 所以为&lt;code class=&quot;highlighter-rouge&quot;&gt;EXACTLY, parentSize&lt;/code&gt;也可以理解; 如果父&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;尺寸不确定, 此时父&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;只知道一个最大尺寸, 那么&lt;code class=&quot;highlighter-rouge&quot;&gt;Child&lt;/code&gt;由于&lt;code class=&quot;highlighter-rouge&quot;&gt;match_parent&lt;/code&gt;, 也只能知道一个最大尺寸, 而且该最大尺寸不应该超过&lt;code class=&quot;highlighter-rouge&quot;&gt;parentSize&lt;/code&gt;, 所以为&lt;code class=&quot;highlighter-rouge&quot;&gt;AT_MOST, parentSize&lt;/code&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;当&lt;code class=&quot;highlighter-rouge&quot;&gt;Child&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;layout_xxx&lt;/code&gt;为&lt;code class=&quot;highlighter-rouge&quot;&gt;wrap_content&lt;/code&gt;, 即尺寸大小不确定的话, 那么不管父&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;是具有确定尺寸还是尺寸不确定, 反正&lt;code class=&quot;highlighter-rouge&quot;&gt;Child&lt;/code&gt;的尺寸始终是不确定的, 所以此时应该为&lt;code class=&quot;highlighter-rouge&quot;&gt;AT_MOST&lt;/code&gt;, 而且&lt;code class=&quot;highlighter-rouge&quot;&gt;Child&lt;/code&gt;尺寸也不应该超过父&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;尺寸, 故综上为&lt;code class=&quot;highlighter-rouge&quot;&gt;AT_MOST, parentSize&lt;/code&gt;&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h3 id=&quot;22-decorview的measure过程&quot;&gt;2.2 DecorView的measure过程&lt;/h3&gt;
-
-&lt;p&gt;我们知道, &lt;code class=&quot;highlighter-rouge&quot;&gt;DecorView&lt;/code&gt;是整个&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;树的&lt;code class=&quot;highlighter-rouge&quot;&gt;root&lt;/code&gt;, 是一个&lt;code class=&quot;highlighter-rouge&quot;&gt;FrameLayout&lt;/code&gt;, 我们首先来看&lt;code class=&quot;highlighter-rouge&quot;&gt;DecorView&lt;/code&gt;的测量过程; 在&lt;code class=&quot;highlighter-rouge&quot;&gt;performTraversals()&lt;/code&gt;中, 首先通过&lt;code class=&quot;highlighter-rouge&quot;&gt;getRootMeasureSpec()&lt;/code&gt;来获取&lt;code class=&quot;highlighter-rouge&quot;&gt;MeasureSpec&lt;/code&gt;, 如下; 结合上面&lt;code class=&quot;highlighter-rouge&quot;&gt;MeasureSpec&lt;/code&gt;的构建规则可以理解&lt;code class=&quot;highlighter-rouge&quot;&gt;DecorView&lt;/code&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;MeasureSpec&lt;/code&gt;的构建规则如下:&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;如果&lt;code class=&quot;highlighter-rouge&quot;&gt;DecorView&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;LayoutParams&lt;/code&gt;为&lt;code class=&quot;highlighter-rouge&quot;&gt;MATCH_PARENT&lt;/code&gt;, 由于&lt;code class=&quot;highlighter-rouge&quot;&gt;DecorView&lt;/code&gt;没有父&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;, 所以其尺寸就为窗口尺寸, &lt;code class=&quot;highlighter-rouge&quot;&gt;SpecMode&lt;/code&gt;为&lt;code class=&quot;highlighter-rouge&quot;&gt;EXACTLY&lt;/code&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;如果&lt;code class=&quot;highlighter-rouge&quot;&gt;DecorView&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;LayoutParams&lt;/code&gt;为&lt;code class=&quot;highlighter-rouge&quot;&gt;WRAP_CONTENT&lt;/code&gt;, 此时&lt;code class=&quot;highlighter-rouge&quot;&gt;DecorView&lt;/code&gt;尺寸不确定, 最大尺寸不应该超过窗口尺寸, 所以为&lt;code class=&quot;highlighter-rouge&quot;&gt;AT_MOST, windowSize&lt;/code&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;如果&lt;code class=&quot;highlighter-rouge&quot;&gt;DecorView&lt;/code&gt;明确规定了自己的尺寸, 那么就不受窗口尺寸的影响, 为&lt;code class=&quot;highlighter-rouge&quot;&gt;EXACTLY, rootDimension&lt;/code&gt;&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private static int getRootMeasureSpec(int windowSize, int rootDimension) {
-        int measureSpec;
-        switch (rootDimension) {
-
-        case ViewGroup.LayoutParams.MATCH_PARENT:
-            // Window can't resize. Force root view to be windowSize.
-            measureSpec = MeasureSpec.makeMeasureSpec(windowSize, MeasureSpec.EXACTLY);
-            break;
-        case ViewGroup.LayoutParams.WRAP_CONTENT:
-            // Window can resize. Set max size for root view.
-            measureSpec = MeasureSpec.makeMeasureSpec(windowSize, MeasureSpec.AT_MOST);
-            break;
-        default:
-            // Window wants to be an exact size. Force root view to be that size.
-            measureSpec = MeasureSpec.makeMeasureSpec(rootDimension, MeasureSpec.EXACTLY);
-            break;
-        }
-        return measureSpec;
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;构建好&lt;code class=&quot;highlighter-rouge&quot;&gt;DecorView&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;MeasureSpec&lt;/code&gt;之后, 就直接传入了&lt;code class=&quot;highlighter-rouge&quot;&gt;performMeasure()&lt;/code&gt;中, &lt;code class=&quot;highlighter-rouge&quot;&gt;performMeasure()&lt;/code&gt;的代码如下; 可以看出, 接下来就是将&lt;code class=&quot;highlighter-rouge&quot;&gt;MeasureSpec&lt;/code&gt;传递给&lt;code class=&quot;highlighter-rouge&quot;&gt;mView&lt;/code&gt;进行测量, 而这里的&lt;code class=&quot;highlighter-rouge&quot;&gt;mView&lt;/code&gt;其实就是&lt;code class=&quot;highlighter-rouge&quot;&gt;DecorView&lt;/code&gt;, 而&lt;code class=&quot;highlighter-rouge&quot;&gt;measure()&lt;/code&gt;方法是&lt;code class=&quot;highlighter-rouge&quot;&gt;final&lt;/code&gt;的, 不可重写, 所以应该追溯到&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;(继承链为: &lt;code class=&quot;highlighter-rouge&quot;&gt;DecorView&lt;/code&gt; –&amp;gt; &lt;code class=&quot;highlighter-rouge&quot;&gt;FrameLayout&lt;/code&gt; –&amp;gt; &lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt; –&amp;gt; &lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;)的&lt;code class=&quot;highlighter-rouge&quot;&gt;measure()&lt;/code&gt;方法, 在&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;measure()&lt;/code&gt;方法中, 则是去调用了&lt;code class=&quot;highlighter-rouge&quot;&gt;onMeausre()&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;onMeasure()&lt;/code&gt;不是&lt;code class=&quot;highlighter-rouge&quot;&gt;final&lt;/code&gt;的,
-所以我们应该去分析的是&lt;code class=&quot;highlighter-rouge&quot;&gt;DecorView&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;onMeasure()&lt;/code&gt;&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private void performMeasure(int childWidthMeasureSpec, int childHeightMeasureSpec) {
-        if (mView == null) {
-            return;
-        }
-        Trace.traceBegin(Trace.TRACE_TAG_VIEW, &quot;measure&quot;);
-        try {
-            mView.measure(childWidthMeasureSpec, childHeightMeasureSpec);
-        } finally {
-            Trace.traceEnd(Trace.TRACE_TAG_VIEW);
-        }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;DecorView&lt;/code&gt;的在&lt;code class=&quot;highlighter-rouge&quot;&gt;onMeasure()&lt;/code&gt;中将&lt;code class=&quot;highlighter-rouge&quot;&gt;MeasureSpec&lt;/code&gt;进行处理和判断之后, 调用了&lt;code class=&quot;highlighter-rouge&quot;&gt;super.onMeasure()&lt;/code&gt;, 即&lt;code class=&quot;highlighter-rouge&quot;&gt;FrameLayout&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;onMeasure()&lt;/code&gt;; 如下, 可以看出, &lt;code class=&quot;highlighter-rouge&quot;&gt;FrameLayout&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;onMeasure()&lt;/code&gt;方法中处理了&lt;code class=&quot;highlighter-rouge&quot;&gt;Margin&lt;/code&gt;(&lt;code class=&quot;highlighter-rouge&quot;&gt;measureChildWithMargins()&lt;/code&gt;)和&lt;code class=&quot;highlighter-rouge&quot;&gt;Padding&lt;/code&gt;(&lt;code class=&quot;highlighter-rouge&quot;&gt;getPaddingXXX&lt;/code&gt;), 而在&lt;code class=&quot;highlighter-rouge&quot;&gt;measureChildWithMargins()&lt;/code&gt;中会去调用&lt;code class=&quot;highlighter-rouge&quot;&gt;child.measure()&lt;/code&gt;, 将&lt;code class=&quot;highlighter-rouge&quot;&gt;MeasureSpec&lt;/code&gt;往下传递(即递归测量), 这样就将测量工作传递到了子&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;中&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;// DecorView.onMeasure()
-protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-    ...
-    super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-    ...
-}
-
-// FrameLayout.onMeasure()
-protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        int count = getChildCount();
-        for (int i = 0; i &amp;lt; count; i++) {
-            final View child = getChildAt(i);
-            if (mMeasureAllChildren || child.getVisibility() != GONE) {
-                measureChildWithMargins(child, widthMeasureSpec, 0, heightMeasureSpec, 0);
-                final LayoutParams lp = (LayoutParams) child.getLayoutParams();
-                maxWidth = Math.max(maxWidth,
-                        child.getMeasuredWidth() + lp.leftMargin + lp.rightMargin);
-                maxHeight = Math.max(maxHeight,
-                        child.getMeasuredHeight() + lp.topMargin + lp.bottomMargin);
-                childState = combineMeasuredStates(childState, child.getMeasuredState());
-                if (measureMatchParentChildren) {
-                    if (lp.width == LayoutParams.MATCH_PARENT ||
-                            lp.height == LayoutParams.MATCH_PARENT) {
-                        mMatchParentChildren.add(child);
-                    }
-                }
-            }
-        }
-
-        // Account for padding too
-        maxWidth += getPaddingLeftWithForeground() + getPaddingRightWithForeground();
-        maxHeight += getPaddingTopWithForeground() + getPaddingBottomWithForeground();
-        ...
-}
-
-// FrameLayout.measureChildWithMargins()
-protected void measureChildWithMargins(View child,
-            int parentWidthMeasureSpec, int widthUsed,
-            int parentHeightMeasureSpec, int heightUsed) {
-            ....
-            child.measure(childWidthMeasureSpec, childHeightMeasureSpec);
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;子&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;中的&lt;code class=&quot;highlighter-rouge&quot;&gt;measure&lt;/code&gt;过程分为&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的测量过程&lt;/p&gt;
-
-&lt;h3 id=&quot;23-viewgroup的measure过程&quot;&gt;2.3 ViewGroup的measure过程&lt;/h3&gt;
-
-&lt;p&gt;我们来看子&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;是一个&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;时的测量过程; 其实对于&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;来说, 不同的&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;有不同的布局规则, 比如&lt;code class=&quot;highlighter-rouge&quot;&gt;LinearLayout&lt;/code&gt;, 有竖直布局和水平布局两种, 而这两种不同的布局测量方式也不同; 所以我们这里只是简单的看一下&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;对子&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的通用测量方式&lt;/p&gt;
-
-&lt;p&gt;代码如下; 测量逻辑比较简单, 也是遍历所有的子&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;, 然后将&lt;code class=&quot;highlighter-rouge&quot;&gt;MeasureSpec&lt;/code&gt;往下传递, 实现递归测量, 不做细讲啦~&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;protected void measureChildren(int widthMeasureSpec, int heightMeasureSpec) {
-        final int size = mChildrenCount;
-        final View[] children = mChildren;
-        for (int i = 0; i &amp;lt; size; ++i) {
-            final View child = children[i];
-            if ((child.mViewFlags &amp;amp; VISIBILITY_MASK) != GONE) {
-                measureChild(child, widthMeasureSpec, heightMeasureSpec);
-            }
-        }
-}
-
-
-protected void measureChild(View child, int parentWidthMeasureSpec,
-            int parentHeightMeasureSpec) {
-        final LayoutParams lp = child.getLayoutParams();
-            
-        // 获取child的MeasureSpec, 同时考虑Padding
-        final int childWidthMeasureSpec = getChildMeasureSpec(parentWidthMeasureSpec,
-                mPaddingLeft + mPaddingRight, lp.width);
-        final int childHeightMeasureSpec = getChildMeasureSpec(parentHeightMeasureSpec,
-                mPaddingTop + mPaddingBottom, lp.height);
-
-        child.measure(childWidthMeasureSpec, childHeightMeasureSpec); // 递归调用, 又回到了这里
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;需要注意的一点是子&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;MeasureSpec&lt;/code&gt;的构建, 这里以&lt;code class=&quot;highlighter-rouge&quot;&gt;getChildMeasureSpec()&lt;/code&gt;为例, 如下; 其构造规则除了考虑了&lt;code class=&quot;highlighter-rouge&quot;&gt;Padding&lt;/code&gt;以外, 和上面&lt;code class=&quot;highlighter-rouge&quot;&gt;MeasureSpec&lt;/code&gt;的构造规则表是相同的, 可以结合代码注释再次理解该表&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public static int getChildMeasureSpec(int spec, int padding, int childDimension) {
-        int specMode = MeasureSpec.getMode(spec);
-        int specSize = MeasureSpec.getSize(spec);
-
-        int size = Math.max(0, specSize - padding);
-
-        int resultSize = 0;
-        int resultMode = 0;
-
-        switch (specMode) {
-        case MeasureSpec.EXACTLY: // 如果父View尺寸确定
-            if (childDimension &amp;gt;= 0) { // childDimension &amp;gt;= 0, 表示的是子View的layout_xxx设置了具体的数值, 因为wrap_content = -2
-                                       // match_parent = -1
-                resultSize = childDimension; // 那么集合MeasureSpec的构造规则及对应解释, 这里应该为childDimension, EXACTLY
-                resultMode = MeasureSpec.EXACTLY;
-            } else if (childDimension == LayoutParams.MATCH_PARENT) { // 如果子View的layout_xxx为match_parent, 同时父View尺寸也确定
-                resultSize = size;  // 说明子View尺寸确定, 且为父View尺寸
-                resultMode = MeasureSpec.EXACTLY;
-            } else if (childDimension == LayoutParams.WRAP_CONTENT) { // 如果子View的layout_xxx为wrap_content, 父View尺寸确定
-                resultSize = size;  // 说明子View尺寸不确定, 最大不应该超过父View尺寸
-                resultMode = MeasureSpec.AT_MOST;
-            }
-            break;
-
-        case MeasureSpec.AT_MOST: // 如果父View尺寸不确定
-            if (childDimension &amp;gt;= 0) {
-                resultSize = childDimension; // 如果子View的layout_xxx设置了明确的值
-                resultMode = MeasureSpec.EXACTLY; // 那么子View有确定尺寸, 即为设置的值
-            } else if (childDimension == LayoutParams.MATCH_PARENT) { // 如果子View的layout_xxx为match_parent, 但是父View的尺寸不定
-                resultSize = size; // 那么子View的尺寸也不定, 最大尺寸不应该超过父View尺寸
-                resultMode = MeasureSpec.AT_MOST;
-            } else if (childDimension == LayoutParams.WRAP_CONTENT) { // 如果子View的layout_xxx为wrap_content, 父View尺寸不定
-                resultSize = size; // 那么子View尺寸也不定, 最大尺寸不应该超过父View尺寸
-                resultMode = MeasureSpec.AT_MOST;
-            }
-            break;
-
-        case MeasureSpec.UNSPECIFIED:
-            if (childDimension &amp;gt;= 0) {
-                // Child wants a specific size... let him have it
-                resultSize = childDimension;
-                resultMode = MeasureSpec.EXACTLY;
-            } else if (childDimension == LayoutParams.MATCH_PARENT) {
-                // Child wants to be our size... find out how big it should
-                // be
-                resultSize = View.sUseZeroUnspecifiedMeasureSpec ? 0 : size;
-                resultMode = MeasureSpec.UNSPECIFIED;
-            } else if (childDimension == LayoutParams.WRAP_CONTENT) {
-                // Child wants to determine its own size.... find out how
-                // big it should be
-                resultSize = View.sUseZeroUnspecifiedMeasureSpec ? 0 : size;
-                resultMode = MeasureSpec.UNSPECIFIED;
-            }
-            break;
-        }
-        //noinspection ResourceType
-        return MeasureSpec.makeMeasureSpec(resultSize, resultMode);
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h3 id=&quot;24-view的measure过程&quot;&gt;2.4 View的measure过程&lt;/h3&gt;
-
-&lt;p&gt;这里的&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;不包括 &lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;啦~, 只是一个单纯的&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;控件而已; 其默认测量规则如下; 这里以&lt;code class=&quot;highlighter-rouge&quot;&gt;getSuggestedMinimumWidth()&lt;/code&gt;为例, 这里的&lt;code class=&quot;highlighter-rouge&quot;&gt;mMinWidth&lt;/code&gt;指的是&lt;code class=&quot;highlighter-rouge&quot;&gt;android:minWidth&lt;/code&gt;属性, 默认为&lt;code class=&quot;highlighter-rouge&quot;&gt;0&lt;/code&gt;, 如果设置了背景, 则返回背景宽度和指定&lt;code class=&quot;highlighter-rouge&quot;&gt;mMinWidth&lt;/code&gt;中的最大值; 至于&lt;code class=&quot;highlighter-rouge&quot;&gt;getDefaultSize()&lt;/code&gt;则是返回默认尺寸, 我们只需关心&lt;code class=&quot;highlighter-rouge&quot;&gt;AT_MOST&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;EXACTLY&lt;/code&gt;两种情况即可(因为&lt;code class=&quot;highlighter-rouge&quot;&gt;UNSPECIFIED&lt;/code&gt;一般用于系统, 不常用), 可以看出, &lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;对于这两种情况默认都是返回的&lt;code class=&quot;highlighter-rouge&quot;&gt;specSize&lt;/code&gt;, 即传入的尺寸,
-我们上面说了&lt;code class=&quot;highlighter-rouge&quot;&gt;AT_MOST&lt;/code&gt;对应&lt;code class=&quot;highlighter-rouge&quot;&gt;wrap_content&lt;/code&gt;模式, &lt;code class=&quot;highlighter-rouge&quot;&gt;EXACTLY&lt;/code&gt;对应&lt;code class=&quot;highlighter-rouge&quot;&gt;match_parent&lt;/code&gt;和指定数值情况, 而&lt;code class=&quot;highlighter-rouge&quot;&gt;getDefaultSize()&lt;/code&gt;将这两种情况都默认返回了&lt;code class=&quot;highlighter-rouge&quot;&gt;specSize&lt;/code&gt;, 即父&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;可用空间, 很明显, 这对于&lt;code class=&quot;highlighter-rouge&quot;&gt;wrap_content&lt;/code&gt;是不支持的(因为此时的&lt;code class=&quot;highlighter-rouge&quot;&gt;wrap_content&lt;/code&gt;就相当于&lt;code class=&quot;highlighter-rouge&quot;&gt;match_parent&lt;/code&gt;), 所以在自定义&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的时候, 需要自己根据逻辑实现&lt;code class=&quot;highlighter-rouge&quot;&gt;wrap_content&lt;/code&gt;的情况, 具体实现可以参见&lt;code class=&quot;highlighter-rouge&quot;&gt;TextView&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;ImageView&lt;/code&gt;等对&lt;code class=&quot;highlighter-rouge&quot;&gt;wrap_content&lt;/code&gt;的支持&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        setMeasuredDimension(getDefaultSize(getSuggestedMinimumWidth(), widthMeasureSpec),
-                getDefaultSize(getSuggestedMinimumHeight(), heightMeasureSpec));
-}
-
-// 这里以Width为例
-protected int getSuggestedMinimumWidth() {
-        return (mBackground == null) ? mMinWidth : max(mMinWidth, mBackground.getMinimumWidth());
-}
-
-public static int getDefaultSize(int size, int measureSpec) {
-        int result = size;
-        int specMode = MeasureSpec.getMode(measureSpec);
-        int specSize = MeasureSpec.getSize(measureSpec);
-
-        switch (specMode) {
-        case MeasureSpec.UNSPECIFIED:
-            result = size;
-            break;
-        case MeasureSpec.AT_MOST:
-        case MeasureSpec.EXACTLY:
-            result = specSize;
-            break;
-        }
-        return result;
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;当然, 最终我们确定&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的尺寸之后, 还需要通过&lt;code class=&quot;highlighter-rouge&quot;&gt;setMeasuredDimension()&lt;/code&gt;正真设置和作用到&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;上; 需要注意的是, 此时只是&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的测量宽高, 可能不是实际宽高, 实际宽高在&lt;code class=&quot;highlighter-rouge&quot;&gt;layout&lt;/code&gt;过程中才能确定, 出现测量宽高和实际宽高不相等的原因 主要是在&lt;code class=&quot;highlighter-rouge&quot;&gt;layout&lt;/code&gt;过程中改变了&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;实际布局的位置尺寸等造成的, 但是一般情况下二者都是相等的&lt;/p&gt;
-
-&lt;h3 id=&quot;25-自定义view时measure过程注意事项&quot;&gt;2.5 自定义View时measure过程注意事项&lt;/h3&gt;
-
-&lt;p&gt;到这里, 其实&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;绘制过程中的&lt;code class=&quot;highlighter-rouge&quot;&gt;measure&lt;/code&gt;过程就已经讲解完了; 但是笔者还想提一下在实际使用, 即自定义&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;时, 还需要注意哪些方面; 这里需要提前声明的是, 下面所说的&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;不包含&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;, 只是单纯的子&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;~&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;需要自己实现对&lt;code class=&quot;highlighter-rouge&quot;&gt;wrap_content&lt;/code&gt;的支持&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;需要自己处理&lt;code class=&quot;highlighter-rouge&quot;&gt;padding&lt;/code&gt;的情况, &lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;还需要处理&lt;code class=&quot;highlighter-rouge&quot;&gt;margin&lt;/code&gt;的情况&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;记住使用&lt;code class=&quot;highlighter-rouge&quot;&gt;setMeasuredDimension()&lt;/code&gt;使测量尺寸生效, 否则会抛异常&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;三-layout过程&quot;&gt;三. layout过程&lt;/h2&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;layout&lt;/code&gt;过程会确定&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;最终的位置和尺寸, 对于&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;而言, &lt;code class=&quot;highlighter-rouge&quot;&gt;layout&lt;/code&gt;过程才是真正实现不同布局的关键; &lt;code class=&quot;highlighter-rouge&quot;&gt;layout&lt;/code&gt;过程的传递是从&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewRootImp&lt;/code&gt;中的&lt;code class=&quot;highlighter-rouge&quot;&gt;performTraversals()&lt;/code&gt;开始的, 在&lt;code class=&quot;highlighter-rouge&quot;&gt;performTraversals()&lt;/code&gt;中去调用了&lt;code class=&quot;highlighter-rouge&quot;&gt;performLayout()&lt;/code&gt;开始往下传递&lt;code class=&quot;highlighter-rouge&quot;&gt;layout&lt;/code&gt;过程; 而在&lt;code class=&quot;highlighter-rouge&quot;&gt;performLayout()&lt;/code&gt;中则是去调用了&lt;code class=&quot;highlighter-rouge&quot;&gt;mView.layout(0, 0, mView.getMeasuredWidth(), mView.getMeasuredHeight());&lt;/code&gt;, 前面我们已经说过了&lt;code class=&quot;highlighter-rouge&quot;&gt;mView&lt;/code&gt;其实就是&lt;code class=&quot;highlighter-rouge&quot;&gt;DecorView&lt;/code&gt;,
-但是这里我们并不去分析&lt;code class=&quot;highlighter-rouge&quot;&gt;DecorView&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;layout()&lt;/code&gt;方法, 因为这是针对某一具体布局而言的; 我们这里选择具体分析&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;layout()&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;对于&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;而言, 其&lt;code class=&quot;highlighter-rouge&quot;&gt;layout()&lt;/code&gt;方法如下; 可以看出其调用了&lt;code class=&quot;highlighter-rouge&quot;&gt;View.layout()&lt;/code&gt;, 在&lt;code class=&quot;highlighter-rouge&quot;&gt;View.layout()&lt;/code&gt;中, 可以看出调用了&lt;code class=&quot;highlighter-rouge&quot;&gt;View.onLayout()&lt;/code&gt;, 而&lt;code class=&quot;highlighter-rouge&quot;&gt;View.onLayout()&lt;/code&gt;在&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;中是一个空实现, 同时还需要注意一点就是&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;layout()&lt;/code&gt;方法是由&lt;code class=&quot;highlighter-rouge&quot;&gt;final&lt;/code&gt;修饰的, 这也就意味着自定义&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;的时候, 不能重写&lt;code class=&quot;highlighter-rouge&quot;&gt;layout()&lt;/code&gt;方法, 另外, &lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;onLayout()&lt;/code&gt;是一个抽象方法, 也就是说我们必须自己去是实现; 其实这也很好理解, 因为对于自定义&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;来说, 我们需要实现自己的布局,
-这里实现逻辑其实就是写在&lt;code class=&quot;highlighter-rouge&quot;&gt;onLayout()&lt;/code&gt;中即可&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;// ViewGroup.layout()
-public final void layout(int l, int t, int r, int b) {
-    ...
-    super.layout(l, t, r, b);
-    ...
-}
-
-// View.layout()
-public void layout(int l, int t, int r, int b) {
-    ...
-    boolean changed = isLayoutModeOptical(mParent) ? setOpticalFrame(l, t, r, b) : setFrame(l, t, r, b);
-    ...
-    onLayout(changed, l, t, r, b);
-    ...
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;另外, 还需要注意一点的是, &lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;layout()&lt;/code&gt;方法中还调用了一个&lt;code class=&quot;highlighter-rouge&quot;&gt;setFrame()&lt;/code&gt;, 该方法的作用其实是设置&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;mLeft&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;mRight&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;mTop&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;mBottom&lt;/code&gt;的值; 这里反应的其实是上文说过的一句话, 即&lt;code class=&quot;highlighter-rouge&quot;&gt;measure&lt;/code&gt;过程中确定测量宽高, 实际宽高需要在&lt;code class=&quot;highlighter-rouge&quot;&gt;layout&lt;/code&gt;过程中确定; 这里就是记录&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的实际宽高; 至于&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的测量宽高可以通过&lt;code class=&quot;highlighter-rouge&quot;&gt;getMeasuredWidth()&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;getMeasuredHeight()&lt;/code&gt;来获取, 这在&lt;code class=&quot;highlighter-rouge&quot;&gt;measure&lt;/code&gt;过程之后即可得到; 实际宽高可以通过&lt;code class=&quot;highlighter-rouge&quot;&gt;getWidth()&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;getHeight()&lt;/code&gt;来得到,
-这在&lt;code class=&quot;highlighter-rouge&quot;&gt;layout&lt;/code&gt;过程之后可以获取; 至于二者的区别, 这里以&lt;code class=&quot;highlighter-rouge&quot;&gt;getMeasuredWidth()&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;getWidth()&lt;/code&gt;为例, 如下; 可以看出&lt;code class=&quot;highlighter-rouge&quot;&gt;getMeasuredWidth()&lt;/code&gt;获取的其实就是&lt;code class=&quot;highlighter-rouge&quot;&gt;MeasureSpec&lt;/code&gt;中的&lt;code class=&quot;highlighter-rouge&quot;&gt;SpecSize&lt;/code&gt;, 而&lt;code class=&quot;highlighter-rouge&quot;&gt;getWidth()&lt;/code&gt;获取的则是实际宽高(因为是&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的右边界减去左边界); 上面已经说过了测量宽高和实际宽高的区别, 这里就不再赘述啦~&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public final int getMeasuredWidth() {
-    return mMeasuredWidth &amp;amp; MEASURED_SIZE_MASK;
-}
-
-public final int getWidth() {
-    return mRight - mLeft;
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;layout&lt;/code&gt;过程比较简单, 也是一个递归调用的过程, 至于自定义&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;时主要是在自定义&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;需要涉及到&lt;code class=&quot;highlighter-rouge&quot;&gt;layout&lt;/code&gt;过程的设计, 需要考虑的还是要&lt;code class=&quot;highlighter-rouge&quot;&gt;padding&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;margin&lt;/code&gt;的影响啦~&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;四-draw过程&quot;&gt;四. draw过程&lt;/h2&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;draw&lt;/code&gt;过程其实就是其&lt;code class=&quot;highlighter-rouge&quot;&gt;draw()&lt;/code&gt;方法, 在前面&lt;code class=&quot;highlighter-rouge&quot;&gt;performTraversals()&lt;/code&gt;中, 最终会调用到&lt;code class=&quot;highlighter-rouge&quot;&gt;mView.draw()&lt;/code&gt;(实际上调用栈是: &lt;code class=&quot;highlighter-rouge&quot;&gt;performTraversals()&lt;/code&gt; –&amp;gt; &lt;code class=&quot;highlighter-rouge&quot;&gt;performDraw()&lt;/code&gt; –&amp;gt; &lt;code class=&quot;highlighter-rouge&quot;&gt;draw()&lt;/code&gt; –&amp;gt; &lt;code class=&quot;highlighter-rouge&quot;&gt;drawSoftware()&lt;/code&gt; –&amp;gt; &lt;code class=&quot;highlighter-rouge&quot;&gt;mView.draw()&lt;/code&gt;)&lt;/p&gt;
-
-&lt;p&gt;自定义&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;时官方并不建议去重写&lt;code class=&quot;highlighter-rouge&quot;&gt;draw()&lt;/code&gt;方法, 而是建议重写&lt;code class=&quot;highlighter-rouge&quot;&gt;onDraw()&lt;/code&gt;去实现自己的逻辑, &lt;code class=&quot;highlighter-rouge&quot;&gt;onDraw()&lt;/code&gt;在&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;中实际上是一个空实现; 我们这里先来看&lt;code class=&quot;highlighter-rouge&quot;&gt;draw()&lt;/code&gt;的实现逻辑&lt;/p&gt;
-
-&lt;p&gt;官方文档注释中已经说明了&lt;code class=&quot;highlighter-rouge&quot;&gt;draw()&lt;/code&gt;过程的实现逻辑, 如下; 可以看出, 主要绘制逻辑为:&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;绘制背景&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;绘制内容(即自己)&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;绘制子&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;绘制装饰, 如滚动条等前景&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;&lt;strong&gt;注&lt;/strong&gt;: 第&lt;code class=&quot;highlighter-rouge&quot;&gt;2&lt;/code&gt;步和第&lt;code class=&quot;highlighter-rouge&quot;&gt;5&lt;/code&gt;步一般会跳过&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;// View.draw()
-public void draw(Canvas canvas) {
-        ...
-        /*
-         *      1. Draw the background
-         *      2. If necessary, save the canvas' layers to prepare for fading
-         *      3. Draw view's content
-         *      4. Draw children
-         *      5. If necessary, draw the fading edges and restore layers
-         *      6. Draw decorations (scrollbars for instance)
-         */
-        ...
-         // Step 1, draw the background, if needed
-         if (!dirtyOpaque) {
-             drawBackground(canvas);
-         }
-         // skip step 2 &amp;amp; 5 if possible (common case)
-         // Step 3, draw the content
-         if (!dirtyOpaque) 
-            onDraw(canvas);
-         // Step 4, draw the children
-         dispatchDraw(canvas);
-         // Step 6, draw decorations (foreground, scrollbars)
-         onDrawForeground(canvas);
-         ...
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;我们知道, 绘制内容这一步是调用的&lt;code class=&quot;highlighter-rouge&quot;&gt;onDraw()&lt;/code&gt;, 即我们自己自定义&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;时需要实现的内容; 另外, 这里需要注意的一点是绘制子&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;时, 通过&lt;code class=&quot;highlighter-rouge&quot;&gt;dispatchDraw()&lt;/code&gt;去传递绘制绘制过程, 该方法在&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;中是一个空实现, 一般用于&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;时; 在&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;中其实现如下; 其实就是遍历所有的子&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;, 然后依次调用子&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;draw()&lt;/code&gt;方法绘制出子&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;即可&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;protected void dispatchDraw(Canvas canvas) {
-    ...
-    for (int i = 0; i &amp;lt; childrenCount; i++) {
-        ...
-        more |= drawChild(canvas, transientChild, drawingTime); // 在drawChild()中调用child.draw(canvas, this, drawingTime)将绘制过程传递
-        ...
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;五-总结&quot;&gt;五. 总结&lt;/h2&gt;
-
-&lt;p&gt;到这里, &lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的整个绘制流程就讲解完成啦~, 当然这对于我们随心所欲的实现炫酷的自定义&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;还是第一步理论基础, 真正要做到还是需要靠自己多动手去画咯~&lt;/p&gt;
-</description>
-        <pubDate>Mon, 24 Sep 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/09/24/%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B9%8BView%E7%BB%98%E5%88%B6%E6%B5%81%E7%A8%8B/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/09/24/%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B9%8BView%E7%BB%98%E5%88%B6%E6%B5%81%E7%A8%8B/</guid>
-        
-        <category>Android</category>
-        
-        <category>View</category>
         
         
       </item>

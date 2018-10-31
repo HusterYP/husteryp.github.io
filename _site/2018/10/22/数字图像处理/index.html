@@ -10,9 +10,9 @@
     <meta name="keyword"  content="">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>Java集合框架之LinkedHashMap - 袁平 | HusterYP-Blog</title>
+    <title>数字图像处理 - 袁平 | HusterYP-Blog</title>
 
-    <link rel="canonical" href="http://localhost:4000/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/">
+    <link rel="canonical" href="http://localhost:4000/2018/10/22/%E6%95%B0%E5%AD%97%E5%9B%BE%E5%83%8F%E5%A4%84%E7%90%86/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/css/bootstrap.min.css">
@@ -140,15 +140,15 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/tags/#Java" title="Java">Java</a>
+                        <a class="tag" href="/tags/#数字图像处理" title="数字图像处理">数字图像处理</a>
                         
                     </div>
-                    <h1>Java集合框架之LinkedHashMap</h1>
+                    <h1>数字图像处理</h1>
                     
                     
-                    <h2 class="subheading">LinkedHashMap源码讲解</h2>
+                    <h2 class="subheading">数字图像处理笔记</h2>
                     
-                    <span class="meta">Posted by 袁平 on August 28, 2018</span>
+                    <span class="meta">Posted by 袁平 on October 22, 2018</span>
                 </div>
             </div>
         </div>
@@ -168,37 +168,7 @@
 
 				<h1 id="前言">前言</h1>
 
-<blockquote>
-  <ol>
-    <li><a href="https://husteryp.github.io/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/">前面</a>我们对Java集合框架有了一个基本的认识; 本文将主要讲解<code class="highlighter-rouge">LinkedHashMap</code>的实现原理和处理细节</li>
-    <li><code class="highlighter-rouge">LinkedHashMap</code>继承于<code class="highlighter-rouge">HashMap</code>, 所以需要先对<code class="highlighter-rouge">HashMap</code>有一个基本的认识, 可以参见<a href="https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/">Java集合框架之HashMap</a></li>
-  </ol>
-</blockquote>
-
-<p>文章源码基于<code class="highlighter-rouge">JDK8</code></p>
-
-<p><strong><code class="highlighter-rouge">Java</code>集合框架系列博客</strong>:</p>
-
-<ol>
-  <li>
-    <p><a href="https://husteryp.github.io/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/">Java集合框架概述</a></p>
-  </li>
-  <li>
-    <p><a href="https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BList/">Java集合框架之List</a></p>
-  </li>
-  <li>
-    <p><a href="https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/">Java集合框架之HashMap</a></p>
-  </li>
-  <li>
-    <p><a href="https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BSet/">Java集合框架之Set</a></p>
-  </li>
-  <li>
-    <p><a href="https://husteryp.github.io/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/">Java集合框架之LinkedHashMap</a></p>
-  </li>
-  <li>
-    <p><a href="https://husteryp.github.io/2018/09/06/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BQueue/">Java集合框架之Queue</a></p>
-  </li>
-</ol>
+<p>数字图像处理笔记</p>
 
 <hr />
 
@@ -206,96 +176,152 @@
 
 <hr />
 
-<h2 id="一-概述">一. 概述</h2>
+<blockquote>
+  <p>可以使用Utrapdit软件查看图片的ASIIC值(可以看任何文件的ASIIC值)</p>
+</blockquote>
 
-<p><code class="highlighter-rouge">LinkedHashMap</code>继承于<code class="highlighter-rouge">HashMap</code>, 除了<code class="highlighter-rouge">HashMap</code>元素遍历无序, <code class="highlighter-rouge">LinkedHashMap</code>元素遍历有序以外, 具有<code class="highlighter-rouge">HashMap</code>的大多数特点; 另外, <code class="highlighter-rouge">LinkedHashMap</code>内部还有一个双向链表, 用于记录元素顺序(这也是保证其遍历有序的原因), 具体有两种顺序,  一个是插入顺序, 一个访问顺序; 同时, <code class="highlighter-rouge">LinkedHashMap</code>还可以用来实现<code class="highlighter-rouge">LRU</code>算法(<code class="highlighter-rouge">Least Recently Used</code>, 即最近最少使用算法); 本文将主要分析<code class="highlighter-rouge">LinkedHashMap</code>的两个大方面: 一个是遍历有序, 另一个是用于<code class="highlighter-rouge">LRU</code>算法的特性</p>
+<h2 id="一-第一讲-数字图像处理概述">一. 第一讲 数字图像处理概述</h2>
 
-<hr />
+<ol>
+  <li>图形和图像的区别:</li>
+</ol>
 
-<h2 id="二-遍历有序">二. 遍历有序</h2>
+<blockquote>
+  <ol>
+    <li>图形: 一条指令; 比如一条直线的表示</li>
+    <li>图像: 大矩阵, 里面的数据是每一点的颜色值</li>
+  </ol>
+</blockquote>
 
-<p><code class="highlighter-rouge">LinkedHashMap</code>遍历有序, 主要是因为其在<code class="highlighter-rouge">HashMap</code>的基础上, 增加了一个双向链表, 按照元素的插入顺序或者访问顺序, 将数据重新组织成一个双向链表; 根据标志位<code class="highlighter-rouge">final boolean accessOrder;</code>来决定是按照插入顺序(<code class="highlighter-rouge">insertion-order</code>, 此时需要<code class="highlighter-rouge">accessOrder = false</code>)还是访问顺序(<code class="highlighter-rouge">access-order</code>, 此时需要<code class="highlighter-rouge">accessOrder = true</code>)来组织</p>
-
-<p><code class="highlighter-rouge">LinkedHashMap</code>改写了<code class="highlighter-rouge">HashMap</code>的节点, 如下; 在其中增加了<code class="highlighter-rouge">before</code>和<code class="highlighter-rouge">after</code>域用于帮助组织双向链表</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    static class Entry&lt;K,V&gt; extends HashMap.Node&lt;K,V&gt; {
-        Entry&lt;K,V&gt; before, after;
-        Entry(int hash, K key, V value, Node&lt;K,V&gt; next) {
-            super(hash, key, value, next);
-        }
-    }
-</code></pre></div></div>
-
-<p>对于<code class="highlighter-rouge">accessOrder</code>值的指定只能在创建<code class="highlighter-rouge">LinkedHashMap</code>的时候, 也就是说<code class="highlighter-rouge">LinkedHashMap</code>并没有提供明确的<code class="highlighter-rouge">set()</code>方法来改变该值(一旦在构造函数中指定, 就无法改变); <code class="highlighter-rouge">LinkedHashMap</code>提供了如下构造函数可以用于指定<code class="highlighter-rouge">accessOrder</code>的值, 其余构造函数中, <code class="highlighter-rouge">accessOrder</code>都默认为<code class="highlighter-rouge">false</code>, 即默认以<code class="highlighter-rouge">insertion-order</code>的顺序组织双向链表</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    public LinkedHashMap(int initialCapacity,
-                         float loadFactor,
-                         boolean accessOrder) {
-        super(initialCapacity, loadFactor);
-        this.accessOrder = accessOrder;
-    }
-</code></pre></div></div>
-
-<p><code class="highlighter-rouge">LinkedHashMap</code>重写了<code class="highlighter-rouge">HashMap</code>的<code class="highlighter-rouge">newNode()</code>函数, <code class="highlighter-rouge">newNode()</code>在进行元素插入的时候会被<code class="highlighter-rouge">HashMap.putVal()</code>调用, <code class="highlighter-rouge">LinkedHashMap</code>用自己的<code class="highlighter-rouge">Entry</code>节点替换<code class="highlighter-rouge">HashMap</code><code class="highlighter-rouge">Node</code>节点的同时, 进行双向链表的构建, 使得程序改动最小</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    Node&lt;K,V&gt; newNode(int hash, K key, V value, Node&lt;K,V&gt; e) {
-        LinkedHashMap.Entry&lt;K,V&gt; p =
-            new LinkedHashMap.Entry&lt;K,V&gt;(hash, key, value, e);
-        linkNodeLast(p); // 将节点插入到双向链表的末尾
-        return p;
-    }
-</code></pre></div></div>
-
-<p>至于<code class="highlighter-rouge">linkNodeLast()</code>函数, 即将节点插入到双向链表的末尾, 该方法比较简单, 这里就不再贴源码啦 !</p>
-
-<p>那么当我们指定了<code class="highlighter-rouge">accessOrder</code>为<code class="highlighter-rouge">true</code>的时候, 即以元素访问顺序来组织双向链表的时候, 其实就只是在获取元素的时候, 将被访问的元素移动到链表末尾; 如下; 那么链表表头的元素就是最近没有被访问的元素, 这也是我们实现<code class="highlighter-rouge">LRU</code>算法的依据(稍后会细讲)</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    public V get(Object key) {
-        Node&lt;K,V&gt; e;
-        if ((e = getNode(hash(key), key)) == null)
-            return null;
-        if (accessOrder) // 如果指定为按照元素访问顺序组织元素
-            afterNodeAccess(e); // 将元素移动到链表末尾
-        return e.value;
-    }
-</code></pre></div></div>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    void afterNodeAccess(Node&lt;K,V&gt; e) { // move node to last
-        // 省略具体细节
-        ...
-    }
-</code></pre></div></div>
-
-<p>到这里, 我们对<code class="highlighter-rouge">LinkedHashMap</code>遍历有序的原因有了较为详细的了解; 接下来要讲的是<code class="highlighter-rouge">LinkedHashMap</code>的一个应用, 即用于实现<code class="highlighter-rouge">LRU</code>算法的特性</p>
+<ol>
+  <li>
+    <p>宽高相乘就是图像的像素</p>
+  </li>
+  <li>
+    <p>图像空间分辨率和灰度级分辨率(表用多少位表示)</p>
+  </li>
+  <li>
+    <p>jpg是压缩格式; 网上的视屏也是经过压缩后传输再解压缩播放的</p>
+  </li>
+</ol>
 
 <hr />
 
-<h2 id="三-lru算法">三. LRU算法</h2>
+<h2 id="二-第二讲-图像存储格式">二. 第二讲 图像存储格式</h2>
 
-<p><strong>LRU算法</strong>即<code class="highlighter-rouge">Least Recently Used</code>, 其依据是<strong>如果数据最近被访问过, 那么其将来被访问的几率也更大</strong></p>
+<ol>
+  <li>
+    <p>单色图像(黑白图像): 一位;</p>
+  </li>
+  <li>
+    <p>8位索引图像: 有一个颜色表和一个像颜色表的序号的数据矩阵</p>
+  </li>
+</ol>
 
-<p><code class="highlighter-rouge">Android</code>中的<code class="highlighter-rouge">LruCache</code>(内存缓存)内部就是利用<code class="highlighter-rouge">LinkedHashMap</code>实现的</p>
+<blockquote>
+  <ol>
+    <li>8位索引灰度图像: 颜色表中的RGB相等</li>
+    <li>8位伪彩色索引图像: 颜色表中的RGB值不等</li>
+  </ol>
+</blockquote>
 
-<p>前面我们讲了, 当<code class="highlighter-rouge">accessOrder</code>设置为<code class="highlighter-rouge">true</code>, 即按照元素访问顺序组织数据的时候, 会在<code class="highlighter-rouge">get()</code>方法中将被访问的元素移动到链表的末尾, 那么链表首部的元素就是最久没有访问的, 所以, 当要使用<code class="highlighter-rouge">LinkedHashMap</code>实现<code class="highlighter-rouge">LRU</code>的时候, 必须将<code class="highlighter-rouge">accessOrder</code>置为<code class="highlighter-rouge">true</code></p>
-
-<p>另外, 还需要我们自己去定义<code class="highlighter-rouge">LRU</code>的实现规则, 即自己定义什么时候应该移除最久没有使用的元素; 此时我们需要去重写<code class="highlighter-rouge">LinkedHashMap</code>的<code class="highlighter-rouge">removeEldestEntry()</code>函数, <code class="highlighter-rouge">removeEldestEntry()</code>是在我们插入一个元素完毕之后, 回调<code class="highlighter-rouge">afterNodeInsertion()</code>中调用的, 如下; 但是<code class="highlighter-rouge">removeEldestEntry()</code>默认返回<code class="highlighter-rouge">false</code>, 所以需要我们自己去定义规则</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    void afterNodeInsertion(boolean evict) { // possibly remove eldest
-        LinkedHashMap.Entry&lt;K,V&gt; first;
-        if (evict &amp;&amp; (first = head) != null &amp;&amp; removeEldestEntry(first)) { // 插入元素之后, 判断是否需要移除最久没有访问的元素
-            K key = first.key;
-            removeNode(hash(key), key, null, false, true); // 移除链表首部的元素
-        }
-    }
-</code></pre></div></div>
-
-<p>至于自定义规则, 比如: 约定最多在内存中缓存多少个元素, 超过该阈值之后, <code class="highlighter-rouge">removeEldestEntry()</code>返回<code class="highlighter-rouge">true</code>, 即将旧元素移除; 或者, 规定缓存占用多少内存, 当达到该阈值之后, 即进行旧元素移除; 当然, 这些都是后话, 具体的<code class="highlighter-rouge">LRU</code>算法, 可以根据实际需求来定</p>
+<ol>
+  <li>
+    <p>彩色图像: 分为伪彩色和真彩色(每个像素24位, RGB各占8位);</p>
+  </li>
+  <li>
+    <p>BMP, GIF, TIF, JPEG</p>
+    <blockquote>
+      <ol>
+        <li>GIF: 主要用于不同平台上交流和传输, 而不是作为文件的存储格式</li>
+        <li>TIF: 最复杂</li>
+      </ol>
+    </blockquote>
+  </li>
+</ol>
 
 <hr />
 
-<h2 id="四-总结">四. 总结</h2>
+<h2 id="三-第三讲-bmp位图文件的存储格式">三. 第三讲 BMP位图文件的存储格式</h2>
 
-<p><code class="highlighter-rouge">LinkedHashMap</code>基于<code class="highlighter-rouge">HashMap</code>, 总体上比较简单, 主要掌握上文说的两个主要特点即可, 不再赘述 !</p>
+<ol>
+  <li>BMP文件组成:</li>
+</ol>
+
+<blockquote>
+  <ol>
+    <li>位图文件头结构: BITMAPFILEHEADER</li>
+    <li>位图信息头结构: BITMAPINFOHEADER</li>
+    <li>位图颜色表: RGBQUAD(有的可能没有颜色表, 具体有没有, 参见第二讲)</li>
+    <li>位图像素数据</li>
+  </ol>
+</blockquote>
+
+<ol>
+  <li>BMP文件头: 14个字节</li>
+</ol>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>typedef struct tagBITMAPFILEHEADER
+{
+    WORD bfType; // BM: BMP文件标识(前两个字节), 一个字节是B, 一个字节是M
+    DWORD bfSize; // 文件大小
+    WORD bfReserved1; // 0
+    WORD bfReserved2; // 0
+    DWORD bfOffBits; // 位图数据的起始位置
+} BITMAPFILEHEDADER; 
+</code></pre></div></div>
+
+<ol>
+  <li>BMP信息头结构: 40个字节</li>
+</ol>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>typedef struct tagBITMAPINFOHEADER
+{
+    DWORD biSize; // 本结构的大小: 40个字节
+    LONG biWidth; // 位图宽度, 像素为单位
+    LONG biHeight; // 位图高度, 像素为单位
+    WORD biPlanes; // 位平面数, 是标准的一般是1
+    WORD biBitCount; // 每个像素所需的位数
+    DWORD biCompression; // 位图压缩类型: BMP位图一般不压缩, 取0
+    DWORD biSizeImage; // 位图大小
+    LONG biXpelsPerMeter; // 水平分辨率(像素点/米)
+    LONG biYPelsPerMeter; // 垂直分辨率(像素点/米)
+    DWORD biCIrUsed; // 颜色数: 如果是标准颜色, 如16, 24, 256等位颜色, 则是0; 如果是自己定义, 则需要将颜色数写在这
+    DWORD biCIrImportant; // 重要的颜色数
+} BITMAPINFOHEADER;
+</code></pre></div></div>
+
+<ol>
+  <li>颜色表:</li>
+</ol>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>typedef struct tagRGBQUAD 
+{
+    BYTE rgbBlue; // 蓝色
+    BYTE rgbGreen; // 绿色
+    BYTE rgbRed; // 红色
+    BYTE rgbReserved; // 保留字节; 0
+} RGBQUAD;
+</code></pre></div></div>
+
+<ol>
+  <li>位图信息 – BITMAPINFO结构: 图像显示时作为参数传入函数</li>
+</ol>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>struct tagBITMAPINFO
+{
+    BITMAPINFOHEADER bmiHeader;
+    RGBQUAD bmiColors[1]; // 颜色表(上的第一项)
+} BITMAPINFO;
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="四-几何变换基础">四. 几何变换基础</h2>
+
+<blockquote>
+  <p>讲解平移, 缩放, 旋转, 镜像等的矩阵和原理</p>
+</blockquote>
 
 
                 <hr>
@@ -306,12 +332,12 @@
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BSet/" data-toggle="tooltip" data-placement="top" title="Java集合框架之Set">&larr; Previous Post</a>
+                        <a href="/2018/10/13/OpenGL%E7%AC%94%E8%AE%B0/" data-toggle="tooltip" data-placement="top" title="OpenGL笔记">&larr; Previous Post</a>
                     </li>
                     
                     
                     <li class="next">
-                        <a href="/2018/08/31/%E5%9B%BE%E7%89%87%E4%B8%89%E7%BA%A7%E7%BC%93%E5%AD%98%E4%B9%8BLruCache%E5%92%8CDiskLurCache/" data-toggle="tooltip" data-placement="top" title="图片三级缓存之内存缓存和磁盘缓存">Next Post &rarr;</a>
+                        <a href="/2018/10/28/Compiler/" data-toggle="tooltip" data-placement="top" title="编译器笔记与实验记录">Next Post &rarr;</a>
                     </li>
                     
                 </ul>
@@ -417,8 +443,8 @@
 <script type="text/javascript">
     /* * * CONFIGURATION VARIABLES * * */
     var disqus_shortname = "HusterYP";
-    var disqus_identifier = "/2018/08/28/Java集合框架之LinkedHashMap";
-    var disqus_url = "http://localhost:4000/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/";
+    var disqus_identifier = "/2018/10/22/数字图像处理";
+    var disqus_url = "http://localhost:4000/2018/10/22/%E6%95%B0%E5%AD%97%E5%9B%BE%E5%83%8F%E5%A4%84%E7%90%86/";
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
