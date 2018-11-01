@@ -5,9 +5,312 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Mon, 29 Oct 2018 17:55:45 +0800</pubDate>
-    <lastBuildDate>Mon, 29 Oct 2018 17:55:45 +0800</lastBuildDate>
+    <pubDate>Thu, 01 Nov 2018 12:15:37 +0800</pubDate>
+    <lastBuildDate>Thu, 01 Nov 2018 12:15:37 +0800</lastBuildDate>
     <generator>Jekyll v3.8.3</generator>
+    
+      <item>
+        <title>Java并发[一]</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Java并发编程实战第一部分总结&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;一-基本概念&quot;&gt;一. 基本概念&lt;/h2&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;先检查后执行&lt;/strong&gt;: 首先观察到某个条件为真(例如文件X不存在), 然后根据这个观察结果采用相应的动作(创建文件X), 但事实上, 在你观察到这个结果以及开始穿件文件之间, 观察结果可能变得无效(另一个线程创建了文件X), 从而导致各种问题(未预期异常, 数据被覆盖, 文件被破坏等)&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;每个&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;对象都可以用作一个实现同步的锁, 这些锁被称为内置锁或监视锁(&lt;code class=&quot;highlighter-rouge&quot;&gt;synchronized&lt;/code&gt;)&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;不要在构造过程中使&lt;code class=&quot;highlighter-rouge&quot;&gt;this&lt;/code&gt;引用逸出: 当且仅当对象的构造函数返回时, 对象才处于可预测的和一致的状态, 因此, 当从对象的构造函数中发布对象时, 只是发布了一个尚未构造完成的对象, 如果&lt;code class=&quot;highlighter-rouge&quot;&gt;this&lt;/code&gt;引用在构造过程中逸出, 那么这种对象就被认为是不正确的构造; 常见场景是:&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;在构造函数中创建线程: 在构造函数中创建线程并没有错, 但是最好不要立即启动它&lt;/li&gt;
+    &lt;li&gt;在构造函数中注册事件监听: 依据是非静态内部类会持有外部类的引用&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;考虑下列程序&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class ThisEscape {
+    public ThisEscape(EventSource source) {
+        source.registerListener(new EventListener() { // this逸出
+            public void onEvent(Event e) { 
+                doSomething(); 
+            }
+        });
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;使用静态工厂方法来防止&lt;code class=&quot;highlighter-rouge&quot;&gt;this&lt;/code&gt;引用在构造过程中逸出&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class SafeListener {
+    private final EventListener listener;
+
+    private SafeListener() {
+        listener = new EventListener() {
+            public void onEvent(Event e) {
+                doSomething();
+            }
+        };
+    }
+
+    public static SafeListener newInstance(EventSource source) {
+        SafeListener listener = new SafeListener();
+        source.registerListener(listener.listener);
+        return listener;
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;一个正确构造的对象可以通过以下方式来安全的发布:
+    &lt;blockquote&gt;
+      &lt;ol&gt;
+        &lt;li&gt;在静态初始化函数中初始化一个对象引用&lt;/li&gt;
+        &lt;li&gt;将对象的引用保存到&lt;code class=&quot;highlighter-rouge&quot;&gt;volatile&lt;/code&gt;类型的域或者&lt;code class=&quot;highlighter-rouge&quot;&gt;AtomicReferance&lt;/code&gt;对象中&lt;/li&gt;
+        &lt;li&gt;将对象的引用保存到某个正确构造对象的&lt;code class=&quot;highlighter-rouge&quot;&gt;final&lt;/code&gt;类型域中&lt;/li&gt;
+        &lt;li&gt;将对象的引用保存到一个由锁保护的域中&lt;/li&gt;
+      &lt;/ol&gt;
+    &lt;/blockquote&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;要安全的发布一个静态构造的对象, 最简单和安全的方式是使用静态的初始化器: 静态初始化器由&lt;code class=&quot;highlighter-rouge&quot;&gt;JVM&lt;/code&gt;在类的初始化阶段执行, 由于在&lt;code class=&quot;highlighter-rouge&quot;&gt;JVM&lt;/code&gt;内部存在着同步机制, 因此通过这种方式初始化的任何对象都可以被安全的发布&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public static Holder holder = new Holder();
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;二-synchronized&quot;&gt;二. synchronized&lt;/h2&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;synchronized&lt;/code&gt;使用的是对象锁, 修饰方法, 代码块或局部执行代码时, 使用的是当前锁对象; 修饰静态方法时, 使用的&lt;code class=&quot;highlighter-rouge&quot;&gt;XX.class&lt;/code&gt;锁对象&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;内置锁(&lt;code class=&quot;highlighter-rouge&quot;&gt;synchronized&lt;/code&gt;)可重入; 可重入: 如果某个线程试图获得一个已经由它自己持有的锁, 那么这个请求就会成功, 而不会造成死锁
+考虑如下代码, 子类改写了父类的&lt;code class=&quot;highlighter-rouge&quot;&gt;synchronized&lt;/code&gt;方法, 然后调用父类中的方法, 此时如果没有可重入的锁, 那么这段代码将产生死锁&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class Widget {
+    public synchronized void doSomething() {
+        System.out.println(&quot;Widget&quot;);
+    }
+}
+
+class LoggingWidget extends Widget {
+    @Override
+    public synchronized void doSomething() {
+        System.out.println(&quot;LoggingWidget&quot;);
+        super.doSomething();
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;关键字&lt;code class=&quot;highlighter-rouge&quot;&gt;synchronized&lt;/code&gt;不能被继承:
+    &lt;blockquote&gt;
+      &lt;p&gt;1、子类继承父类时, 如果没有重写父类中的同步方法, 子类同一对象, 在不同线程并发调用该方法时, 具有同步效果&lt;/p&gt;
+      &lt;ol&gt;
+        &lt;li&gt;子类继承父类, 并且重写父类中的同步方法,但没有添加关键字&lt;code class=&quot;highlighter-rouge&quot;&gt;synchronized&lt;/code&gt;, 子类同一对象, 在不同线程并发调用该方法时, 不再具有同步效果&lt;/li&gt;
+      &lt;/ol&gt;
+    &lt;/blockquote&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class Widget {
+    public synchronized void doSomething() {
+        System.out.println(Thread.currentThread() + &quot; Widget&quot;);
+    }
+}
+
+class LoggingWidget extends Widget {
+    @Override
+    public void doSomething() { // 这里没有加synchronized
+        System.out.println(Thread.currentThread() + &quot; LoggingWidget&quot;); // 由于子类的doSomething()没有加synchronized方法, 所以子类的doSomething()不可同步
+        super.doSomething(); // 但是父类的doSomething()仍可同步
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;三-volatile&quot;&gt;三. volatile&lt;/h2&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;volatile&lt;/code&gt;变量用来确保将变量的更新操作通知到其他线程; 当把变量声明为&lt;code class=&quot;highlighter-rouge&quot;&gt;volatile&lt;/code&gt;类型后, 不会将该变量上的操作与其他内存操作一起重排序, &lt;code class=&quot;highlighter-rouge&quot;&gt;volatile&lt;/code&gt;变量不会被缓存在寄存器或者对其他处理器不可见的地方, 因此在读取&lt;code class=&quot;highlighter-rouge&quot;&gt;volatile&lt;/code&gt;类型的变量总会返回最新写入的值&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;在当前大多数处理器架构上, 读取&lt;code class=&quot;highlighter-rouge&quot;&gt;volatile&lt;/code&gt;变量的开销只比读取非&lt;code class=&quot;highlighter-rouge&quot;&gt;volatile&lt;/code&gt;变量的开销略高一些&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;对于非&lt;code class=&quot;highlighter-rouge&quot;&gt;volatile&lt;/code&gt;类型的&lt;code class=&quot;highlighter-rouge&quot;&gt;long&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;double&lt;/code&gt;变量(&lt;code class=&quot;highlighter-rouge&quot;&gt;64&lt;/code&gt;位), &lt;code class=&quot;highlighter-rouge&quot;&gt;JVM&lt;/code&gt;允许将&lt;code class=&quot;highlighter-rouge&quot;&gt;64&lt;/code&gt;位的读操作或写操作分解为两个&lt;code class=&quot;highlighter-rouge&quot;&gt;32&lt;/code&gt;位的操作; 当读取一个非&lt;code class=&quot;highlighter-rouge&quot;&gt;volatile&lt;/code&gt;类型的&lt;code class=&quot;highlighter-rouge&quot;&gt;long&lt;/code&gt;变量时, 如果对该变量的读操作和写操作在不同线程中执行, 那么很可能会读取到某个值的高&lt;code class=&quot;highlighter-rouge&quot;&gt;32&lt;/code&gt;位和另一个值的低&lt;code class=&quot;highlighter-rouge&quot;&gt;32&lt;/code&gt;位; 因此, 即使不考虑失效数据问题, 在多线程中使用共享且可变的&lt;code class=&quot;highlighter-rouge&quot;&gt;long&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;double&lt;/code&gt;等类型的变量也是不安全的, 除非用&lt;code class=&quot;highlighter-rouge&quot;&gt;volatile&lt;/code&gt;来声明他们, 或者用锁保护起来&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;四-同步工具类&quot;&gt;四. 同步工具类&lt;/h2&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;同步工具类可以根据其自身的状态来协调线程的控制流; 可以用作同步工具类的如: 阻塞队列, 信号量(Semaphore), 栅栏(Barrier), 闭锁(Latch)&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h3 id=&quot;41-阻塞队列-blockingqueue&quot;&gt;4.1 阻塞队列-BlockingQueue&lt;/h3&gt;
+
+&lt;p&gt;阻塞队列提供了可阻塞的&lt;code class=&quot;highlighter-rouge&quot;&gt;put&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;take&lt;/code&gt;方法, 以及支持定时的&lt;code class=&quot;highlighter-rouge&quot;&gt;offer&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;poll&lt;/code&gt;方法, 如果队列已经满了, 那么&lt;code class=&quot;highlighter-rouge&quot;&gt;put&lt;/code&gt;方法将阻塞直到有空间可用; 如果队列为空, 那么&lt;code class=&quot;highlighter-rouge&quot;&gt;take&lt;/code&gt;方法将阻塞直到有元素可用(实际上是通过&lt;code class=&quot;highlighter-rouge&quot;&gt;while&lt;/code&gt;循环不断插入元素和获取元素, 以及结合信号量来实现的阻塞)&lt;/p&gt;
+
+&lt;p&gt;常用的接口&lt;code class=&quot;highlighter-rouge&quot;&gt;BlockingQueue&lt;/code&gt;的实现有: &lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedBlockingQueue&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;ArrayBlockingQueue&lt;/code&gt;, 这两个是&lt;code class=&quot;highlighter-rouge&quot;&gt;FIFO&lt;/code&gt;队列, 分别与&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedList&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;ArrayList&lt;/code&gt;类似; 还有一个是&lt;code class=&quot;highlighter-rouge&quot;&gt;PriorityBlockingQueue&lt;/code&gt;, 是一个优先级队列, 可以按照元素的自然顺序来排列, 也可以使用&lt;code class=&quot;highlighter-rouge&quot;&gt;Comparator&lt;/code&gt;来排列(如果它们实现了&lt;code class=&quot;highlighter-rouge&quot;&gt;Comparable&lt;/code&gt;方法); 最后一个&lt;code class=&quot;highlighter-rouge&quot;&gt;BlockingQueue&lt;/code&gt;的实现是&lt;code class=&quot;highlighter-rouge&quot;&gt;SynchronousQueue&lt;/code&gt;, 实际上它不是一个真正的队列, 因为它不会为队列中元素维护存储空间, 与其他队列不同的是, 它维护一组线程,
+这些线程在等待这把元素加入或移出队列, 因为&lt;code class=&quot;highlighter-rouge&quot;&gt;SynchronousQueue&lt;/code&gt;没有存储功能, 因此&lt;code class=&quot;highlighter-rouge&quot;&gt;put&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;take&lt;/code&gt;会一直阻塞, 直到有另一个线程已经准备好参与到交付过程中, 仅当有足够多的消费者, 并且总是有一个消费者准备好获取交付工作时, 才适合使用同步队列&lt;/p&gt;
+
+&lt;p&gt;这里再提一下&lt;strong&gt;双端队列&lt;/strong&gt;, 即&lt;code class=&quot;highlighter-rouge&quot;&gt;Deque&lt;/code&gt;(可以在队列头和队列尾高效插入和移除), 具体实现包括&lt;code class=&quot;highlighter-rouge&quot;&gt;ArrayDeque&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedBlockingDeque&lt;/code&gt;; 双端队列适用于工作密取, 即每个消费者都有自己的双端队列, 如果一个消费者完成了自己双端队列的全部工作, 那么它可以从其他消费者双端队列末尾秘密的获取工作(因为可以首尾插入和获取, 所以互不影响)&lt;/p&gt;
+
+&lt;h3 id=&quot;42-闭锁&quot;&gt;4.2 闭锁&lt;/h3&gt;
+
+&lt;h4 id=&quot;421-countdownlatch&quot;&gt;4.2.1 CountDownLatch&lt;/h4&gt;
+
+&lt;p&gt;作用: 可以延迟线程的进度直到其到达终止状态; 闭锁的作用相当于一扇门: 在闭锁到达结束状态之前, 这扇门一直是关闭的, 并且没有任何线程能通过, 当到达结束状态时, 这扇门会打开并允许所有的线程通过; 当闭锁到达结束状态后, 将不再改变状态, 因此这扇门永远保持打开状态; 闭锁可以用来确保某些活动直到其他活动都完成后才继续进行(可以使一个或多个线程等待一组事件发生)&lt;/p&gt;
+
+&lt;p&gt;闭锁状态包括一个计数器, 该计数器被初始化为一个正数, 表示需要等待的事件数量, &lt;code class=&quot;highlighter-rouge&quot;&gt;countDown&lt;/code&gt;递减计数器 , 表示有一个事件已经发生了, 而&lt;code class=&quot;highlighter-rouge&quot;&gt;await&lt;/code&gt;方法等待计数器达到零, 这表示所有需要等待的事件都已发生; 如果计数器值非零, 那么&lt;code class=&quot;highlighter-rouge&quot;&gt;await&lt;/code&gt;会一直阻塞直到计数器为零, 或者等待中的线程中断, 或者等待超时&lt;/p&gt;
+
+&lt;p&gt;用法参见下列程序:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class LatchTest {
+    public long timeTasks(int nThreads, final Runnable task) throws InterruptedException {
+        final CountDownLatch startGate = new CountDownLatch(1);
+        final CountDownLatch endGate = new CountDownLatch(nThreads);
+        for (int i = 0; i &amp;lt; nThreads; i++) {
+            Thread t = new Thread(() -&amp;gt; {
+                try {
+                    startGate.await(); // 等待所有线程准备完毕
+                    task.run();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } finally {
+                    endGate.countDown();
+                }
+            });
+            t.start();
+        }
+        long start = System.nanoTime();
+        startGate.countDown(); // 执行到这里, 说明所有线程准备好了, 可以开始执行了
+        endGate.await(); // 主线程等待任务执行完毕
+        long end = System.nanoTime();
+        return end - start;
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h4 id=&quot;422-futuretask&quot;&gt;4.2.2 FutureTask&lt;/h4&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;FutureTask&lt;/code&gt;也可以用作闭锁, 相当于一种可生成结果的&lt;code class=&quot;highlighter-rouge&quot;&gt;Runnable&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Future.get()&lt;/code&gt;: 如果任务已经完成, 那么&lt;code class=&quot;highlighter-rouge&quot;&gt;get()&lt;/code&gt;会立即返回结果, 否则&lt;code class=&quot;highlighter-rouge&quot;&gt;get()&lt;/code&gt;将阻塞直到任务进入完成状态, 然后返回结果或者抛出异常&lt;/p&gt;
+
+&lt;p&gt;基本使用参见如下代码:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class FutureTest {
+    private final FutureTask&amp;lt;String&amp;gt; futureTask = new FutureTask&amp;lt;String&amp;gt;(new Callable&amp;lt;String&amp;gt;() {
+        @Override
+        public String call() throws Exception {
+            // 耗时操作
+            return &quot;Hello&quot;;
+        }
+    });
+
+    private final Thread thread = new Thread(futureTask);
+
+    public void start() { // 不要在构造函数中构造和start线程: 参见上文安全发布
+        thread.start();
+    }
+
+    public String get() throws ExecutionException, InterruptedException {
+        return futureTask.get(); // 阻塞直到结束或者异常
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;43-信号量-semaphore&quot;&gt;4.3 信号量-Semaphore&lt;/h3&gt;
+
+&lt;p&gt;计数信号量用来控制同时访问某个特定资源的操作数量, 或者同时执行某个指定操作的数量&lt;/p&gt;
+
+&lt;p&gt;计算信号量的一种就简化形式是二值信号量, 即初始值为&lt;code class=&quot;highlighter-rouge&quot;&gt;1&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;Semaphore&lt;/code&gt;, 二值信号量可以用作互斥体, 并具备不可重入的加锁语义: 谁拥有这个唯一的许可, 谁就拥有了互斥锁&lt;/p&gt;
+
+&lt;p&gt;使用信号量实现有界阻塞容器:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class BoundedHashSet&amp;lt;T&amp;gt; {
+    private final Set&amp;lt;T&amp;gt; set;
+    private final Semaphore sem;
+
+    public BoundedHashSet(int bound) {
+        set = Collections.synchronizedSet(new HashSet&amp;lt;T&amp;gt;());
+        sem = new Semaphore(bound);
+    }
+
+    public boolean add(T t) throws InterruptedException {
+        sem.acquire();
+        boolean wasAdded = false;
+        try {
+            wasAdded = set.add(t);
+            return wasAdded;
+        } finally {
+            if (!wasAdded)
+                sem.release();
+        }
+    }
+
+    public boolean remove(T o) {
+        boolean wasRemoved = set.remove(o);
+        if (wasRemoved)
+            sem.release();
+        return wasRemoved;
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;44-栅栏-barrier&quot;&gt;4.4 栅栏-Barrier&lt;/h3&gt;
+
+&lt;p&gt;栅栏类似于闭锁, 它能阻塞一组线程直到某个事件发生, 栅栏与闭锁的关键区别在于, 所有线程必须同时到达栅栏位置, 才能继续执行, 闭锁用于等待事件, 而栅栏用于等待其他线程&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;CyclicBarrier&lt;/code&gt;可以使一定数量的参与方反复的在栅栏位置汇集, 它在并行迭代算法中非常有用; 当线程到达栅栏位置时将调用&lt;code class=&quot;highlighter-rouge&quot;&gt;await&lt;/code&gt;方法, 这个方法将阻塞直到所有线程都到达栅栏位置; 如果所有线程都到达了栅栏位置, 那么栅栏将打开, 此时所有线程都被释放, 而栅栏将被重置以便下次使用; 如果对&lt;code class=&quot;highlighter-rouge&quot;&gt;await&lt;/code&gt;调用超时, 或者&lt;code class=&quot;highlighter-rouge&quot;&gt;await&lt;/code&gt;阻塞的线程被中断, 那么栅栏就被认为是打破了, 所有阻塞的&lt;code class=&quot;highlighter-rouge&quot;&gt;await&lt;/code&gt;调用都将终止并抛出&lt;code class=&quot;highlighter-rouge&quot;&gt;BrokenBarrierException&lt;/code&gt;; 如果成功通过栅栏, 那么&lt;code class=&quot;highlighter-rouge&quot;&gt;await&lt;/code&gt;将为每个线程返回一个唯一到达索引号;
+&lt;code class=&quot;highlighter-rouge&quot;&gt;CyclicBarrier&lt;/code&gt;还可以使你将一个栅栏操作传递给构造函数, 这是一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Runnable&lt;/code&gt;, 当成功通过栅栏时会(在一个子任务线程中)执行它, 但在阻塞线程被释放之前是不能执行的&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;五-遗留&quot;&gt;五. 遗留&lt;/h2&gt;
+
+&lt;p&gt;Vector, Hashtable, CopyOnWriteArrayList(写入时复制: Copy-On-Write), CopyOnWriteArraySet, BlockingQueue, ConcurrentLinkedQueue, PriorityQueue
+Deque: ArrayDeque, LinkedBlockingDeque&lt;/p&gt;
+
+&lt;p&gt;三个interrupt()理解&lt;/p&gt;
+</description>
+        <pubDate>Wed, 31 Oct 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/10/31/Java%E5%B9%B6%E5%8F%91%E4%B8%80/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/10/31/Java%E5%B9%B6%E5%8F%91%E4%B8%80/</guid>
+        
+        <category>Java</category>
+        
+        
+      </item>
     
       <item>
         <title>编译器笔记与实验记录</title>
@@ -2948,283 +3251,6 @@ PropertyValuesHolder 的进阶使用：使用 PropertyValuesHolder.ofKeyframe() 
         <guid isPermaLink="true">http://localhost:4000/2018/09/27/%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B9%8B%E5%B8%B8%E7%94%A8%E5%B7%A5%E5%85%B7Draft/</guid>
         
         <category>Draft</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>Java内存区域与内存溢出异常</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;p&gt;本文是对«深入理解Java虚拟机»第二章以及其他博客的阅读总结&lt;/p&gt;
-
-&lt;p&gt;重点是需要去理解各区域存储的是什么, 以此从底层理解对象的创建与引用等过程; 同时还需要明确的一点是各部分会产生的异常, 以及产生异常的原因&lt;/p&gt;
-
-&lt;p&gt;&lt;strong&gt;注&lt;/strong&gt;: 文中部分图片来自网络, 但是忘了出处, 侵删~&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;一-基本概念&quot;&gt;一. 基本概念&lt;/h2&gt;
-
-&lt;p&gt;在开始讲解之前, 需要先明确关于&lt;code class=&quot;highlighter-rouge&quot;&gt;JVM&lt;/code&gt;的一些基本概念&lt;/p&gt;
-
-&lt;p&gt;我们都知道, &lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;是一个跨平台的语言, &lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;跨平台的基本支撑其实就是&lt;code class=&quot;highlighter-rouge&quot;&gt;JVM&lt;/code&gt;对操作系统底层细节的屏蔽, 相当于加了一个中间层(计算机中的任何问题都可以加一个中间层解决~), &lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;不再像&lt;code class=&quot;highlighter-rouge&quot;&gt;C/C++&lt;/code&gt;等语言一样直接翻译为针对特殊平台的机器码, 而是翻译为字节码, 也即是我们的&lt;code class=&quot;highlighter-rouge&quot;&gt;class&lt;/code&gt;文件, 下图大概可以比较简明的概括了~; 字节码就相当于&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;世界中的汇编, 而&lt;code class=&quot;highlighter-rouge&quot;&gt;JVM&lt;/code&gt;则不是跨平台的, 只是不同平台的&lt;code class=&quot;highlighter-rouge&quot;&gt;JVM&lt;/code&gt;都能识别和运行标准格式的字节码文件而已&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/JVM/Java编译.png&quot; alt=&quot;Java编译&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;关于&lt;code class=&quot;highlighter-rouge&quot;&gt;JVM&lt;/code&gt;运行&lt;code class=&quot;highlighter-rouge&quot;&gt;class&lt;/code&gt;文件, 我觉得下图已经可以比较准确的表达了&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/JVM/JVM.png&quot; alt=&quot;JVM&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;我们下面要讲的就是&lt;code class=&quot;highlighter-rouge&quot;&gt;Runtime Data Area&lt;/code&gt;部分&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;二-运行时数据区&quot;&gt;二. 运行时数据区&lt;/h2&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;JVM&lt;/code&gt;会在执行&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;程序的时候把它所管理的内存划分为若干个不同的数据区, 如下:&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/JVM/JVM内存区域.png&quot; alt=&quot;JVM&quot; /&gt;&lt;/p&gt;
-
-&lt;h3 id=&quot;21-程序计数器&quot;&gt;2.1 程序计数器&lt;/h3&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;线程私有&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;h4 id=&quot;211-存储数据类型&quot;&gt;2.1.1 存储数据类型&lt;/h4&gt;
-
-&lt;p&gt;指向下一条需要执行的字节码指令; 如果线程正在执行一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;方法, 该计数器记录的是正在执行的虚拟机字节码指令的地址; 如果正在执行&lt;code class=&quot;highlighter-rouge&quot;&gt;Native&lt;/code&gt;方法, 该计数器值则为空(&lt;code class=&quot;highlighter-rouge&quot;&gt;Undefined&lt;/code&gt;)&lt;/p&gt;
-
-&lt;h4 id=&quot;212-异常情况&quot;&gt;2.1.2 异常情况&lt;/h4&gt;
-
-&lt;p&gt;该区域是是唯一一个在&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;虚拟机中没有规定任何&lt;code class=&quot;highlighter-rouge&quot;&gt;OutOfMemoryError&lt;/code&gt;情况的区域&lt;/p&gt;
-
-&lt;h3 id=&quot;22-java虚拟机栈&quot;&gt;2.2 Java虚拟机栈&lt;/h3&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;线程私有&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;h4 id=&quot;221-存储数据类型&quot;&gt;2.2.1 存储数据类型&lt;/h4&gt;
-
-&lt;p&gt;描述&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;方法执行的内存模型, 每个方法调用就对应着一个栈帧的入栈和出栈; 一个栈帧里面存储了局部变量表, 操作数栈, 动态链接, 方法出口等信息&lt;/p&gt;
-
-&lt;p&gt;局部变量表存储了编译器可知的各种基本数据类型, 对象引用, &lt;code class=&quot;highlighter-rouge&quot;&gt;returnAddress&lt;/code&gt;; 局部变量表的大小在编译期间即可确定, 运行期间大小不变&lt;/p&gt;
-
-&lt;h4 id=&quot;222-异常情况&quot;&gt;2.2.2 异常情况&lt;/h4&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;&lt;strong&gt;StackOverflowError&lt;/strong&gt;: 线程请求栈深度大于虚拟机允许深度&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;异常示例代码:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class JavaVMStackSOF {
-
-    private int stackLength = 1;
-
-    public void stackLeak() {
-        stackLength++;
-        stackLeak();
-    }
-
-    public static void main(String[] args) {
-        JavaVMStackSOF sof = new JavaVMStackSOF();
-        try {
-            sof.stackLeak();
-        } catch (Throwable e) {
-            System.out.println(&quot;Stack Length: &quot; + sof.stackLength);
-            throw e;
-        }
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;&lt;strong&gt;OutOfMemoryError&lt;/strong&gt;: 虚拟机栈动态扩展时无法申请到足够内存&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;异常示例代码:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class JavaVMStackOOM {
-
-    private void dontStop() {
-        while (true) {
-        }
-    }
-
-    public void stackLeakByThread() {
-        while (true) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    dontStop();
-                }
-            }).start();
-        }
-    }
-
-    public static void main(String[] args) {
-        JavaVMStackOOM oom = new JavaVMStackOOM();
-        oom.stackLeakByThread();
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;&lt;strong&gt;注&lt;/strong&gt;: 由于操作系统分配给每个进程的内存空间是有限制的, 所以如果是由于建立过多的线程导致内存溢出, 在不能减少线程数或者更换&lt;code class=&quot;highlighter-rouge&quot;&gt;64&lt;/code&gt;位虚拟机的情况下, 可以选择通过减少最大堆和减少栈容量来换取更多的线程&lt;/p&gt;
-
-&lt;h3 id=&quot;23-本地方法栈&quot;&gt;2.3 本地方法栈&lt;/h3&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;线程私有&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;h4 id=&quot;231-存储数据类型&quot;&gt;2.3.1 存储数据类型&lt;/h4&gt;
-
-&lt;p&gt;和虚拟机栈类似, 只是本地方法栈提供的是&lt;code class=&quot;highlighter-rouge&quot;&gt;Native&lt;/code&gt;方法服务&lt;/p&gt;
-
-&lt;h4 id=&quot;232-异常情况&quot;&gt;2.3.2 异常情况&lt;/h4&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;StackOverflowError&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;OutOfMemoryError&lt;/code&gt;&lt;/p&gt;
-
-&lt;h3 id=&quot;24-java堆&quot;&gt;2.4 Java堆&lt;/h3&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;线程共享&lt;/li&gt;
-    &lt;li&gt;垃圾收集管理的主要区域&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;h4 id=&quot;241-存储数据类型&quot;&gt;2.4.1 存储数据类型&lt;/h4&gt;
-
-&lt;p&gt;几乎所有的对象实例都在这里分配&lt;/p&gt;
-
-&lt;h4 id=&quot;242-异常情况&quot;&gt;2.4.2 异常情况&lt;/h4&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;OutOfMemoryError&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;异常示例:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class JavaVMHeapOOM {
-
-    static class HeapOOM {
-    }
-
-    public static void main(String[] args) {
-        List&amp;lt;HeapOOM&amp;gt; list = new ArrayList();
-        while (true) {
-            list.add(new HeapOOM());
-        }
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h3 id=&quot;25-方法区&quot;&gt;2.5 方法区&lt;/h3&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;线程共享&lt;/li&gt;
-    &lt;li&gt;该区域的垃圾回收目标主要是针对常量池的回收和对类型的卸载&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;h4 id=&quot;251-存储数据类型&quot;&gt;2.5.1 存储数据类型&lt;/h4&gt;
-
-&lt;p&gt;存储已被虚拟机加载的类信息, 常量, 静态变量, 即使编译器编译后的代码等数据&lt;/p&gt;
-
-&lt;h4 id=&quot;252-运行时常量池&quot;&gt;2.5.2 运行时常量池&lt;/h4&gt;
-
-&lt;p&gt;运行时常量池是方法区的一部分, 但是&lt;code class=&quot;highlighter-rouge&quot;&gt;JDK6&lt;/code&gt;之后, 常量池被放入了堆中;&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Class&lt;/code&gt;文件中也有常量池部分, 即编译期生成的各种字面量和符号引用, 这部分将在类加载后进入方法区的运行时常量池中, 此外还会把翻译出来的直接引用也存储在运行时常量池中&lt;/p&gt;
-
-&lt;p&gt;运行时常量池相对于&lt;code class=&quot;highlighter-rouge&quot;&gt;Class&lt;/code&gt;文件常量池的另外一个最重要的特征是具备动态性, 即运行期间也可以将新的常量放入池中, 比如&lt;code class=&quot;highlighter-rouge&quot;&gt;String&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;intern()&lt;/code&gt;方法&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;String.intern()&lt;/code&gt;作用是: 如果字符串常量池中已经包含一个等于此&lt;code class=&quot;highlighter-rouge&quot;&gt;String&lt;/code&gt;对象的字符串, 则返回代表池中这个字符串的&lt;code class=&quot;highlighter-rouge&quot;&gt;String&lt;/code&gt;对象; 否则, 将此&lt;code class=&quot;highlighter-rouge&quot;&gt;String&lt;/code&gt;对象包含的字符串添加到常量池中, 并且返回此&lt;code class=&quot;highlighter-rouge&quot;&gt;String&lt;/code&gt;对象的引用&lt;/p&gt;
-
-&lt;p&gt;同样, 收方法区的限制, 当常量池无法再申请到内存时会抛出&lt;code class=&quot;highlighter-rouge&quot;&gt;OutOfMemoryError&lt;/code&gt;&lt;/p&gt;
-
-&lt;h4 id=&quot;253-异常情况&quot;&gt;2.5.3 异常情况&lt;/h4&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;OutOfMemoryError&lt;/code&gt;: 方法区无法满足内存分配需求&lt;/p&gt;
-
-&lt;p&gt;异常示例:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class RuntimeConstantPoolOOM {
-    public static void main(String[] args) {
-        List&amp;lt;String&amp;gt; list = new ArrayList&amp;lt;&amp;gt;();
-        int i = 0;
-        while (true) {
-            list.add(String.valueOf(i++).intern());
-        }
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h3 id=&quot;26-直接内存&quot;&gt;2.6 直接内存&lt;/h3&gt;
-
-&lt;p&gt;直接内存不是虚拟机运行时数据区的一部分, 但是也被频繁使用, 如: 在&lt;code class=&quot;highlighter-rouge&quot;&gt;JDK1.4&lt;/code&gt;中新加入了&lt;code class=&quot;highlighter-rouge&quot;&gt;NIO&lt;/code&gt;类, 引入了一种基于通道(&lt;code class=&quot;highlighter-rouge&quot;&gt;Chanel&lt;/code&gt;)和缓冲区(&lt;code class=&quot;highlighter-rouge&quot;&gt;Buffer&lt;/code&gt;)的&lt;code class=&quot;highlighter-rouge&quot;&gt;I/O&lt;/code&gt;方式, 它可以使用&lt;code class=&quot;highlighter-rouge&quot;&gt;Native&lt;/code&gt;函数库直接分配堆外内存, 然后通过一个存储在&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;堆中的&lt;code class=&quot;highlighter-rouge&quot;&gt;DirectByteBuffer&lt;/code&gt;对象作为这块内存的引用进行操作, 避免了在&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;堆和&lt;code class=&quot;highlighter-rouge&quot;&gt;Native&lt;/code&gt;堆中来回复制数据, 提高性能&lt;/p&gt;
-
-&lt;p&gt;同样会产生&lt;code class=&quot;highlighter-rouge&quot;&gt;OutOfMemoryError&lt;/code&gt;&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;三-常见问题&quot;&gt;三. 常见问题&lt;/h2&gt;
-
-&lt;p&gt;&lt;strong&gt;注&lt;/strong&gt;: 下文摘自文末参考链接, 权作个人笔记~&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;程序运行永远都是在栈中进行的，因而参数传递时, 只存在传递基本类型和对象引用的问题, 不会直接传对象本身;  但是传引用的错觉是如何造成的呢? 在运行栈中, 基本类型和引用的处理是一样的, 都是传值, 所以, 如果是传引用的方法调用, 也同时可以理解为“传引用值”的传值调用, 即引用的处理跟基本类型是完全一样的; 但是当进入被调用方法时, 被传递的这个引用的值, 被程序解释(或者查找)到堆中的对象, 这个时候才对应到真正的对象; 如果此时进行修改; 修改的是引用对应的对象; 而不是引用本身; 即: 修改的是堆中的数据; 所以这个修改是可以保持的了&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;我产生的对象不多呀, 为什么还会产生&lt;code class=&quot;highlighter-rouge&quot;&gt;OutOfMemory&lt;/code&gt;?&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;答: 你继承层次忒多了, &lt;code class=&quot;highlighter-rouge&quot;&gt;Heap&lt;/code&gt;中产生的对象是先产生父类, 然后才产生子类, 明白不?&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;OutOfMemory&lt;/code&gt;错误分几种?
-答: 分两种, 分别是&lt;code class=&quot;highlighter-rouge&quot;&gt;OutOfMemoryError:java heap size&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;OutOfMemoryError: PermGen space&lt;/code&gt;, 两种都是内存溢出, &lt;code class=&quot;highlighter-rouge&quot;&gt;heap size&lt;/code&gt;是说申请不到新的内存了, 这个很常见，检查应用或调整堆内存大小; &lt;code class=&quot;highlighter-rouge&quot;&gt;PermGenspace&lt;/code&gt;是因为永久存储区满了, 这个也很常见, 一般在热发布的环境中出现, 是因为每次发布应用系统都不重启, 久而久之永久存储区中的死对象太多导致新对象无法申请内存, 一般重新启动一下即可&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;为什么不建议在程序中显式的生命&lt;code class=&quot;highlighter-rouge&quot;&gt;System.gc()&lt;/code&gt;?
-答: 因为显式声明是做堆内存全扫描, 也就是&lt;code class=&quot;highlighter-rouge&quot;&gt;Full GC&lt;/code&gt;, 是需要停止所有的活动的(&lt;code class=&quot;highlighter-rouge&quot;&gt;Stop The World Collection&lt;/code&gt;), 你的应用能承受这个吗?&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;四-参考链接&quot;&gt;四. 参考链接&lt;/h2&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;http://www.importnew.com/1993.html&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;http://www.cnblogs.com/dolphin0520/p/3783345.html&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;http://hllvm.group.iteye.com/group/wiki/2905-JVM&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;http://hllvm.group.iteye.com/group/wiki/?show_full=true&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-</description>
-        <pubDate>Thu, 27 Sep 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/09/27/JVM%E4%B9%8B%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F%E4%B8%8E%E5%86%85%E5%AD%98%E6%BA%A2%E5%87%BA%E5%BC%82%E5%B8%B8/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/09/27/JVM%E4%B9%8B%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F%E4%B8%8E%E5%86%85%E5%AD%98%E6%BA%A2%E5%87%BA%E5%BC%82%E5%B8%B8/</guid>
-        
-        <category>Java</category>
         
         
       </item>
