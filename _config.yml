@@ -86,6 +86,10 @@ friends: [
     {
        title: "美团点评",
        href: "https://tech.meituan.com/archives"
+    }, 
+    {
+      title: "天宇"
+      href: "https://eriri.ink/"
     }
     #,{
    #    title: "Foo",
