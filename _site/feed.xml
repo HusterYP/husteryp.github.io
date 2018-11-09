@@ -5,9 +5,246 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Thu, 01 Nov 2018 12:15:37 +0800</pubDate>
-    <lastBuildDate>Thu, 01 Nov 2018 12:15:37 +0800</lastBuildDate>
+    <pubDate>Fri, 09 Nov 2018 11:35:28 +0800</pubDate>
+    <lastBuildDate>Fri, 09 Nov 2018 11:35:28 +0800</lastBuildDate>
     <generator>Jekyll v3.8.3</generator>
+    
+      <item>
+        <title>Java并发[三]</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;讲解锁等高级主题&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;一-死锁及其避免&quot;&gt;一. 死锁及其避免&lt;/h2&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;死锁出现的原因通常是出现锁环路造成的, 不管是显示的还是隐式的&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;通过定义获取锁的顺序来避免死锁: 通过&lt;code class=&quot;highlighter-rouge&quot;&gt;System.identityHashCode(object)&lt;/code&gt;来返回一个锁对象的&lt;code class=&quot;highlighter-rouge&quot;&gt;Object.hashCode()&lt;/code&gt;的返回值; 通过这个值来定义锁的顺序, 并在整个应用程序中都按照这个顺序来获取锁, 那么就不会形成锁环路了&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;        Object fromAcct = new Object(); // 这里的锁对象也可以是其他
+        Object toAcct = new Object();
+        Object tieLock = new Object();
+        int fromHash = System.identityHashCode(fromAcct);
+        int toHash = System.identityHashCode(toAcct);
+        if (fromHash &amp;lt; toHash) {
+            synchronized (fromAcct) {
+                synchronized (toAcct) {
+                    // doSomething
+                }
+            }
+        } else if (fromHash &amp;gt; toHash) {
+            synchronized (toAcct) {
+                synchronized (fromAcct) {
+                    // doSomething
+                }
+            }
+        } else { // 这种情况主要是避免Hash冲突, 此时需要额外的锁
+            synchronized (tieLock) {
+                synchronized (fromAcct) {
+                    synchronized (toAcct) {
+                        // doSomething
+                    }
+                }
+            }
+        }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;使用开放调用(如果在调用某个方法时, 不需要持有锁, 那么这种调用就被成为开放调用)避免死锁: 这种情况下适用于持有不同锁的方法之间的相互调用(注意锁的级别是在方法上, 而不是代码块上)(相当于形成一个隐式的环); 将锁从方法上转移到需要同步的内部代码块上可以避免死锁&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Lock.tryLock()&lt;/code&gt;: 可以检测死锁和从死锁中恢复过来; 即指定一个超时时限, 在等待超过该时间后&lt;code class=&quot;highlighter-rouge&quot;&gt;tryLock()&lt;/code&gt;会返回一个失败信息&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;需要注意的几点:&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;对象分配操作的开销比同步的开销更低(实际上, 现在&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;的分配操作已经比&lt;code class=&quot;highlighter-rouge&quot;&gt;C&lt;/code&gt;语言的&lt;code class=&quot;highlighter-rouge&quot;&gt;malloc&lt;/code&gt;调用更快&lt;/li&gt;
+    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ConcurrentHashMap&lt;/code&gt;的以前实现中(现在实现不同咯)采用分段锁, 使用了一个包含&lt;code class=&quot;highlighter-rouge&quot;&gt;16&lt;/code&gt;个锁的数组, 每个锁保护散列桶的&lt;code class=&quot;highlighter-rouge&quot;&gt;1/16&lt;/code&gt;, 这样就能够支持多达&lt;code class=&quot;highlighter-rouge&quot;&gt;16&lt;/code&gt;个并发的写入器; &lt;code class=&quot;highlighter-rouge&quot;&gt;ConcurrentHashMap&lt;/code&gt;中的&lt;code class=&quot;highlighter-rouge&quot;&gt;size&lt;/code&gt;将对每个分段进行枚举并将每个分段中的元素数量相加, 而不是维护一个全局计数, 为了避免枚举每个计数, &lt;code class=&quot;highlighter-rouge&quot;&gt;ConcurrentHashMap&lt;/code&gt;为每个分段都维护了一个独立的计数, 并通过每个分段的锁来维护这个值(这个地方有两点需要注意: 一个是&lt;code class=&quot;highlighter-rouge&quot;&gt;size&lt;/code&gt;的计算是在每个&lt;code class=&quot;highlighter-rouge&quot;&gt;add&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;remove&lt;/code&gt;操作都会改变一次, 这样虽然增加了&lt;code class=&quot;highlighter-rouge&quot;&gt;add&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;remove&lt;/code&gt;的操作, 但是这会使得&lt;code class=&quot;highlighter-rouge&quot;&gt;size&lt;/code&gt;的计算从&lt;code class=&quot;highlighter-rouge&quot;&gt;O(n)&lt;/code&gt;变为&lt;code class=&quot;highlighter-rouge&quot;&gt;O(1)&lt;/code&gt;; 另一个是为每个分段维护一个&lt;code class=&quot;highlighter-rouge&quot;&gt;size&lt;/code&gt;, 而不是使用一个全局的共享&lt;code class=&quot;highlighter-rouge&quot;&gt;size&lt;/code&gt;, 如果使用一个全局的共享&lt;code class=&quot;highlighter-rouge&quot;&gt;size&lt;/code&gt;的话, ,实际上就破坏了分段锁的分段特性, 因为访问共享&lt;code class=&quot;highlighter-rouge&quot;&gt;size&lt;/code&gt;的时候, 需要同步)&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+</description>
+        <pubDate>Fri, 09 Nov 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/11/09/Java%E5%B9%B6%E5%8F%91-%E4%B8%89/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/11/09/Java%E5%B9%B6%E5%8F%91-%E4%B8%89/</guid>
+        
+        <category>Java</category>
+        
+        
+      </item>
+    
+      <item>
+        <title>Java并发[二]</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;主要讲解了&lt;code class=&quot;highlighter-rouge&quot;&gt;Executor&lt;/code&gt;框架&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;一-executor框架&quot;&gt;一. Executor框架&lt;/h2&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;线程池: 可以通过&lt;code class=&quot;highlighter-rouge&quot;&gt;Executors&lt;/code&gt;中的静态工厂方法之一来创建一个线程池&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;newFixedThreadPool&lt;/code&gt;: 创建一个固定长度的线程池, 每当提交一个任务时就创建一个线程, 直到达到线程池的最大数量, 这是线程池规模将不再变化(如果某个线程发生异常终止, 那么线程池会补充一个线程)&lt;/li&gt;
+    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;newCachedThreadPool&lt;/code&gt;: 创建一个可缓存的线程池, 如果线程池的当前规模超过了处理需求时, 那么将回收空闲的线程, 而当需求增加时, 则可以添加新的线程, 线程池的规模不存在任何限制&lt;/li&gt;
+    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;newSingleThreadExecutor&lt;/code&gt;: 一个单线程的&lt;code class=&quot;highlighter-rouge&quot;&gt;Executor&lt;/code&gt;, 它创建单个工作者线程来执行任务, 如果这个线程异常结束, 会创建另一个线程来代替;&lt;code class=&quot;highlighter-rouge&quot;&gt;newSingleThreadExecutor&lt;/code&gt;能确保依照任务在队列中的顺序来执行(如: &lt;code class=&quot;highlighter-rouge&quot;&gt;FIFO&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;LIFO&lt;/code&gt;, 优先级)&lt;/li&gt;
+    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;newScheduledThreadPool&lt;/code&gt;: 创建了一个固定长度的线程池, 而且以延迟或定时的方式来执行任务, 类似于&lt;code class=&quot;highlighter-rouge&quot;&gt;Timer&lt;/code&gt;&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Executor&lt;/code&gt;生命周期: 为了解决执行服务的生命周期问题, &lt;code class=&quot;highlighter-rouge&quot;&gt;Executor&lt;/code&gt;扩展了&lt;code class=&quot;highlighter-rouge&quot;&gt;ExecutorService&lt;/code&gt;接口; &lt;code class=&quot;highlighter-rouge&quot;&gt;ExecutorService&lt;/code&gt;的生命周期有三种状态: 运行, 关闭, 已终止; 提供了如下方法:&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;shutdown()&lt;/code&gt;: 执行平缓的关闭过程, 不再接受新任务, 同时等待已经提交的任务执行完成(包括那些还未开始执行的任务)&lt;/li&gt;
+    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;shutdownNow()&lt;/code&gt;: 执行粗暴的关闭过程, 尝试取消所有运行中的任务, 并且不再启动队列中尚未开始执行的任务&lt;/li&gt;
+    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;awaitTermination()&lt;/code&gt;: 等待&lt;code class=&quot;highlighter-rouge&quot;&gt;ExecutorService&lt;/code&gt;到达终止状态, 或者通过&lt;code class=&quot;highlighter-rouge&quot;&gt;isTerminated()&lt;/code&gt;来轮循是否已经终止&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;延迟任务与周期任务: &lt;code class=&quot;highlighter-rouge&quot;&gt;Timer&lt;/code&gt;与&lt;code class=&quot;highlighter-rouge&quot;&gt;ScheduleThreadPoolExecutor&lt;/code&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Timer&lt;/code&gt;: 在执行所有定时任务时只会创建一个线程, 如果某个任务执行时间过长, 那么将破坏其他&lt;code class=&quot;highlighter-rouge&quot;&gt;TimerTask&lt;/code&gt;的定时精确性; &lt;code class=&quot;highlighter-rouge&quot;&gt;Timer&lt;/code&gt;线程并不捕获异常, 因此当&lt;code class=&quot;highlighter-rouge&quot;&gt;TimerTask&lt;/code&gt;抛出未检查异常时将终止定时线程&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;考虑下列程序, 运行&lt;code class=&quot;highlighter-rouge&quot;&gt;1&lt;/code&gt;秒之后结束, 而不是运行&lt;code class=&quot;highlighter-rouge&quot;&gt;6&lt;/code&gt;秒; 同时还会抛出异常&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class OutOfTime {
+    public static void main(String[] args) throws InterruptedException {
+        Timer timer = new Timer();
+        timer.schedule(new ThrowTask(), 1);
+        SECONDS.sleep(1);
+        timer.schedule(new ThrowTask(), 5);
+        SECONDS.sleep(5);
+    }
+
+    public static class ThrowTask extends TimerTask {
+
+        @Override
+        public void run() {
+            throw new RuntimeException();
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;携带结果的任务&lt;code class=&quot;highlighter-rouge&quot;&gt;Callable&lt;/code&gt;与&lt;code class=&quot;highlighter-rouge&quot;&gt;Future&lt;/code&gt;:&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Callable&lt;/code&gt;任务主入口点(即&lt;code class=&quot;highlighter-rouge&quot;&gt;call&lt;/code&gt;)将返回一个值, 并可能抛出一个异常&lt;/li&gt;
+    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Future&lt;/code&gt;: 表示一个任务的生命周期, 并提供了相应的方法来判断是否已经完成或取消, 以及获取任务的结果和取消任务等&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;二者区别参见其提供方法:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public interface Callable&amp;lt;V&amp;gt; {
+    V call() throws Exception;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public interface Future&amp;lt;V&amp;gt; {
+    boolean cancel(boolean mayInterruptIfRunning);
+    boolean isCancelled();
+    boolean isDone();
+    V get() throws InterruptedException, ExecutionException;
+    V get(long timeout, TimeUnit unit)
+        throws InterruptedException, ExecutionException, TimeoutException;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;二-中断&quot;&gt;二. 中断&lt;/h2&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;有三个中断方法: &lt;code class=&quot;highlighter-rouge&quot;&gt;interrupt()&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;isInterrupted()&lt;/code&gt;, 静态的&lt;code class=&quot;highlighter-rouge&quot;&gt;interrupted()&lt;/code&gt;(&lt;code class=&quot;highlighter-rouge&quot;&gt;Thread.interrupted()&lt;/code&gt;)&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;interrupt()&lt;/code&gt;能中断目标线程, 而&lt;code class=&quot;highlighter-rouge&quot;&gt;isInterrupt()&lt;/code&gt;能返回目标线程的中断状态, 静态的&lt;code class=&quot;highlighter-rouge&quot;&gt;interrupted()&lt;/code&gt;将清除当前线程的中断状态并返回它之前的值; 这也是清除中断状态的唯一方法&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;阻塞库方法, 如: &lt;code class=&quot;highlighter-rouge&quot;&gt;Thread.sleep()&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;Object.wait()&lt;/code&gt;等, 都检查线程何时中断, 它们在响应中断时执行的操作包括: 清除中断状态, 抛出&lt;code class=&quot;highlighter-rouge&quot;&gt;InterruptedException&lt;/code&gt;&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;调用&lt;code class=&quot;highlighter-rouge&quot;&gt;interrupt()&lt;/code&gt;并不意味着立即停止目标线程正在进行的工作, 而只是传递了请求中断的消息(由线程自己去决定如何处理中断)&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;中断是实现取消最合理的方式&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;响应中断:
+    &lt;blockquote&gt;
+      &lt;ol&gt;
+        &lt;li&gt;传递异常&lt;/li&gt;
+        &lt;li&gt;恢复中断状态&lt;/li&gt;
+      &lt;/ol&gt;
+    &lt;/blockquote&gt;
+  &lt;/li&gt;
+  &lt;li&gt;不可阻塞中断: 许多可阻塞的方法都是通过提前返回或者抛出&lt;code class=&quot;highlighter-rouge&quot;&gt;InterruptedException&lt;/code&gt;来响应中断请求的; 但是并非所有的可阻塞方法或者阻塞机制都能响应中断, 有如下两种情况:&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;当线程执行同步的&lt;code class=&quot;highlighter-rouge&quot;&gt;Socket I/O&lt;/code&gt;时&lt;/li&gt;
+    &lt;li&gt;等待获得内置锁而阻塞时: 但是&lt;code class=&quot;highlighter-rouge&quot;&gt;Lock&lt;/code&gt;类中提供了&lt;code class=&quot;highlighter-rouge&quot;&gt;lockInterruptibly&lt;/code&gt;方法来允许在等待一个锁的同时仍能响应中断&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;三-守护线程&quot;&gt;三. 守护线程&lt;/h2&gt;
+
+&lt;p&gt;线程可以分为两种: 普通线程和守护线程; 在&lt;code class=&quot;highlighter-rouge&quot;&gt;JVM&lt;/code&gt;启动时创建的所有线程中, ,除了主线程以外, 其他的线程都是守护线程(例如垃圾回收器以及其他执行辅助工作的线程); 当创建一个新线程时, 新线程将继承它的线程的守护状态&lt;/p&gt;
+
+&lt;p&gt;普通线程与守护线程的区别仅在于当线程退出时发生的操作, 当一个线程退出时, &lt;code class=&quot;highlighter-rouge&quot;&gt;JVM&lt;/code&gt;会检查其他正在运行的线程, 如果这些线程都是守护线程, 那么&lt;code class=&quot;highlighter-rouge&quot;&gt;JVM&lt;/code&gt;会正常退出操作, 当&lt;code class=&quot;highlighter-rouge&quot;&gt;JVM&lt;/code&gt;停止时, 所有仍然存在的守护线程都将被抛弃–既不会执行&lt;code class=&quot;highlighter-rouge&quot;&gt;finally&lt;/code&gt;代码块, 也不会执行回卷栈, 而&lt;code class=&quot;highlighter-rouge&quot;&gt;JVM&lt;/code&gt;只是直接退出&lt;/p&gt;
+</description>
+        <pubDate>Fri, 02 Nov 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/11/02/Java%E5%B9%B6%E5%8F%91-%E4%BA%8C/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/11/02/Java%E5%B9%B6%E5%8F%91-%E4%BA%8C/</guid>
+        
+        <category>Java</category>
+        
+        
+      </item>
     
       <item>
         <title>Java并发[一]</title>
@@ -391,6 +628,20 @@ Deque: ArrayDeque, LinkedBlockingDeque&lt;/p&gt;
 
 &lt;ul&gt;
   &lt;li&gt;DFA最小化算法: Hopcroft算法&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;三-语法分析&quot;&gt;三. 语法分析&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;语法分析器: 判断程序是否符合语法规则&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/Compiler/语法分析器的作用.png&quot; alt=&quot;语法分析器的作用&quot; /&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;语法分析的数据工具: 上下文无关文法(乔姆斯基文法体系: 为研究自然语言提供的一系列数学工具)&lt;/li&gt;
 &lt;/ul&gt;
 </description>
         <pubDate>Sun, 28 Oct 2018 00:00:00 +0800</pubDate>
@@ -2701,556 +2952,6 @@ public class ClassLoaderTest {
         <guid isPermaLink="true">http://localhost:4000/2018/10/02/JVM%E4%B9%8B%E7%B1%BB%E6%96%87%E4%BB%B6%E7%BB%93%E6%9E%84%E4%B8%8E%E7%B1%BB%E5%8A%A0%E8%BD%BD%E6%9C%BA%E5%88%B6/</guid>
         
         <category>Java</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>Java垃圾收集器与内存分配策略</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;p&gt;本文为«深入理解Java虚拟机»第三章以及部分博客内容总结, 权作个人笔记~&lt;/p&gt;
-
-&lt;p&gt;&lt;strong&gt;注&lt;/strong&gt;: 文中部分图片来自: http://hllvm.group.iteye.com/group/wiki/?show_full=true&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;一-对象是否死亡&quot;&gt;一. 对象是否死亡&lt;/h2&gt;
-
-&lt;p&gt;进行垃圾收集首先需要的就是判断对象是否死亡, 也就是是否可以清除收集, 下面将讲解判断对象是否死亡的方法&lt;/p&gt;
-
-&lt;h3 id=&quot;11-引用计数算法&quot;&gt;1.1 引用计数算法&lt;/h3&gt;
-
-&lt;h4 id=&quot;111-原理&quot;&gt;1.1.1 原理&lt;/h4&gt;
-
-&lt;p&gt;给对象添加一个引用计数, 每当有一个地方引用它, 计数器值就加&lt;code class=&quot;highlighter-rouge&quot;&gt;1&lt;/code&gt;; 当引用失效时, 计数器值就减&lt;code class=&quot;highlighter-rouge&quot;&gt;1&lt;/code&gt;; 任何时刻计数器值为&lt;code class=&quot;highlighter-rouge&quot;&gt;0&lt;/code&gt;的对象就是不可能再被使用的&lt;/p&gt;
-
-&lt;h4 id=&quot;112-优缺点&quot;&gt;1.1.2 优缺点&lt;/h4&gt;
-
-&lt;p&gt;&lt;strong&gt;优点&lt;/strong&gt;: 实现简单, 效率高&lt;/p&gt;
-
-&lt;p&gt;&lt;strong&gt;缺点&lt;/strong&gt;: 无法解决循环引用的问题, 如下;&lt;/p&gt;
-
-&lt;p&gt;主流&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;虚拟机中没有使用引用计数来管理内存的&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class ReferenceCountingGC {
-
-    public Object instance = null;
-    private final int _1MB = 1024 * 1024;
-    private byte[] bigSize = new byte[2 * _1MB]; // 占用内存, 以便GC日志中看清楚是否被回收过
-
-    public static void main(String[] args) {
-        ReferenceCountingGC objA = new ReferenceCountingGC();
-        ReferenceCountingGC objB = new ReferenceCountingGC();
-        objA.instance = objB;
-        objB.instance = objA;
-
-        objA = null;
-        objB = null;
-
-        System.gc();
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h3 id=&quot;12-可达性分析算法&quot;&gt;1.2 可达性分析算法&lt;/h3&gt;
-
-&lt;h4 id=&quot;121-原理&quot;&gt;1.2.1 原理&lt;/h4&gt;
-
-&lt;p&gt;通过一系列成为&lt;code class=&quot;highlighter-rouge&quot;&gt;GC Root&lt;/code&gt;的对象作为起始点, 从这些节点开始往下搜索, 搜索走过的路径称为引用链, 当一个对象到&lt;code class=&quot;highlighter-rouge&quot;&gt;GC Root&lt;/code&gt;没有任何引用链相连时, 则证明此对象是不可引用的; 如下图(&lt;a href=&quot;https://llag9810.github.io/2017/12/04/Java-%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0%EF%BC%88%E4%BA%8C%EF%BC%89/&quot;&gt;图片来自&lt;/a&gt;)&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/JVM/GcRoot.png&quot; alt=&quot;GC Root&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;可作为&lt;code class=&quot;highlighter-rouge&quot;&gt;GC Root&lt;/code&gt;的对象:&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;虚拟机栈(栈帧中的本地变量表)中引用的对象&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;方法区中类静态属性引用的对象&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;方法区中常量引用的对象&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;本地方法栈中&lt;code class=&quot;highlighter-rouge&quot;&gt;JNI&lt;/code&gt;(&lt;code class=&quot;highlighter-rouge&quot;&gt;Native&lt;/code&gt;方法)引用的变量&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;使用可达性分析算法时, 至少需要经过两次标记过程才能宣告一个对象真正死亡: 如果对象在进行可达性分析后发现没有与&lt;code class=&quot;highlighter-rouge&quot;&gt;GC Root&lt;/code&gt;相连接的引用链, 那它会被第一次标记并且进行一次筛选, 筛选的条件是此对象是否有必要执行&lt;code class=&quot;highlighter-rouge&quot;&gt;finalize()&lt;/code&gt;方法, 当对象没有覆盖&lt;code class=&quot;highlighter-rouge&quot;&gt;finalize()&lt;/code&gt;方法时, 或者&lt;code class=&quot;highlighter-rouge&quot;&gt;finalize()&lt;/code&gt;方法已经被虚拟机调用过, 虚拟机将这两种情况都视为没有必要执行(也就是说&lt;code class=&quot;highlighter-rouge&quot;&gt;finalize()&lt;/code&gt;方法最多执行一次, 这点需要注意~);
-如果这个对象被判定为有必要执行&lt;code class=&quot;highlighter-rouge&quot;&gt;finalize()&lt;/code&gt;方法, 那么这个对象将会放置在一个叫做&lt;code class=&quot;highlighter-rouge&quot;&gt;F-Queue&lt;/code&gt;的队列中, 并在稍后由一个由虚拟机自动建立, 低优先级的&lt;code class=&quot;highlighter-rouge&quot;&gt;Finalizer&lt;/code&gt;线程去执行它, 但并不承诺会等待&lt;code class=&quot;highlighter-rouge&quot;&gt;finalize()&lt;/code&gt;方法运行结束(这里也需要注意, 这是为了防止&lt;code class=&quot;highlighter-rouge&quot;&gt;finalize()&lt;/code&gt;中出现耗时操作甚至死循环); 在&lt;code class=&quot;highlighter-rouge&quot;&gt;finalize()&lt;/code&gt;中对象可以使自己再次加入引用链中, 逃脱&lt;code class=&quot;highlighter-rouge&quot;&gt;GC&lt;/code&gt;; &lt;strong&gt;但是不建议使用该方法来逃脱GC&lt;/strong&gt;&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class FinalizeEscapeGC {
-    public static FinalizeEscapeGC finalizeEscapeGC = null;
-
-    int count = 0;
-
-    public void isAlive() {
-        System.out.println(&quot;Yes, I am alive :) &quot;);
-    }
-
-    @Override
-    protected void finalize() throws Throwable {
-        super.finalize();
-        System.out.println(&quot;finalize method executed&quot;);
-        FinalizeEscapeGC.finalizeEscapeGC = this; // 再次进入引用链
-        // 经过验证, 虚拟机不会等待finalize()执行完毕
-//        while (true) {
-//            System.out.println(count++);
-//        }
-    }
-
-    public static void main(String[] args) throws InterruptedException {
-        finalizeEscapeGC = new FinalizeEscapeGC();
-        finalizeEscapeGC = null;
-        System.gc();
-        Thread.sleep(500);
-        if (finalizeEscapeGC == null) {
-            System.out.println(&quot;No, I am dead :(&quot;);
-        } else {
-            finalizeEscapeGC.isAlive();
-        }
-
-        finalizeEscapeGC = null;
-        System.gc();
-        Thread.sleep(500);
-        if (finalizeEscapeGC == null) {
-            System.out.println(&quot;No, I am dead :(&quot;);
-        } else {
-            finalizeEscapeGC.isAlive();
-        }
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;上述程序运行结果为: 可以看出, &lt;code class=&quot;highlighter-rouge&quot;&gt;finalize()&lt;/code&gt;确实被调用了, 而且只被调用了一次&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;finalize method executed
-Yes, I am alive :)
-No, I am dead :(
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h3 id=&quot;13-再谈引用&quot;&gt;1.3 再谈引用&lt;/h3&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;JDK1.2&lt;/code&gt;以前, &lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;引用很传统: 如果&lt;code class=&quot;highlighter-rouge&quot;&gt;reference&lt;/code&gt;类型的数据中存储的数值代表的是另一块内存的起始地址, 就称这块内存代表着一个引用&lt;/p&gt;
-
-&lt;p&gt;但是实际我们希望的是: 当内存空间还足够时, 能够保留在内存中; 当内存空间在进行垃圾收集后还是非常紧张, 则可以抛弃某些对象&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;JDK1.2&lt;/code&gt;之后, 扩充了引用概念:&lt;/p&gt;
-
-&lt;p&gt;&lt;strong&gt;注&lt;/strong&gt;: 以下引用强度递减&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;强引用: 类似&lt;code class=&quot;highlighter-rouge&quot;&gt;Object obj = new Object()&lt;/code&gt;的引用; 这类引用永远不会被垃圾收集器回收&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;软引用: 有用但非必需的对象; 在系统将要发生内存溢出之前, 将回收这部分对象, 如果回收之后内存仍然不够, 才会内存溢出&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;弱引用: 无论当前内存是否足够都会回收掉只被弱引用关联的对象&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;虚引用: 一个对象是否有虚引用的存在, 完全不会对其生存时间构成影响, 也无法通过一个虚引用来取得对象实例; 为一个对象设置虚引用关联的唯一目的是能在这个对象被收集器回收之前收到一个系统通知&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h3 id=&quot;14-方法区回收&quot;&gt;1.4 方法区回收&lt;/h3&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;GC&lt;/code&gt;的主要区域是堆, 但是方法区也会进行&lt;code class=&quot;highlighter-rouge&quot;&gt;GC&lt;/code&gt;; 方法区的&lt;code class=&quot;highlighter-rouge&quot;&gt;GC&lt;/code&gt;主要是废弃常量和无用的类&lt;/p&gt;
-
-&lt;p&gt;废弃常量好理解, 和堆中对象回收一样, 没有引用即回收&lt;/p&gt;
-
-&lt;p&gt;无用类需要满足条件:&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;该类的所有实例都已经被回收, 也就是&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;堆中不存在该类的任何实例&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;加载该类的&lt;code class=&quot;highlighter-rouge&quot;&gt;ClassLoader&lt;/code&gt;已经被回收&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;该类对应的&lt;code class=&quot;highlighter-rouge&quot;&gt;java.lang.Class&lt;/code&gt;对象没有在任何地方被引用, 无法在任何地方通过反射访问该类的方法&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;二-垃圾收集算法&quot;&gt;二. 垃圾收集算法&lt;/h2&gt;
-
-&lt;h3 id=&quot;21-标记-清除算法mark-sweep&quot;&gt;2.1 标记-清除算法(Mark-Sweep)&lt;/h3&gt;
-
-&lt;h4 id=&quot;211-原理&quot;&gt;2.1.1 原理&lt;/h4&gt;
-
-&lt;p&gt;先标记, 后回收咯&lt;/p&gt;
-
-&lt;p&gt;如下图:&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/JVM/标记清除算法.png&quot; alt=&quot;标记清除算法&quot; /&gt;&lt;/p&gt;
-
-&lt;h4 id=&quot;212-优缺点&quot;&gt;2.1.2 优缺点&lt;/h4&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;标记和清除的效率都不高&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;产生大量不连续的内存碎片&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h3 id=&quot;22-复制算法&quot;&gt;2.2 复制算法&lt;/h3&gt;
-
-&lt;p&gt;多用于新生代&lt;/p&gt;
-
-&lt;h4 id=&quot;221-原理&quot;&gt;2.2.1 原理&lt;/h4&gt;
-
-&lt;p&gt;将内存分成相等的两块, 每次只使用其中一块, 当这一块用完了, 就将还存活的对象复制到另一块, 然后把使用过的内存空间一次清掉&lt;/p&gt;
-
-&lt;p&gt;如下图:&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/JVM/复制算法.png&quot; alt=&quot;复制算法&quot; /&gt;&lt;/p&gt;
-
-&lt;h4 id=&quot;222-优缺点&quot;&gt;2.2.2 优缺点&lt;/h4&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;效率高, 无碎片&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;每次可使用内存减半&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h3 id=&quot;23-标记-整理算法&quot;&gt;2.3 标记-整理算法&lt;/h3&gt;
-
-&lt;p&gt;多用于老年代&lt;/p&gt;
-
-&lt;h4 id=&quot;231-原理&quot;&gt;2.3.1 原理&lt;/h4&gt;
-
-&lt;p&gt;让所有存活对象都向一端移动, 然后清理掉端边界以外的内存&lt;/p&gt;
-
-&lt;p&gt;如下图:&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/JVM/标记整理算法.png&quot; alt=&quot;标记整理算法&quot; /&gt;&lt;/p&gt;
-
-&lt;h3 id=&quot;24-分代收集算法&quot;&gt;2.4 分代收集算法&lt;/h3&gt;
-
-&lt;h4 id=&quot;241-分代&quot;&gt;2.4.1 分代&lt;/h4&gt;
-
-&lt;p&gt;分代的依据是: 不同对象的生命周期不同; 因此不同对象可以采用不同的回收方式, 以便提高回收效率; 因为如果每次都对整个堆进行回收遍历的话, 对于生命周期较长的对象而言, 实际上有很多次回收都是不必要和没用的&lt;/p&gt;
-
-&lt;p&gt;分代:&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/JVM/分代.png&quot; alt=&quot;分代&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;分为年轻代(&lt;code class=&quot;highlighter-rouge&quot;&gt;Young Generation&lt;/code&gt;), 老年代(&lt;code class=&quot;highlighter-rouge&quot;&gt;Old Generation&lt;/code&gt;)和永久代(&lt;code class=&quot;highlighter-rouge&quot;&gt;Permanent Generation&lt;/code&gt;); 永久代主要存放的是&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;类的类信息, 与垃圾收集要收集的&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;对象关系不大; 年轻代和老年代的划分是对垃圾收集影响比较大的&lt;/p&gt;
-
-&lt;h4 id=&quot;242-原理&quot;&gt;2.4.2 原理&lt;/h4&gt;
-
-&lt;p&gt;新生代采用复制算法, 有老年代作空间担保; 老年代中因为对象存活率高, 没有额外空间对它进行分配担保, 就必须使用&lt;strong&gt;标记-清理&lt;/strong&gt;或者&lt;strong&gt;标记-整理&lt;/strong&gt;算法&lt;/p&gt;
-
-&lt;p&gt;关于分代收集算法更详细信息, 可以参见博客: http://hllvm.group.iteye.com/group/wiki/2863-JVM&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;三-内存分配与回收策略&quot;&gt;三. 内存分配与回收策略&lt;/h2&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;对象优先在&lt;code class=&quot;highlighter-rouge&quot;&gt;Eden&lt;/code&gt;分配, 当&lt;code class=&quot;highlighter-rouge&quot;&gt;Eden&lt;/code&gt;没有足够空间时, 将发起一次&lt;code class=&quot;highlighter-rouge&quot;&gt;Minor GC&lt;/code&gt;(&lt;code class=&quot;highlighter-rouge&quot;&gt;Minor GC&lt;/code&gt;指发生在新生代的&lt;code class=&quot;highlighter-rouge&quot;&gt;GC&lt;/code&gt;, 较为频繁, 但是速度也快; &lt;code class=&quot;highlighter-rouge&quot;&gt;Major GC&lt;/code&gt;指的是发生在老年代的&lt;code class=&quot;highlighter-rouge&quot;&gt;GC&lt;/code&gt;; &lt;code class=&quot;highlighter-rouge&quot;&gt;Full GC&lt;/code&gt;指的是发生在整个堆空间的&lt;code class=&quot;highlighter-rouge&quot;&gt;GC&lt;/code&gt;, 包括老年代和新生代)&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;大对象直接进入老年代, 这是为了防止在新生代的&lt;code class=&quot;highlighter-rouge&quot;&gt;Eden&lt;/code&gt;和两个&lt;code class=&quot;highlighter-rouge&quot;&gt;Survivor&lt;/code&gt;区之间发生大量的内存复制&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;长期存活的对象直接进入老年代; 虚拟机给每个对象定义一个年龄计数器, 如果对象在&lt;code class=&quot;highlighter-rouge&quot;&gt;Eden&lt;/code&gt;区出生并经过第一&lt;code class=&quot;highlighter-rouge&quot;&gt;Minor GC&lt;/code&gt;后仍然存活, 并且能被&lt;code class=&quot;highlighter-rouge&quot;&gt;Survivor&lt;/code&gt;区容纳, 将被移到&lt;code class=&quot;highlighter-rouge&quot;&gt;Survivor&lt;/code&gt;区中, 并且对象年龄设置为&lt;code class=&quot;highlighter-rouge&quot;&gt;1&lt;/code&gt;, 对象在&lt;code class=&quot;highlighter-rouge&quot;&gt;Survivor&lt;/code&gt;区中没度过一次&lt;code class=&quot;highlighter-rouge&quot;&gt;Minor GC&lt;/code&gt;, 年龄就增&lt;code class=&quot;highlighter-rouge&quot;&gt;1&lt;/code&gt;, 当其年龄达到一定程度(默认&lt;code class=&quot;highlighter-rouge&quot;&gt;15&lt;/code&gt;岁), 则移入老年代&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;动态对象年龄判定, 如果在&lt;code class=&quot;highlighter-rouge&quot;&gt;Survivor&lt;/code&gt;空间中相同年龄所有对象大小的总和大于&lt;code class=&quot;highlighter-rouge&quot;&gt;Survivor&lt;/code&gt;空间的一半, 年龄大于或等于该年龄的对象就可以直接进入老年代, 而不必等到年龄达到阈值&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;空间分配担保: 因为新生代采用复制算法, 可能会出现复制空间不足的情况, 老年代可以为新生代作内存空间担保&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h2 id=&quot;四-others&quot;&gt;四. Others&lt;/h2&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;这里提一些其他的要点~&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;GC&lt;/code&gt;时会发生&lt;code class=&quot;highlighter-rouge&quot;&gt;Stop the World&lt;/code&gt;, 由此可以联想, 也有可能由于&lt;code class=&quot;highlighter-rouge&quot;&gt;GC&lt;/code&gt;造成的&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;白屏~&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;安全点和安全区: 引用关系不变; &lt;code class=&quot;highlighter-rouge&quot;&gt;GC&lt;/code&gt;只有在程序执行达到安全点或者安全区的时候才能进行; 如何让所有线程都跑到最近的安全点? 有两种方法: 抢先式中断(&lt;code class=&quot;highlighter-rouge&quot;&gt;GC&lt;/code&gt;时, 首先把所有线程全部中断, 如果发现有线程不在安全点上, 则恢复该线程, 让它跑到安全点)和主动式中断(&lt;code class=&quot;highlighter-rouge&quot;&gt;GC&lt;/code&gt;时, 不直接对线程中断, 仅仅简单地设置一个标志, 各个线程执行时主动去轮询该标志, 发现该标志为真时就自己中断挂起)(多采用主动式中断)&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h2 id=&quot;五-参考链接&quot;&gt;五. 参考链接&lt;/h2&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;http://hllvm.group.iteye.com/group/wiki/?show_full=true&lt;/li&gt;
-&lt;/ol&gt;
-</description>
-        <pubDate>Fri, 28 Sep 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/09/28/JVM%E4%B9%8B%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8%E4%B8%8E%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E7%AD%96%E7%95%A5/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/09/28/JVM%E4%B9%8B%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8%E4%B8%8E%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E7%AD%96%E7%95%A5/</guid>
-        
-        <category>Java</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>自定义View之常用工具</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;p&gt;本文将要讲解的是在自定义&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;中常用的一些工具类&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;一-canvas&quot;&gt;一. Canvas&lt;/h2&gt;
-
-&lt;p&gt;drawXXX: 绘制相关&lt;/p&gt;
-
-&lt;p&gt;clipXXX: 裁剪; 使用裁剪的时候, 通常需要配合save()和restore()一起使用, 否则之后所有的绘制都会被裁剪
-范围裁切有两个方法： clipRect() 和 clipPath()&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;p&gt;几何变换(平移, 旋转, 伸缩等):&lt;/p&gt;
-
-&lt;p&gt;几何变换的使用大概分为三类：&lt;/p&gt;
-&lt;ol&gt;
-  &lt;li&gt;使用 Canvas 来做常见的二维变换；&lt;/li&gt;
-  &lt;li&gt;使用 Matrix 来做常见和不常见的二维变换；&lt;/li&gt;
-  &lt;li&gt;使用 Camera 来做三维变换。&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;Matrix; 或者自带的translate(), rotate(), scale(), skew()(错切); 
-需要注意的是, Canvas自带的几何变换是倒序的, 比如: 如果translate()在rotate()前面, 则实际执行顺序是先rotate(), 再translate(); 
-Canvas自带的几何变换内部其实也是使用的Matrix
-Matrix可以自定义执行顺序, 通常Matrix的方法都是成对的, 比如: preTranslate()(往前插入)和postTranslate()(往后插入)
-Camare可以用于辅助Matrix计算; 比如: 如下代码&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;protected void onDraw(Canvas canvas) {
-    canvas.save();
-
-    camare.save();
-    camare.rotateX(30);
-    canvas.translate(centerX, centerY); // 注意这里的顺序要倒着, 因为上面说了, Canvas几何变换的顺序是倒着的
-    camare.applyToCanvas(canvas); // 同时, 由于camare执行旋转操作的时候, 是以原点为中心的, 所以, 如果这里不配合canvas的平移操作来使用的话, 最终图像是歪的; 但是camare又不支持设置中心, 所以就只能先将图像平移到原点, camare作用完之后再平移回原来的位置; 注意, 虽然Camare也有translate()方法, 但是Camare的变换是会带着整个三维坐标系一起的, 而且它在变换结束之后才会做投影, 而不是一旋转完就立即投影到Canvas上去, 这样如果用Camare做移动,
-    那么绘制出来的结果就完全不是预期的样子了(这里的解释不是很懂)
-    canvas.translate(-centerX, -centerY);
-    camare.restore();
-
-    canvas.restore();
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-&lt;p&gt;Camare坐标系: 使用的是三维坐标系, 原点也是View左上角; x轴右正左负, y轴上正下负(注意y轴不一样咯, 和View坐标系相反), z轴垂直于View, 内正外负(朝屏幕里面为正, 朝屏幕外面为负); 还包含了一个虚拟的Camare对象, 即一个虚拟的相机, 默认在z轴负向, 即View坐标原点的正上方
-Camare的旋转方向没有规律, 见Download文件夹下照片
-Camare也是可以沿着x, y, z轴平移的, 比如沿着z轴平移, 就相当于将物体远离或者靠近相机, 即起到放大缩小的作用, 但是由于这种情况也可以直接使用Canvas的scale()等来做到, 所以实际开发中一般都用Canvas自带的方法来实现
-Camare还可以通过setLocation()来设置虚拟相机的位置, 这种的使用情况是, 比如进行旋转时会造成物体投影太大(因为相机离物体太近), 此时可以通过setLocation()来设置相机位置远离物体, 使投影缩小; 一般使用时都是沿着z轴移动Camare, 不常见沿着x, y轴移动的
-Camare变换的时候也需要save()和restore()&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;p&gt;重写其他方法体现遮盖(联系draw过程, 如: 绘制前景, 绘制背景等)&lt;/p&gt;
-
-&lt;p&gt;drawColor: 可以用于填充背景或者设置半透明蒙版&lt;/p&gt;
-
-&lt;h2 id=&quot;二-paint&quot;&gt;二. Paint&lt;/h2&gt;
-
-&lt;p&gt;关于Paint, 请参见: https://hencoder.com/ui-1-2/&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;颜色: 
-setColor()&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;setShader(): 着色器, 着色器设置的是一个颜色方案，或者说是一套着色规则; 当设置了 Shader 之后，Paint 在绘制图形和文字时就不使用 setColor/ARGB() 设置的颜色了，而是使用  Shader 的方案中的颜色。LinearGradient RadialGradient SweepGradient BitmapShader ComposeShader&lt;/p&gt;
-
-&lt;p&gt;setColorFilter(): ColorFilter; 共有三个子类：LightingColorFilter PorterDuffColorFilter 和 ColorMatrixColorFilter&lt;/p&gt;
-
-&lt;p&gt;setXfermode(): Xfermode 指的是你要绘制的内容和 Canvas 的目标位置的内容应该怎样结合计算出最终的颜色; 唯一子类: PorterDuffXfermode&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;效果&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;抗锯齿、填充/轮廓、线条宽度等&lt;/p&gt;
-
-&lt;p&gt;setAntiAlias()&lt;/p&gt;
-
-&lt;p&gt;setStyle()&lt;/p&gt;
-
-&lt;p&gt;线条形状: setStrokeWidth(float width),  setStrokeCap(Paint.Cap cap), setStrokeJoin(Paint.Join join),  setStrokeMiter(float miter)&lt;/p&gt;
-
-&lt;p&gt;色彩优化: setDither(boolean dither) 和  setFilterBitmap(boolean filter)&lt;/p&gt;
-
-&lt;p&gt;setPathEffect(): PathEffect 分为两类，单一效果的 CornerPathEffect DiscretePathEffect DashPathEffect PathDashPathEffect ，和组合效果的 SumPathEffect ComposePathEffect&lt;/p&gt;
-
-&lt;p&gt;什么是硬件加速: https://developer.android.com/guide/topics/graphics/hardware-accel&lt;/p&gt;
-
-&lt;p&gt;setShadowLayer(): 在绘制层下方添加效果
-setMaskFilter(): 在绘制层上方添加效果; BlurMaskFilter 和 EmbossMaskFilter&lt;/p&gt;
-
-&lt;p&gt;获取绘制的 Path&lt;/p&gt;
-
-&lt;h3 id=&quot;drawtext相关&quot;&gt;drawText()相关&lt;/h3&gt;
-
-&lt;h2 id=&quot;三-动画&quot;&gt;三. 动画&lt;/h2&gt;
-
-&lt;p&gt;动画可以分为两类：Animation 和 Transition；其中 Animation 又可以再分为 View Animation 和 Property Animation 两类： View Animation 是纯粹基于 framework 的绘制转变，比较简单
-Property Animation，属性动画，这是在 Android 3.0 开始引入的新的动画形式
-还有一类动画是 Transition。 Transition 这个词的本意是转换，在 Android 里指的是切换界面时的动画效果&lt;/p&gt;
-
-&lt;p&gt;一个动画需要考虑取消&lt;/p&gt;
-
-&lt;p&gt;以下介绍属性动画:&lt;/p&gt;
-
-&lt;p&gt;ViewPropertyAnimator: imageView.animate().translationX(500); 默认动画时长300ms, 默认插值器为AccelerateDecelerateInterpolator()(先加速后减速)
-view.setTranslationX()等方法内部没有调用invalidate()来实现重绘, 而是直接使用了硬件加速实现重绘, 这样更加高效, 但是好像自定义绘制不能用, 只能使用invalidate(), 为什么?&lt;/p&gt;
-
-&lt;p&gt;ObjectAnimator: 拼接出set方法名, 然后去调用set方法; 如果只是传入了一个值(ofXXX()有很多重载函数), 该值表示终止值, 但是起始值无法得到, 那么就还需要提供一个get方法来得到初始属性值&lt;/p&gt;
-
-&lt;p&gt;Interpolator: AccelerateDecelerateInterpolator, LinearInterpolator, AccelerateInterpolator, DecelerateInterpolator, AnticipateInterpolator, OvershootInterpolator, AnticipateOvershootInterpolator, BounceInterpolator, CycleInterpolator, PathInterpolator
-Android 5.0 （API 21）引入了三个新的 Interpolator 模型，并把它们加入了 support v4 包中: 
-FastOutLinearInInterpolator, FastOutSlowInInterpolator, LinearOutSlowInInterpolator&lt;/p&gt;
-
-&lt;p&gt;设置监听器: 
-ViewPropertyAnimator 用的是 setListener() 和 setUpdateListener() 方法, 要移除监听器时通过 set[Update]Listener(null) 填 null 值来移除; ViewPropertyAnimator 则独有 withStartAction() 和 withEndAction() 方法，可以设置一次性的动画开始或结束的监听&lt;/p&gt;
-
-&lt;p&gt;ObjectAnimator 则是用 addListener() 和 addUpdateListener() 来添加一个或多个监听器，移除监听器则是通过 remove[Update]Listener() 来指定移除对象; ObjectAnimator 支持使用 pause() 方法暂停，所以它还多了一个 addPauseListener() / removePauseListener() 的支持&lt;/p&gt;
-
-&lt;p&gt;AnimatorListener: onAnimationStart, onAnimationEnd, onAnimationCancel(当动画被通过 cancel() 方法取消时，这个方法被调用。
-需要说明一下的是，就算动画被取消，onAnimationEnd() 也会被调用。所以当动画被取消时，如果设置了 AnimatorListener，那么 onAnimationCancel() 和 onAnimationEnd() 都会被调用。onAnimationCancel() 会先于 onAnimationEnd() 被调用。), onAnimationRepeat(ViewPropertyAnimator 不支持重复，所以这个方法对 ViewPropertyAnimator 相当于无效)&lt;/p&gt;
-
-&lt;p&gt;ViewPropertyAnimator.withStartAction/EndAction(): ViewPropertyAnimator 的独有方法, 它们和 set/addListener() 中回调的 onAnimationStart() / onAnimationEnd() 相比起来的不同主要有两点：&lt;/p&gt;
-&lt;ol&gt;
-  &lt;li&gt;withStartAction() / withEndAction() 是一次性的，在动画执行结束后就自动弃掉了，就算之后再重用 ViewPropertyAnimator 来做别的动画，用它们设置的回调也不会再被调用。而 set/addListener() 所设置的  AnimatorListener 是持续有效的，当动画重复执行时，回调总会被调用。&lt;/li&gt;
-  &lt;li&gt;withEndAction() 设置的回调只有在动画正常结束时才会被调用，而在动画被取消时不会被执行。这点和 AnimatorListener.onAnimationEnd() 的行为是不一致的。&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;TypeEvaluator: 
-在需要的时候, 还可以自定义TypeEvaluator来实现自己针对某一特定属性值来设计自己的算法
-ObjectAnimator.setEvaluator()
-ArgbEvaluator&lt;/p&gt;
-
-&lt;p&gt;PropertyValuesHolder: 同一个动画中改变多个属性; ViewPropertyAnimator可以直接连用即可, 但是ObjectAnimator不能直接连用, 此时可以使用PropertyValuesHolder来同时在一个动画中改变多个属性&lt;/p&gt;
-
-&lt;p&gt;AnimatorSet 多个动画配合执行; 还可以定义动画的执行顺序&lt;/p&gt;
-
-&lt;p&gt;PropertyValuesHolders.ofKeyframe() 把同一个属性拆分&lt;/p&gt;
-
-&lt;p&gt;「关于复杂的属性关系来做动画」，就这么三种：
-使用 PropertyValuesHolder 来对多个属性同时做动画；
-使用 AnimatorSet 来同时管理调配多个动画；
-PropertyValuesHolder 的进阶使用：使用 PropertyValuesHolder.ofKeyframe() 来把一个属性拆分成多段，执行更加精细的属性动画。&lt;/p&gt;
-
-&lt;p&gt;ValueAnimator 最基本的轮子; ValueAnimator 是 ObjectAnimator 的父类，实际上，ValueAnimator 就是一个不能指定目标对象版本的 ObjectAnimator&lt;/p&gt;
-
-&lt;h2 id=&quot;四-硬件加速&quot;&gt;四. 硬件加速&lt;/h2&gt;
-
-&lt;p&gt;文档: https://developer.android.google.cn/guide/topics/graphics/hardware-accel&lt;/p&gt;
-
-&lt;p&gt;在 Android 里，硬件加速专指把 View 中绘制的计算工作交给 GPU 来处理。进一步地再明确一下，这个「绘制的计算工作」指的就是把绘制方法中的那些  Canvas.drawXXX() 变成实际的像素这件事&lt;/p&gt;
-
-&lt;p&gt;在硬件加速关闭的时候，Canvas 绘制的工作方式是：把要绘制的内容写进一个 Bitmap，然后在之后的渲染过程中，这个 Bitmap 的像素内容被直接用于渲染到屏幕。这种绘制方式的主要计算工作在于把绘制操作转换为像素的过程（例如由一句 Canvas.drawCircle() 来获得一个具体的圆的像素信息），这个过程的计算是由 CPU 来完成的
-而在硬件加速开启时，Canvas 的工作方式改变了：它只是把绘制的内容转换为 GPU 的操作保存了下来，然后就把它交给 GPU，最终由 GPU 来完成实际的显示工作(在硬件加速开启时，CPU 做的事只是把绘制工作转换成 GPU 的操作，这个工作量相对来说是非常小的。)&lt;/p&gt;
-
-&lt;p&gt;关闭硬件加速: view.setLayerType(LAYER_TYPE_SOFTWARE, null);&lt;/p&gt;
-
-&lt;p&gt;View Layer，又称为离屏缓冲（Off-screen Buffer），它的作用是单独启用一块地方来绘制这个 View ，而不是使用软件绘制的 Bitmap 或者通过硬件加速的 GPU; 当设置了 View Layer 的时候，它的绘制会被缓存下来，而且缓存的是最终的绘制结果&lt;/p&gt;
-
-&lt;p&gt;在进行移动、旋转等（无需调用 invalidate()）的属性动画的时候开启 Hardware Layer 将会极大地提升动画的效率，因为在动画过程中 View 本身并没有发生改变，只是它的位置或角度改变了，而这种改变是可以由 GPU 通过简单计算就完成的，并不需要重绘整个 View; (打开硬件加速: view.setLayerType(LAYER_TYPE_NONE, null);)&lt;/p&gt;
-
-&lt;p&gt;如果是使用 ViewPropertyAnimator, 如下代码; 不过一定要注意，只有你在对 translationX translationY rotation alpha 等无需调用 invalidate() 的属性做动画的时候，这种方法才适用，因为这种方法本身利用的就是当界面不发生时，缓存未更新所带来的时间的节省。所以简单地说——
-&lt;strong&gt;这种方式不适用于基于自定义属性绘制的动画&lt;/strong&gt;。一定记得这句话。&lt;/p&gt;
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;view.animate()
-        .rotationY(90)
-        .withLayer(); // withLayer() 可以自动完成上面这段代码的复杂操作
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;由于设置了 View Layer 后，View 在初次绘制时以及每次  invalidate() 后重绘时，需要进行两次的绘制工作（一次绘制到 Layer，一次从 Layer 绘制到显示屏），所以其实它的每次绘制的效率是被降低了的。所以一定要慎重使用 View Layer，在需要用到它的时候再去使用。&lt;/p&gt;
-
-&lt;p&gt;setLayerType(): 
-参数为 LAYER_TYPE_SOFTWARE 时，使用软件来绘制 View Layer，绘制到一个 Bitmap，并顺便关闭硬件加速；
-参数为 LAYER_TYPE_HARDWARE 时，使用 GPU 来绘制 View Layer，绘制到一个 OpenGL texture（如果硬件加速关闭，那么行为和  VIEW_TYPE_SOFTWARE 一致）；
-参数为 LAYER_TYPE_NONE 时，关闭 View Layer。&lt;/p&gt;
-
-&lt;p&gt;View Layer 可以加速无 invalidate() 时的刷新效率，但对于需要调用  invalidate() 的刷新无法加速&lt;/p&gt;
-
-&lt;h2 id=&quot;五-布局&quot;&gt;五. 布局&lt;/h2&gt;
-
-&lt;p&gt;&lt;a href=&quot;https://hencoder.com/ui-2-1/&quot;&gt;参考博客&lt;/a&gt;&lt;/p&gt;
-
-&lt;p&gt;onMeasure()测量完成之后通过setMeasuredDimension()来设置的测量尺寸只是该View的一个期望尺寸, 表示View觉得自己这么大比较合适, 之后它的父View就会根据这个期望尺寸再去判断(只是一个参考), 至于最终父View是允许子View就这么大, 还是要求再去测量一次, 还是说直接重新指派一个新的尺寸, 由父View决定, 最终会通过layout参数传递&lt;/p&gt;
-
-&lt;p&gt;布局过程自定义方式:&lt;/p&gt;
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;重写 onMeasure() 来修改已有的 View 的尺寸；&lt;/li&gt;
-    &lt;li&gt;重写 onMeasure() 来全新定制自定义 View 的尺寸；&lt;/li&gt;
-    &lt;li&gt;重写 onMeasure() 和 onLayout() 来全新定制自定义 ViewGroup 的内部布局&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;父View对子View的尺寸限制:&lt;/p&gt;
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;这个限制怎么来的: 开发者对子View的要求&lt;/li&gt;
-    &lt;li&gt;子View的onMeasure应该怎么做来让自己符合这个限制: 使用resolveSize()方法(resolveSize()方法内部其实就是通过三种mode的不同情况来返回是使用子View的测量值, 还是父View的限制值)&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;全新定制自定义View:&lt;/p&gt;
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;通过onMeasure()重新去计算(不用调用super.onMeasure()了)&lt;/li&gt;
-    &lt;li&gt;将计算出来的结果通过resolveSize()过滤一遍, 使得其符合父View的限制, 之后再通过setMeasureDimension()来设置即可&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;onMeasure()的重写:&lt;/p&gt;
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;调用每个子View的measure(), 让子View自我测量&lt;/li&gt;
-    &lt;li&gt;根据子View给出的尺寸, 得出子View的位置, 并保存它们的尺寸和位置&lt;/li&gt;
-    &lt;li&gt;根据子View的位置和尺寸计算出自己的尺寸, 并用setMeasureDimesion()保存&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;关于保存子View位置的两点说明:&lt;/p&gt;
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;不是所有的Layout都需要保存子View的位置(因为有的Layout可以在布局阶段实时推出子View的位置, 比如LinearLayout)&lt;/li&gt;
-    &lt;li&gt;有些时候对某些子View需要重复测量两次或多次才能得到正确的尺寸和位置&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/View/onMeasure模板.png&quot; alt=&quot;onMeasure模板&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/View/onLayout模板.png&quot; alt=&quot;onLayout模板&quot; /&gt;&lt;/p&gt;
-</description>
-        <pubDate>Thu, 27 Sep 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/09/27/%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B9%8B%E5%B8%B8%E7%94%A8%E5%B7%A5%E5%85%B7Draft/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/09/27/%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B9%8B%E5%B8%B8%E7%94%A8%E5%B7%A5%E5%85%B7Draft/</guid>
-        
-        <category>Draft</category>
         
         
       </item>

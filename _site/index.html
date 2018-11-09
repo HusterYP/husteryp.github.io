@@ -154,6 +154,85 @@
             ">
     			
 <div class="post-preview">
+    <a href="/2018/11/09/Java%E5%B9%B6%E5%8F%91-%E4%B8%89/">
+        <h2 class="post-title">
+            Java并发[三]
+        </h2>
+        
+        <h3 class="post-subtitle">
+            Java并发编程实战第三部分第四部分总结
+        </h3>
+        
+        <div class="post-content-preview">
+            前言
+
+
+  讲解锁等高级主题
+
+
+
+
+正文
+
+
+
+一. 死锁及其避免
+
+
+  
+    死锁出现的原因通常是出现锁环路造成的, 不管是显示的还是隐式的
+  
+  
+    通过定义获取锁的顺序来避免死锁: 通过System.identityHashCode(object)来返回一个锁对象的Object.hashCode()的返回值; 通过这个值来定义锁的顺序, 并在整个应用程序中都按照这个...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by 袁平 on November 9, 2018
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
+    <a href="/2018/11/02/Java%E5%B9%B6%E5%8F%91-%E4%BA%8C/">
+        <h2 class="post-title">
+            Java并发[二]
+        </h2>
+        
+        <h3 class="post-subtitle">
+            Java并发编程实战第二部分总结
+        </h3>
+        
+        <div class="post-content-preview">
+            前言
+
+
+  主要讲解了Executor框架
+
+
+
+
+正文
+
+
+
+一. Executor框架
+
+
+  线程池: 可以通过Executors中的静态工厂方法之一来创建一个线程池
+
+
+
+  
+    newFixedThreadPool: 创建一个固定长度的线程池, 每当提交一个任务时就创建一个线程, 直到达到线程池的最大数量, 这是线程池规模将不再变化(如果某个线程发生异常终止, 那么线程池会...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by 袁平 on November 2, 2018
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
     <a href="/2018/10/31/Java%E5%B9%B6%E5%8F%91%E4%B8%80/">
         <h2 class="post-title">
             Java并发[一]
@@ -440,83 +519,6 @@ Class文件格式采用一种类似于C语言结构体的伪结构来存储数�
 </div>
 <hr>
 
-<div class="post-preview">
-    <a href="/2018/09/28/JVM%E4%B9%8B%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8%E4%B8%8E%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E7%AD%96%E7%95%A5/">
-        <h2 class="post-title">
-            Java垃圾收集器与内存分配策略
-        </h2>
-        
-        <h3 class="post-subtitle">
-            深入理解Java虚拟机第三章总结
-        </h3>
-        
-        <div class="post-content-preview">
-            前言
-
-本文为«深入理解Java虚拟机»第三章以及部分博客内容总结, 权作个人笔记~
-
-注: 文中部分图片来自: http://hllvm.group.iteye.com/group/wiki/?show_full=true
-
-
-
-正文
-
-
-
-一. 对象是否死亡
-
-进行垃圾收集首先需要的就是判断对象是否死亡, 也就是是否可以清除收集, 下面将讲解判断对象是否死亡的方法
-
-1.1 引用计数算法...
-        </div>
-    </a>
-    <p class="post-meta">
-        Posted by 袁平 on September 28, 2018
-    </p>
-</div>
-<hr>
-
-<div class="post-preview">
-    <a href="/2018/09/27/%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B9%8B%E5%B8%B8%E7%94%A8%E5%B7%A5%E5%85%B7Draft/">
-        <h2 class="post-title">
-            自定义View之常用工具
-        </h2>
-        
-        <h3 class="post-subtitle">
-            介绍自定义View中常用的工具类
-        </h3>
-        
-        <div class="post-content-preview">
-            前言
-
-本文将要讲解的是在自定义View中常用的一些工具类
-
-
-
-正文
-
-
-
-一. Canvas
-
-drawXXX: 绘制相关
-
-clipXXX: 裁剪; 使用裁剪的时候, 通常需要配合save()和restore()一起使用, 否则之后所有的绘制都会被裁剪
-范围裁切有两个方法： clipRect() 和 clipPath()
-
-
-
-几何变换(平移, 旋转, 伸缩等):
-
-几何变换的使用大概...
-        </div>
-    </a>
-    <p class="post-meta">
-        Posted by 袁平 on September 27, 2018
-    </p>
-</div>
-<hr>
-
 
 <!-- Pager -->
 
@@ -565,7 +567,7 @@ clipXXX: 裁剪; 使用裁剪的时候, 通常需要配合save()和restore()一�
                             
                         
                             
-                                <a href="/tags/#Java" title="Java" rel="11">
+                                <a href="/tags/#Java" title="Java" rel="13">
                                     Java
                                 </a>
                             
@@ -635,6 +637,8 @@ clipXXX: 裁剪; 使用裁剪的时候, 通常需要配合save()和restore()一�
                 <ul class="list-inline">
                     
                         <li><a href="https://tech.meituan.com/archives">美团点评</a></li>
+                    
+                        <li><a href="https://eriri.ink/">天宇</a></li>
                     
                 </ul>
                 
