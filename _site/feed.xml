@@ -5,9 +5,718 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Fri, 09 Nov 2018 11:35:28 +0800</pubDate>
-    <lastBuildDate>Fri, 09 Nov 2018 11:35:28 +0800</lastBuildDate>
+    <pubDate>Sun, 18 Nov 2018 16:41:43 +0800</pubDate>
+    <lastBuildDate>Sun, 18 Nov 2018 16:41:43 +0800</lastBuildDate>
     <generator>Jekyll v3.8.3</generator>
+    
+      <item>
+        <title>Note</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;记录各类笔记, 包括各类优秀文章收集, 资料收集等!&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;一-git&quot;&gt;一. Git&lt;/h2&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://www.jianshu.com/p/d4d5e07ea0cd&quot;&gt;超赞的Git操作讲解&lt;/a&gt;&lt;/p&gt;
+</description>
+        <pubDate>Sun, 18 Nov 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/11/18/Note/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/11/18/Note/</guid>
+        
+        <category>Note</category>
+        
+        
+      </item>
+    
+      <item>
+        <title>FFmpeg交叉编译与接入Android工程</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;本文主要讲解如何在&lt;code class=&quot;highlighter-rouge&quot;&gt;Linux&lt;/code&gt;上编译&lt;code class=&quot;highlighter-rouge&quot;&gt;FFmpeg&lt;/code&gt;, 以及将编译出来的动态库(&lt;code class=&quot;highlighter-rouge&quot;&gt;so&lt;/code&gt;)接入已有的&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;工程&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;一-ffmpeg交叉编译&quot;&gt;一. FFmpeg交叉编译&lt;/h2&gt;
+
+&lt;p&gt;本文选用的&lt;code class=&quot;highlighter-rouge&quot;&gt;FFmpeg&lt;/code&gt;版本是&lt;code class=&quot;highlighter-rouge&quot;&gt;FFmpeg 4.0&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;NDK&lt;/code&gt;版本是&lt;code class=&quot;highlighter-rouge&quot;&gt;Android-ndk-r15c&lt;/code&gt;, 注意在编译&lt;code class=&quot;highlighter-rouge&quot;&gt;FFmpeg&lt;/code&gt;时, 对&lt;code class=&quot;highlighter-rouge&quot;&gt;NDK&lt;/code&gt;版本有要求, 另外, 笔者最开始选用最新版本的&lt;code class=&quot;highlighter-rouge&quot;&gt;NDK&lt;/code&gt;, 总是编译不过, 去查证了一下, 发现从&lt;code class=&quot;highlighter-rouge&quot;&gt;Androud-ndk-r16&lt;/code&gt;开始, 其用于交叉编译都有问题了, 所以选用较低版本的&lt;code class=&quot;highlighter-rouge&quot;&gt;Androud-ndk&lt;/code&gt;; 本文选用的&lt;code class=&quot;highlighter-rouge&quot;&gt;FFmpeg&lt;/code&gt;版本和&lt;code class=&quot;highlighter-rouge&quot;&gt;NDK&lt;/code&gt;版本亲测可编译通过; 先提供下载地址:&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://ffmpeg.org/releases/ffmpeg-4.0.tar.bz2&quot;&gt;FFmpeg 4.0&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://dl.google.com/android/repository/android-ndk-r15c-linux-x86_64.zip&quot;&gt;Android-ndk-r15c&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;笔者选用的编译环境是&lt;code class=&quot;highlighter-rouge&quot;&gt;ArchLinux&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;Windows&lt;/code&gt;上的编译的话, 大体流程不变, 环境配置需要自己弄啦~&lt;/p&gt;
+
+&lt;p&gt;在开始之前, 需要先了解一下相关知识:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;JNI和NDK&lt;/li&gt;
+    &lt;li&gt;CPU架构&lt;/li&gt;
+    &lt;li&gt;交叉编译&lt;/li&gt;
+    &lt;li&gt;FFmpeg简介&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;这里推荐&lt;a href=&quot;https://developer.android.google.cn/ndk/guides/&quot;&gt;官方文档&lt;/a&gt;, 对以上方面讲解比较详细; 下面简要介绍重点地方&lt;/p&gt;
+
+&lt;h3 id=&quot;11-基础知识&quot;&gt;1.1 基础知识&lt;/h3&gt;
+
+&lt;h4 id=&quot;111-jni和ndk&quot;&gt;1.1.1 JNI和NDK&lt;/h4&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;JNI&lt;/code&gt;就是&lt;code class=&quot;highlighter-rouge&quot;&gt;Java Native Interface&lt;/code&gt;, 即&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;层和&lt;code class=&quot;highlighter-rouge&quot;&gt;Native&lt;/code&gt;层通信的接口; 通过&lt;code class=&quot;highlighter-rouge&quot;&gt;JNI&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;可以实现和其他语言之间的互相调用(注意其他语言不仅仅只限于&lt;code class=&quot;highlighter-rouge&quot;&gt;C/C++&lt;/code&gt;, 虽然大多时候是&lt;code class=&quot;highlighter-rouge&quot;&gt;C/C++&lt;/code&gt;); &lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;是跨平台的, 但是&lt;code class=&quot;highlighter-rouge&quot;&gt;C/C++&lt;/code&gt;不是跨平台的, 所以&lt;code class=&quot;highlighter-rouge&quot;&gt;JNI&lt;/code&gt;也使得&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;需要考虑和特定平台相关的特性&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;NDK&lt;/code&gt;就是&lt;code class=&quot;highlighter-rouge&quot;&gt;Native Development Kit&lt;/code&gt;, 是&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;平台提供的一个工具集, 提供与本地代码之间的交互&lt;/p&gt;
+
+&lt;p&gt;详细可参见&lt;a href=&quot;https://blog.csdn.net/carson_ho/article/details/73250163&quot;&gt;博客&lt;/a&gt;&lt;/p&gt;
+
+&lt;h4 id=&quot;112-cpu架构&quot;&gt;1.1.2 CPU架构&lt;/h4&gt;
+
+&lt;p&gt;不同的手机使用不同的&lt;code class=&quot;highlighter-rouge&quot;&gt;CPU&lt;/code&gt;, 不同的&lt;code class=&quot;highlighter-rouge&quot;&gt;CPU&lt;/code&gt;有不同的指令集, 每种&lt;code class=&quot;highlighter-rouge&quot;&gt;CPU&lt;/code&gt;及其指令集有其自己的应用程序二进制接口(&lt;code class=&quot;highlighter-rouge&quot;&gt;Application Binary Interface&lt;/code&gt;即&lt;code class=&quot;highlighter-rouge&quot;&gt;ABI&lt;/code&gt;); &lt;code class=&quot;highlighter-rouge&quot;&gt;ABI&lt;/code&gt;定义了机器代码与系统运行时的交互方式; &lt;code class=&quot;highlighter-rouge&quot;&gt;ABI&lt;/code&gt;与指令集的对应关系如下表(摘自官方文档)&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/FFmpegCompile/ABI与指令集对应关系.png&quot; alt=&quot;ABI与指令集对应关系&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;常见的&lt;code class=&quot;highlighter-rouge&quot;&gt;CPU&lt;/code&gt;架构有&lt;code class=&quot;highlighter-rouge&quot;&gt;x86&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;x86-64&lt;/code&gt;以及&lt;code class=&quot;highlighter-rouge&quot;&gt;arm&lt;/code&gt;等(&lt;code class=&quot;highlighter-rouge&quot;&gt;x86-64&lt;/code&gt;也是基于&lt;code class=&quot;highlighter-rouge&quot;&gt;x86&lt;/code&gt;的), 其中, &lt;code class=&quot;highlighter-rouge&quot;&gt;x86&lt;/code&gt;主要是针对&lt;code class=&quot;highlighter-rouge&quot;&gt;PC&lt;/code&gt;端, &lt;code class=&quot;highlighter-rouge&quot;&gt;arm&lt;/code&gt;主要针对移动端; &lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;系统目前支持&lt;code class=&quot;highlighter-rouge&quot;&gt;ARMv5&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;ARMv7&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;ARMv8&lt;/code&gt;, ` x86&lt;code class=&quot;highlighter-rouge&quot;&gt;, &lt;/code&gt;x86_64&lt;code class=&quot;highlighter-rouge&quot;&gt;, &lt;/code&gt;MIPS&lt;code class=&quot;highlighter-rouge&quot;&gt;以及&lt;/code&gt;MIPS64&lt;code class=&quot;highlighter-rouge&quot;&gt;共七种&lt;/code&gt;CPU`架构&lt;/p&gt;
+
+&lt;p&gt;在&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;中应用安装时, &lt;code class=&quot;highlighter-rouge&quot;&gt;Package Manager Service&lt;/code&gt;会去扫描&lt;code class=&quot;highlighter-rouge&quot;&gt;APK&lt;/code&gt;, 只有该设备&lt;code class=&quot;highlighter-rouge&quot;&gt;CPU&lt;/code&gt;架构支持的&lt;code class=&quot;highlighter-rouge&quot;&gt;.so&lt;/code&gt;文件才会被安装, 另外还可以定义&lt;code class=&quot;highlighter-rouge&quot;&gt;.so&lt;/code&gt;文件的对应安装优先级&lt;/p&gt;
+
+&lt;h4 id=&quot;113-交叉编译&quot;&gt;1.1.3 交叉编译&lt;/h4&gt;
+
+&lt;p&gt;在某个平台上编译该平台上的可执行文件叫本地编译; 如果在一个平台上编译在其他平台上的可执行程序则叫交叉编译; 交叉编译是随着嵌入式系统的发展而发展的, 因为嵌入式系统的处理能力, 内存等均有限, 所以有时候需要在其他平台上编译好后导入嵌入式系统中, 此时就需要交叉编译&lt;/p&gt;
+
+&lt;p&gt;交叉编译最主要的是环境, 即交叉编译链; 对本文来说, 编译&lt;code class=&quot;highlighter-rouge&quot;&gt;FFmpeg&lt;/code&gt;需要准备&lt;code class=&quot;highlighter-rouge&quot;&gt;NDK&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;NDK&lt;/code&gt;中提供了交叉编译链; 即&lt;code class=&quot;highlighter-rouge&quot;&gt;android-ndk-r15c/toolchains/&lt;/code&gt;下提供的各种平台相关的编译工具链&lt;/p&gt;
+
+&lt;p&gt;本文使用的示例是在&lt;code class=&quot;highlighter-rouge&quot;&gt;x86&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;Linux&lt;/code&gt;下编译&lt;code class=&quot;highlighter-rouge&quot;&gt;arm-v7a&lt;/code&gt;架构的动态库&lt;/p&gt;
+
+&lt;h4 id=&quot;114-ffmpeg&quot;&gt;1.1.4 FFmpeg&lt;/h4&gt;
+
+&lt;p&gt;推荐&lt;a href=&quot;https://ffmpeg.org/ffmpeg-formats.html&quot;&gt;官方文档&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://javapyer.iteye.com/blog/1989274&quot;&gt;基本用法&lt;/a&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h3 id=&quot;12-ffmpeg交叉编译&quot;&gt;1.2 FFmpeg交叉编译&lt;/h3&gt;
+
+&lt;p&gt;在开始之前需要先配置一下&lt;code class=&quot;highlighter-rouge&quot;&gt;NDK&lt;/code&gt;的环境变量, 在&lt;code class=&quot;highlighter-rouge&quot;&gt;/etc/profile&lt;/code&gt;文件中添加&lt;code class=&quot;highlighter-rouge&quot;&gt;PATH&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;FFmpeg&lt;/code&gt;编译生成的动态库默认格式为&lt;code class=&quot;highlighter-rouge&quot;&gt;xx.so.版本号&lt;/code&gt;, 但是&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;工程中只支持以&lt;code class=&quot;highlighter-rouge&quot;&gt;.so&lt;/code&gt;结尾的动态库, 所以需要修改&lt;code class=&quot;highlighter-rouge&quot;&gt;FFmpeg&lt;/code&gt;的配置文件, 修改其生成库文件名的格式; 编辑&lt;code class=&quot;highlighter-rouge&quot;&gt;FFmpeg&lt;/code&gt;目录下的&lt;code class=&quot;highlighter-rouge&quot;&gt;configure&lt;/code&gt;文件, 修改如下:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# 将configure文件中的：
+SLIBNAME_WITH_MAJOR='$(SLIBNAME).$(LIBMAJOR)'
+LIB_INSTALL_EXTRA_CMD='$$(RANLIB) &quot;$(LIBDIR)/$(LIBNAME)&quot;'
+SLIB_INSTALL_NAME='$(SLIBNAME_WITH_VERSION)'
+SLIB_INSTALL_LINKS='$(SLIBNAME_WITH_MAJOR) $(SLIBNAME)'
+
+#替换为：
+SLIBNAME_WITH_MAJOR='$(SLIBPREF)$(FULLNAME)-$(LIBMAJOR)$(SLIBSUF)'
+LIB_INSTALL_EXTRA_CMD='$$(RANLIB) &quot;$(LIBDIR)/$(LIBNAME)&quot;'
+SLIB_INSTALL_NAME='$(SLIBNAME_WITH_MAJOR)'
+SLIB_INSTALL_LINKS='$(SLIBNAME)'
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;为了减小&lt;code class=&quot;highlighter-rouge&quot;&gt;APK&lt;/code&gt;大小, 我们只将需要的功能开启即可; 配置参数较多, 我们写一个脚本如下(名为&lt;code class=&quot;highlighter-rouge&quot;&gt;build-script.sh&lt;/code&gt;)&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;注: 下面的注释在运行脚本时需删除~&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;#!/bin/bash&lt;/span&gt;
+
+&lt;span class=&quot;nv&quot;&gt;NDK&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;/home/yuanping/Software/NDK/android-ndk-r15c  &lt;span class=&quot;c&quot;&gt;# NDK所在路径, 注意替换为你的&lt;/span&gt;
+&lt;span class=&quot;nv&quot;&gt;SYSROOT&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$NDK&lt;/span&gt;/platforms/android-19/arch-arm/
+&lt;span class=&quot;nv&quot;&gt;TOOLCHAIN&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$NDK&lt;/span&gt;/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64 &lt;span class=&quot;c&quot;&gt;# 交叉编译链, 这里使用的是arm, 如果需要编译其他平台的, 更换即可&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;function &lt;/span&gt;build_one
+&lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+./configure &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;--prefix&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$PREFIX&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;--enable-shared&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\ &lt;/span&gt; &lt;span class=&quot;c&quot;&gt;# 生成动态库&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;--disable-static&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\ &lt;/span&gt;&lt;span class=&quot;c&quot;&gt;# 禁止生成静态库&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;--disable-doc&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\ &lt;/span&gt; &lt;span class=&quot;c&quot;&gt;# 关闭不需要的功能, 下同&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;--disable-ffplay&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;--disable-ffprobe&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;--disable-doc&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;--disable-symver&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;--disable-ffmpeg&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;--enable-small&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;--cross-prefix&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$TOOLCHAIN&lt;/span&gt;/bin/arm-linux-androideabi- &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;--target-os&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;linux &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;--arch&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;arm &lt;span class=&quot;se&quot;&gt;\ &lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;--enable-cross-compile&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;--sysroot&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$SYSROOT&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;--extra-cflags&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;-Os -fpic &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$ADDI_CFLAGS&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;--extra-ldflags&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$ADDI_LDFLAGS&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+&lt;span class=&quot;nv&quot;&gt;$ADDITIONAL_CONFIGURE_FLAG&lt;/span&gt;
+make clean all
+make &lt;span class=&quot;nt&quot;&gt;-j3&lt;/span&gt;
+make &lt;span class=&quot;nb&quot;&gt;install&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;nv&quot;&gt;CPU&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;armv7-a &lt;span class=&quot;c&quot;&gt;# CPU架构&lt;/span&gt;
+&lt;span class=&quot;nv&quot;&gt;PREFIX&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;pwd&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt;/android/&lt;span class=&quot;nv&quot;&gt;$CPU&lt;/span&gt; &lt;span class=&quot;c&quot;&gt;# 生成动态库所在路径&lt;/span&gt;
+&lt;span class=&quot;nv&quot;&gt;ADDI_CFLAGS&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;-marm&quot;&lt;/span&gt;
+build_one
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;之后运行该脚本即可, 注意添加可执行权限(&lt;code class=&quot;highlighter-rouge&quot;&gt;sudo chmod a+x build-script.sh&lt;/code&gt;)&lt;/p&gt;
+
+&lt;p&gt;等待一会应该就好啦, 然后在&lt;code class=&quot;highlighter-rouge&quot;&gt;FFmpeg&lt;/code&gt;目录下有一个&lt;code class=&quot;highlighter-rouge&quot;&gt;android&lt;/code&gt;目录, 生成的动态库就在其中啦~; 笔者生成的如下:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/FFmpegCompile/armv7-a.png&quot; alt=&quot;Armv7-a&quot; /&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;二-动态库接入android工程&quot;&gt;二. 动态库接入Android工程&lt;/h2&gt;
+
+&lt;p&gt;在开始接入之前, 需要先配置&lt;code class=&quot;highlighter-rouge&quot;&gt;Android Studio&lt;/code&gt;的环境; 主要是在&lt;code class=&quot;highlighter-rouge&quot;&gt;SDK Manager&lt;/code&gt;中下载&lt;code class=&quot;highlighter-rouge&quot;&gt;CMake&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;LLDB&lt;/code&gt;; 这里可以不用下载&lt;code class=&quot;highlighter-rouge&quot;&gt;NDK&lt;/code&gt;, 最好使用与编译版本一致的&lt;code class=&quot;highlighter-rouge&quot;&gt;NDK&lt;/code&gt;, 以免出现兼容性问题&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/FFmpegCompile/SDKManager.png&quot; alt=&quot;SDKManager&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;配置&lt;code class=&quot;highlighter-rouge&quot;&gt;NDK&lt;/code&gt;路径, 如下:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/FFmpegCompile/NDKPath.png&quot; alt=&quot;NDK路径&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;项目接入&lt;code class=&quot;highlighter-rouge&quot;&gt;JNI&lt;/code&gt;有两种方法, 一种是通过&lt;code class=&quot;highlighter-rouge&quot;&gt;cmake&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;CMakeLists.txt&lt;/code&gt;配置文件来指定; 另一种是通过&lt;code class=&quot;highlighter-rouge&quot;&gt;ndk-build&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;Android.mk&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;Application.mk&lt;/code&gt;配置文件来指定; 官方推荐使用第一种; 关于第二种接入方式, 可以参见&lt;a href=&quot;https://developer.android.google.cn/ndk/guides/android_mk&quot;&gt;官方文档&lt;/a&gt;配置&lt;/p&gt;
+
+&lt;p&gt;这里主要讲解第一种方式, 参见&lt;a href=&quot;https://developer.android.com/studio/projects/configure-cmake&quot;&gt;官方文档&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;如果是创建的新项目的话, 可以直接在创建项目的时候选择&lt;code class=&quot;highlighter-rouge&quot;&gt;include C++  surpport&lt;/code&gt;, 如下图; 如果项目已经创建了, 也不要紧, 下面讲解的就是这种情况&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/FFmpegCompile/JNI新项目.png&quot; alt=&quot;JNI新项目&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;我们先来看一下完整的目录结构如下:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/FFmpegCompile/JNI目录结构.png&quot; alt=&quot;目录结构&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;在&lt;code class=&quot;highlighter-rouge&quot;&gt;main&lt;/code&gt;目录下创建一个&lt;code class=&quot;highlighter-rouge&quot;&gt;jni&lt;/code&gt;目录(其他目录名也可以, 但是要注意后文的更改), 在&lt;code class=&quot;highlighter-rouge&quot;&gt;jni&lt;/code&gt;下创建一个&lt;code class=&quot;highlighter-rouge&quot;&gt;ffmpeg&lt;/code&gt;目录, 将上面编译好的&lt;code class=&quot;highlighter-rouge&quot;&gt;android/armv7-a/lib&lt;/code&gt;目录下的&lt;code class=&quot;highlighter-rouge&quot;&gt;.so&lt;/code&gt;文件拷贝到&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;工程的&lt;code class=&quot;highlighter-rouge&quot;&gt;ffmpeg/armeabi-v7a&lt;/code&gt;下(新建&lt;code class=&quot;highlighter-rouge&quot;&gt;armeabi-v7a&lt;/code&gt;目录, 注意目录名一定要是&lt;code class=&quot;highlighter-rouge&quot;&gt;armeabi-v7a&lt;/code&gt;, 和&lt;code class=&quot;highlighter-rouge&quot;&gt;CPU&lt;/code&gt;架构对应), 需要注意的是生成的动态链接库中有一些不带版本号的是指向另一个待版本号的软链接, 如下举例的两个&lt;code class=&quot;highlighter-rouge&quot;&gt;so&lt;/code&gt;文件, 其中&lt;code class=&quot;highlighter-rouge&quot;&gt;libavcodec.so&lt;/code&gt;文件是软链接, 指向&lt;code class=&quot;highlighter-rouge&quot;&gt;libavcodec-58.so&lt;/code&gt;, 所以拷贝时不需要拷贝这些软链接咯&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/FFmpegCompile/动态链接库.png&quot; alt=&quot;动态链接库&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;再将&lt;code class=&quot;highlighter-rouge&quot;&gt;android/armv7-a&lt;/code&gt;目录下的&lt;code class=&quot;highlighter-rouge&quot;&gt;include&lt;/code&gt;文件夹拷贝到&lt;code class=&quot;highlighter-rouge&quot;&gt;ffmpeg&lt;/code&gt;下; 创建好后目录结构如下:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/FFmpegCompile/创建jni目录.png&quot; alt=&quot;创建jni目录&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;在&lt;code class=&quot;highlighter-rouge&quot;&gt;app&lt;/code&gt;目录下创建&lt;code class=&quot;highlighter-rouge&quot;&gt;CMakeLists.txt&lt;/code&gt;(一定要是这个名字咯), 如下:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/FFmpegCompile/创建CMakeLists.png&quot; alt=&quot;创建CMakeLists&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;内容如下:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;cmake_minimum_required(VERSION 3.4.1) # cmake最低版本
+
+add_library( # Sets the name of the library.
+             wlffmpeg
+
+             # Sets the library as a shared library.
+             SHARED
+
+             # Provides a relative path to your source file(s).
+             src/main/jni/ffmpeg/player.c )
+
+add_library( avcodec-58  # 库名字
+             SHARED
+             IMPORTED)
+set_target_properties( avcodec-58
+                       PROPERTIES IMPORTED_LOCATION
+                       ${CMAKE_SOURCE_DIR}/src/main/jni/ffmpeg/armeabi-v7a/libavcodec-58.so) 
+
+add_library( avdevice-58
+             SHARED
+             IMPORTED)
+set_target_properties( avdevice-58
+                       PROPERTIES IMPORTED_LOCATION
+                       ${CMAKE_SOURCE_DIR}/src/main/jni/ffmpeg/armeabi-v7a/libavdevice-58.so)
+
+add_library( avfilter-7
+             SHARED
+             IMPORTED)
+set_target_properties( avfilter-7
+                       PROPERTIES IMPORTED_LOCATION
+                       ${CMAKE_SOURCE_DIR}/src/main/jni/ffmpeg/armeabi-v7a/libavfilter-7.so)
+
+add_library( avformat-58
+             SHARED
+             IMPORTED)
+set_target_properties( avformat-58
+                       PROPERTIES IMPORTED_LOCATION
+                       ${CMAKE_SOURCE_DIR}/src/main/jni/ffmpeg/armeabi-v7a/libavformat-58.so)
+
+add_library( avutil-56
+             SHARED
+             IMPORTED)
+set_target_properties( avutil-56
+                       PROPERTIES IMPORTED_LOCATION
+                       ${CMAKE_SOURCE_DIR}/src/main/jni/ffmpeg/armeabi-v7a/libavutil-56.so)
+
+add_library( swresample-3
+             SHARED
+             IMPORTED)
+set_target_properties( swresample-3
+                       PROPERTIES IMPORTED_LOCATION
+                       ${CMAKE_SOURCE_DIR}/src/main/jni/ffmpeg/armeabi-v7a/libswresample-3.so)
+
+add_library( swscale-5
+             SHARED
+             IMPORTED)
+set_target_properties( swscale-5
+                       PROPERTIES IMPORTED_LOCATION
+                       ${CMAKE_SOURCE_DIR}/src/main/jni/ffmpeg/armeabi-v7a/libswscale-5.so)
+
+
+find_library( # Sets the name of the path variable.
+              log-lib  # Android内置的log模块, 用于将JNI层的log打到AS控制台
+
+              # Specifies the name of the NDK library that
+              # you want CMake to locate.
+              log )
+
+include_directories(src/main/jni/ffmpeg/include)
+
+target_link_libraries( # Specifies the target library.  # 链接
+
+                       wlffmpeg  
+                       avcodec-58
+                       avdevice-58
+                       avfilter-7
+                       avformat-58
+                       avutil-56
+                       swresample-3
+                       swscale-5
+
+                       # Links the target library to the log library
+                       # included in the NDK.
+                       ${log-lib} )
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;关于&lt;code class=&quot;highlighter-rouge&quot;&gt;CMake&lt;/code&gt;配置可以参见&lt;a href=&quot;https://developer.android.com/studio/projects/configure-cmake&quot;&gt;文档&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;在模块级别的&lt;code class=&quot;highlighter-rouge&quot;&gt;build.gradle&lt;/code&gt;下配置:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;android {
+    ...
+    defaultConfig {
+        ...
+        externalNativeBuild {
+            cmake {
+                cppFlags &quot;&quot; 
+            }
+            ndk {
+                abiFilters &quot;armeabi-v7a&quot; # 指定CPU架构
+            }
+        }
+        sourceSets {
+            main {
+                jniLibs.srcDirs = ['src/main/jni/ffmpeg']  # 指定jni路径
+            }
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path 'CMakeLists.txt' # 指定cmake的配置文件路径
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;创建&lt;code class=&quot;highlighter-rouge&quot;&gt;FFmpeg.java&lt;/code&gt;类, 使用静态代码块加载动态链接库, 定义&lt;code class=&quot;highlighter-rouge&quot;&gt;native&lt;/code&gt;方法&lt;code class=&quot;highlighter-rouge&quot;&gt;playMyMedia()&lt;/code&gt;, 如下:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class FFmpeg {
+    static {
+        System.loadLibrary(&quot;avutil-56&quot;);
+        System.loadLibrary(&quot;swresample-3&quot;);
+        System.loadLibrary(&quot;avcodec-58&quot;);
+        System.loadLibrary(&quot;avformat-58&quot;);
+        System.loadLibrary(&quot;swscale-5&quot;);
+        System.loadLibrary(&quot;avfilter-7&quot;);
+        System.loadLibrary(&quot;avdevice-58&quot;);
+        System.loadLibrary(&quot;wlffmpeg&quot;); // 注意不要忘了加载这个库
+    }
+
+    public native void playMyMedia(String url);
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;在&lt;code class=&quot;highlighter-rouge&quot;&gt;playMyMedia()&lt;/code&gt;上快捷键&lt;code class=&quot;highlighter-rouge&quot;&gt;Alt + Enter&lt;/code&gt;选择&lt;code class=&quot;highlighter-rouge&quot;&gt;create function xxx&lt;/code&gt;, 可以自动创建对应的&lt;code class=&quot;highlighter-rouge&quot;&gt;.c&lt;/code&gt;文件, 当然该&lt;code class=&quot;highlighter-rouge&quot;&gt;.c&lt;/code&gt;文件也可以自命名, 此处命名为&lt;code class=&quot;highlighter-rouge&quot;&gt;player.c&lt;/code&gt;; &lt;code class=&quot;highlighter-rouge&quot;&gt;player.c&lt;/code&gt;的完整代码如下: 该代码摘自&lt;a href=&quot;https://blog.csdn.net/ywl5320/article/details/75136986&quot;&gt;博客&lt;/a&gt;&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;#include &amp;lt;jni.h&amp;gt;
+#include &quot;libavformat/avformat.h&quot;
+#include &amp;lt;android/log.h&amp;gt;
+#define LOGI(FORMAT,...) __android_log_print(ANDROID_LOG_INFO,&quot;HusterYP&quot;,FORMAT,##__VA_ARGS__);  // 输出到AS的log中
+#define LOGE(FORMAT,...) __android_log_print(ANDROID_LOG_ERROR,&quot;HusterYP&quot;,FORMAT,##__VA_ARGS__);
+
+JNIEXPORT void JNICALL
+Java_com_gif_ping_jnidemo_FFmpeg_playMyMedia(JNIEnv *env, jobject instance, jstring url_) {
+    const char *url = (*env)-&amp;gt;GetStringUTFChars(env, url_, 0);
+    LOGI(&quot;url:%s&quot;, url);
+    av_register_all();
+    AVCodec *c_temp = av_codec_next(NULL);
+    while (c_temp != NULL)
+    {
+        switch (c_temp-&amp;gt;type)
+        {
+            case AVMEDIA_TYPE_VIDEO:
+                LOGI(&quot;[Video]:%s&quot;, c_temp-&amp;gt;name);
+                break;
+            case AVMEDIA_TYPE_AUDIO:
+                LOGI(&quot;[Audio]:%s&quot;, c_temp-&amp;gt;name);
+                break;
+            default:
+                LOGI(&quot;[Other]:%s&quot;, c_temp-&amp;gt;name);
+                break;
+        }
+        c_temp = c_temp-&amp;gt;next;
+    }
+    (*env)-&amp;gt;ReleaseStringUTFChars(env, url_, url);
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;然后在&lt;code class=&quot;highlighter-rouge&quot;&gt;MainActivity&lt;/code&gt;中使用, 也比较简单; 注意添加网络权限, 在&lt;code class=&quot;highlighter-rouge&quot;&gt;log&lt;/code&gt;中就可以看到输出的视频信息啦~&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class MainActivity extends AppCompatActivity {
+
+    FFmpeg mFFmpeg;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        init();
+    }
+
+    private void init() {
+        mFFmpeg = new FFmpeg();
+        mFFmpeg.playMyMedia(&quot;http://video.xxx&quot;); // 随便找一个视频url啦~
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;到这里, 项目应该就能跑起来啦~&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;三-参考链接&quot;&gt;三. 参考链接&lt;/h2&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://medium.com/@karthikcodes1999/cross-compiling-ffmpeg-4-0-for-android-b988326f16f2&quot;&gt;Cross Compiling FFmpeg 4.0 for Android&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://blog.csdn.net/yhaolpz/article/details/76408829&quot;&gt;Android 集成 FFmpeg (一) 基础知识及简单调用&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://blog.csdn.net/ywl5320/article/details/75136986&quot;&gt;Android Studio通过cmake创建FFmpeg项目&lt;/a&gt;&lt;/p&gt;
+</description>
+        <pubDate>Sat, 17 Nov 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/11/17/FFmpeg%E4%BA%A4%E5%8F%89%E7%BC%96%E8%AF%91%E4%B8%8E%E6%8E%A5%E5%85%A5Android%E5%B7%A5%E7%A8%8B/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/11/17/FFmpeg%E4%BA%A4%E5%8F%89%E7%BC%96%E8%AF%91%E4%B8%8E%E6%8E%A5%E5%85%A5Android%E5%B7%A5%E7%A8%8B/</guid>
+        
+        <category>Android</category>
+        
+        
+      </item>
+    
+      <item>
+        <title>进程与线程</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;操作系统之进程与线程总结&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;一-进程&quot;&gt;一. 进程&lt;/h2&gt;
+
+&lt;p&gt;定义: 一个运行中的程序&lt;/p&gt;
+
+&lt;p&gt;进程和程序的区别: 一个进程是某种类型的活动, 它有程序, 输入, 输出以及状态, 如果一个程序运行了两遍, 则算作两个进程&lt;/p&gt;
+
+&lt;p&gt;进程地址空间见下图:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/CS/进程地址空间.png&quot; alt=&quot;进程地址空间&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;内核模式和用户模式的实现: 通常是用某个控制寄存器中的一个模式位实现的&lt;/p&gt;
+
+&lt;p&gt;进程有三种状态: 运行态, 就绪态, 阻塞态; 其相互之间的切换见下&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/CS/进程状态切换.png&quot; alt=&quot;进程状态切换&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;子进程的回收: 当一个进程由于某种原因终止时, 内核并不是立即把它从系统中清除, 相反, 进程被保持在已终止的状态, 知道被它的父进程回收, 一个终止但还未被回收的进程称为僵死进程, 即使僵死进程没有运行, 他们仍然消耗系统的内存资源; 如果一个父进程终止了, 内核会安排&lt;code class=&quot;highlighter-rouge&quot;&gt;init&lt;/code&gt;进程成为它的孤儿进程的养父&lt;/p&gt;
+
+&lt;h3 id=&quot;11-进程创建fork&quot;&gt;1.1 进程创建–fork()&lt;/h3&gt;
+
+&lt;p&gt;通过&lt;code class=&quot;highlighter-rouge&quot;&gt;fork&lt;/code&gt;可以创建进程, 新创建的子进程与父进程几乎但不是完全相同的, 子进程得到与父进程用户级虚拟地址空间相同(但是独立)的副本, 包括代码和数据段, 堆, 共享库以及用户栈, 子进程还获得与父进程任何打开文件描述符相同的副本, 这就意味着当父进程调用&lt;code class=&quot;highlighter-rouge&quot;&gt;fork&lt;/code&gt;时, 子进程可以读写父进程中打开的任何文件; 其最大的区别就是具有不同的&lt;code class=&quot;highlighter-rouge&quot;&gt;UID&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;通常子进程会执行&lt;code class=&quot;highlighter-rouge&quot;&gt;execve&lt;/code&gt;或一个相同的系统调用以修改其内存映像并运行一个新的程序&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;fork&lt;/code&gt;函数调用一次但是返回两次, 一次是在父进程中, 另一次是在新创建的子进程中, 参见一下代码&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;int main() 
+{
+    pid_t pid;
+    int x = 1;
+    pid = Fork();
+    if (pid == 0) // 子进程
+    {
+        printf(&quot;Child: x = %d\n&quot;, ++x); 
+        exit(0);
+    }
+    printf(&quot;Parent: x = %d\n&quot;, --x); // 父进程
+    exit(0);
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;输出(注意由于并发不定性, 所以输出顺序不定):&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Parent: x = 0
+Child: x = 2
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;注意理解上述程序:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;调用一次, 返回两次&lt;/li&gt;
+    &lt;li&gt;并发执行&lt;/li&gt;
+    &lt;li&gt;相同但是独立的地址空间: 写时复制; 子进程共享父进程的所有内存, 但这块内存通过写时复制共享, 这意味着一旦两者之一想要修改部分内存, 则这块内存首先被明确的复制, 以确保修改发生在私有内存区域&lt;/li&gt;
+    &lt;li&gt;共享文件: 当运行这个程序时, 我们注意到父进程和子进程都把他们的输出显示到屏幕上, 原因是子进程继承了父进程所有的打开文件, 当父进程调用&lt;code class=&quot;highlighter-rouge&quot;&gt;fork&lt;/code&gt;时, &lt;code class=&quot;highlighter-rouge&quot;&gt;stdout&lt;/code&gt;文件是打开的, 并指向屏幕, 子进程继承了这个文件, 因此它的输出也是指向屏幕的(&lt;strong&gt;注意理解此处&lt;/strong&gt;)&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;h3 id=&quot;12-进程间通信&quot;&gt;1.2 进程间通信&lt;/h3&gt;
+
+&lt;h4 id=&quot;121-如何保证临界区互斥&quot;&gt;1.2.1 如何保证临界区互斥&lt;/h4&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;屏蔽中断: 在单处理器系统中, 最简单的方法是使每个进程在刚刚进入临界区后立即屏蔽所有中断, 并在要离开之前再打开中断&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;锁变量&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;严格的轮换法: 自旋锁&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Peterson&lt;/code&gt;解法&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;TSL&lt;/code&gt;指令: 测试并加锁; 读字和写字操作保证是不可分割的, 即该指令结束之前其他处理器均不允许访问该内存字; 执行&lt;code class=&quot;highlighter-rouge&quot;&gt;TSL&lt;/code&gt;指令的&lt;code class=&quot;highlighter-rouge&quot;&gt;CPU&lt;/code&gt;锁住内存总线, 以禁止其他&lt;code class=&quot;highlighter-rouge&quot;&gt;CPU&lt;/code&gt;在本指令结束之前访问内存(原子操作的更底层解释)&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h4 id=&quot;122-生产者消费者问题&quot;&gt;1.2.2 生产者消费者问题&lt;/h4&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;信号量: 用一个整型变量来累计唤醒次数&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;#define N 100 // 缓冲区的槽数目
+typedef int semaphore; // 信号量是一种特殊类型的整型数据
+semaphore mutex = 1; // 控制对临界区的访问
+semaphore empty = N; // 计数缓冲区的空槽数目
+semaphore full = 0; // 计数缓冲区的满槽数目
+
+void producer(void)
+{   
+    int item;
+
+    while(true)
+    {   
+        item = produce_item();
+        down(&amp;amp;empty); // 将空槽数目减一; 注意理解, 若交换这里两个down操作的顺序, 可能会造成死锁
+        down(&amp;amp;mutex); // 进入临界区
+        insert_item(item);
+        up(&amp;amp;mutex); // 离开临界区
+        up(&amp;amp;full); // 将满槽数目加一
+    }
+}
+
+void consumer(void)
+{
+    int item;
+
+    while(true)
+    {
+        down(&amp;amp;full);
+        down(&amp;amp;mutex);
+        item = remove_item();
+        up(&amp;amp;mutex);
+        up(&amp;amp;empty);
+        comsume_item(item);
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;互斥量: 没有计数能力, 可以处于两态之一: 解锁和加锁&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;管程: 一个管程是一个由过程, 变量以及数据等组成的一个集合, 它们组成一个特殊的模块或软件包, 进程可以在任何需要的时候调用管程中的过程, 但是不能在管程之外声明的过程中直接访问管程内的数据结构&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/CS/管程.png&quot; alt=&quot;管程&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;进入管程的互斥由编译器负责, 但通常的做法是用一个互斥量或二元信号量&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;避免锁: 读-复制-更新&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&quot;13-调度&quot;&gt;1.3 调度&lt;/h3&gt;
+
+&lt;p&gt;进程切换做的工作: 首先用户态切换到内核态, 然后保存当前进程的状态, 包括在进程表中存储器值; 在许多系统中, 内存映像(如: 页表内内存访问位)也必须保存, 接着, 通过运行调度程序选择一个新进程, 之后, 将该新进程的内存映像装进&lt;code class=&quot;highlighter-rouge&quot;&gt;MMU&lt;/code&gt;, 最后新进程开始运行; 除此之外, 进程切换还要使整个内存高速缓存失效, 强迫缓存从内存中动态重新装入两次(进入内核一次, 离开内核一次)&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/CS/上下文切换.png&quot; alt=&quot;上下文切换&quot; /&gt;&lt;/p&gt;
+
+&lt;h4 id=&quot;131-调度时机&quot;&gt;1.3.1 调度时机&lt;/h4&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;什么时候调度&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;创建一个新进程之后, 决定是运行子进程还是父进程&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;在一个进程退出时&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;当一个进程阻塞在&lt;code class=&quot;highlighter-rouge&quot;&gt;I/O&lt;/code&gt;和信号量上或由于其他原因阻塞时&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;I/O&lt;/code&gt;中断时&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h4 id=&quot;132-调度策略&quot;&gt;1.3.2 调度策略&lt;/h4&gt;
+
+&lt;p&gt;有三种环境:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;批处理&lt;/li&gt;
+    &lt;li&gt;交互式&lt;/li&gt;
+    &lt;li&gt;实时&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;批处理&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;先来先服务&lt;/li&gt;
+    &lt;li&gt;最短作业优先&lt;/li&gt;
+    &lt;li&gt;最短剩余时间优先&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;交互式&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;轮转调度: 时间分片; 维护一个进程队列, 用完时间片后, 排到队列末尾&lt;/li&gt;
+    &lt;li&gt;优先级调度&lt;/li&gt;
+    &lt;li&gt;多级队列&lt;/li&gt;
+    &lt;li&gt;最短进程优先&lt;/li&gt;
+    &lt;li&gt;保证调度&lt;/li&gt;
+    &lt;li&gt;彩票调度&lt;/li&gt;
+    &lt;li&gt;公平分享调度&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;h4 id=&quot;133-读者-写者问题&quot;&gt;1.3.3 读者-写者问题&lt;/h4&gt;
+
+&lt;p&gt;实现目标是: 可以多个读者&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;以数据库为例&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;typedef int semaphore;
+semaphore mutex = 1; 
+semaphore db = 1; // 控制对数据库的访问
+int rc = 0; // 正在读或者即将读的进程数目
+
+void reader(void)
+{
+    while(true)
+    {
+        down(&amp;amp;mutex); // 获得对rc的互斥访问权
+        rc = rc + 1; // 多了一个读者
+        if (rc == 1) // 如果是第一个读者
+            down(&amp;amp;db);
+        up(&amp;amp;mutex);
+        read_data_base(); // 访问数据
+        down(&amp;amp;mutex);
+        rc = rc - 1; // 减少了一个读者
+        if (rc == 0) // 如果是最后一个读者
+            up(&amp;amp;db); 
+        up(&amp;amp;mutex);
+        use_data_read(); // 非临界区
+    }
+}
+
+void writer(void) 
+{   
+    while(true)
+    {
+        think_up_data(); // 非临界区
+        down(&amp;amp;db); // 获取互斥访问
+        write_data_basae(); // 更新数据
+        up(&amp;amp;db); // 释放互斥访问
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;二-线程&quot;&gt;二. 线程&lt;/h2&gt;
+
+&lt;p&gt;为什么要使用线程:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;并行实体拥有共享同一个地址空间和所有可用数据的能力, 这是多进程无法表达的&lt;/li&gt;
+    &lt;li&gt;线程比进程更轻量级, 它们比进程更容易创建, 也更容易撤销&lt;/li&gt;
+    &lt;li&gt;若多个线程都是&lt;code class=&quot;highlighter-rouge&quot;&gt;CPU&lt;/code&gt;密集型的, 那么并不能获得性能上的增强(考虑调度消耗时间), 但是如果存在大量的计算和大量的&lt;code class=&quot;highlighter-rouge&quot;&gt;I/O&lt;/code&gt;处理, 拥有多个线程允许这些活动彼此重叠进行, 从而会加快应用程序执行的速度&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;在线程中有一个程序计数器, 用来记录接着要执行哪一条指令, 线程拥有寄存器, 用来保存线程当前的工作变量, 线程还拥有一个堆栈, 其中每一帧保存了一个已调用的但是还没有从中返回的过程&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/CS/线程与进程.png&quot; alt=&quot;线程与进程&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;进程用于把资源集中到一起, 而线程则是在&lt;code class=&quot;highlighter-rouge&quot;&gt;CPU&lt;/code&gt;上被调度执行的实体(资源管理的单位是进程)&lt;/p&gt;
+
+</description>
+        <pubDate>Thu, 15 Nov 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/11/15/%E8%BF%9B%E7%A8%8B%E4%B8%8E%E7%BA%BF%E7%A8%8B/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/11/15/%E8%BF%9B%E7%A8%8B%E4%B8%8E%E7%BA%BF%E7%A8%8B/</guid>
+        
+        <category>操作系统</category>
+        
+        
+      </item>
     
       <item>
         <title>Java并发[三]</title>
@@ -1389,1569 +2098,6 @@ Matrix)，它指定了一个范围的坐标(如果只是图元(Primitive)，例�
         <guid isPermaLink="true">http://localhost:4000/2018/10/13/Activity%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F/</guid>
         
         <category>Android</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>排序算法</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;p&gt;排序算法总结, 分析各种排序算法的时间复杂度, 空间复杂度, 使用场景和优化等方面&lt;/p&gt;
-
-&lt;p&gt;包括: 选择排序, 归并排序, 插入排序, 冒泡排序, 快排, 堆排, 基数排序, 希尔排序, 计数排序, 桶排序&lt;/p&gt;
-
-&lt;p&gt;文中代码使用&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;实现, &lt;code class=&quot;highlighter-rouge&quot;&gt;C/C++&lt;/code&gt;实现可以参见: https://github.com/HusterYP/DataStructure&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;一-选择排序&quot;&gt;一. 选择排序&lt;/h2&gt;
-
-&lt;h3 id=&quot;11-基本思路&quot;&gt;1.1 基本思路&lt;/h3&gt;
-
-&lt;p&gt;找到数组中的最小元素, 将它和数组的第一个元素交换, 然后在剩下元素中找到最小元素和数组第二个元素交换, 如此往复, 直到有序&lt;/p&gt;
-
-&lt;h3 id=&quot;12-主要代码&quot;&gt;1.2 主要代码&lt;/h3&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public static void sort(int[] noSort) {
-        if (noSort == null || noSort.length &amp;lt;= 0) // 边界条件
-            return;
-        int N = noSort.length;
-        for (int i = 0; i &amp;lt; N; i++) {
-            int min = i;
-            for (int j = i + 1; j &amp;lt; N; j++) {
-                if (Utils.less(noSort[min], noSort[j]) &amp;lt; 0) // 注意此处比较条件, 不要写成noSort[i]和noSort[j]比较了
-                    min = j;
-            }
-            Utils.exch(noSort, i, min);
-        }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h3 id=&quot;13-特点&quot;&gt;1.3 特点&lt;/h3&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;时间复杂度&lt;/strong&gt;: &lt;code class=&quot;highlighter-rouge&quot;&gt;O(N^2)&lt;/code&gt;; 需要进行&lt;code class=&quot;highlighter-rouge&quot;&gt;(N-1)+(N-2)+...+1 = (N-1)*N/2&lt;/code&gt;次比较和&lt;code class=&quot;highlighter-rouge&quot;&gt;N&lt;/code&gt;次交换&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;临界时间&lt;/strong&gt;: 选择排序的最好情况与最坏情况时间相同, 同其时间复杂度分析(也可以说没有最好最坏情况)&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;空间复杂度&lt;/strong&gt;: &lt;code class=&quot;highlighter-rouge&quot;&gt;1&lt;/code&gt;; 需要一个临时变量&lt;code class=&quot;highlighter-rouge&quot;&gt;min&lt;/code&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;稳定性&lt;/strong&gt;: 不稳定的; 如&lt;code class=&quot;highlighter-rouge&quot;&gt;[5, 5, 2]&lt;/code&gt;&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;二-插入排序&quot;&gt;二. 插入排序&lt;/h2&gt;
-
-&lt;h3 id=&quot;21-基本思路&quot;&gt;2.1 基本思路&lt;/h3&gt;
-
-&lt;p&gt;从第一个元素开始, 该元素可认为已经被排序, 取出下一个元素, 在已排序元素序列中从后往前开始扫描, 插入到相应位置&lt;/p&gt;
-
-&lt;h3 id=&quot;22-主要代码&quot;&gt;2.2 主要代码&lt;/h3&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public static void sort(int[] noSort) {
-        if (noSort == null || noSort.length &amp;lt;= 0)
-            return;
-        int N = noSort.length;
-        for (int i = 1; i &amp;lt; N; i++) {
-            int index = i;
-            while (index &amp;gt; 0 &amp;amp;&amp;amp; Utils.less(noSort[index], noSort[index - 1])) {
-                Utils.exch(noSort, index, index - 1);
-                index--;
-            }
-        }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h3 id=&quot;23-特点&quot;&gt;2.3 特点&lt;/h3&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;时间复杂度&lt;/strong&gt;: &lt;code class=&quot;highlighter-rouge&quot;&gt;O(N^2)&lt;/code&gt;; 平均情况下需要&lt;code class=&quot;highlighter-rouge&quot;&gt;N^2 / 4&lt;/code&gt;次比较和&lt;code class=&quot;highlighter-rouge&quot;&gt;N^2 / 4&lt;/code&gt;次交换&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;临界情况&lt;/strong&gt;: 最好情况是, 所有数据有序, 此时需要&lt;code class=&quot;highlighter-rouge&quot;&gt;N-1&lt;/code&gt;次比较和&lt;code class=&quot;highlighter-rouge&quot;&gt;0&lt;/code&gt;次交换; 最坏情况是所有数据逆序有序, 此时需要&lt;code class=&quot;highlighter-rouge&quot;&gt;N^2 / 2&lt;/code&gt;次比较和&lt;code class=&quot;highlighter-rouge&quot;&gt;N^2 / 2&lt;/code&gt;次交换(注意, 其实平均情况就是最坏情况对半, 因为每个位置每个元素出现几率相同)&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;适用情况&lt;/strong&gt;: 对于部分有序的数组, 插入排序的效率很高; 部分有序数组:&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;数组中每个元素距离它的最终位置都不远&lt;/li&gt;
-    &lt;li&gt;一个有序的大数组接一个小数组&lt;/li&gt;
-    &lt;li&gt;数组中只有几个元素的位置不正确&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;空间复杂度&lt;/strong&gt;: &lt;code class=&quot;highlighter-rouge&quot;&gt;1&lt;/code&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;稳定性&lt;/strong&gt;: 稳定&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;三-希尔排序&quot;&gt;三. 希尔排序&lt;/h2&gt;
-
-&lt;p&gt;插入排序的改进&lt;/p&gt;
-
-&lt;h3 id=&quot;31-基本思路&quot;&gt;3.1 基本思路&lt;/h3&gt;
-
-&lt;p&gt;使数组中任意间隔为&lt;code class=&quot;highlighter-rouge&quot;&gt;h&lt;/code&gt;的数组都是有序的, 称为&lt;code class=&quot;highlighter-rouge&quot;&gt;h&lt;/code&gt;有序数组; 类似插入排序, 但使用不同增量, 因为在插入排序中讲解适用性的时候说过, 插入排序在用于小数组的时候(可以理解为部分有序数组的第一种情况)很有效, 希尔排序就是将一个大数组按照&lt;code class=&quot;highlighter-rouge&quot;&gt;h&lt;/code&gt;间隔分为许多小数组, 然后分别对这些小数组进行插入排序, 部分有序之后对整体进行插入排序(&lt;code class=&quot;highlighter-rouge&quot;&gt;h=1&lt;/code&gt;), 此时即有序; 而这两种情况都适用于插入排序&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;h&lt;/code&gt;的选择, &lt;code class=&quot;highlighter-rouge&quot;&gt;1/2*(3^k-1)&lt;/code&gt;, 从&lt;code class=&quot;highlighter-rouge&quot;&gt;N/3&lt;/code&gt;递减至&lt;code class=&quot;highlighter-rouge&quot;&gt;1&lt;/code&gt;, 如下代码&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;int h = 1;
-while(h &amp;lt; N/3)
-    h = h * 3 + 1;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h3 id=&quot;32-基本代码&quot;&gt;3.2 基本代码&lt;/h3&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public static void sort(int[] noSort) {
-        if (noSort == null || noSort.length &amp;lt;= 0)
-            return;
-        int N = noSort.length;
-        int h = 1;
-        while (h &amp;lt; N / 3)
-            h = h * 3 + 1;
-        while (h &amp;gt;= 1) {
-            for (int i = h; i &amp;lt; N; i++) {
-                for (int j = i; j &amp;gt;= h &amp;amp;&amp;amp; Utils.less(noSort[j], noSort[j - h]); j -= h)
-                    Utils.exch(noSort, j, j - h);
-            }
-            h = h / 3;
-        }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h3 id=&quot;33-特点&quot;&gt;3.3 特点&lt;/h3&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;时间复杂度&lt;/strong&gt;: 优于插入排序; 取决于&lt;code class=&quot;highlighter-rouge&quot;&gt;h&lt;/code&gt;的取值&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;空间复杂度&lt;/strong&gt;: &lt;code class=&quot;highlighter-rouge&quot;&gt;1&lt;/code&gt;(&lt;code class=&quot;highlighter-rouge&quot;&gt;h&lt;/code&gt;)&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;稳定性&lt;/strong&gt;: 不稳定&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;适用情况&lt;/strong&gt;: 希尔排序也可以用于大数组, 对任意排序(不一定是随机的)的数组表现也很好; 可以先考虑使用希尔排序, 然后再考虑是否值得将它替换为更加复杂的排序算法&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;四-冒泡排序&quot;&gt;四. 冒泡排序&lt;/h2&gt;
-
-&lt;h3 id=&quot;41-基本思路&quot;&gt;4.1 基本思路&lt;/h3&gt;
-
-&lt;p&gt;比较相邻元素, 如果第一个比第二个大, 就交换他们两个, 遍历所有元素, 一趟之后, 最后一个元素为最大元素; 对剩余元素重复该步骤(除了最后一个)&lt;/p&gt;
-
-&lt;h3 id=&quot;42-主要代码&quot;&gt;4.2 主要代码&lt;/h3&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public static void sort(int[] noSort) {
-        if (noSort == null || noSort.length &amp;lt;= 0)
-            return;
-        int N = noSort.length;
-        for (int i = N; i &amp;gt; 0; i--) {
-            for (int j = 0; j &amp;lt; i - 1; j++) {
-                if (Utils.less(noSort[j + 1], noSort[j]))
-                    Utils.exch(noSort, j, j + 1);
-            }
-        }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h3 id=&quot;43-特点&quot;&gt;4.3 特点&lt;/h3&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;时间复杂度&lt;/strong&gt;: &lt;code class=&quot;highlighter-rouge&quot;&gt;O(N^2)&lt;/code&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;空间复杂度&lt;/strong&gt;: &lt;code class=&quot;highlighter-rouge&quot;&gt;0&lt;/code&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;稳定性&lt;/strong&gt;: 稳定&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;改进&lt;/strong&gt;: 添加标志位, 如果一趟遍历中没有交换, 说明已经有序, 直接退出即可&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public static void sort(int[] noSort) {
-        if (noSort == null || noSort.length &amp;lt;= 0)
-            return;
-        int N = noSort.length;
-        boolean isChange = true;
-        for (int i = N; i &amp;gt; 0 &amp;amp;&amp;amp; isChange; i--) {
-            isChange = false;
-            for (int j = 0; j &amp;lt; i - 1; j++) {
-                if (Utils.less(noSort[j + 1], noSort[j])) {
-                    Utils.exch(noSort, j, j + 1);
-                    isChange = true;
-                }
-            }
-        }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;五-归并排序&quot;&gt;五. 归并排序&lt;/h2&gt;
-
-&lt;h3 id=&quot;51-基本思路&quot;&gt;5.1 基本思路&lt;/h3&gt;
-
-&lt;p&gt;递归排序, 先将一个数组分成两半分别排序, 然后将结果归并起来&lt;/p&gt;
-
-&lt;h3 id=&quot;52-主要代码&quot;&gt;5.2 主要代码&lt;/h3&gt;
-
-&lt;p&gt;&lt;strong&gt;自顶向下的归并排序:&lt;/strong&gt;&lt;/p&gt;
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class MergeSort {
-    private static int[] aux; // 辅助数组
-
-    public static void sort(int[] noSort) {
-        if (noSort == null || noSort.length &amp;lt;= 0)
-            return;
-        aux = new int[noSort.length];
-        sort(noSort, 0, noSort.length - 1);
-    }
-
-    public static void sort(int[] noSort, int low, int high) {
-        if (high &amp;lt;= low)
-            return;
-        int mid = low + (high - low) / 2;
-        sort(noSort, low, mid); // 将左半边数组排序
-        sort(noSort, mid + 1, high); // 将右半边数组排序
-        merge(noSort, low, mid, high); // 将数组归并
-    }
-
-    public static void merge(int[] noSort, int low, int mid, int high) {
-        int i = low;
-        int j = mid + 1;
-        for (int k = low; k &amp;lt;= high; k++) {
-            aux[k] = noSort[k];
-        }
-
-        for (int k = low; k &amp;lt;= high; k++) {
-            if (i &amp;gt; mid)
-                noSort[k] = aux[j++]; // 如果左边用完
-            else if (j &amp;gt; high)
-                noSort[k] = aux[i++]; // 如果右边用完
-            else if (Utils.less(aux[j], aux[i]))
-                noSort[k] = aux[j++];
-            else
-                noSort[k] = aux[i++];
-        }
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;&lt;strong&gt;自底向下的归并排序:&lt;/strong&gt;&lt;/p&gt;
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public static void sortBU(int[] noSort) {
-        int N = noSort.length;
-        aux = new int[N];
-        for (int sz = 1; sz &amp;lt; N; sz = sz + sz) {
-            for (int low = 0; low &amp;lt; N - sz; low += sz + sz)
-                merge(noSort, low, low + sz - 1, Math.min(low + sz + sz - 1, N - 1));
-        }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h3 id=&quot;53-特点&quot;&gt;5.3 特点&lt;/h3&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;时间复杂度&lt;/strong&gt;: &lt;code class=&quot;highlighter-rouge&quot;&gt;O(NlogN)&lt;/code&gt;; 归并排序是一种渐进最优的基于比较的排序算法; 能够保证&lt;code class=&quot;highlighter-rouge&quot;&gt;O(NlogN)&lt;/code&gt;的时间复杂度(即最坏情况最好情况都相同)&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;空间复杂度&lt;/strong&gt;: 需要与&lt;code class=&quot;highlighter-rouge&quot;&gt;N&lt;/code&gt;成正比的额外数组空间&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;稳定性&lt;/strong&gt;: 稳定&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;两种归并方式的区别&lt;/strong&gt;: 自底向上的归并方式比较适合用链表组织的数据, 此时只需要重新组织链表链接就能将链表原地排序, 不需要额外空间&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h3 id=&quot;54-改进&quot;&gt;5.4 改进&lt;/h3&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;对小规模子数组使用插入排序&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;测试数组是否已经有序: 如果&lt;code class=&quot;highlighter-rouge&quot;&gt;noSort[mid] &amp;lt; noSort[mid+1]&lt;/code&gt;说明数组有序, 可以跳过本次&lt;code class=&quot;highlighter-rouge&quot;&gt;merge()&lt;/code&gt;了&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;不将元素复制到辅助数组: 可以节省将元素复制到辅助数组所用的时间(但是空间不行), 即进行交替归并即可(可以添加一个标志位标识最终结果存储在哪个数组)&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;六-快排&quot;&gt;六. 快排&lt;/h2&gt;
-
-&lt;h3 id=&quot;61-基本思路&quot;&gt;6.1 基本思路&lt;/h3&gt;
-
-&lt;p&gt;对于某个&lt;code class=&quot;highlighter-rouge&quot;&gt;j&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;a[j]&lt;/code&gt;已经排定, &lt;code class=&quot;highlighter-rouge&quot;&gt;a[low]&lt;/code&gt;到&lt;code class=&quot;highlighter-rouge&quot;&gt;a[j-1]&lt;/code&gt;中的所有元素都不大于&lt;code class=&quot;highlighter-rouge&quot;&gt;a[j]&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;a[j+1]&lt;/code&gt;到&lt;code class=&quot;highlighter-rouge&quot;&gt;a[high]&lt;/code&gt;中的所有元素都不小于&lt;code class=&quot;highlighter-rouge&quot;&gt;a[j]&lt;/code&gt;&lt;/p&gt;
-
-&lt;h3 id=&quot;62-主要代码&quot;&gt;6.2 主要代码&lt;/h3&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class QuickSort {
-
-    public static void sort(int[] noSort) {
-        if (noSort == null || noSort.length &amp;lt;= 0)
-            return;
-        sort(noSort, 0, noSort.length - 1);
-    }
-
-    private static void sort(int[] noSort, int low, int high) {
-        if (high &amp;lt;= low)
-            return;
-        int j = partition(noSort, low, high);
-        sort(noSort, low, j - 1);
-        sort(noSort, j + 1, high);
-    }
-
-    private static int partition(int[] noSort, int low, int high) {
-        int i = low;
-        int j = high + 1;
-        int temp = noSort[low];
-        while (true) {
-            while (Utils.less(noSort[++i], temp))
-                if (i == high)
-                    break;
-            while (Utils.less(temp, noSort[--j]))
-                if (j == low)
-                    break;
-            if (i &amp;gt;= j)
-                break;
-            Utils.exch(noSort, i, j);
-        }
-        Utils.exch(noSort, low, j);
-        return j;
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h3 id=&quot;63-特点&quot;&gt;6.3 特点&lt;/h3&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;时间复杂度&lt;/strong&gt;: &lt;code class=&quot;highlighter-rouge&quot;&gt;O(NlogN)&lt;/code&gt;; 比归并和希尔排序都快&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;临界情况&lt;/strong&gt;: 依赖于切分情况; 最好情况是每次都能将数组对半分; 最坏情况是第一次从最小元素切分, 第二次第二小元素切分, 如此这般, 每次调用都只能移除一个元素, 造成最坏情况(可以在开始排序之前, 现将待排序数组打乱(&lt;code class=&quot;highlighter-rouge&quot;&gt;shuffle()&lt;/code&gt;))&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;空间复杂度&lt;/strong&gt;: &lt;code class=&quot;highlighter-rouge&quot;&gt;logN&lt;/code&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;稳定性&lt;/strong&gt;: 不稳定&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h3 id=&quot;64-算法改进&quot;&gt;6.4 算法改进&lt;/h3&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;小数组时切换到插入排序&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;三取样切分: 使用子数组的一小部分元素的中位数来切分数组, 这样切分更好, 但代价是需要计算中位数; 将取样大小设置为&lt;code class=&quot;highlighter-rouge&quot;&gt;3&lt;/code&gt;并用大小居中的元素切分的效果更好; 还可以将取样元素放在数组末尾作为&lt;strong&gt;哨兵&lt;/strong&gt;, 这样可以避免临界值判断&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;熵最优排序: 当含有大量重复元素的时候, 快排的递归性会使元素全部重复的子元素经常出现, 这就有很大的改进潜力, 将线性对数级的性能提高到线性级别; 一个简单的想法是将数组切分为三部分, 即小于, 等于和大于(荷兰国旗问题); 基本思路是: 维护一个指针&lt;code class=&quot;highlighter-rouge&quot;&gt;lt&lt;/code&gt;使得&lt;code class=&quot;highlighter-rouge&quot;&gt;a[low..lt-1]&lt;/code&gt;中的元素都小于&lt;code class=&quot;highlighter-rouge&quot;&gt;v&lt;/code&gt;(切分元素), 一个指针&lt;code class=&quot;highlighter-rouge&quot;&gt;gt&lt;/code&gt;使得&lt;code class=&quot;highlighter-rouge&quot;&gt;a[gt+1..hi]&lt;/code&gt;中的元素都大于&lt;code class=&quot;highlighter-rouge&quot;&gt;v&lt;/code&gt;, 一个指针&lt;code class=&quot;highlighter-rouge&quot;&gt;i&lt;/code&gt;使得&lt;code class=&quot;highlighter-rouge&quot;&gt;a[lt..i-1]&lt;/code&gt;中元素都等于&lt;code class=&quot;highlighter-rouge&quot;&gt;v&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;a[i..gt-1]&lt;/code&gt;中元素都还未确定, 一开始&lt;code class=&quot;highlighter-rouge&quot;&gt;i&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;low&lt;/code&gt;相等:&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;a[i]&lt;/code&gt;小于&lt;code class=&quot;highlighter-rouge&quot;&gt;v&lt;/code&gt;, 将&lt;code class=&quot;highlighter-rouge&quot;&gt;a[lt]&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;a[i]&lt;/code&gt;交换, &lt;code class=&quot;highlighter-rouge&quot;&gt;lt&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;i&lt;/code&gt;加一&lt;/li&gt;
-    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;a[i]&lt;/code&gt;大于&lt;code class=&quot;highlighter-rouge&quot;&gt;v&lt;/code&gt;, 将&lt;code class=&quot;highlighter-rouge&quot;&gt;a[gt]&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;a[i]&lt;/code&gt;交换, 将&lt;code class=&quot;highlighter-rouge&quot;&gt;gt&lt;/code&gt;减一&lt;/li&gt;
-    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;a[i]&lt;/code&gt;等于&lt;code class=&quot;highlighter-rouge&quot;&gt;v&lt;/code&gt;, 将&lt;code class=&quot;highlighter-rouge&quot;&gt;i&lt;/code&gt;加一&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;&lt;strong&gt;三向切分改进代码如下:&lt;/strong&gt; 三向切分的最坏情况是所有元素都不同; 在包含大量重复元素时, 其能将对数级别的时间降低到线性级别&lt;/p&gt;
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public static void sort3Way(int[] noSort, int low, int high) {
-        if (high &amp;lt;= low)
-            return;
-        int lt = low;
-        int i = low + 1;
-        int gt = high;
-        int temp = noSort[low];
-        while (i &amp;lt; gt) { // 找出重复元素
-            if (noSort[i] &amp;lt; temp)
-                Utils.exch(noSort, lt++, i++);
-            else if (noSort[i] &amp;gt; temp)
-                Utils.exch(noSort, i, gt--);
-            else
-                i++;
-        }
-        sort3Way(noSort, low, lt - 1);
-        sort3Way(noSort, gt + 1, high);
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;七-堆排&quot;&gt;七. 堆排&lt;/h2&gt;
-
-&lt;h3 id=&quot;71-基本思路&quot;&gt;7.1 基本思路&lt;/h3&gt;
-
-&lt;p&gt;堆是一个二叉树的每个节点都大于等于(或小于等于)它的两个子节点; 分为大顶堆和小顶堆&lt;/p&gt;
-
-&lt;h3 id=&quot;72-主要代码&quot;&gt;7.2 主要代码&lt;/h3&gt;
-
-&lt;p&gt;&lt;strong&gt;注&lt;/strong&gt;: 摘自&lt;a href=&quot;https://zh.wikipedia.org/wiki/%E5%A0%86%E6%8E%92%E5%BA%8F#Java&quot;&gt;Wiki&lt;/a&gt;&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class HeapSort {
-
-    public static void sort(int[] arr) {
-        /*
-         *  第一步：将数组堆化
-         *  beginIndex = 第一个非叶子节点。
-         *  从第一个非叶子节点开始即可。无需从最后一个叶子节点开始。
-         *  叶子节点可以看作已符合堆要求的节点，根节点就是它自己且自己以下值为最大。
-         */
-        int len = arr.length - 1;
-        int beginIndex = (len - 1) &amp;gt;&amp;gt; 1;
-        for (int i = beginIndex; i &amp;gt;= 0; i--) {
-            maxHeapify(arr, i, len);
-        }
-
-        /*
-         * 第二步：对堆化数据排序
-         * 每次都是移出最顶层的根节点A[0]，与最尾部节点位置调换，同时遍历长度 - 1。
-         * 然后从新整理被换到根节点的末尾元素，使其符合堆的特性。
-         * 直至未排序的堆长度为 0。
-         */
-        for (int i = len; i &amp;gt; 0; i--) {
-            Utils.exch(arr, 0, i);
-            maxHeapify(arr, 0, i - 1);
-        }
-    }
-
-    /**
-     * 调整索引为 index 处的数据，使其符合堆的特性。
-     *
-     * @param index 需要堆化处理的数据的索引
-     * @param len   未排序的堆（数组）的长度
-     */
-    private static void maxHeapify(int[] arr, int index, int len) {
-        int li = (index &amp;lt;&amp;lt; 1) + 1; // 左子节点索引
-        int ri = li + 1;           // 右子节点索引
-        int cMax = li;             // 子节点值最大索引，默认左子节点。
-
-        if (li &amp;gt; len) return;       // 左子节点索引超出计算范围，直接返回。
-        if (ri &amp;lt;= len &amp;amp;&amp;amp; arr[ri] &amp;gt; arr[li]) // 先判断左右子节点，哪个较大。
-            cMax = ri;
-        if (arr[cMax] &amp;gt; arr[index]) {
-            Utils.exch(arr, cMax, index);
-            maxHeapify(arr, cMax, len);  // 则需要继续判断换下后的父节点是否符合堆的特性。
-        }
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h3 id=&quot;73-特点&quot;&gt;7.3 特点&lt;/h3&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;时间复杂度&lt;/strong&gt;: 堆排序是唯一能够同时最优的利用空间和时间的方法, 在最坏情况下它也能保证&lt;code class=&quot;highlighter-rouge&quot;&gt;O(NlogN)&lt;/code&gt;的时间复杂度和恒定空间&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;空间复杂度&lt;/strong&gt;: &lt;code class=&quot;highlighter-rouge&quot;&gt;O(1)&lt;/code&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;适用场景&lt;/strong&gt;: 在空间十分紧张(如嵌入式设别或低成本的移动设备中)十分流行, 但是由于其数据变更比较频繁, 因此无法利用缓存(缓存命中率比较低), 在现代系统的许多应用中很少使用&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;稳定性&lt;/strong&gt;: 不稳定&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;使用堆还可以实现优先队列, 使得当有大量数据时, 可用较少空间即可从中筛选出指定数量的最大(小)&lt;code class=&quot;highlighter-rouge&quot;&gt;K&lt;/code&gt;个数据&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;八-小结&quot;&gt;八. 小结&lt;/h2&gt;
-
-&lt;p&gt;上面介绍的七个排序算法都是基于&lt;strong&gt;比较&lt;/strong&gt;的, 这里再以表的形式总结如下:&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;排序算法&lt;/th&gt;
-      &lt;th&gt;是否稳定&lt;/th&gt;
-      &lt;th&gt;是否为原地排序&lt;/th&gt;
-      &lt;th&gt;时间复杂度&lt;/th&gt;
-      &lt;th&gt;空间复杂度&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;选择排序&lt;/td&gt;
-      &lt;td&gt;否&lt;/td&gt;
-      &lt;td&gt;是&lt;/td&gt;
-      &lt;td&gt;N^2&lt;/td&gt;
-      &lt;td&gt;1&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;插入排序&lt;/td&gt;
-      &lt;td&gt;是&lt;/td&gt;
-      &lt;td&gt;是&lt;/td&gt;
-      &lt;td&gt;介于N和N^2之间&lt;/td&gt;
-      &lt;td&gt;1&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;希尔排序&lt;/td&gt;
-      &lt;td&gt;否&lt;/td&gt;
-      &lt;td&gt;是&lt;/td&gt;
-      &lt;td&gt;未知(NlogN / N^(5/6) ?)&lt;/td&gt;
-      &lt;td&gt;1&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;快排&lt;/td&gt;
-      &lt;td&gt;否&lt;/td&gt;
-      &lt;td&gt;是&lt;/td&gt;
-      &lt;td&gt;NlogN&lt;/td&gt;
-      &lt;td&gt;logN&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;三向快排&lt;/td&gt;
-      &lt;td&gt;否&lt;/td&gt;
-      &lt;td&gt;是&lt;/td&gt;
-      &lt;td&gt;介于N和NlogN之间&lt;/td&gt;
-      &lt;td&gt;logN&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;归并排序&lt;/td&gt;
-      &lt;td&gt;是&lt;/td&gt;
-      &lt;td&gt;否&lt;/td&gt;
-      &lt;td&gt;NlogN&lt;/td&gt;
-      &lt;td&gt;N&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;堆排&lt;/td&gt;
-      &lt;td&gt;否&lt;/td&gt;
-      &lt;td&gt;是&lt;/td&gt;
-      &lt;td&gt;NlogN&lt;/td&gt;
-      &lt;td&gt;1&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;下面要介绍的是线性排序; 有这样一个结论是: 没有任何基于比较的算法能够保证使用少于&lt;code class=&quot;highlighter-rouge&quot;&gt;log(N!) ~ NlogN&lt;/code&gt;次比较将长度为&lt;code class=&quot;highlighter-rouge&quot;&gt;N&lt;/code&gt;的数组排序; 所以这也决定了上面基于比较的排序算法的上界;&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;九-计数排序&quot;&gt;九. 计数排序&lt;/h2&gt;
-
-&lt;p&gt;&lt;a href=&quot;https://blog.csdn.net/liyuming0000/article/details/46913357&quot;&gt;参考博客&lt;/a&gt;&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;十-基数排序&quot;&gt;十. 基数排序&lt;/h2&gt;
-
-&lt;p&gt;&lt;a href=&quot;https://www.cnblogs.com/skywang12345/p/3603669.html&quot;&gt;参考博客&lt;/a&gt;&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;十一-桶排序&quot;&gt;十一. 桶排序&lt;/h2&gt;
-
-&lt;p&gt;&lt;a href=&quot;http://hxraid.iteye.com/blog/647759&quot;&gt;参考博客&lt;/a&gt;&lt;/p&gt;
-
-</description>
-        <pubDate>Sat, 06 Oct 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/10/06/%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/10/06/%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95/</guid>
-        
-        <category>Algorithm</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>Android动画详解</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;动画也是&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;系统中一个很重要的模块, 在平时开发中, 为了做出炫酷的效果, 动画可以说是必不可少的; 本文将总结&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;中与动画相关的部分, 文中部分内容整理自文末参考链接, 权作笔记~&lt;/p&gt;
-
-&lt;p&gt;需要声明的是文章不会详细通过源码去讲解各种动画的实现细节, 因为相对来说, 动画的熟练使用更为重要, 所以本文只是提一下关键的动画源码部分&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;一-概述&quot;&gt;一. 概述&lt;/h2&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;中动画分为三大类: &lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;动画, &lt;code class=&quot;highlighter-rouge&quot;&gt;Transition&lt;/code&gt;(过渡动画), 属性动画; 下文也将从这三个方面进行总结和讲解&lt;/p&gt;
-
-&lt;p&gt;动画的本质实际上就是将作用对象的属性值在一段时间内缓慢的改变, 将每一个小的时间片段对应的属性值改变作用到对象并进行不断重绘, 造成肉眼看起来的的动画效果~&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;二-view动画&quot;&gt;二. View动画&lt;/h2&gt;
-
-&lt;h3 id=&quot;21-基本使用总结&quot;&gt;2.1 基本使用总结&lt;/h3&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;动画分为四种, 如下表:&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;名称&lt;/th&gt;
-      &lt;th&gt;标签&lt;/th&gt;
-      &lt;th&gt;子类&lt;/th&gt;
-      &lt;th&gt;效果&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;平移动画&lt;/td&gt;
-      &lt;td&gt;&amp;lt;translate&amp;gt;&lt;/td&gt;
-      &lt;td&gt;TranslateAnimation&lt;/td&gt;
-      &lt;td&gt;移动&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;缩放动画&lt;/td&gt;
-      &lt;td&gt;&amp;lt;scale&amp;gt;&lt;/td&gt;
-      &lt;td&gt;ScaleAnimation&lt;/td&gt;
-      &lt;td&gt;缩放&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;旋转动画&lt;/td&gt;
-      &lt;td&gt;&amp;lt;rotate&amp;gt;&lt;/td&gt;
-      &lt;td&gt;RotateAnimation&lt;/td&gt;
-      &lt;td&gt;旋转&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;透明度&lt;/td&gt;
-      &lt;td&gt;&amp;lt;alpha&amp;gt;&lt;/td&gt;
-      &lt;td&gt;AlphaAnimation&lt;/td&gt;
-      &lt;td&gt;透明度&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;&lt;strong&gt;注&lt;/strong&gt;: 动画中还有一种叫&lt;strong&gt;帧动画&lt;/strong&gt;, 这里也归为&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;动画中, 后文单独讲解&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;动画可以使用&lt;code class=&quot;highlighter-rouge&quot;&gt;xml&lt;/code&gt;描述, 也可以使用代码描述(即使用上表中的四个子类); 使用&lt;code class=&quot;highlighter-rouge&quot;&gt;xml&lt;/code&gt;描述的语法格式如下:&lt;/p&gt;
-
-&lt;p&gt;&lt;strong&gt;注&lt;/strong&gt;: 位置为&lt;code class=&quot;highlighter-rouge&quot;&gt;res/anim/filename.xml&lt;/code&gt;&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;cp&quot;&gt;&amp;lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&amp;gt;&lt;/span&gt;
-&lt;span class=&quot;nt&quot;&gt;&amp;lt;set&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;xmlns:android=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;http://schemas.android.com/apk/res/android&quot;&lt;/span&gt;
-    &lt;span class=&quot;na&quot;&gt;android:interpolator=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;@[package:]anim/interpolator_resource&quot;&lt;/span&gt;
-    &lt;span class=&quot;na&quot;&gt;android:shareInterpolator=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;[true | false]&quot;&lt;/span&gt;
-    &lt;span class=&quot;na&quot;&gt;android:fillAfter=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;[true | false]&quot;&lt;/span&gt;
-    &lt;span class=&quot;na&quot;&gt;android:duration=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;int&quot;&lt;/span&gt;
-    &lt;span class=&quot;na&quot;&gt;android:repeatMode=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;[reverse | restart]&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
-    &lt;span class=&quot;nt&quot;&gt;&amp;lt;alpha&lt;/span&gt;
-        &lt;span class=&quot;na&quot;&gt;android:fromAlpha=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;float&quot;&lt;/span&gt;
-        &lt;span class=&quot;na&quot;&gt;android:toAlpha=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;float&quot;&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
-    &lt;span class=&quot;nt&quot;&gt;&amp;lt;scale&lt;/span&gt;
-        &lt;span class=&quot;na&quot;&gt;android:fromXScale=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;float&quot;&lt;/span&gt;
-        &lt;span class=&quot;na&quot;&gt;android:toXScale=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;float&quot;&lt;/span&gt;
-        &lt;span class=&quot;na&quot;&gt;android:fromYScale=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;float&quot;&lt;/span&gt;
-        &lt;span class=&quot;na&quot;&gt;android:toYScale=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;float&quot;&lt;/span&gt;
-        &lt;span class=&quot;na&quot;&gt;android:pivotX=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;float&quot;&lt;/span&gt;
-        &lt;span class=&quot;na&quot;&gt;android:pivotY=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;float&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
-    &lt;span class=&quot;nt&quot;&gt;&amp;lt;translate&lt;/span&gt;
-        &lt;span class=&quot;na&quot;&gt;android:fromXDelta=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;float&quot;&lt;/span&gt;
-        &lt;span class=&quot;na&quot;&gt;android:toXDelta=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;float&quot;&lt;/span&gt;
-        &lt;span class=&quot;na&quot;&gt;android:fromYDelta=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;float&quot;&lt;/span&gt;
-        &lt;span class=&quot;na&quot;&gt;android:toYDelta=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;float&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
-    &lt;span class=&quot;nt&quot;&gt;&amp;lt;rotate&lt;/span&gt;
-        &lt;span class=&quot;na&quot;&gt;android:fromDegrees=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;float&quot;&lt;/span&gt;
-        &lt;span class=&quot;na&quot;&gt;android:toDegrees=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;float&quot;&lt;/span&gt;
-        &lt;span class=&quot;na&quot;&gt;android:pivotX=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;float&quot;&lt;/span&gt;
-        &lt;span class=&quot;na&quot;&gt;android:pivotY=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;float&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
-    &lt;span class=&quot;nt&quot;&gt;&amp;lt;set&amp;gt;&lt;/span&gt;
-        ...
-    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/set&amp;gt;&lt;/span&gt;
-&lt;span class=&quot;nt&quot;&gt;&amp;lt;/set&amp;gt;&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;&lt;strong&gt;解释&lt;/strong&gt;:&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;set&amp;gt;&lt;/code&gt;代表&lt;code class=&quot;highlighter-rouge&quot;&gt;AnimationSet&lt;/code&gt;, 可以包含若干动画&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;android:shareInterpolator&lt;/code&gt;: 表示集合中的动画是否和集合共享同一个插值器; 如果集合不指定插值器, 那么子动画需要单独指定或者使用默认插值器&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;android:pivotX&lt;/code&gt;: 轴点&lt;code class=&quot;highlighter-rouge&quot;&gt;x&lt;/code&gt;坐标&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;android:pivotY&lt;/code&gt;: 轴点&lt;code class=&quot;highlighter-rouge&quot;&gt;y&lt;/code&gt;坐标&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;android:fillAfter&lt;/code&gt;: 动画结束之后, &lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;是否停留在结束位置, &lt;code class=&quot;highlighter-rouge&quot;&gt;true&lt;/code&gt;表示停留在结束位置, &lt;code class=&quot;highlighter-rouge&quot;&gt;false&lt;/code&gt;表示不停留&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;在代码中使用&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;动画:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Button button = findViewById(R.id.button);
-Animatoin animation = AnimationUtils.loadAnimation(this, R.anim.animation_item);
-button.startAnimation(animation);
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h3 id=&quot;22-自定义view动画&quot;&gt;2.2 自定义View动画&lt;/h3&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;TranslateAnimation&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;ScaleAnimation&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;RotateAnimation&lt;/code&gt;, 和&lt;code class=&quot;highlighter-rouge&quot;&gt;AlphaAnimation&lt;/code&gt;都继承自&lt;code class=&quot;highlighter-rouge&quot;&gt;Animation&lt;/code&gt;; 如果要自定义&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;动画的话, 也需要继承&lt;code class=&quot;highlighter-rouge&quot;&gt;Animation&lt;/code&gt;, 并重写&lt;code class=&quot;highlighter-rouge&quot;&gt;Animation.initialize()&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;Animation.applyTransformation()&lt;/code&gt;方法; &lt;code class=&quot;highlighter-rouge&quot;&gt;initialize()&lt;/code&gt;顾名思义就是进行一些初始化工作, 比如设置属性的初始值等, &lt;code class=&quot;highlighter-rouge&quot;&gt;applyTransformation()&lt;/code&gt;就是根据时间的流失量来计算出当前时间片段所对应的属性值, 并设置到对应的作用对象(对于&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;动画来说该对象就是&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;); 这里的设置往往是通过&lt;code class=&quot;highlighter-rouge&quot;&gt;Matrix&lt;/code&gt;来作用的, 如下以&lt;code class=&quot;highlighter-rouge&quot;&gt;TranslateAnimation.applyTransformation()&lt;/code&gt;为例&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;@Override
-protected void applyTransformation(float interpolatedTime, Transformation t) {
-        float dx = mFromXDelta;
-        float dy = mFromYDelta;
-        if (mFromXDelta != mToXDelta) {
-            dx = mFromXDelta + ((mToXDelta - mFromXDelta) * interpolatedTime);  // 通过时间流失量计算出x的改变量
-        }
-        if (mFromYDelta != mToYDelta) {
-            dy = mFromYDelta + ((mToYDelta - mFromYDelta) * interpolatedTime);  // 通过时间流失量计算出y的改变量
-        }
-        t.getMatrix().setTranslate(dx, dy);  // 通过Matrix作用到对象
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;上述代码其实也可以当做自定义&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;动画的模板代码, 自定义&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;动画时, 可以使用&lt;code class=&quot;highlighter-rouge&quot;&gt;Camera&lt;/code&gt;来配合计算改变量; 关于&lt;code class=&quot;highlighter-rouge&quot;&gt;Camera&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;Matrix&lt;/code&gt;的使用, 可以参见&lt;a href=&quot;https://hencoder.com/ui-1-4/&quot;&gt;博客&lt;/a&gt;&lt;/p&gt;
-
-&lt;h3 id=&quot;23-帧动画&quot;&gt;2.3 帧动画&lt;/h3&gt;
-
-&lt;p&gt;帧动画就是顺序播放一组预先定义好的图片, 系统提供了&lt;code class=&quot;highlighter-rouge&quot;&gt;AnimationDrawable&lt;/code&gt;来使用帧动画&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;xml&lt;/code&gt;定义如下:&lt;/p&gt;
-
-&lt;p&gt;&lt;strong&gt;注&lt;/strong&gt;: 位置为&lt;code class=&quot;highlighter-rouge&quot;&gt;/res/drawable/filename.xml&lt;/code&gt;&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;cp&quot;&gt;&amp;lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&amp;gt;&lt;/span&gt;
-&lt;span class=&quot;nt&quot;&gt;&amp;lt;animation-list&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;xmlns:android=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;http://schemas.android.com/apk/res/android&quot;&lt;/span&gt;
-    &lt;span class=&quot;na&quot;&gt;android:oneshot=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;false&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
-    &lt;span class=&quot;nt&quot;&gt;&amp;lt;item&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;android:drawable=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;@drawable/item&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;android:duration=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;100&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
-    &lt;span class=&quot;nt&quot;&gt;&amp;lt;item&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;android:drawable=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;@drawable/item&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;android:duration=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;100&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
-    &lt;span class=&quot;nt&quot;&gt;&amp;lt;item&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;android:drawable=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;@drawable/item&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;android:duration=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;100&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
-    &lt;span class=&quot;nt&quot;&gt;&amp;lt;item&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;android:drawable=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;@drawable/item&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;android:duration=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;100&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
-&lt;span class=&quot;nt&quot;&gt;&amp;lt;/animation-list&amp;gt;&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;使用帧动画时, 当图片较多或者较大时可能引起&lt;code class=&quot;highlighter-rouge&quot;&gt;OOM&lt;/code&gt;&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;三-transition过渡动画&quot;&gt;三. Transition(过渡动画)&lt;/h2&gt;
-
-&lt;p&gt;过渡动画其实是用于控制&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;Item&lt;/code&gt;的出场效果, 或者&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;之间的切换效果等&lt;/p&gt;
-
-&lt;h3 id=&quot;31-layoutanimation&quot;&gt;3.1 LayoutAnimation&lt;/h3&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;xml&lt;/code&gt;实现格式如下:&lt;/p&gt;
-
-&lt;p&gt;&lt;strong&gt;注&lt;/strong&gt;: 位置为&lt;code class=&quot;highlighter-rouge&quot;&gt;/res/anim/anim_layout.xml&lt;/code&gt;&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;cp&quot;&gt;&amp;lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&amp;gt;&lt;/span&gt;
-&lt;span class=&quot;nt&quot;&gt;&amp;lt;layoutAnimation&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;xmlns:android=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;http://schemas.android.com/apk/res/android&quot;&lt;/span&gt;
-    &lt;span class=&quot;na&quot;&gt;android:delay=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0.5&quot;&lt;/span&gt;
-    &lt;span class=&quot;na&quot;&gt;android:animationOrder=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;[normal | reverse | random]&quot;&lt;/span&gt;
-    &lt;span class=&quot;na&quot;&gt;android:animation=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;@anim/anim_item&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;&lt;strong&gt;解释&lt;/strong&gt;:&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;android:delay&lt;/code&gt;: 子元素延迟多少时间执行动画; 比如子元素入场动画时间周期为&lt;code class=&quot;highlighter-rouge&quot;&gt;300ms&lt;/code&gt;, 那么&lt;code class=&quot;highlighter-rouge&quot;&gt;0.5&lt;/code&gt;表示每个每个子元素都需要延迟&lt;code class=&quot;highlighter-rouge&quot;&gt;150ms&lt;/code&gt;才能播放入场动画, 总体来说, 第一个子元素延迟&lt;code class=&quot;highlighter-rouge&quot;&gt;150ms&lt;/code&gt;开始播放动画, 第二个子元素延迟&lt;code class=&quot;highlighter-rouge&quot;&gt;300ms&lt;/code&gt;开始播放动画, 以此类推&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;android:animationOrder&lt;/code&gt;: &lt;code class=&quot;highlighter-rouge&quot;&gt;normal&lt;/code&gt;表示顺序显示, 即排在前面的子元素先开始动画; &lt;code class=&quot;highlighter-rouge&quot;&gt;reverse&lt;/code&gt;表示逆向显示; &lt;code class=&quot;highlighter-rouge&quot;&gt;random&lt;/code&gt;表示随机显示&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;当定义好&lt;code class=&quot;highlighter-rouge&quot;&gt;layoutAnimation&lt;/code&gt;之后, 在布局文件中就可以通过&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewGroup&lt;/code&gt;的属性&lt;code class=&quot;highlighter-rouge&quot;&gt;android:layoutAnimation=&quot;@anim/anim_layout&quot;&lt;/code&gt;来指定入场动画了~&lt;/p&gt;
-
-&lt;p&gt;代码实现, 格式如下: 即通过&lt;code class=&quot;highlighter-rouge&quot;&gt;LayoutAnimationController&lt;/code&gt;实现&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;ListView listView = findViewById(R.id.list);
-Animation animation = AnimationUtils.loadAnimation(this, R.anim.anim_item);
-LayoutAnimationController controller = new LayoutAnimationController(animation);
-controller.setDelay(0.5f);
-controller.setOrder(LayoutAnimationController.ORDER_NORMAL);
-listView.setLayoutAnimation(controller);
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h3 id=&quot;32-activity的切换效果&quot;&gt;3.2 Activity的切换效果&lt;/h3&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;当启动一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;的时候, 可以按照如下方式为其添加自定义的切换效果:&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Intent intent = new Intent(this, AnimActivity.class);
-startActivity(intent);
-overridePendingTransition(R.anim.enter_anim, R.anim.exit_anim);
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;当&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;退出时, 可以如下添加切换效果:&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    @Override
-    public void finish() {
-        super.finish();
-        overridePendingTransition(R.anim.enter_anim, R.anim.exit_anim);
-    }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;可以看出, 都是使用&lt;code class=&quot;highlighter-rouge&quot;&gt;overridePendingTransition()&lt;/code&gt;来指定切换动画, 同时需要注意的是这个方法必须在&lt;code class=&quot;highlighter-rouge&quot;&gt;startActivity(intent)&lt;/code&gt;或者&lt;code class=&quot;highlighter-rouge&quot;&gt;finish()&lt;/code&gt;之后被调用才能生效&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;为&lt;code class=&quot;highlighter-rouge&quot;&gt;Fragment&lt;/code&gt;添加切换动画: 可以通过&lt;code class=&quot;highlighter-rouge&quot;&gt;FragmentTransaction.setCustomAnimations()&lt;/code&gt;来添加切换动画; 需要注意的是该动画必须是&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;动画, 不能用属性动画(因为属性动画在&lt;code class=&quot;highlighter-rouge&quot;&gt;API 11&lt;/code&gt;引入, &lt;code class=&quot;highlighter-rouge&quot;&gt;Fragment&lt;/code&gt;也是&lt;code class=&quot;highlighter-rouge&quot;&gt;API 11&lt;/code&gt;才引入的)&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;四-属性动画&quot;&gt;四. 属性动画&lt;/h2&gt;
-
-&lt;p&gt;属性动画是在&lt;code class=&quot;highlighter-rouge&quot;&gt;Android 3.0&lt;/code&gt;(&lt;code class=&quot;highlighter-rouge&quot;&gt;API 11&lt;/code&gt;)开始引入的; 属性动画可以用&lt;code class=&quot;highlighter-rouge&quot;&gt;xml&lt;/code&gt;实现, 也可以用代码实现, 但是一般都是用代码实现&lt;/p&gt;
-
-&lt;h3 id=&quot;41-基本使用&quot;&gt;4.1 基本使用&lt;/h3&gt;
-
-&lt;h4 id=&quot;411-viewpropertyanimator&quot;&gt;4.1.1 ViewPropertyAnimator&lt;/h4&gt;
-
-&lt;p&gt;操作&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;属性值, 可以通过&lt;code class=&quot;highlighter-rouge&quot;&gt;View.animate()&lt;/code&gt;来获取一个&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewPropertyAnimator&lt;/code&gt;对象, 然后就可以通过&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewPropertyAnimator&lt;/code&gt;来操作该对象的属性值了~  可以操作的属性值参见下图(图片来源, 参见文末参考链接):&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/Animation/ViewPropertyAnimator属性动画.png&quot; alt=&quot;ViewPropertyAnimator&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;使用示例如&lt;code class=&quot;highlighter-rouge&quot;&gt;View.animate().setDuration(500).alpha(0.5);&lt;/code&gt;&lt;/p&gt;
-
-&lt;h4 id=&quot;412-objectanimator&quot;&gt;4.1.2 ObjectAnimator&lt;/h4&gt;
-
-&lt;p&gt;也是针对&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的特定属性, 同时还要求该属性提供了对应的&lt;code class=&quot;highlighter-rouge&quot;&gt;set&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;get&lt;/code&gt;方法, 基本使用如下; 因为&lt;code class=&quot;highlighter-rouge&quot;&gt;ObjectAnimator&lt;/code&gt;是通过属性的&lt;code class=&quot;highlighter-rouge&quot;&gt;set&lt;/code&gt;方法来不断改变属性值的, 所以&lt;code class=&quot;highlighter-rouge&quot;&gt;set&lt;/code&gt;方法是一定需要的, 至于&lt;code class=&quot;highlighter-rouge&quot;&gt;get&lt;/code&gt;方法只是用于获取动画开始的初始值的, 如果明确指定了初始值的话, 也可以提供&lt;code class=&quot;highlighter-rouge&quot;&gt;get&lt;/code&gt;方法(如果没有提供&lt;code class=&quot;highlighter-rouge&quot;&gt;get&lt;/code&gt;方法, 同时又没有指定初始值的话, 将&lt;code class=&quot;highlighter-rouge&quot;&gt;Crash&lt;/code&gt;; 如果没有&lt;code class=&quot;highlighter-rouge&quot;&gt;set&lt;/code&gt;方法, 不会&lt;code class=&quot;highlighter-rouge&quot;&gt;Crash&lt;/code&gt;, 只是没有效果而已)&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;ObjectAnimator animator = ObjectAnimator.ofFloat(view, &quot;alpha&quot;, 0, 65);
-animator.start();
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;如果一个属性没有&lt;code class=&quot;highlighter-rouge&quot;&gt;set&lt;/code&gt;方法的话, 解决方法有以下三种:&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;如果有权限的话, 自己给对象加上&lt;code class=&quot;highlighter-rouge&quot;&gt;set&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;get&lt;/code&gt;方法&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;用一个类来包装原始对象, 间接为其提供&lt;code class=&quot;highlighter-rouge&quot;&gt;set&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;get&lt;/code&gt;方法&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;采用&lt;code class=&quot;highlighter-rouge&quot;&gt;ValueAnimator&lt;/code&gt;, 监听动画过程, 自己实现属性改变&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h3 id=&quot;42-插值器&quot;&gt;4.2 插值器&lt;/h3&gt;
-
-&lt;p&gt;所谓插值器就是属性改变的速度, 系统提供了如下插值器:&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;AccelerateDecelerateInterpolator&lt;/td&gt;
-      &lt;td&gt;LinearInterpolator&lt;/td&gt;
-      &lt;td&gt;AccelerateInterpolator&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;DecelerateInterpolator&lt;/td&gt;
-      &lt;td&gt;AnticipateInterpolator&lt;/td&gt;
-      &lt;td&gt;OvershootInterpolator&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;AnticipateOvershootInterpolator&lt;/td&gt;
-      &lt;td&gt;BounceInterpolator&lt;/td&gt;
-      &lt;td&gt;CycleInterpolator&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;PathInterpolator&lt;/td&gt;
-      &lt;td&gt; &lt;/td&gt;
-      &lt;td&gt; &lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;FastOutLinearInInterpolator&lt;/code&gt;&lt;/td&gt;
-      &lt;td&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;FastOutSlowInInterpolator&lt;/code&gt;&lt;/td&gt;
-      &lt;td&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;LinearOutSlowInInterpolator&lt;/code&gt;&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;其中&lt;code class=&quot;highlighter-rouge&quot;&gt;FastOutLinearInInterpolator&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;FastOutSlowInInterpolator&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;LinearOutSlowInInterpolator&lt;/code&gt;是&lt;code class=&quot;highlighter-rouge&quot;&gt;Android 5.0(API 21)&lt;/code&gt;引入的三个新的 &lt;code class=&quot;highlighter-rouge&quot;&gt;Interpolator&lt;/code&gt;模型, 并把它们加入了&lt;code class=&quot;highlighter-rouge&quot;&gt;support v4&lt;/code&gt;包中&lt;/p&gt;
-
-&lt;p&gt;关于各种插值器的讲解, 可以参见&lt;a href=&quot;https://hencoder.com/ui-1-6/&quot;&gt;博客&lt;/a&gt;, 该博客讲的比较详细, 此处不再赘述~&lt;/p&gt;
-
-&lt;h3 id=&quot;43-估值器&quot;&gt;4.3 估值器&lt;/h3&gt;
-
-&lt;p&gt;估值器即&lt;code class=&quot;highlighter-rouge&quot;&gt;TypeEvaluator&lt;/code&gt;, 作用是根据当前属性改变的百分比来计算改变后的属性值, 用于协助插值器实现非线性运动; 系统提供了如下估值器:&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;IntEvaluator&lt;/td&gt;
-      &lt;td&gt;IntArrayEvaluator&lt;/td&gt;
-      &lt;td&gt;FloatEvaluator&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;FloatArrayEvaluator&lt;/td&gt;
-      &lt;td&gt;ArgbEvaluator&lt;/td&gt;
-      &lt;td&gt;PointFEvaluator&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;RectEvaluator&lt;/td&gt;
-      &lt;td&gt; &lt;/td&gt;
-      &lt;td&gt; &lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;如果要对其他类型做动画(非&lt;code class=&quot;highlighter-rouge&quot;&gt;int&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;float&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;Color&lt;/code&gt;), 那么需要自定义类型估值算法, 即继承&lt;code class=&quot;highlighter-rouge&quot;&gt;TypeEvaluator&lt;/code&gt;自己实现其&lt;code class=&quot;highlighter-rouge&quot;&gt;evaluate()&lt;/code&gt;方法即可&lt;/p&gt;
-
-&lt;p&gt;估值器基本使用如下:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;ObjectAnimator anim = ObjectAnimator.ofObject(view, &quot;alpha&quot;, new FloatEvaluator(), 0, 1);
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h3 id=&quot;44-监听器&quot;&gt;4.4 监听器&lt;/h3&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewPropertyAnimator&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;ObjectAnimator&lt;/code&gt;设置监听器的方法如下表:&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;ViewPropertyAnimator&lt;/td&gt;
-      &lt;td&gt;setListener()&lt;/td&gt;
-      &lt;td&gt;setUpdateListener()&lt;/td&gt;
-      &lt;td&gt;withStartAction()&lt;/td&gt;
-      &lt;td&gt;withEndAction()&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;ObjectAnimator&lt;/td&gt;
-      &lt;td&gt;addListener()&lt;/td&gt;
-      &lt;td&gt;addUpdateListener()&lt;/td&gt;
-      &lt;td&gt;addPauseListener()&lt;/td&gt;
-      &lt;td&gt; &lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;&lt;strong&gt;注&lt;/strong&gt;:&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewPropertyAnimator&lt;/code&gt;可以通过&lt;code class=&quot;highlighter-rouge&quot;&gt;setListener()&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;setUpdateListener()&lt;/code&gt;来设置监听器, 移除监听器可以通过&lt;code class=&quot;highlighter-rouge&quot;&gt;setListener(null)&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;setUpdateListener(null)&lt;/code&gt;来移除; &lt;code class=&quot;highlighter-rouge&quot;&gt;ViewPropertyAnimator&lt;/code&gt;独有的&lt;code class=&quot;highlighter-rouge&quot;&gt;withStartAction()&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;withEndAction()&lt;/code&gt; 方法, 可以设置&lt;strong&gt;一次性&lt;/strong&gt;(动画结束后就自动弃掉了, 即一次有效)的动画开始或结束的监听&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ObjectAnimator&lt;/code&gt;则是用&lt;code class=&quot;highlighter-rouge&quot;&gt;addListener()&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;addUpdateListener()&lt;/code&gt;来添加一个或多个监听器, 移除监听器则是通过&lt;code class=&quot;highlighter-rouge&quot;&gt;removeListener()&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;removeUpdateListener()&lt;/code&gt;来指定移除对象; &lt;code class=&quot;highlighter-rouge&quot;&gt;ObjectAnimator&lt;/code&gt;支持使用&lt;code class=&quot;highlighter-rouge&quot;&gt;pause()&lt;/code&gt;方法暂停, 所以它还多了一个 &lt;code class=&quot;highlighter-rouge&quot;&gt;addPauseListener()&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;removePauseListener()&lt;/code&gt;的支持&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewPropertyAnimator.withStartAction/EndAction()&lt;/code&gt;是&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewPropertyAnimator&lt;/code&gt;的独有方法, 它们和&lt;code class=&quot;highlighter-rouge&quot;&gt;set/addListener()&lt;/code&gt;中回调的 &lt;code class=&quot;highlighter-rouge&quot;&gt;onAnimationStart()&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;onAnimationEnd()&lt;/code&gt;相比起来的不同主要有两点:&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;withStartAction()&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;withEndAction()&lt;/code&gt;是一次性的, 在动画执行结束后就自动弃掉了, 就算之后再重用&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewPropertyAnimator&lt;/code&gt; 来做别的动画, 用它们设置的回调也不会再被调用; 而&lt;code class=&quot;highlighter-rouge&quot;&gt;set/addListener()&lt;/code&gt;所设置的&lt;code class=&quot;highlighter-rouge&quot;&gt;AnimatorListener&lt;/code&gt;是持续有效的, 当动画重复执行时, 回调总会被调用&lt;/li&gt;
-    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;withEndAction()&lt;/code&gt;设置的回调只有在动画正常结束时才会被调用, 而在动画被取消时不会被执行; 这点和&lt;code class=&quot;highlighter-rouge&quot;&gt;AnimatorListener.onAnimationEnd()&lt;/code&gt; 的行为是不一致的&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;监听器方法有:&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;strong&gt;AnimatorListener&lt;/strong&gt;&lt;/td&gt;
-      &lt;td&gt;onAnimationStart()&lt;/td&gt;
-      &lt;td&gt;onAnimationEnd()&lt;/td&gt;
-      &lt;td&gt;onAnimationCancel()&lt;/td&gt;
-      &lt;td&gt;onAnimationRepeat()&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;&lt;strong&gt;注&lt;/strong&gt;: 即使动画通过&lt;code class=&quot;highlighter-rouge&quot;&gt;cancle()&lt;/code&gt;方法取消, &lt;code class=&quot;highlighter-rouge&quot;&gt;onAnimationEnd()&lt;/code&gt;也会被调用; 所以当动画被取消时, 如果设置了&lt;code class=&quot;highlighter-rouge&quot;&gt;AnimatorListener&lt;/code&gt;, 那么 &lt;code class=&quot;highlighter-rouge&quot;&gt;onAnimationCancel()&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;onAnimationEnd()&lt;/code&gt;都会被调用; &lt;code class=&quot;highlighter-rouge&quot;&gt;onAnimationCancel()&lt;/code&gt;会先于&lt;code class=&quot;highlighter-rouge&quot;&gt;onAnimationEnd()&lt;/code&gt;被调用; 由于&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewPropertyAnimator&lt;/code&gt;不支持重复, 所以这个方法对&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewPropertyAnimator&lt;/code&gt;相当于无效&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;五-动画注意事项&quot;&gt;五. 动画注意事项&lt;/h2&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;避免使用帧动画, 易造成&lt;code class=&quot;highlighter-rouge&quot;&gt;OOM&lt;/code&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;动画需要考虑暂停和取消; 属性动画中有一类无线循环的动画, 这类动画在&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;退出时要及时停止, 否则将导致&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;无法释放从而造成内存泄露; 通过验证后发现&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;动画无此问题&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;使用&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;动画之后可能会出现&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;无法隐藏的现象, 即&lt;code class=&quot;highlighter-rouge&quot;&gt;setVisibility(View.GONE)&lt;/code&gt;失效了, 此时可以使用&lt;code class=&quot;highlighter-rouge&quot;&gt;view.clearAnimation()&lt;/code&gt;来清除&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;动画即可&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Android 3.0&lt;/code&gt;以前系统, 不管是&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;动画还是属性动画, 都只是作用于&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;内容(因为&lt;code class=&quot;highlighter-rouge&quot;&gt;Android 3.0&lt;/code&gt;以前, 属性动画底层其实也是通过&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;动画实现的), 新位置无法触发单击事件; 从&lt;code class=&quot;highlighter-rouge&quot;&gt;3.0&lt;/code&gt;开始, 属性动画的单击事件触发位置为移动后的位置, 但是&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;动画仍然在原位置&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;六-参考&quot;&gt;六. 参考&lt;/h2&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;«Android开发艺术探索»&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;a href=&quot;https://hencoder.com/ui-1-6/&quot;&gt;属性动画 Property Animation&lt;/a&gt;&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-</description>
-        <pubDate>Thu, 04 Oct 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/10/04/Android%E5%8A%A8%E7%94%BB%E8%AF%A6%E8%A7%A3/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/10/04/Android%E5%8A%A8%E7%94%BB%E8%AF%A6%E8%A7%A3/</guid>
-        
-        <category>Android</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>Java类文件结构与类加载机制</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;p&gt;本文是对«深入理解Java虚拟机»第六章第七章以及其他博客的总结, 权做笔记~&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;一-类文件结构&quot;&gt;一. 类文件结构&lt;/h2&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Class&lt;/code&gt;文件是一组以&lt;code class=&quot;highlighter-rouge&quot;&gt;8&lt;/code&gt;位字节为基础单位的二进制流, 当遇到需要占据&lt;code class=&quot;highlighter-rouge&quot;&gt;8&lt;/code&gt;位字节以上空间的数据项时, 则会按照高位在前的方式分割成若干个&lt;code class=&quot;highlighter-rouge&quot;&gt;8&lt;/code&gt;位字节进行存储&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Class&lt;/code&gt;文件格式采用一种类似于&lt;code class=&quot;highlighter-rouge&quot;&gt;C&lt;/code&gt;语言结构体的伪结构来存储数据, 这种伪结构中只有两种数据类型: 无符号数和表; 无符号数是基本数据类型, 以&lt;code class=&quot;highlighter-rouge&quot;&gt;u1&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;u2&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;u4&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;u8&lt;/code&gt;来分别代表&lt;code class=&quot;highlighter-rouge&quot;&gt;1&lt;/code&gt;个字节,&lt;code class=&quot;highlighter-rouge&quot;&gt;2&lt;/code&gt;个字节, &lt;code class=&quot;highlighter-rouge&quot;&gt;4&lt;/code&gt;个字节和&lt;code class=&quot;highlighter-rouge&quot;&gt;8&lt;/code&gt;个字节的无符号数, 无符号数可以用来描述数字, 索引引用, 数量值或者按照&lt;code class=&quot;highlighter-rouge&quot;&gt;UTF-8&lt;/code&gt;编码构成字符串值; 表由多个无符号数或者其他表作为数据项构成的复合数据类型, 以&lt;code class=&quot;highlighter-rouge&quot;&gt;_info&lt;/code&gt;结尾&lt;/p&gt;
-
-&lt;p&gt;由于&lt;code class=&quot;highlighter-rouge&quot;&gt;Class&lt;/code&gt;文件中没有分隔符, 所以哪个字节代表什么含义, 长度是多少, 先后顺序如何, 都被严格限定且不允许改变&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Class&lt;/code&gt;文件格式见下表&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;类型&lt;/th&gt;
-      &lt;th&gt;名称&lt;/th&gt;
-      &lt;th&gt;数量&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;u4&lt;/td&gt;
-      &lt;td&gt;magic&lt;/td&gt;
-      &lt;td&gt;1&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;u2&lt;/td&gt;
-      &lt;td&gt;minor_version&lt;/td&gt;
-      &lt;td&gt;1&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;u2&lt;/td&gt;
-      &lt;td&gt;major_version&lt;/td&gt;
-      &lt;td&gt;1&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;u2&lt;/td&gt;
-      &lt;td&gt;constant_pool_count&lt;/td&gt;
-      &lt;td&gt;1&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;cp_info&lt;/td&gt;
-      &lt;td&gt;constant_pool&lt;/td&gt;
-      &lt;td&gt;constant_pool_count-1&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;u2&lt;/td&gt;
-      &lt;td&gt;access_flags&lt;/td&gt;
-      &lt;td&gt;1&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;u2&lt;/td&gt;
-      &lt;td&gt;this_class&lt;/td&gt;
-      &lt;td&gt;1&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;u2&lt;/td&gt;
-      &lt;td&gt;super_class&lt;/td&gt;
-      &lt;td&gt;1&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;u2&lt;/td&gt;
-      &lt;td&gt;interfaces_count&lt;/td&gt;
-      &lt;td&gt;1&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;u2&lt;/td&gt;
-      &lt;td&gt;interfaces&lt;/td&gt;
-      &lt;td&gt;interfaces_count&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;u2&lt;/td&gt;
-      &lt;td&gt;fields_count&lt;/td&gt;
-      &lt;td&gt;1&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;field_info&lt;/td&gt;
-      &lt;td&gt;fields&lt;/td&gt;
-      &lt;td&gt;fields_count&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;u2&lt;/td&gt;
-      &lt;td&gt;methods_count&lt;/td&gt;
-      &lt;td&gt;1&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;method_info&lt;/td&gt;
-      &lt;td&gt;methods&lt;/td&gt;
-      &lt;td&gt;methods_count&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;u2&lt;/td&gt;
-      &lt;td&gt;attributes_count&lt;/td&gt;
-      &lt;td&gt;1&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;attribute_info&lt;/td&gt;
-      &lt;td&gt;attributes&lt;/td&gt;
-      &lt;td&gt;attributes_count&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;h3 id=&quot;11-简介&quot;&gt;1.1 简介&lt;/h3&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;魔数&lt;/strong&gt;: 每个&lt;code class=&quot;highlighter-rouge&quot;&gt;Class&lt;/code&gt;文件头&lt;code class=&quot;highlighter-rouge&quot;&gt;4&lt;/code&gt;个字节称为魔数, 唯一作用是确定该文件是否是一个能被虚拟机接受的&lt;code class=&quot;highlighter-rouge&quot;&gt;Class&lt;/code&gt;文件&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;版本号&lt;/strong&gt;: 紧接着魔数的四个字节存储的是&lt;code class=&quot;highlighter-rouge&quot;&gt;Class&lt;/code&gt;文件的版本号: 第&lt;code class=&quot;highlighter-rouge&quot;&gt;5&lt;/code&gt;和第&lt;code class=&quot;highlighter-rouge&quot;&gt;6&lt;/code&gt;个字节是次版本号(&lt;code class=&quot;highlighter-rouge&quot;&gt;Minor Version&lt;/code&gt;), 第&lt;code class=&quot;highlighter-rouge&quot;&gt;7&lt;/code&gt;和第&lt;code class=&quot;highlighter-rouge&quot;&gt;8&lt;/code&gt;个字节是主版本号(&lt;code class=&quot;highlighter-rouge&quot;&gt;Major Version&lt;/code&gt;); 虚拟机必须拒绝执行超过其版本号的&lt;code class=&quot;highlighter-rouge&quot;&gt;Class&lt;/code&gt;文件&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;常量池&lt;/strong&gt;: 紧接着主版本号之后的是常量池入口, 是一个表类型数据项; &lt;code class=&quot;highlighter-rouge&quot;&gt;Class&lt;/code&gt;文件中只有常量池的容量计数是从&lt;code class=&quot;highlighter-rouge&quot;&gt;1&lt;/code&gt;开始的; 常量池中主要存放两大类常量: 字面量和符号引用&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;字面量: 如: 文本字符串, 声明为&lt;code class=&quot;highlighter-rouge&quot;&gt;final&lt;/code&gt;的常量值等&lt;/li&gt;
-    &lt;li&gt;符号引用: 类和接口的全限定名; 字段的名称和描述符; 方法的名称和描述符&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;访问标志&lt;/strong&gt;: 常量池结束之后, 紧接着的两个字节代表访问标志; 用于表示一些类或者接口的层次信息&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;类索引, 父类索引和接口索引集合&lt;/strong&gt;: 用于确定类的继承关系; 除了&lt;code class=&quot;highlighter-rouge&quot;&gt;java.lang.Object&lt;/code&gt;之外, 所有的&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;类都有父类, 因此除了&lt;code class=&quot;highlighter-rouge&quot;&gt;java.lang.Object&lt;/code&gt;外, 所有&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;类的父类索引都不为&lt;code class=&quot;highlighter-rouge&quot;&gt;0&lt;/code&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;字段表&lt;/strong&gt;: 描述接口或者类中声明的变量; 字段包括类级变量以及实例级变量, 但不包括方法内部声明的局部变量&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;方法表&lt;/strong&gt;: 包括访问标志, 名称索引, 描述符索引, 属性表集合; 如果父类方法在子类中没有被重写, 方法表集合中就不会出现来自父类的方法信息, 但是, 同样的, 有可能会出现由编译器自动添加的方法, 最典型的便是类构造器&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;clinit&amp;gt;&lt;/code&gt;方法和实例构造器&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;init&amp;gt;&lt;/code&gt;方法&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;属性表&lt;/strong&gt;: &lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;虚拟机运行时会忽略掉它不认识的属性&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h3 id=&quot;12-常见问题&quot;&gt;1.2 常见问题&lt;/h3&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;程序中如果定义了超过&lt;code class=&quot;highlighter-rouge&quot;&gt;64KB&lt;/code&gt;英文字符的变量或方法名, 将无法编译:&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;由于&lt;code class=&quot;highlighter-rouge&quot;&gt;Class&lt;/code&gt;文件中方法, 字段等都需要引用&lt;code class=&quot;highlighter-rouge&quot;&gt;CONSTANT_Utf8_info&lt;/code&gt;型常量来描述名称, 所以&lt;code class=&quot;highlighter-rouge&quot;&gt;CONSTANT_Utf8_info&lt;/code&gt;型常量的最大长度也就是&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;中方法, 字段名的最大长度; &lt;code class=&quot;highlighter-rouge&quot;&gt;u2&lt;/code&gt;类型能表达的最大值是&lt;code class=&quot;highlighter-rouge&quot;&gt;65535&lt;/code&gt;, 所以&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;程序中如果定义了超过&lt;code class=&quot;highlighter-rouge&quot;&gt;64KB&lt;/code&gt;英文字符的变量或方法名, 将无法编译&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;二-虚拟机类加载机制&quot;&gt;二. 虚拟机类加载机制&lt;/h2&gt;
-
-&lt;h3 id=&quot;21-类加载的时机&quot;&gt;2.1 类加载的时机&lt;/h3&gt;
-
-&lt;p&gt;类从被加载到虚拟机内存中开始, 到卸载出内存为止, 其生命周期如下图:&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/JVM/类的生命周期.png&quot; alt=&quot;类的生命周期&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;其中, 加载, 验证, 准备, 初始化和卸载这五个阶段的顺序是确定的, 解析阶段则不一定: 在某些情况下, 可以在初始化阶段之后再&lt;strong&gt;开始&lt;/strong&gt;(注意, 是开始, 而不是&lt;em&gt;进行&lt;/em&gt;或者&lt;em&gt;完成&lt;/em&gt;)&lt;/p&gt;
-
-&lt;p&gt;遇到以下五种情况必须立即对类进行&lt;em&gt;初始化&lt;/em&gt;(而加载, 验证, 准备自然要在这之前完成):&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;遇到&lt;code class=&quot;highlighter-rouge&quot;&gt;new&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;getstatic&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;putstatic&lt;/code&gt;或&lt;code class=&quot;highlighter-rouge&quot;&gt;invokestatic&lt;/code&gt;这&lt;code class=&quot;highlighter-rouge&quot;&gt;4&lt;/code&gt;条字节码指令时, 如果类没有初始化, 需要出发初始化; 生成这&lt;code class=&quot;highlighter-rouge&quot;&gt;4&lt;/code&gt;条指令的常见&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;代码场景是: 使用&lt;code class=&quot;highlighter-rouge&quot;&gt;new&lt;/code&gt;关键字实例化对象的时候, 读取或设置一个类的静态字段的时候(注意: 被&lt;code class=&quot;highlighter-rouge&quot;&gt;final&lt;/code&gt;修饰, 已在编译期把结果放入常量池的静态字段除外(由此可见, 添加&lt;code class=&quot;highlighter-rouge&quot;&gt;final&lt;/code&gt;修饰可以避免不必要的类加载)), 以及调用一个类的静态方法的时候&lt;/li&gt;
-    &lt;li&gt;使用&lt;code class=&quot;highlighter-rouge&quot;&gt;java.lang.reflect&lt;/code&gt;包的方法对类进行反射调用的时候&lt;/li&gt;
-    &lt;li&gt;当初始化一个类, 如果发现其父类没有初始化, 则需先初始化其父类&lt;/li&gt;
-    &lt;li&gt;虚拟机启动时, 用户需要指定一个要执行的主类(&lt;code class=&quot;highlighter-rouge&quot;&gt;main()&lt;/code&gt;所在的类), 虚拟机会先初始化这个主类&lt;/li&gt;
-    &lt;li&gt;当使用&lt;code class=&quot;highlighter-rouge&quot;&gt;JDK1.7&lt;/code&gt;的动态语言支持(比如: &lt;code class=&quot;highlighter-rouge&quot;&gt;Groovy&lt;/code&gt;等)时, 如果一个&lt;code class=&quot;highlighter-rouge&quot;&gt;java.lang.invoke.MethodHandle&lt;/code&gt;实例最后的解析结果&lt;code class=&quot;highlighter-rouge&quot;&gt;REF_getStatic&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;REF_putStatic&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;REF_invokeStatic&lt;/code&gt;的方法句柄, 并且这个方法句柄所对应的类没有进行过初始化, 则需先触发其初始化&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;h3 id=&quot;22-主动引用与被动引用&quot;&gt;2.2 主动引用与被动引用&lt;/h3&gt;
-
-&lt;h4 id=&quot;221-构造函数-代码块-静态代码块的执行时机&quot;&gt;2.2.1 构造函数, 代码块, 静态代码块的执行时机&lt;/h4&gt;
-
-&lt;p&gt;考虑下列代码:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class Practice {
-
-    static {
-        System.out.println(&quot;Practice static code block&quot;);
-    }
-
-    {
-        System.out.println(&quot;Practice code block&quot;);
-    }
-
-    public Practice() {
-        System.out.println(&quot;Practice constructor&quot;);
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;当&lt;code class=&quot;highlighter-rouge&quot;&gt;new&lt;/code&gt;一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Practice&lt;/code&gt;对象时, 输出如下; 说明三者的执行顺序是: 静态代码块 –&amp;gt; 代码块 –&amp;gt; 构造函数&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Practice static code block
-Practice code block
-Practice constructor
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;关于三者的执行时机与作用:&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;&lt;strong&gt;静态代码块&lt;/strong&gt;:&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;用于给类初始化, 随着类的加载而执行, 只执行一次&lt;/li&gt;
-    &lt;li&gt;在&lt;code class=&quot;highlighter-rouge&quot;&gt;main()&lt;/code&gt;函数之前执行&lt;/li&gt;
-    &lt;li&gt;一个类可以有多个静态代码块&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;&lt;strong&gt;代码块&lt;/strong&gt;:&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;实例对象相关, 给所有对象进行统一初始化(因为构造函数可以重载)&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;&lt;strong&gt;构造函数&lt;/strong&gt;:&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;初始化实例&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;h4 id=&quot;222-被动引用示例&quot;&gt;2.2.2 被动引用示例&lt;/h4&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;前面所说的触发初始化的五个场景对应叫做主动引用&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;通过子类引用父类的静态字段, 不会导致子类初始化: 对于静态字段, 只有直接定义这个字段的类才会被初始化&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class NotInitialization {
-    public static void main(String[] args) {
-        System.out.println(SubClass.value);  // 不会初始化子类~
-    }
-}
-
-class SuperClass {
-    static {
-        System.out.println(&quot;SuperClass init&quot;);
-    }
-
-    public static int value = 123;
-}
-
-class SubClass extends SuperClass{
-    static {
-        System.out.println(&quot;Child init&quot;);
-    }
-}
-
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;&lt;strong&gt;注&lt;/strong&gt;: 后文为节省篇幅, 将重用这里的&lt;code class=&quot;highlighter-rouge&quot;&gt;SuperClass&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;SubClass&lt;/code&gt;, 而不再重写~&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;通过数组定义来引用类, 不会触发此类的初始化: 虚拟机会为数组自动生成一个直接继承自&lt;code class=&quot;highlighter-rouge&quot;&gt;Object&lt;/code&gt;的子类; &lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;中对数组的访问比&lt;code class=&quot;highlighter-rouge&quot;&gt;C/C++&lt;/code&gt;更安全, 是因为这个类封装了数组元素的访问方法, 而&lt;code class=&quot;highlighter-rouge&quot;&gt;C/C++&lt;/code&gt;直接翻译为数组指针的移动&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class NotInitialization {
-    public static void main(String[] args) {
-        SuperClass[] sca = new SuperClass[0];
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;常量在编译阶段会存入被调用类的常量池中, 本质上并没有直接引用到常量的类, 因此不会出发定义常量的类的初始化: 在编译阶段经过常量传播优化, 已经将次&lt;code class=&quot;highlighter-rouge&quot;&gt;Hello World&lt;/code&gt;常量存储到了&lt;code class=&quot;highlighter-rouge&quot;&gt;NotInitialization&lt;/code&gt;类的常量池中了, 以后&lt;code class=&quot;highlighter-rouge&quot;&gt;Initialization&lt;/code&gt;对常量&lt;code class=&quot;highlighter-rouge&quot;&gt;ConstClass.HELLOWORLD&lt;/code&gt;的引用都被转化为&lt;code class=&quot;highlighter-rouge&quot;&gt;NotInitialization&lt;/code&gt;类对自身常量池的引用了~&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class NotInitialization {
-    public static void main(String[] args) {
-        System.out.println(ConstClass.CONST);
-    }
-}
-
-class ConstClass {
-    static {
-        System.out.println(&quot;ConstClass init&quot;);
-    }
-
-    public static final String HELLOWORLD=&quot;Hello World&quot;; // 注意这里不能从static来理解, 因为即使有static, 但是没有final的话仍然会触发ConstClass的初始化~
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h3 id=&quot;23-类的加载过程&quot;&gt;2.3 类的加载过程&lt;/h3&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;结合前面的图咯~&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;h4 id=&quot;231-加载&quot;&gt;2.3.1 加载&lt;/h4&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;通过一个类的全限定名来获取定义此类的二进制字节流&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;将这个字节流所代表的静态存储结构转化为方法区的运行时数据结构&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;在内存中生成一个代表这个类的&lt;code class=&quot;highlighter-rouge&quot;&gt;java.lang.Class&lt;/code&gt;对象(该&lt;code class=&quot;highlighter-rouge&quot;&gt;Class&lt;/code&gt;对象并没有明确规定是在&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;堆中, 对于&lt;code class=&quot;highlighter-rouge&quot;&gt;HotSpot&lt;/code&gt;虚拟机而言, &lt;code class=&quot;highlighter-rouge&quot;&gt;Class&lt;/code&gt;对象比较特殊, 它虽然是对象, 但是存在于方法区中), 作为方法区这个类的各种数据的访问入口&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h4 id=&quot;232--验证&quot;&gt;2.3.2  验证&lt;/h4&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;文件格式验证:&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;是否以魔数&lt;code class=&quot;highlighter-rouge&quot;&gt;0xCAFEBABE&lt;/code&gt;开头&lt;/li&gt;
-    &lt;li&gt;主, 次版本号是否在当前虚拟机处理范围之内&lt;/li&gt;
-    &lt;li&gt;常量池的常量中是否有不被支持的类型
-….&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;元数据验证&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;是否有父类&lt;/li&gt;
-    &lt;li&gt;是否继承了不允许被继承的父类(被&lt;code class=&quot;highlighter-rouge&quot;&gt;final&lt;/code&gt;修饰的父类)&lt;/li&gt;
-    &lt;li&gt;如果这个类不是抽象类, 是否实现其父类或接口中要求实现的所有方法&lt;/li&gt;
-    &lt;li&gt;是否非法覆盖(&lt;code class=&quot;highlighter-rouge&quot;&gt;final&lt;/code&gt;方法), 重载是否正确
-…&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;字节码验证&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;对类的方法体进行校验分析, 保证被校验的类在运行时不会危害虚拟机&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;符号引用验证&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;符号引用中通过字符串描述的全限定名是否能找到对应的父类&lt;/li&gt;
-    &lt;li&gt;符号引用中的类, 字段, 方法的访问性是否可以被当前类访问&lt;/li&gt;
-    &lt;li&gt;指定类中是否存在符合方法的字段描述符以及简单名称所描述的方法和字段
-…&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;h4 id=&quot;233-准备&quot;&gt;2.3.3 准备&lt;/h4&gt;
-
-&lt;p&gt;正式为类变量分配内存并为其设置初始值&lt;/p&gt;
-
-&lt;h4 id=&quot;234-解析&quot;&gt;2.3.4 解析&lt;/h4&gt;
-
-&lt;p&gt;将常量池中的符号引用替换为直接引用&lt;/p&gt;
-
-&lt;h4 id=&quot;235-初始化&quot;&gt;2.3.5 初始化&lt;/h4&gt;
-
-&lt;p&gt;真正开始执行&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;程序代码(字节码)或者说初始化阶段是执行类构造器&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;clinit&amp;gt;()&lt;/code&gt;方法的过程&lt;/p&gt;
-
-&lt;h5 id=&quot;235-1-类构造器方法&quot;&gt;2.3.5-1 类构造器&lt;clinit&gt;()方法&lt;/clinit&gt;&lt;/h5&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;clinit&amp;gt;()&lt;/code&gt;方法是由编译器自动收集类中的所有类变量的赋值动作和静态语句块(&lt;code class=&quot;highlighter-rouge&quot;&gt;static&lt;/code&gt;代码块)中的语句合并产生的; 静态语句块只能访问到定义在静态语句块之前的变量, 定义在它之后的变量, 在前面的静态语句块可以赋值, 但是不能访问, 如下代码&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class Temp {
-    static {
-        value = 2;
-//        System.out.println(value); // 不能访问
-    }
-
-    static int value = 1;
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;clinit&amp;gt;()&lt;/code&gt;方法与构造函数(&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;init&amp;gt;()&lt;/code&gt;)不同, 虚拟机会保证子类的&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;clinit&amp;gt;()&lt;/code&gt;方法执行之前, 父类的&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;clinit&amp;gt;()&lt;/code&gt;方法已经执行完毕; 因此在虚拟机中第一个被执行的&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;clinit&amp;gt;()&lt;/code&gt;方法的类肯定是&lt;code class=&quot;highlighter-rouge&quot;&gt;java.lang.Object&lt;/code&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;由于父类的&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;clinit&amp;gt;()&lt;/code&gt;方法先于子类的执行, 也就意味着父类中的静态语句块要先于子类的变量赋值操作; 注意如下代码;&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class SuperClass {
-    public static int A = 1;
-    static {
-        A = 2;
-    }
-}
-
-class SubClass extends SuperClass{
-    public static int B = A; // 注意这里的B应该为2, 而不是1
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;clinit&amp;gt;()&lt;/code&gt;方法对于类或接口来说不是必需的, 如果一个类没有静态语句块, 也没有对变量的赋值操作, 那么编译器可以不为这个类生成&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;clinit&amp;gt;()&lt;/code&gt;方法&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;接口中不能有静态语句块, 但是可以有变量的初始化赋值操作, 因此接口与类一样也会生成&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;clinit&amp;gt;()&lt;/code&gt;方法; 但接口与类不同的是, 执行接口的&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;clinit&amp;gt;()&lt;/code&gt;方法不需要先执行父接口的&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;clinit&amp;gt;()&lt;/code&gt;方法, 只有当父接口中定义的变量使用时, 父接口才会初始化; 另外, 接口的实现类在初始化时也一样不会执行接口的&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;clinit&amp;gt;()&lt;/code&gt;方法&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;虚拟机会保证一个类的&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;clinit&amp;gt;()&lt;/code&gt;方法在多线程环境中被正确的加锁, 同步; 只能有一个线程去执行&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;clinit&amp;gt;()&lt;/code&gt;&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h3 id=&quot;24-类加载器&quot;&gt;2.4 类加载器&lt;/h3&gt;
-
-&lt;p&gt;任意一个类, 都是由加载它的类加载器和这个类本身一同确立其在&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;虚拟机中的唯一性; 更通俗一些是: 比较两个类是否&lt;em&gt;相等&lt;/em&gt;, 只有在这两个类是由同一个类加载器加载的前提下才有意义, 否则, 即使这两个类来自同一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Class&lt;/code&gt;文件, 被同一个虚拟机加载, 只要加载它们的类加载器不同, 那这两个类就必定不相等(这里所谓的相等, 包括代表&lt;code class=&quot;highlighter-rouge&quot;&gt;Class&lt;/code&gt;对象的&lt;code class=&quot;highlighter-rouge&quot;&gt;equals()&lt;/code&gt;方法, &lt;code class=&quot;highlighter-rouge&quot;&gt;isAssignableFrom()&lt;/code&gt;方法, &lt;code class=&quot;highlighter-rouge&quot;&gt;isInstance()&lt;/code&gt;方法的返回结果, 以及使用&lt;code class=&quot;highlighter-rouge&quot;&gt;instanceof&lt;/code&gt;关键字做对象所属关系判断等情况); 如下代码:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;import java.io.IOException;
-import java.io.InputStream;
-
-public class ClassLoaderTest {
-    public static void main(String[] args) throws Exception {
-        ClassLoader loader = new ClassLoader() {
-            @Override
-            public Class&amp;lt;?&amp;gt; loadClass(String name) throws ClassNotFoundException {
-                try {
-                    String fileName = name.substring(name.lastIndexOf(&quot;.&quot;) + 1) + &quot;.class&quot;;
-                    InputStream inputStream = getClass().getResourceAsStream(fileName);
-                    if (inputStream == null) {
-                        return super.loadClass(name);
-                    }
-                    byte[] bytes = new byte[inputStream.available()];
-                    inputStream.read(bytes);
-                    return defineClass(name, bytes, 0, bytes.length);
-                } catch (IOException e) {
-                }
-                return null;
-            }
-        };
-
-        Object obj = loader.loadClass(&quot;Practice&quot;).newInstance();
-        System.out.println(obj.getClass());
-        System.out.println(obj instanceof Practice); // 及时是Practice实例, 但是这里仍然返回false
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h3 id=&quot;25-双亲委派模型&quot;&gt;2.5 双亲委派模型&lt;/h3&gt;
-
-&lt;h4 id=&quot;251-类加载器分类&quot;&gt;2.5.1 类加载器分类&lt;/h4&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;启动类加载器(&lt;code class=&quot;highlighter-rouge&quot;&gt;Bootstrap ClassLoader&lt;/code&gt;): &lt;code class=&quot;highlighter-rouge&quot;&gt;C++&lt;/code&gt;实现, 虚拟机自身一部分&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;扩展类加载器(&lt;code class=&quot;highlighter-rouge&quot;&gt;Extension ClassLoader&lt;/code&gt;)&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;应用程序类加载器(&lt;code class=&quot;highlighter-rouge&quot;&gt;Application ClassLoader&lt;/code&gt;): 如果没有定义自己的类加载器, 则为程序中默认的类加载器&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h4 id=&quot;252-双亲委派模型含义&quot;&gt;2.5.2 双亲委派模型含义&lt;/h4&gt;
-
-&lt;p&gt;如下图; 双亲委派模型要求除了顶层的启动类加载器外, 其余的类加载器都应当有自己的父类加载器;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/JVM/双亲委派模型.png&quot; alt=&quot;双亲委派模型&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;如果一个类加载器收到了类加载的请求, 它首先不会自己去尝试加载这个类, 而是把这个请求委派给父类加载器去完成, 每一个层次的类加载器都是如此; 因此所有的加载请求最终都应该传送到顶层的启动类加载器中, 只有当父类加载器反馈自己无法完成这个加载请求(它的搜索范围中没有找到所需的类)时, 子加载器才会尝试自己去加载&lt;/p&gt;
-
-</description>
-        <pubDate>Tue, 02 Oct 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/10/02/JVM%E4%B9%8B%E7%B1%BB%E6%96%87%E4%BB%B6%E7%BB%93%E6%9E%84%E4%B8%8E%E7%B1%BB%E5%8A%A0%E8%BD%BD%E6%9C%BA%E5%88%B6/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/10/02/JVM%E4%B9%8B%E7%B1%BB%E6%96%87%E4%BB%B6%E7%BB%93%E6%9E%84%E4%B8%8E%E7%B1%BB%E5%8A%A0%E8%BD%BD%E6%9C%BA%E5%88%B6/</guid>
-        
-        <category>Java</category>
         
         
       </item>

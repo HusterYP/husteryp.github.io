@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Hello-World">
+    <meta name="keyword"  content="">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>FFmpeg交叉编译与接入Android工程 - 袁平 | HusterYP-Blog</title>
+
+    <link rel="canonical" href="http://localhost:4000/2018/11/17/FFmpeg%E4%BA%A4%E5%8F%89%E7%BC%96%E8%AF%91%E4%B8%8E%E6%8E%A5%E5%85%A5Android%E5%B7%A5%E7%A8%8B/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    <!-- Pygments Github CSS -->
+    <link rel="stylesheet" href="/css/syntax.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="http://cdn.staticfile.org/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">袁平</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/about/">About</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/tags/">Tags</a>
+                    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Image to hack wechat -->
+<!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="/img/tag-bg.jpg" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/img/tag-bg.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                    </div>
+                    <h1>FFmpeg交叉编译与接入Android工程</h1>
+                    
+                    
+                    <h2 class="subheading">记录FFmpeg的交叉编译与将动态库接入Android工程</h2>
+                    
+                    <span class="meta">Posted by 袁平 on November 17, 2018</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+				<h1 id="前言">前言</h1>
+
+<blockquote>
+  <p>本文主要讲解如何在<code class="highlighter-rouge">Linux</code>上编译<code class="highlighter-rouge">FFmpeg</code>, 以及将编译出来的动态库(<code class="highlighter-rouge">so</code>)接入已有的<code class="highlighter-rouge">Android</code>工程</p>
+</blockquote>
+
+<hr />
+
+<h1 id="正文">正文</h1>
+
+<hr />
+
+<h2 id="一-ffmpeg交叉编译">一. FFmpeg交叉编译</h2>
+
+<p>本文选用的<code class="highlighter-rouge">FFmpeg</code>版本是<code class="highlighter-rouge">FFmpeg 4.0</code>, <code class="highlighter-rouge">NDK</code>版本是<code class="highlighter-rouge">Android-ndk-r15c</code>, 注意在编译<code class="highlighter-rouge">FFmpeg</code>时, 对<code class="highlighter-rouge">NDK</code>版本有要求, 另外, 笔者最开始选用最新版本的<code class="highlighter-rouge">NDK</code>, 总是编译不过, 去查证了一下, 发现从<code class="highlighter-rouge">Androud-ndk-r16</code>开始, 其用于交叉编译都有问题了, 所以选用较低版本的<code class="highlighter-rouge">Androud-ndk</code>; 本文选用的<code class="highlighter-rouge">FFmpeg</code>版本和<code class="highlighter-rouge">NDK</code>版本亲测可编译通过; 先提供下载地址:</p>
+
+<p><a href="https://ffmpeg.org/releases/ffmpeg-4.0.tar.bz2">FFmpeg 4.0</a></p>
+
+<p><a href="https://dl.google.com/android/repository/android-ndk-r15c-linux-x86_64.zip">Android-ndk-r15c</a></p>
+
+<p>笔者选用的编译环境是<code class="highlighter-rouge">ArchLinux</code>, <code class="highlighter-rouge">Windows</code>上的编译的话, 大体流程不变, 环境配置需要自己弄啦~</p>
+
+<p>在开始之前, 需要先了解一下相关知识:</p>
+
+<blockquote>
+  <ol>
+    <li>JNI和NDK</li>
+    <li>CPU架构</li>
+    <li>交叉编译</li>
+    <li>FFmpeg简介</li>
+  </ol>
+</blockquote>
+
+<p>这里推荐<a href="https://developer.android.google.cn/ndk/guides/">官方文档</a>, 对以上方面讲解比较详细; 下面简要介绍重点地方</p>
+
+<h3 id="11-基础知识">1.1 基础知识</h3>
+
+<h4 id="111-jni和ndk">1.1.1 JNI和NDK</h4>
+
+<p><code class="highlighter-rouge">JNI</code>就是<code class="highlighter-rouge">Java Native Interface</code>, 即<code class="highlighter-rouge">Java</code>层和<code class="highlighter-rouge">Native</code>层通信的接口; 通过<code class="highlighter-rouge">JNI</code>, <code class="highlighter-rouge">Java</code>可以实现和其他语言之间的互相调用(注意其他语言不仅仅只限于<code class="highlighter-rouge">C/C++</code>, 虽然大多时候是<code class="highlighter-rouge">C/C++</code>); <code class="highlighter-rouge">Java</code>是跨平台的, 但是<code class="highlighter-rouge">C/C++</code>不是跨平台的, 所以<code class="highlighter-rouge">JNI</code>也使得<code class="highlighter-rouge">Java</code>需要考虑和特定平台相关的特性</p>
+
+<p><code class="highlighter-rouge">NDK</code>就是<code class="highlighter-rouge">Native Development Kit</code>, 是<code class="highlighter-rouge">Android</code>平台提供的一个工具集, 提供与本地代码之间的交互</p>
+
+<p>详细可参见<a href="https://blog.csdn.net/carson_ho/article/details/73250163">博客</a></p>
+
+<h4 id="112-cpu架构">1.1.2 CPU架构</h4>
+
+<p>不同的手机使用不同的<code class="highlighter-rouge">CPU</code>, 不同的<code class="highlighter-rouge">CPU</code>有不同的指令集, 每种<code class="highlighter-rouge">CPU</code>及其指令集有其自己的应用程序二进制接口(<code class="highlighter-rouge">Application Binary Interface</code>即<code class="highlighter-rouge">ABI</code>); <code class="highlighter-rouge">ABI</code>定义了机器代码与系统运行时的交互方式; <code class="highlighter-rouge">ABI</code>与指令集的对应关系如下表(摘自官方文档)</p>
+
+<p><img src="/img/post/FFmpegCompile/ABI与指令集对应关系.png" alt="ABI与指令集对应关系" /></p>
+
+<p>常见的<code class="highlighter-rouge">CPU</code>架构有<code class="highlighter-rouge">x86</code>, <code class="highlighter-rouge">x86-64</code>以及<code class="highlighter-rouge">arm</code>等(<code class="highlighter-rouge">x86-64</code>也是基于<code class="highlighter-rouge">x86</code>的), 其中, <code class="highlighter-rouge">x86</code>主要是针对<code class="highlighter-rouge">PC</code>端, <code class="highlighter-rouge">arm</code>主要针对移动端; <code class="highlighter-rouge">Android</code>系统目前支持<code class="highlighter-rouge">ARMv5</code>, <code class="highlighter-rouge">ARMv7</code>, <code class="highlighter-rouge">ARMv8</code>, ` x86<code class="highlighter-rouge">, </code>x86_64<code class="highlighter-rouge">, </code>MIPS<code class="highlighter-rouge">以及</code>MIPS64<code class="highlighter-rouge">共七种</code>CPU`架构</p>
+
+<p>在<code class="highlighter-rouge">Android</code>中应用安装时, <code class="highlighter-rouge">Package Manager Service</code>会去扫描<code class="highlighter-rouge">APK</code>, 只有该设备<code class="highlighter-rouge">CPU</code>架构支持的<code class="highlighter-rouge">.so</code>文件才会被安装, 另外还可以定义<code class="highlighter-rouge">.so</code>文件的对应安装优先级</p>
+
+<h4 id="113-交叉编译">1.1.3 交叉编译</h4>
+
+<p>在某个平台上编译该平台上的可执行文件叫本地编译; 如果在一个平台上编译在其他平台上的可执行程序则叫交叉编译; 交叉编译是随着嵌入式系统的发展而发展的, 因为嵌入式系统的处理能力, 内存等均有限, 所以有时候需要在其他平台上编译好后导入嵌入式系统中, 此时就需要交叉编译</p>
+
+<p>交叉编译最主要的是环境, 即交叉编译链; 对本文来说, 编译<code class="highlighter-rouge">FFmpeg</code>需要准备<code class="highlighter-rouge">NDK</code>, <code class="highlighter-rouge">NDK</code>中提供了交叉编译链; 即<code class="highlighter-rouge">android-ndk-r15c/toolchains/</code>下提供的各种平台相关的编译工具链</p>
+
+<p>本文使用的示例是在<code class="highlighter-rouge">x86</code>的<code class="highlighter-rouge">Linux</code>下编译<code class="highlighter-rouge">arm-v7a</code>架构的动态库</p>
+
+<h4 id="114-ffmpeg">1.1.4 FFmpeg</h4>
+
+<p>推荐<a href="https://ffmpeg.org/ffmpeg-formats.html">官方文档</a></p>
+
+<p><a href="http://javapyer.iteye.com/blog/1989274">基本用法</a></p>
+
+<hr />
+
+<h3 id="12-ffmpeg交叉编译">1.2 FFmpeg交叉编译</h3>
+
+<p>在开始之前需要先配置一下<code class="highlighter-rouge">NDK</code>的环境变量, 在<code class="highlighter-rouge">/etc/profile</code>文件中添加<code class="highlighter-rouge">PATH</code></p>
+
+<p><code class="highlighter-rouge">FFmpeg</code>编译生成的动态库默认格式为<code class="highlighter-rouge">xx.so.版本号</code>, 但是<code class="highlighter-rouge">Android</code>工程中只支持以<code class="highlighter-rouge">.so</code>结尾的动态库, 所以需要修改<code class="highlighter-rouge">FFmpeg</code>的配置文件, 修改其生成库文件名的格式; 编辑<code class="highlighter-rouge">FFmpeg</code>目录下的<code class="highlighter-rouge">configure</code>文件, 修改如下:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code># 将configure文件中的：
+SLIBNAME_WITH_MAJOR='$(SLIBNAME).$(LIBMAJOR)'
+LIB_INSTALL_EXTRA_CMD='$$(RANLIB) "$(LIBDIR)/$(LIBNAME)"'
+SLIB_INSTALL_NAME='$(SLIBNAME_WITH_VERSION)'
+SLIB_INSTALL_LINKS='$(SLIBNAME_WITH_MAJOR) $(SLIBNAME)'
+
+#替换为：
+SLIBNAME_WITH_MAJOR='$(SLIBPREF)$(FULLNAME)-$(LIBMAJOR)$(SLIBSUF)'
+LIB_INSTALL_EXTRA_CMD='$$(RANLIB) "$(LIBDIR)/$(LIBNAME)"'
+SLIB_INSTALL_NAME='$(SLIBNAME_WITH_MAJOR)'
+SLIB_INSTALL_LINKS='$(SLIBNAME)'
+</code></pre></div></div>
+
+<p>为了减小<code class="highlighter-rouge">APK</code>大小, 我们只将需要的功能开启即可; 配置参数较多, 我们写一个脚本如下(名为<code class="highlighter-rouge">build-script.sh</code>)</p>
+
+<blockquote>
+  <p>注: 下面的注释在运行脚本时需删除~</p>
+</blockquote>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#!/bin/bash</span>
+
+<span class="nv">NDK</span><span class="o">=</span>/home/yuanping/Software/NDK/android-ndk-r15c  <span class="c"># NDK所在路径, 注意替换为你的</span>
+<span class="nv">SYSROOT</span><span class="o">=</span><span class="nv">$NDK</span>/platforms/android-19/arch-arm/
+<span class="nv">TOOLCHAIN</span><span class="o">=</span><span class="nv">$NDK</span>/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64 <span class="c"># 交叉编译链, 这里使用的是arm, 如果需要编译其他平台的, 更换即可</span>
+<span class="k">function </span>build_one
+<span class="o">{</span>
+./configure <span class="se">\</span>
+<span class="nt">--prefix</span><span class="o">=</span><span class="nv">$PREFIX</span> <span class="se">\</span>
+<span class="nt">--enable-shared</span> <span class="se">\ </span> <span class="c"># 生成动态库</span>
+<span class="nt">--disable-static</span> <span class="se">\ </span><span class="c"># 禁止生成静态库</span>
+<span class="nt">--disable-doc</span> <span class="se">\ </span> <span class="c"># 关闭不需要的功能, 下同</span>
+<span class="nt">--disable-ffplay</span> <span class="se">\</span>
+<span class="nt">--disable-ffprobe</span> <span class="se">\</span>
+<span class="nt">--disable-doc</span> <span class="se">\</span>
+<span class="nt">--disable-symver</span> <span class="se">\</span>
+<span class="nt">--disable-ffmpeg</span> <span class="se">\</span>
+<span class="nt">--enable-small</span> <span class="se">\</span>
+<span class="nt">--cross-prefix</span><span class="o">=</span><span class="nv">$TOOLCHAIN</span>/bin/arm-linux-androideabi- <span class="se">\</span>
+<span class="nt">--target-os</span><span class="o">=</span>linux <span class="se">\</span>
+<span class="nt">--arch</span><span class="o">=</span>arm <span class="se">\ </span>
+<span class="nt">--enable-cross-compile</span> <span class="se">\</span>
+<span class="nt">--sysroot</span><span class="o">=</span><span class="nv">$SYSROOT</span> <span class="se">\</span>
+<span class="nt">--extra-cflags</span><span class="o">=</span><span class="s2">"-Os -fpic </span><span class="nv">$ADDI_CFLAGS</span><span class="s2">"</span> <span class="se">\</span>
+<span class="nt">--extra-ldflags</span><span class="o">=</span><span class="s2">"</span><span class="nv">$ADDI_LDFLAGS</span><span class="s2">"</span> <span class="se">\</span>
+<span class="nv">$ADDITIONAL_CONFIGURE_FLAG</span>
+make clean all
+make <span class="nt">-j3</span>
+make <span class="nb">install</span>
+<span class="o">}</span>
+<span class="nv">CPU</span><span class="o">=</span>armv7-a <span class="c"># CPU架构</span>
+<span class="nv">PREFIX</span><span class="o">=</span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/android/<span class="nv">$CPU</span> <span class="c"># 生成动态库所在路径</span>
+<span class="nv">ADDI_CFLAGS</span><span class="o">=</span><span class="s2">"-marm"</span>
+build_one
+</code></pre></div></div>
+
+<p>之后运行该脚本即可, 注意添加可执行权限(<code class="highlighter-rouge">sudo chmod a+x build-script.sh</code>)</p>
+
+<p>等待一会应该就好啦, 然后在<code class="highlighter-rouge">FFmpeg</code>目录下有一个<code class="highlighter-rouge">android</code>目录, 生成的动态库就在其中啦~; 笔者生成的如下:</p>
+
+<p><img src="/img/post/FFmpegCompile/armv7-a.png" alt="Armv7-a" /></p>
+
+<hr />
+
+<h2 id="二-动态库接入android工程">二. 动态库接入Android工程</h2>
+
+<p>在开始接入之前, 需要先配置<code class="highlighter-rouge">Android Studio</code>的环境; 主要是在<code class="highlighter-rouge">SDK Manager</code>中下载<code class="highlighter-rouge">CMake</code>, <code class="highlighter-rouge">LLDB</code>; 这里可以不用下载<code class="highlighter-rouge">NDK</code>, 最好使用与编译版本一致的<code class="highlighter-rouge">NDK</code>, 以免出现兼容性问题</p>
+
+<p><img src="/img/post/FFmpegCompile/SDKManager.png" alt="SDKManager" /></p>
+
+<p>配置<code class="highlighter-rouge">NDK</code>路径, 如下:</p>
+
+<p><img src="/img/post/FFmpegCompile/NDKPath.png" alt="NDK路径" /></p>
+
+<p><code class="highlighter-rouge">Android</code>项目接入<code class="highlighter-rouge">JNI</code>有两种方法, 一种是通过<code class="highlighter-rouge">cmake</code>和<code class="highlighter-rouge">CMakeLists.txt</code>配置文件来指定; 另一种是通过<code class="highlighter-rouge">ndk-build</code>和<code class="highlighter-rouge">Android.mk</code>, <code class="highlighter-rouge">Application.mk</code>配置文件来指定; 官方推荐使用第一种; 关于第二种接入方式, 可以参见<a href="https://developer.android.google.cn/ndk/guides/android_mk">官方文档</a>配置</p>
+
+<p>这里主要讲解第一种方式, 参见<a href="https://developer.android.com/studio/projects/configure-cmake">官方文档</a></p>
+
+<p>如果是创建的新项目的话, 可以直接在创建项目的时候选择<code class="highlighter-rouge">include C++  surpport</code>, 如下图; 如果项目已经创建了, 也不要紧, 下面讲解的就是这种情况</p>
+
+<p><img src="/img/post/FFmpegCompile/JNI新项目.png" alt="JNI新项目" /></p>
+
+<p>我们先来看一下完整的目录结构如下:</p>
+
+<p><img src="/img/post/FFmpegCompile/JNI目录结构.png" alt="目录结构" /></p>
+
+<p>在<code class="highlighter-rouge">main</code>目录下创建一个<code class="highlighter-rouge">jni</code>目录(其他目录名也可以, 但是要注意后文的更改), 在<code class="highlighter-rouge">jni</code>下创建一个<code class="highlighter-rouge">ffmpeg</code>目录, 将上面编译好的<code class="highlighter-rouge">android/armv7-a/lib</code>目录下的<code class="highlighter-rouge">.so</code>文件拷贝到<code class="highlighter-rouge">Android</code>工程的<code class="highlighter-rouge">ffmpeg/armeabi-v7a</code>下(新建<code class="highlighter-rouge">armeabi-v7a</code>目录, 注意目录名一定要是<code class="highlighter-rouge">armeabi-v7a</code>, 和<code class="highlighter-rouge">CPU</code>架构对应), 需要注意的是生成的动态链接库中有一些不带版本号的是指向另一个待版本号的软链接, 如下举例的两个<code class="highlighter-rouge">so</code>文件, 其中<code class="highlighter-rouge">libavcodec.so</code>文件是软链接, 指向<code class="highlighter-rouge">libavcodec-58.so</code>, 所以拷贝时不需要拷贝这些软链接咯</p>
+
+<p><img src="/img/post/FFmpegCompile/动态链接库.png" alt="动态链接库" /></p>
+
+<p>再将<code class="highlighter-rouge">android/armv7-a</code>目录下的<code class="highlighter-rouge">include</code>文件夹拷贝到<code class="highlighter-rouge">ffmpeg</code>下; 创建好后目录结构如下:</p>
+
+<p><img src="/img/post/FFmpegCompile/创建jni目录.png" alt="创建jni目录" /></p>
+
+<p>在<code class="highlighter-rouge">app</code>目录下创建<code class="highlighter-rouge">CMakeLists.txt</code>(一定要是这个名字咯), 如下:</p>
+
+<p><img src="/img/post/FFmpegCompile/创建CMakeLists.png" alt="创建CMakeLists" /></p>
+
+<p>内容如下:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cmake_minimum_required(VERSION 3.4.1) # cmake最低版本
+
+add_library( # Sets the name of the library.
+             wlffmpeg
+
+             # Sets the library as a shared library.
+             SHARED
+
+             # Provides a relative path to your source file(s).
+             src/main/jni/ffmpeg/player.c )
+
+add_library( avcodec-58  # 库名字
+             SHARED
+             IMPORTED)
+set_target_properties( avcodec-58
+                       PROPERTIES IMPORTED_LOCATION
+                       ${CMAKE_SOURCE_DIR}/src/main/jni/ffmpeg/armeabi-v7a/libavcodec-58.so) 
+
+add_library( avdevice-58
+             SHARED
+             IMPORTED)
+set_target_properties( avdevice-58
+                       PROPERTIES IMPORTED_LOCATION
+                       ${CMAKE_SOURCE_DIR}/src/main/jni/ffmpeg/armeabi-v7a/libavdevice-58.so)
+
+add_library( avfilter-7
+             SHARED
+             IMPORTED)
+set_target_properties( avfilter-7
+                       PROPERTIES IMPORTED_LOCATION
+                       ${CMAKE_SOURCE_DIR}/src/main/jni/ffmpeg/armeabi-v7a/libavfilter-7.so)
+
+add_library( avformat-58
+             SHARED
+             IMPORTED)
+set_target_properties( avformat-58
+                       PROPERTIES IMPORTED_LOCATION
+                       ${CMAKE_SOURCE_DIR}/src/main/jni/ffmpeg/armeabi-v7a/libavformat-58.so)
+
+add_library( avutil-56
+             SHARED
+             IMPORTED)
+set_target_properties( avutil-56
+                       PROPERTIES IMPORTED_LOCATION
+                       ${CMAKE_SOURCE_DIR}/src/main/jni/ffmpeg/armeabi-v7a/libavutil-56.so)
+
+add_library( swresample-3
+             SHARED
+             IMPORTED)
+set_target_properties( swresample-3
+                       PROPERTIES IMPORTED_LOCATION
+                       ${CMAKE_SOURCE_DIR}/src/main/jni/ffmpeg/armeabi-v7a/libswresample-3.so)
+
+add_library( swscale-5
+             SHARED
+             IMPORTED)
+set_target_properties( swscale-5
+                       PROPERTIES IMPORTED_LOCATION
+                       ${CMAKE_SOURCE_DIR}/src/main/jni/ffmpeg/armeabi-v7a/libswscale-5.so)
+
+
+find_library( # Sets the name of the path variable.
+              log-lib  # Android内置的log模块, 用于将JNI层的log打到AS控制台
+
+              # Specifies the name of the NDK library that
+              # you want CMake to locate.
+              log )
+
+include_directories(src/main/jni/ffmpeg/include)
+
+target_link_libraries( # Specifies the target library.  # 链接
+
+                       wlffmpeg  
+                       avcodec-58
+                       avdevice-58
+                       avfilter-7
+                       avformat-58
+                       avutil-56
+                       swresample-3
+                       swscale-5
+
+                       # Links the target library to the log library
+                       # included in the NDK.
+                       ${log-lib} )
+
+</code></pre></div></div>
+
+<p>关于<code class="highlighter-rouge">CMake</code>配置可以参见<a href="https://developer.android.com/studio/projects/configure-cmake">文档</a></p>
+
+<p>在模块级别的<code class="highlighter-rouge">build.gradle</code>下配置:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>android {
+    ...
+    defaultConfig {
+        ...
+        externalNativeBuild {
+            cmake {
+                cppFlags "" 
+            }
+            ndk {
+                abiFilters "armeabi-v7a" # 指定CPU架构
+            }
+        }
+        sourceSets {
+            main {
+                jniLibs.srcDirs = ['src/main/jni/ffmpeg']  # 指定jni路径
+            }
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path 'CMakeLists.txt' # 指定cmake的配置文件路径
+        }
+    }
+}
+</code></pre></div></div>
+
+<p>创建<code class="highlighter-rouge">FFmpeg.java</code>类, 使用静态代码块加载动态链接库, 定义<code class="highlighter-rouge">native</code>方法<code class="highlighter-rouge">playMyMedia()</code>, 如下:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class FFmpeg {
+    static {
+        System.loadLibrary("avutil-56");
+        System.loadLibrary("swresample-3");
+        System.loadLibrary("avcodec-58");
+        System.loadLibrary("avformat-58");
+        System.loadLibrary("swscale-5");
+        System.loadLibrary("avfilter-7");
+        System.loadLibrary("avdevice-58");
+        System.loadLibrary("wlffmpeg"); // 注意不要忘了加载这个库
+    }
+
+    public native void playMyMedia(String url);
+}
+</code></pre></div></div>
+
+<p>在<code class="highlighter-rouge">playMyMedia()</code>上快捷键<code class="highlighter-rouge">Alt + Enter</code>选择<code class="highlighter-rouge">create function xxx</code>, 可以自动创建对应的<code class="highlighter-rouge">.c</code>文件, 当然该<code class="highlighter-rouge">.c</code>文件也可以自命名, 此处命名为<code class="highlighter-rouge">player.c</code>; <code class="highlighter-rouge">player.c</code>的完整代码如下: 该代码摘自<a href="https://blog.csdn.net/ywl5320/article/details/75136986">博客</a></p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#include &lt;jni.h&gt;
+#include "libavformat/avformat.h"
+#include &lt;android/log.h&gt;
+#define LOGI(FORMAT,...) __android_log_print(ANDROID_LOG_INFO,"HusterYP",FORMAT,##__VA_ARGS__);  // 输出到AS的log中
+#define LOGE(FORMAT,...) __android_log_print(ANDROID_LOG_ERROR,"HusterYP",FORMAT,##__VA_ARGS__);
+
+JNIEXPORT void JNICALL
+Java_com_gif_ping_jnidemo_FFmpeg_playMyMedia(JNIEnv *env, jobject instance, jstring url_) {
+    const char *url = (*env)-&gt;GetStringUTFChars(env, url_, 0);
+    LOGI("url:%s", url);
+    av_register_all();
+    AVCodec *c_temp = av_codec_next(NULL);
+    while (c_temp != NULL)
+    {
+        switch (c_temp-&gt;type)
+        {
+            case AVMEDIA_TYPE_VIDEO:
+                LOGI("[Video]:%s", c_temp-&gt;name);
+                break;
+            case AVMEDIA_TYPE_AUDIO:
+                LOGI("[Audio]:%s", c_temp-&gt;name);
+                break;
+            default:
+                LOGI("[Other]:%s", c_temp-&gt;name);
+                break;
+        }
+        c_temp = c_temp-&gt;next;
+    }
+    (*env)-&gt;ReleaseStringUTFChars(env, url_, url);
+}
+</code></pre></div></div>
+
+<p>然后在<code class="highlighter-rouge">MainActivity</code>中使用, 也比较简单; 注意添加网络权限, 在<code class="highlighter-rouge">log</code>中就可以看到输出的视频信息啦~</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class MainActivity extends AppCompatActivity {
+
+    FFmpeg mFFmpeg;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        init();
+    }
+
+    private void init() {
+        mFFmpeg = new FFmpeg();
+        mFFmpeg.playMyMedia("http://video.xxx"); // 随便找一个视频url啦~
+    }
+}
+</code></pre></div></div>
+
+<p>到这里, 项目应该就能跑起来啦~</p>
+
+<hr />
+
+<h2 id="三-参考链接">三. 参考链接</h2>
+
+<p><a href="https://medium.com/@karthikcodes1999/cross-compiling-ffmpeg-4-0-for-android-b988326f16f2">Cross Compiling FFmpeg 4.0 for Android</a></p>
+
+<p><a href="https://blog.csdn.net/yhaolpz/article/details/76408829">Android 集成 FFmpeg (一) 基础知识及简单调用</a></p>
+
+<p><a href="https://blog.csdn.net/ywl5320/article/details/75136986">Android Studio通过cmake创建FFmpeg项目</a></p>
+
+
+                <hr>
+
+                
+
+
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/2018/11/15/%E8%BF%9B%E7%A8%8B%E4%B8%8E%E7%BA%BF%E7%A8%8B/" data-toggle="tooltip" data-placement="top" title="进程与线程">&larr; Previous Post</a>
+                    </li>
+                    
+                    
+                    <li class="next">
+                        <a href="/2018/11/18/Note/" data-toggle="tooltip" data-placement="top" title="Note">Next Post &rarr;</a>
+                    </li>
+                    
+                </ul>
+
+
+                
+
+                
+                <!-- disqus 评论框 start -->
+                <div class="comment">
+                    <div id="disqus_thread" class="disqus-thread"></div>
+                </div>
+                <!-- disqus 评论框 end -->
+                
+
+            </div>
+
+    <!-- Sidebar Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+        				
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#Algorithm" title="Algorithm" rel="3">
+                                    Algorithm
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#Draft" title="Draft" rel="3">
+                                    Draft
+                                </a>
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#Java" title="Java" rel="13">
+                                    Java
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#Android" title="Android" rel="9">
+                                    Android
+                                </a>
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#操作系统" title="操作系统" rel="2">
+                                    操作系统
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#View" title="View" rel="2">
+                                    View
+                                </a>
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+        				
+        			</div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+                <hr>
+                <h5>FRIENDS</h5>
+                <ul class="list-inline">
+                    
+                        <li><a href="https://tech.meituan.com/archives">美团点评</a></li>
+                    
+                        <li><a href="https://eriri.ink/">天宇</a></li>
+                    
+                </ul>
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+
+<!-- disqus 公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = "HusterYP";
+    var disqus_identifier = "/2018/11/17/FFmpeg交叉编译与接入Android工程";
+    var disqus_url = "http://localhost:4000/2018/11/17/FFmpeg%E4%BA%A4%E5%8F%89%E7%BC%96%E8%AF%91%E4%B8%8E%E6%8E%A5%E5%85%A5Android%E5%B7%A5%E7%A8%8B/";
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<!-- disqus 公共JS代码 end -->
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("http://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                    
+                    
+
+                    <!-- add Weibo, Zhihu by Hux, add target = "_blank" to <a> by Hux -->
+                    
+                    
+
+
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/HusterYP">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; 袁平 2018
+                    <br>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js "></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/js/bootstrap.min.js "></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js "></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("http://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+
+
+<!-- Baidu Tongji -->
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>

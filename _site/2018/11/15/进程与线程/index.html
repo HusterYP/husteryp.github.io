@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Hello-World">
+    <meta name="keyword"  content="">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>进程与线程 - 袁平 | HusterYP-Blog</title>
+
+    <link rel="canonical" href="http://localhost:4000/2018/11/15/%E8%BF%9B%E7%A8%8B%E4%B8%8E%E7%BA%BF%E7%A8%8B/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    <!-- Pygments Github CSS -->
+    <link rel="stylesheet" href="/css/syntax.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="http://cdn.staticfile.org/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">袁平</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/about/">About</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/tags/">Tags</a>
+                    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Image to hack wechat -->
+<!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="/img/tag-bg.jpg" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/img/tag-bg.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/#操作系统" title="操作系统">操作系统</a>
+                        
+                    </div>
+                    <h1>进程与线程</h1>
+                    
+                    
+                    <h2 class="subheading">进程与线程总结</h2>
+                    
+                    <span class="meta">Posted by 袁平 on November 15, 2018</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+				<h1 id="前言">前言</h1>
+
+<blockquote>
+  <p>操作系统之进程与线程总结</p>
+</blockquote>
+
+<hr />
+
+<h1 id="正文">正文</h1>
+
+<hr />
+
+<h2 id="一-进程">一. 进程</h2>
+
+<p>定义: 一个运行中的程序</p>
+
+<p>进程和程序的区别: 一个进程是某种类型的活动, 它有程序, 输入, 输出以及状态, 如果一个程序运行了两遍, 则算作两个进程</p>
+
+<p>进程地址空间见下图:</p>
+
+<p><img src="/img/post/CS/进程地址空间.png" alt="进程地址空间" /></p>
+
+<p>内核模式和用户模式的实现: 通常是用某个控制寄存器中的一个模式位实现的</p>
+
+<p>进程有三种状态: 运行态, 就绪态, 阻塞态; 其相互之间的切换见下</p>
+
+<p><img src="/img/post/CS/进程状态切换.png" alt="进程状态切换" /></p>
+
+<p>子进程的回收: 当一个进程由于某种原因终止时, 内核并不是立即把它从系统中清除, 相反, 进程被保持在已终止的状态, 知道被它的父进程回收, 一个终止但还未被回收的进程称为僵死进程, 即使僵死进程没有运行, 他们仍然消耗系统的内存资源; 如果一个父进程终止了, 内核会安排<code class="highlighter-rouge">init</code>进程成为它的孤儿进程的养父</p>
+
+<h3 id="11-进程创建fork">1.1 进程创建–fork()</h3>
+
+<p>通过<code class="highlighter-rouge">fork</code>可以创建进程, 新创建的子进程与父进程几乎但不是完全相同的, 子进程得到与父进程用户级虚拟地址空间相同(但是独立)的副本, 包括代码和数据段, 堆, 共享库以及用户栈, 子进程还获得与父进程任何打开文件描述符相同的副本, 这就意味着当父进程调用<code class="highlighter-rouge">fork</code>时, 子进程可以读写父进程中打开的任何文件; 其最大的区别就是具有不同的<code class="highlighter-rouge">UID</code></p>
+
+<p>通常子进程会执行<code class="highlighter-rouge">execve</code>或一个相同的系统调用以修改其内存映像并运行一个新的程序</p>
+
+<p><code class="highlighter-rouge">fork</code>函数调用一次但是返回两次, 一次是在父进程中, 另一次是在新创建的子进程中, 参见一下代码</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>int main() 
+{
+    pid_t pid;
+    int x = 1;
+    pid = Fork();
+    if (pid == 0) // 子进程
+    {
+        printf("Child: x = %d\n", ++x); 
+        exit(0);
+    }
+    printf("Parent: x = %d\n", --x); // 父进程
+    exit(0);
+}
+</code></pre></div></div>
+
+<p>输出(注意由于并发不定性, 所以输出顺序不定):</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Parent: x = 0
+Child: x = 2
+</code></pre></div></div>
+
+<p>注意理解上述程序:</p>
+
+<blockquote>
+  <ol>
+    <li>调用一次, 返回两次</li>
+    <li>并发执行</li>
+    <li>相同但是独立的地址空间: 写时复制; 子进程共享父进程的所有内存, 但这块内存通过写时复制共享, 这意味着一旦两者之一想要修改部分内存, 则这块内存首先被明确的复制, 以确保修改发生在私有内存区域</li>
+    <li>共享文件: 当运行这个程序时, 我们注意到父进程和子进程都把他们的输出显示到屏幕上, 原因是子进程继承了父进程所有的打开文件, 当父进程调用<code class="highlighter-rouge">fork</code>时, <code class="highlighter-rouge">stdout</code>文件是打开的, 并指向屏幕, 子进程继承了这个文件, 因此它的输出也是指向屏幕的(<strong>注意理解此处</strong>)</li>
+  </ol>
+</blockquote>
+
+<h3 id="12-进程间通信">1.2 进程间通信</h3>
+
+<h4 id="121-如何保证临界区互斥">1.2.1 如何保证临界区互斥</h4>
+
+<ol>
+  <li>
+    <p>屏蔽中断: 在单处理器系统中, 最简单的方法是使每个进程在刚刚进入临界区后立即屏蔽所有中断, 并在要离开之前再打开中断</p>
+  </li>
+  <li>
+    <p>锁变量</p>
+  </li>
+  <li>
+    <p>严格的轮换法: 自旋锁</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">Peterson</code>解法</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">TSL</code>指令: 测试并加锁; 读字和写字操作保证是不可分割的, 即该指令结束之前其他处理器均不允许访问该内存字; 执行<code class="highlighter-rouge">TSL</code>指令的<code class="highlighter-rouge">CPU</code>锁住内存总线, 以禁止其他<code class="highlighter-rouge">CPU</code>在本指令结束之前访问内存(原子操作的更底层解释)</p>
+  </li>
+</ol>
+
+<h4 id="122-生产者消费者问题">1.2.2 生产者消费者问题</h4>
+
+<ol>
+  <li>信号量: 用一个整型变量来累计唤醒次数</li>
+</ol>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#define N 100 // 缓冲区的槽数目
+typedef int semaphore; // 信号量是一种特殊类型的整型数据
+semaphore mutex = 1; // 控制对临界区的访问
+semaphore empty = N; // 计数缓冲区的空槽数目
+semaphore full = 0; // 计数缓冲区的满槽数目
+
+void producer(void)
+{   
+    int item;
+
+    while(true)
+    {   
+        item = produce_item();
+        down(&amp;empty); // 将空槽数目减一; 注意理解, 若交换这里两个down操作的顺序, 可能会造成死锁
+        down(&amp;mutex); // 进入临界区
+        insert_item(item);
+        up(&amp;mutex); // 离开临界区
+        up(&amp;full); // 将满槽数目加一
+    }
+}
+
+void consumer(void)
+{
+    int item;
+
+    while(true)
+    {
+        down(&amp;full);
+        down(&amp;mutex);
+        item = remove_item();
+        up(&amp;mutex);
+        up(&amp;empty);
+        comsume_item(item);
+    }
+}
+</code></pre></div></div>
+
+<ol>
+  <li>
+    <p>互斥量: 没有计数能力, 可以处于两态之一: 解锁和加锁</p>
+  </li>
+  <li>
+    <p>管程: 一个管程是一个由过程, 变量以及数据等组成的一个集合, 它们组成一个特殊的模块或软件包, 进程可以在任何需要的时候调用管程中的过程, 但是不能在管程之外声明的过程中直接访问管程内的数据结构</p>
+  </li>
+</ol>
+
+<p><img src="/img/post/CS/管程.png" alt="管程" /></p>
+
+<p>进入管程的互斥由编译器负责, 但通常的做法是用一个互斥量或二元信号量</p>
+
+<ol>
+  <li>避免锁: 读-复制-更新</li>
+</ol>
+
+<h3 id="13-调度">1.3 调度</h3>
+
+<p>进程切换做的工作: 首先用户态切换到内核态, 然后保存当前进程的状态, 包括在进程表中存储器值; 在许多系统中, 内存映像(如: 页表内内存访问位)也必须保存, 接着, 通过运行调度程序选择一个新进程, 之后, 将该新进程的内存映像装进<code class="highlighter-rouge">MMU</code>, 最后新进程开始运行; 除此之外, 进程切换还要使整个内存高速缓存失效, 强迫缓存从内存中动态重新装入两次(进入内核一次, 离开内核一次)</p>
+
+<p><img src="/img/post/CS/上下文切换.png" alt="上下文切换" /></p>
+
+<h4 id="131-调度时机">1.3.1 调度时机</h4>
+
+<blockquote>
+  <p>什么时候调度</p>
+</blockquote>
+
+<ol>
+  <li>
+    <p>创建一个新进程之后, 决定是运行子进程还是父进程</p>
+  </li>
+  <li>
+    <p>在一个进程退出时</p>
+  </li>
+  <li>
+    <p>当一个进程阻塞在<code class="highlighter-rouge">I/O</code>和信号量上或由于其他原因阻塞时</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">I/O</code>中断时</p>
+  </li>
+</ol>
+
+<h4 id="132-调度策略">1.3.2 调度策略</h4>
+
+<p>有三种环境:</p>
+
+<blockquote>
+  <ol>
+    <li>批处理</li>
+    <li>交互式</li>
+    <li>实时</li>
+  </ol>
+</blockquote>
+
+<ol>
+  <li>批处理</li>
+</ol>
+
+<blockquote>
+  <ol>
+    <li>先来先服务</li>
+    <li>最短作业优先</li>
+    <li>最短剩余时间优先</li>
+  </ol>
+</blockquote>
+
+<ol>
+  <li>交互式</li>
+</ol>
+
+<blockquote>
+  <ol>
+    <li>轮转调度: 时间分片; 维护一个进程队列, 用完时间片后, 排到队列末尾</li>
+    <li>优先级调度</li>
+    <li>多级队列</li>
+    <li>最短进程优先</li>
+    <li>保证调度</li>
+    <li>彩票调度</li>
+    <li>公平分享调度</li>
+  </ol>
+</blockquote>
+
+<h4 id="133-读者-写者问题">1.3.3 读者-写者问题</h4>
+
+<p>实现目标是: 可以多个读者</p>
+
+<blockquote>
+  <p>以数据库为例</p>
+</blockquote>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>typedef int semaphore;
+semaphore mutex = 1; 
+semaphore db = 1; // 控制对数据库的访问
+int rc = 0; // 正在读或者即将读的进程数目
+
+void reader(void)
+{
+    while(true)
+    {
+        down(&amp;mutex); // 获得对rc的互斥访问权
+        rc = rc + 1; // 多了一个读者
+        if (rc == 1) // 如果是第一个读者
+            down(&amp;db);
+        up(&amp;mutex);
+        read_data_base(); // 访问数据
+        down(&amp;mutex);
+        rc = rc - 1; // 减少了一个读者
+        if (rc == 0) // 如果是最后一个读者
+            up(&amp;db); 
+        up(&amp;mutex);
+        use_data_read(); // 非临界区
+    }
+}
+
+void writer(void) 
+{   
+    while(true)
+    {
+        think_up_data(); // 非临界区
+        down(&amp;db); // 获取互斥访问
+        write_data_basae(); // 更新数据
+        up(&amp;db); // 释放互斥访问
+    }
+}
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="二-线程">二. 线程</h2>
+
+<p>为什么要使用线程:</p>
+
+<blockquote>
+  <ol>
+    <li>并行实体拥有共享同一个地址空间和所有可用数据的能力, 这是多进程无法表达的</li>
+    <li>线程比进程更轻量级, 它们比进程更容易创建, 也更容易撤销</li>
+    <li>若多个线程都是<code class="highlighter-rouge">CPU</code>密集型的, 那么并不能获得性能上的增强(考虑调度消耗时间), 但是如果存在大量的计算和大量的<code class="highlighter-rouge">I/O</code>处理, 拥有多个线程允许这些活动彼此重叠进行, 从而会加快应用程序执行的速度</li>
+  </ol>
+</blockquote>
+
+<p>在线程中有一个程序计数器, 用来记录接着要执行哪一条指令, 线程拥有寄存器, 用来保存线程当前的工作变量, 线程还拥有一个堆栈, 其中每一帧保存了一个已调用的但是还没有从中返回的过程</p>
+
+<p><img src="/img/post/CS/线程与进程.png" alt="线程与进程" /></p>
+
+<p>进程用于把资源集中到一起, 而线程则是在<code class="highlighter-rouge">CPU</code>上被调度执行的实体(资源管理的单位是进程)</p>
+
+
+
+                <hr>
+
+                
+
+
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/2018/11/09/Java%E5%B9%B6%E5%8F%91-%E4%B8%89/" data-toggle="tooltip" data-placement="top" title="Java并发[三]">&larr; Previous Post</a>
+                    </li>
+                    
+                    
+                    <li class="next">
+                        <a href="/2018/11/17/FFmpeg%E4%BA%A4%E5%8F%89%E7%BC%96%E8%AF%91%E4%B8%8E%E6%8E%A5%E5%85%A5Android%E5%B7%A5%E7%A8%8B/" data-toggle="tooltip" data-placement="top" title="FFmpeg交叉编译与接入Android工程">Next Post &rarr;</a>
+                    </li>
+                    
+                </ul>
+
+
+                
+
+                
+                <!-- disqus 评论框 start -->
+                <div class="comment">
+                    <div id="disqus_thread" class="disqus-thread"></div>
+                </div>
+                <!-- disqus 评论框 end -->
+                
+
+            </div>
+
+    <!-- Sidebar Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+        				
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#Algorithm" title="Algorithm" rel="3">
+                                    Algorithm
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#Draft" title="Draft" rel="3">
+                                    Draft
+                                </a>
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#Java" title="Java" rel="13">
+                                    Java
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#Android" title="Android" rel="9">
+                                    Android
+                                </a>
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#操作系统" title="操作系统" rel="2">
+                                    操作系统
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#View" title="View" rel="2">
+                                    View
+                                </a>
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+        				
+        			</div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+                <hr>
+                <h5>FRIENDS</h5>
+                <ul class="list-inline">
+                    
+                        <li><a href="https://tech.meituan.com/archives">美团点评</a></li>
+                    
+                        <li><a href="https://eriri.ink/">天宇</a></li>
+                    
+                </ul>
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+
+<!-- disqus 公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = "HusterYP";
+    var disqus_identifier = "/2018/11/15/进程与线程";
+    var disqus_url = "http://localhost:4000/2018/11/15/%E8%BF%9B%E7%A8%8B%E4%B8%8E%E7%BA%BF%E7%A8%8B/";
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<!-- disqus 公共JS代码 end -->
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("http://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                    
+                    
+
+                    <!-- add Weibo, Zhihu by Hux, add target = "_blank" to <a> by Hux -->
+                    
+                    
+
+
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/HusterYP">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; 袁平 2018
+                    <br>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js "></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/js/bootstrap.min.js "></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js "></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("http://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+
+
+<!-- Baidu Tongji -->
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>
