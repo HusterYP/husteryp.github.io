@@ -5,9 +5,437 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Sun, 18 Nov 2018 16:41:43 +0800</pubDate>
-    <lastBuildDate>Sun, 18 Nov 2018 16:41:43 +0800</lastBuildDate>
+    <pubDate>Wed, 12 Dec 2018 21:58:57 +0800</pubDate>
+    <lastBuildDate>Wed, 12 Dec 2018 21:58:57 +0800</lastBuildDate>
     <generator>Jekyll v3.8.3</generator>
+    
+      <item>
+        <title>ListView[一]</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;本文将从&lt;code class=&quot;highlighter-rouge&quot;&gt;ListView&lt;/code&gt;的基本使用入手, 介绍常见的&lt;code class=&quot;highlighter-rouge&quot;&gt;ListView&lt;/code&gt;性能优化问题&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ListView&lt;/code&gt;采用适配器模式, 关于&lt;code class=&quot;highlighter-rouge&quot;&gt;ListView&lt;/code&gt;的优化主要体现在&lt;code class=&quot;highlighter-rouge&quot;&gt;Adapter&lt;/code&gt;上; 本文也主要从&lt;code class=&quot;highlighter-rouge&quot;&gt;Adapter&lt;/code&gt;入手, 分析常见的优化问题&lt;/p&gt;
+
+&lt;p&gt;文章代码基于&lt;code class=&quot;highlighter-rouge&quot;&gt;kotlin&lt;/code&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;一-最差版本&quot;&gt;一. 最差版本&lt;/h2&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ListView&lt;/code&gt;的性能问题主要是其通常用于展示大量数据造成的; 我们手指上下滑动的时候伴随着&lt;code class=&quot;highlighter-rouge&quot;&gt;Adapter.getView()&lt;/code&gt;方法的不断调用, &lt;code class=&quot;highlighter-rouge&quot;&gt;getView()&lt;/code&gt;的主要作用是去解析&lt;code class=&quot;highlighter-rouge&quot;&gt;XML&lt;/code&gt;生成&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;视图, 但是这一过程是一个耗时操作, 如果每次滑动都去&lt;code class=&quot;highlighter-rouge&quot;&gt;inflate&lt;/code&gt;的话, 势必会造成界面的卡顿, 如下即是这种情况: 每次都去&lt;code class=&quot;highlighter-rouge&quot;&gt;inflate&lt;/code&gt;一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Item&lt;/code&gt;, 然后再&lt;code class=&quot;highlighter-rouge&quot;&gt;findViewById()&lt;/code&gt;再进行设置&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;// 最差版本
+class MyAdapter(val context: Context) : BaseAdapter() {
+
+    var data = ArrayList&amp;lt;String&amp;gt;()
+    private val mInflater by lazy {
+        context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
+    }
+
+    override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
+        val view = mInflater.inflate(R.layout.item_main, parent, false)
+        view.setOnClickListener{
+            Toast.makeText(context,data[position],Toast.LENGTH_SHORT).show()
+        }
+        view.findViewById&amp;lt;TextView&amp;gt;(R.id.item_text).text = data[position]
+        return view
+    }
+
+    // 其他方法按照常规写, 故此省略
+    ...
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;二-优化一&quot;&gt;二. 优化一&lt;/h2&gt;
+
+&lt;p&gt;为了避免每次滑动的时候都要&lt;code class=&quot;highlighter-rouge&quot;&gt;inflate&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;Google&lt;/code&gt;官方提供了&lt;code class=&quot;highlighter-rouge&quot;&gt;ListView&lt;/code&gt;的缓存机制, 即将滑动出屏幕外面的&lt;code class=&quot;highlighter-rouge&quot;&gt;Item&lt;/code&gt;缓存下来, 因为通常情况下&lt;code class=&quot;highlighter-rouge&quot;&gt;ListView&lt;/code&gt;要展示的数据类型都是相同的, 所以可以复用同样的&lt;code class=&quot;highlighter-rouge&quot;&gt;Item&lt;/code&gt;界面, 只是展示数据不同; 我们注意到&lt;code class=&quot;highlighter-rouge&quot;&gt;getView()&lt;/code&gt;的参数中有一个&lt;code class=&quot;highlighter-rouge&quot;&gt;convertView&lt;/code&gt;, 这个便是被缓存下来的&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;, 所以我们第一次优化可以如下: 主要就是判断&lt;code class=&quot;highlighter-rouge&quot;&gt;convertView&lt;/code&gt;是否为空, 如果为空, 说明没有缓存的&lt;code class=&quot;highlighter-rouge&quot;&gt;Item&lt;/code&gt;, 此时就需要去&lt;code class=&quot;highlighter-rouge&quot;&gt;inflate&lt;/code&gt;, 否则, 直接更改展示数据即可&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class MyAdapter(val context: Context) : BaseAdapter() {
+
+    var data = ArrayList&amp;lt;String&amp;gt;()
+    private val mInflater by lazy {
+        context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
+    }
+
+    override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
+        if (convertView == null) {
+            val view = mInflater.inflate(R.layout.item_main, parent, false)
+            view.findViewById&amp;lt;TextView&amp;gt;(R.id.item_text).text = data[position]
+            return view
+        }
+        convertView.apply {
+            findViewById&amp;lt;TextView&amp;gt;(R.id.item_text).text = data[position]
+        }
+        return convertView
+    }
+
+    // 其他方法按照常规写, 故此省略
+    ...
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;三-优化二&quot;&gt;三. 优化二&lt;/h2&gt;
+
+&lt;p&gt;到这里, 其实最耗时的部分已经被优化了, 那么我们是否还能够进行优化呢? 我们注意到每次调用&lt;code class=&quot;highlighter-rouge&quot;&gt;getView&lt;/code&gt;的时候, 虽然避免了每次都去&lt;code class=&quot;highlighter-rouge&quot;&gt;inflate&lt;/code&gt;, 但是我们仍然每次都调用了&lt;code class=&quot;highlighter-rouge&quot;&gt;findViewById()&lt;/code&gt;, 那么这部分我们是否也可以避免掉呢, 当然是可以的, 此时我们的&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewHolder&lt;/code&gt;就派上用场啦~&lt;/p&gt;
+
+&lt;p&gt;这里我们使用了一个内部类, 将每次&lt;code class=&quot;highlighter-rouge&quot;&gt;findViewById&lt;/code&gt;找到的&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;保存下来, 因为我们前面说过了, &lt;code class=&quot;highlighter-rouge&quot;&gt;ListView&lt;/code&gt;展示的时候, 通常数据类型都是相同的, 即界面相同, 只是每个&lt;code class=&quot;highlighter-rouge&quot;&gt;Item&lt;/code&gt;展示的数据不同而已, 因此也就没有必要每次都去执行一遍&lt;code class=&quot;highlighter-rouge&quot;&gt;findViewById()&lt;/code&gt;, 这也是&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewHolder&lt;/code&gt;所做的主要的优化&lt;/p&gt;
+
+&lt;p&gt;另外, 还需要提一下的是这里保存&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewHolder&lt;/code&gt;用的是&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;tag&lt;/code&gt;, 其实我们还可以用这个&lt;code class=&quot;highlighter-rouge&quot;&gt;tag&lt;/code&gt;保存许多我们需要的值, 而不用局限与&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewHolder&lt;/code&gt;&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class MyAdapter(val context: Context) : BaseAdapter() {
+
+    var data = ArrayList&amp;lt;String&amp;gt;()
+    private val mInflater by lazy {
+        context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
+    }
+
+    override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
+        var holder: MyViewHolder
+        if (convertView == null) {
+            val view = mInflater.inflate(R.layout.item_main, parent, false)
+            holder = MyViewHolder(view)
+            holder.textView.text = data[position]
+            view.tag = holder
+            return view
+        }
+        holder = convertView.tag as MyViewHolder
+        holder.textView.text = data[position]
+        return convertView
+    }
+    
+    // 其他方法按照常规写, 故此省略
+    ...
+
+    class MyViewHolder(val view: View){
+        val textView: TextView by lazy {
+            view.findViewById&amp;lt;TextView&amp;gt;(R.id.item_text)
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;四-优化三&quot;&gt;四. 优化三&lt;/h2&gt;
+
+&lt;p&gt;将异步操作放在子线程中执行; 其实这个也不算&lt;code class=&quot;highlighter-rouge&quot;&gt;ListView&lt;/code&gt;自身特殊的优化, 而是由&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;自身特性所决定的&lt;/p&gt;
+
+&lt;p&gt;如下; 当加载大图时, 使用异步的&lt;code class=&quot;highlighter-rouge&quot;&gt;AsyncTask&lt;/code&gt;去网络下载好后再展示到界面&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class MyAdapter(private val context: Context) : BaseAdapter() {
+
+    private val mInflater by lazy {
+        context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
+    }
+
+    override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
+        val view: View = convertView ?: mInflater.inflate(R.layout.item_main, parent, false)
+        val holder: ViewHolder = view.tag as ViewHolder? ?: ViewHolder(view)
+        ImageLoader(holder).execute(ImageUrl.url[position])
+        return view
+    }
+
+    // 其他方法按照常规写, 故此省略
+    ...
+
+    class ImageLoader(private var holder: ViewHolder) : AsyncTask&amp;lt;String, Void, Bitmap&amp;gt;() {
+
+        private val cache: LruCache&amp;lt;String, Bitmap&amp;gt; by lazy {
+            val maxMemory = Runtime.getRuntime().maxMemory()
+            val cacheSize = maxMemory / 8
+            object: LruCache&amp;lt;String, Bitmap&amp;gt;(cacheSize.toInt()) {
+                override fun sizeOf(key: String?, value: Bitmap?): Int {
+                    return value?.allocationByteCount ?: 0
+                }
+            }
+        }
+
+        override fun doInBackground(vararg params: String?): Bitmap? {
+            val urlStr = params[0]
+            var bitmap = cache.get(urlStr)
+            if (bitmap != null)
+                return bitmap
+            val url = URL(urlStr)
+            var connection: HttpURLConnection? = null
+            try {
+                connection = url.openConnection() as HttpURLConnection
+                connection.connectTimeout = 5000
+                connection.readTimeout = 5000
+                bitmap = BitmapFactory.decodeStream(connection.inputStream)
+                cache.put(urlStr, bitmap)
+            } catch (e: Exception) {
+                Log.d(&quot;@HusterYP&quot;,&quot;error&quot;, e)
+            } finally {
+                connection?.disconnect()
+            }
+            return bitmap
+        }
+
+        override fun onPostExecute(result: Bitmap?) {
+            holder.imageView.setImageBitmap(result)
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;上述代码其实还有问题; 只是解决了异步加载, 但是由于&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;视图的缓存复用, 当滑动的时候会出现&lt;code class=&quot;highlighter-rouge&quot;&gt;Item&lt;/code&gt;展示图片不断改变的现象; 关于此问题的解决可以参见&lt;a href=&quot;https://blog.csdn.net/guolin_blog/article/details/45586553&quot;&gt;博客&lt;/a&gt; (&lt;strong&gt;注:&lt;/strong&gt; 上述代码图片&lt;code class=&quot;highlighter-rouge&quot;&gt;URL&lt;/code&gt;也来自该博客)&lt;/p&gt;
+</description>
+        <pubDate>Wed, 12 Dec 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/12/12/ListView-%E4%B8%80/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/12/12/ListView-%E4%B8%80/</guid>
+        
+        <category>Android</category>
+        
+        
+      </item>
+    
+      <item>
+        <title>ListView</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;ListView笔记&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;问题: 展示大量数据, 处理内存开销和性能&lt;/p&gt;
+
+&lt;p&gt;复用: 重新填写内容而已&lt;/p&gt;
+
+&lt;p&gt;stable ID&lt;/p&gt;
+
+&lt;p&gt;ListView相关内容:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/ListView/ListView相关.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;getView():&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;错误的使用方式: 如下; 每次都会创建一个新的View视图(会去解析XML, 这是非常耗时的); 特别是当用户滑动的时候, 这种写法将产生大量的View视图&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/ListView/ListView_Slow_Way.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;正确的使用方式: 如下; 复用convertView; 但是下面这种写法也存在待优化的地方, 因为它每次都需要去findViewById(), 这点其实还可以改进&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/ListView/ListView_Right_Way.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;最快的方式: 如下; 使用ViewHolder, 节省findViewById的时间; 还可以通过setTag()和getTag()来存储更多的数据&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/ListView/ListView_Fast_Way.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;数据集更新的方式:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;notifyDataSetChanged()&lt;/li&gt;
+    &lt;li&gt;notifiyDataSetInvalidated(): 表示数据集无效了&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;getViewType()和getViewTypeCount()&lt;/p&gt;
+
+&lt;p&gt;可以通过设置Item的属性, enable或者disable, enable时Item可以被点击和选择, disable时不可被点击和选择; disable属性可以用于比如单纯的展示header展示等&lt;/p&gt;
+
+&lt;p&gt;HeaderView和FooterView:&lt;/p&gt;
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;listView.addHeaderView()&lt;/li&gt;
+    &lt;li&gt;listView.addFooterView()&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;List Selector: 高亮选中Item&lt;/p&gt;
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;可以在xml中指定属性&lt;code class=&quot;highlighter-rouge&quot;&gt;android:drawSelectorOnTop = &quot;true&quot;&lt;/code&gt;&lt;/li&gt;
+    &lt;li&gt;创建一个XML的selector选择器&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;自定义ListView的背景的时候会出现问题貌似; 好像会出现在滑动的时候出现全是黑色的情况; 解决办法:&lt;/p&gt;
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;xml中指定: &lt;code class=&quot;highlighter-rouge&quot;&gt;android:cacheColorHint = &quot;#00000000&quot;&lt;/code&gt;或者&lt;code class=&quot;highlighter-rouge&quot;&gt;android:cacheColorHint = &quot;@color/myBackgroundColor&quot;&lt;/code&gt;&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;在ScrollView中嵌套ListView&lt;/p&gt;
+
+&lt;p&gt;ListView中的Filter是什么?&lt;/p&gt;
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;场景: 当我们要展示的条目很多时, 我们可以设置选项让用户选择查看哪些分类的选项, 而不是全部展示&lt;/li&gt;
+    &lt;li&gt;将Adapter实现&lt;code class=&quot;highlighter-rouge&quot;&gt;Filterable&lt;/code&gt;接口即可(当Adapter继承的是BaseAdapter时, SimpleAdapter默认实现了&lt;code class=&quot;highlighter-rouge&quot;&gt;Filterable&lt;/code&gt;)&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;对ListView设置Item的点击监听:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;listView.setOnItemClickListener(new OnItemClickListener() {
+    @Override
+    public void onItemClick(AdapterView&amp;lt;?&amp;gt; parent, View view,
+        int position, long id) {
+        Toast.makeText(getApplicationContext(),
+            &quot;Click ListItem Number &quot; + position, Toast.LENGTH_LONG)
+            .show();
+    }
+});
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;获取LayoutInflator可以使用&lt;code class=&quot;highlighter-rouge&quot;&gt;context.getSystemService(Context.LAYOUT_INFLATER_SERVICE)&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;还可以设置ListView没有数据时的占位View, 指定id为&lt;code class=&quot;highlighter-rouge&quot;&gt;@android:id/empty&lt;/code&gt;的View即可&lt;/p&gt;
+
+&lt;h2 id=&quot;scrollview嵌套listview&quot;&gt;ScrollView嵌套ListView&lt;/h2&gt;
+
+&lt;p&gt;问题: 只能显示一个Item(ListView不能全部展示)&lt;/p&gt;
+
+&lt;h2 id=&quot;listview的item是scrollview&quot;&gt;ListView的Item是ScrollView&lt;/h2&gt;
+
+&lt;p&gt;ListView性能优化官方文档: https://developer.android.com/training/improving-layouts/smooth-scrolling
+性能优化官方推荐博客: https://android-developers.googleblog.com/2009/01/why-is-my-list-black-android.html&lt;/p&gt;
+
+&lt;p&gt;ListView和大多数Android组件一样有透明背景, 也就意味这你可以看到Window的背景色; 但是当使用自定义ListView背景或者改变Window背景的话, 会出现问题;&lt;/p&gt;
+
+&lt;p&gt;当ListView滑动时会依照不同的滑动方向来填充ListView; 比如从上往下填充或者从下往上填充;&lt;/p&gt;
+
+&lt;p&gt;优化: 除了Demo中写的几个常见的优化外; ListView的性能优化其实就是使getView()方法更快而已&lt;/p&gt;
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;异步加载: 对于耗时资源在getView中去异步加载; 但是有一个问题是当快速滑动时, 此时需要去处理滑动时不加载的情况&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;ListView  height设置wrap_content 导致getView()重复调用问题&lt;/p&gt;
+</description>
+        <pubDate>Sat, 08 Dec 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/12/08/ListView/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/12/08/ListView/</guid>
+        
+        <category>Draft</category>
+        
+        
+      </item>
+    
+      <item>
+        <title>红黑树</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;红黑树&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;实现&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;一-概述&quot;&gt;一. 概述&lt;/h2&gt;
+
+&lt;p&gt;红黑树是一颗平衡二叉树, 是为了避免二叉查找树在极端情况下形成单链表而表现出线性级别的时间复杂度; 红黑树的前身是&lt;code class=&quot;highlighter-rouge&quot;&gt;2-3&lt;/code&gt;查找树, 为了便于理解红黑树的各种旋转操作, 需要先了解一下&lt;code class=&quot;highlighter-rouge&quot;&gt;2-3&lt;/code&gt;查找树&lt;/p&gt;
+
+&lt;p&gt;平衡二叉树始终要保证的是所有空链接(指向一棵空树的链接)到根节点的距离相等&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;二-2-3查找树&quot;&gt;二. 2-3查找树&lt;/h2&gt;
+
+&lt;h3 id=&quot;21-基本概念&quot;&gt;2.1 基本概念&lt;/h3&gt;
+
+&lt;p&gt;为了保证树的平衡性, &lt;code class=&quot;highlighter-rouge&quot;&gt;2-3&lt;/code&gt;查找树允许树中的一个节点保存多个键; 如下图&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/RedBlackTree/2-3树.png&quot; alt=&quot;2-3查找树&quot; /&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;2-结点: 含有一个键(及其对应的值)和两条链接, 左链接指向的2-3树中的键都小于该结点, 右链接指向的2-3树中的键都大于该结点
+3-结点: 含有两个键(及其对应的值)和三条链接, 左链接指向的2-3树中的键都小于该结点, 右链接指向的2-3树中的键都大于该结点, 中链接指向的2-3树中的键介于该结点之间&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;一棵完美平衡的&lt;code class=&quot;highlighter-rouge&quot;&gt;2-3&lt;/code&gt;查找树中的所有空链接到根结点的距离都是相同的&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h3 id=&quot;22-2-3树的插入&quot;&gt;2.2 2-3树的插入&lt;/h3&gt;
+
+&lt;h4 id=&quot;221-向2-结点中插入新键&quot;&gt;2.2.1 向2-结点中插入新键&lt;/h4&gt;
+
+&lt;p&gt;这种情况比较简单, 直接将2-结点替换为3-结点即可&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/RedBlackTree/2-结点插入新键.png&quot; alt=&quot;2-结点插入新键&quot; /&gt;&lt;/p&gt;
+</description>
+        <pubDate>Thu, 06 Dec 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/12/06/%E7%BA%A2%E9%BB%91%E6%A0%91/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/12/06/%E7%BA%A2%E9%BB%91%E6%A0%91/</guid>
+        
+        <category>Algorithm</category>
+        
+        
+      </item>
+    
+      <item>
+        <title>AwesomeAndroid</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;记录一些有趣的&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;知识, 内容不限~&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;子线程更新ui&quot;&gt;子线程更新UI&lt;/h2&gt;
+
+&lt;p&gt;考虑如下代码:&lt;/p&gt;
+
+&lt;p&gt;注: &lt;code class=&quot;highlighter-rouge&quot;&gt;MainActivity&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;Layout&lt;/code&gt;布局只有一个&lt;code class=&quot;highlighter-rouge&quot;&gt;id&lt;/code&gt;为&lt;code class=&quot;highlighter-rouge&quot;&gt;main_text&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;TextView&lt;/code&gt;&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class MainActivity : AppCompatActivity() {
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+        initView()
+    }
+
+    private fun initView() {
+//        Thread { main_text.text = &quot;World&quot; }.start() // 更新UI成功
+        Thread {
+            sleep(200)
+            main_text.text = &quot;World&quot; // 更新UI失败(崩溃0)
+        }.start()
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;如上代码中, 在第二个子线程中跟新&lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;的时候失败了, 报错: &lt;code class=&quot;highlighter-rouge&quot;&gt;Only the original thread that created a view hierarchy can touch its views&lt;/code&gt;; 即常见的不能在子线程中更新&lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;; 但是在第一个子线程中跟新&lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;成功了, 原因是: 线程的检查是在&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewRootImp&lt;/code&gt;中的&lt;code class=&quot;highlighter-rouge&quot;&gt;checkThread()&lt;/code&gt;中, 但是在&lt;code class=&quot;highlighter-rouge&quot;&gt;onCreate()&lt;/code&gt;中, 此时&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewRootImp&lt;/code&gt;还没有创建, 所以此时无法&lt;code class=&quot;highlighter-rouge&quot;&gt;checkThread()&lt;/code&gt;, 实际上, &lt;code class=&quot;highlighter-rouge&quot;&gt;ViewRootImp&lt;/code&gt;的创建是在&lt;code class=&quot;highlighter-rouge&quot;&gt;onResume()&lt;/code&gt;方法回调之后, 在&lt;code class=&quot;highlighter-rouge&quot;&gt;WindowManagerGlobal&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;addView&lt;/code&gt;中创建的; 所以如果这里的&lt;code class=&quot;highlighter-rouge&quot;&gt;initView&lt;/code&gt;即使是在&lt;code class=&quot;highlighter-rouge&quot;&gt;onResume()&lt;/code&gt;中调用也是同样的现象&lt;/p&gt;
+</description>
+        <pubDate>Sat, 24 Nov 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/11/24/AwesomeAndroid/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/11/24/AwesomeAndroid/</guid>
+        
+        <category>Note</category>
+        
+        
+      </item>
     
       <item>
         <title>Note</title>
@@ -26,6 +454,10 @@
 &lt;h2 id=&quot;一-git&quot;&gt;一. Git&lt;/h2&gt;
 
 &lt;p&gt;&lt;a href=&quot;https://www.jianshu.com/p/d4d5e07ea0cd&quot;&gt;超赞的Git操作讲解&lt;/a&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;二-android&quot;&gt;二. Android&lt;/h2&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://qq634421026.github.io/2017/06/21/%E9%9D%A2%E8%AF%95%E9%A2%98%E6%95%B4%E7%90%86/&quot;&gt;Android面试&lt;/a&gt;&lt;/p&gt;
 </description>
         <pubDate>Sun, 18 Nov 2018 00:00:00 +0800</pubDate>
         <link>http://localhost:4000/2018/11/18/Note/</link>
@@ -404,6 +836,10 @@ Java_com_gif_ping_jnidemo_FFmpeg_playMyMedia(JNIEnv *env, jobject instance, jstr
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;p&gt;到这里, 项目应该就能跑起来啦~&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;工程参见&lt;a href=&quot;https://github.com/HusterYP/JNIDemo&quot;&gt;JNIDemo&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;FFmpeg&lt;/code&gt;编译参见: https://github.com/HusterYP/FFmpeg&lt;/p&gt;
 
 &lt;hr /&gt;
 
@@ -1254,850 +1690,6 @@ Deque: ArrayDeque, LinkedBlockingDeque&lt;/p&gt;
         <guid isPermaLink="true">http://localhost:4000/2018/10/31/Java%E5%B9%B6%E5%8F%91%E4%B8%80/</guid>
         
         <category>Java</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>编译器笔记与实验记录</title>
-        <description>&lt;h1 id=&quot;序言&quot;&gt;序言&lt;/h1&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;编译器,教程: http://mooc.study.163.com/learn/1000002001?tid=1000003000#/learn/content?type=detail&amp;amp;id=1000023001&amp;amp;cid=1000019000&lt;/li&gt;
-  &lt;li&gt;配套网站: http://staff.ustc.edu.cn/~bjhua/courses/compiler/2014/&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;一-编译器介绍&quot;&gt;一. 编译器介绍&lt;/h2&gt;
-&lt;ul&gt;
-  &lt;li&gt;概念: 编译器是一个程序,核心功能是把源程序代码翻译成为目标代码&lt;/li&gt;
-  &lt;li&gt;编译器核心功能如下图: 其中&lt;strong&gt;静态计算&lt;/strong&gt;表示的是经过编译器后, 目标程序和源程序的功能需要相同&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/Compiler/编译器核心功能.png&quot; alt=&quot;编译器核心功能&quot; /&gt;&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;解释器: 也是处理程序的一种程序;(解释器是在线的方式,也就是说解释器解释程序之后实际上还会执行该程序,而编译器只是生成可执行文件,称为离线形式, 编译器输出为可执行程序, 而解释器输出为程序执行结果)&lt;/li&gt;
-  &lt;li&gt;结构: 前端–&amp;gt;代码优化–&amp;gt;后端; 词法分析–&amp;gt;语法分析–&amp;gt;语义分析–&amp;gt;代码生成; (流水线模式)&lt;/li&gt;
-  &lt;li&gt;编译器结构: 如下图(一个没有优化的编译器结构)&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/Compiler/一个没有优化的编译器结构.png&quot; alt=&quot;一个没有优化的编译器&quot; /&gt;&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;栈式计算机: 如:JVM&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;二-词法分析&quot;&gt;二. 词法分析&lt;/h2&gt;
-&lt;ul&gt;
-  &lt;li&gt;编译器可以分为一个前端和后端, 前端又可细分为如下:&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/Compiler/前端.png&quot; alt=&quot;前端&quot; /&gt;&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;作用: 字符流–&amp;gt;词法分析–&amp;gt;记号流; (字符,关键字的切分等)&lt;/li&gt;
-  &lt;li&gt;记号流: 编译器内部定义的数据结构, 编码所识别出的词法单元; 如下是一个&lt;code class=&quot;highlighter-rouge&quot;&gt;C&lt;/code&gt;语言实现的记号流的数据结构&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/Compiler/记号流的数据结构.png&quot; alt=&quot;记号流&quot; /&gt;&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;词法分析的实现方法:
-    &lt;blockquote&gt;
-      &lt;ol&gt;
-        &lt;li&gt;手工编码实现方法: 是目前非常流行的实现方法,如:GCC,LLVM&lt;/li&gt;
-        &lt;li&gt;词法分析器的自动生成器: 可以快速成型,但是难以控制细节&lt;/li&gt;
-      &lt;/ol&gt;
-    &lt;/blockquote&gt;
-  &lt;/li&gt;
-  &lt;li&gt;手工分析法: 转移图(实际上有点类似状态转移,需要注意的是有的地方需要回滚(回滚的实现: 一个可以通过文件指针的回退,另一个是可以将文件内容读取到一个字符数组中,然后需要回退时将索引减一即可))&lt;/li&gt;
-  &lt;li&gt;关键字表算法: 对给定语言的所有关键字构造一个Hash表,也就是对所有的标识符和关键字,先统一按标识符的转移图进行识别,识别完成后,再进一步查表看是否是关键字(关键字的完美Hash表: 完美哈希函数是没有冲突的的哈希函数，也就是，函数 H 将 N 个 KEY 值映射到 M 个整数上，这里 M&amp;gt;=N ，而且，对于任意的 KEY1 ，KEY2 ，H( KEY1 ) != H( KEY2 ) ，并且，如果 M = = N ，则 H 是最小完美哈希函数（Minimal Perfect Hash Function，简称MPHF)&lt;a href=&quot;https://www.ibm.com/developerworks/cn/linux/l-gperf.html&quot;&gt;参考博文&lt;/a&gt;)&lt;/li&gt;
-  &lt;li&gt;自动生成法(生成器): 通过一些转换工具,如: lex,flex,jlex等将正则表达式转换为词法分析器; 需要用到:
-    &lt;blockquote&gt;
-      &lt;ol&gt;
-        &lt;li&gt;正则&lt;/li&gt;
-        &lt;li&gt;有限状态自动机: 输入的串是否能被状态机接受(DFA(确定的),NFA(不确定的))&lt;/li&gt;
-        &lt;li&gt;正则表达式到&lt;code class=&quot;highlighter-rouge&quot;&gt;NFA&lt;/code&gt;是&lt;code class=&quot;highlighter-rouge&quot;&gt;Thompson&lt;/code&gt;算法,从&lt;code class=&quot;highlighter-rouge&quot;&gt;NFA&lt;/code&gt;到&lt;code class=&quot;highlighter-rouge&quot;&gt;DFA&lt;/code&gt;是子集构造算法,从DFA到词法分析器是Hopcraft最小化算法&lt;/li&gt;
-      &lt;/ol&gt;
-    &lt;/blockquote&gt;
-  &lt;/li&gt;
-  &lt;li&gt;DFA: 确定状态有限自动机(只有一个状态)(词法分析器是一个DFA); NFA: 非确定有限状态自动机(有多个状态)&lt;/li&gt;
-  &lt;li&gt;正则表达式转换为词法分析器:&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/Compiler/正则表达式转换为词法分析器.png&quot; alt=&quot;正则表达式转换为词法分析器&quot; /&gt;&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;DFA最小化算法: Hopcroft算法&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;三-语法分析&quot;&gt;三. 语法分析&lt;/h2&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;语法分析器: 判断程序是否符合语法规则&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/Compiler/语法分析器的作用.png&quot; alt=&quot;语法分析器的作用&quot; /&gt;&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;语法分析的数据工具: 上下文无关文法(乔姆斯基文法体系: 为研究自然语言提供的一系列数学工具)&lt;/li&gt;
-&lt;/ul&gt;
-</description>
-        <pubDate>Sun, 28 Oct 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/10/28/Compiler/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/10/28/Compiler/</guid>
-        
-        <category>Compiler</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>数字图像处理</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;p&gt;数字图像处理笔记&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;可以使用Utrapdit软件查看图片的ASIIC值(可以看任何文件的ASIIC值)&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;h2 id=&quot;一-第一讲-数字图像处理概述&quot;&gt;一. 第一讲 数字图像处理概述&lt;/h2&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;图形和图像的区别:&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;图形: 一条指令; 比如一条直线的表示&lt;/li&gt;
-    &lt;li&gt;图像: 大矩阵, 里面的数据是每一点的颜色值&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;宽高相乘就是图像的像素&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;图像空间分辨率和灰度级分辨率(表用多少位表示)&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;jpg是压缩格式; 网上的视屏也是经过压缩后传输再解压缩播放的&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;二-第二讲-图像存储格式&quot;&gt;二. 第二讲 图像存储格式&lt;/h2&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;单色图像(黑白图像): 一位;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;8位索引图像: 有一个颜色表和一个像颜色表的序号的数据矩阵&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;8位索引灰度图像: 颜色表中的RGB相等&lt;/li&gt;
-    &lt;li&gt;8位伪彩色索引图像: 颜色表中的RGB值不等&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;彩色图像: 分为伪彩色和真彩色(每个像素24位, RGB各占8位);&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;BMP, GIF, TIF, JPEG&lt;/p&gt;
-    &lt;blockquote&gt;
-      &lt;ol&gt;
-        &lt;li&gt;GIF: 主要用于不同平台上交流和传输, 而不是作为文件的存储格式&lt;/li&gt;
-        &lt;li&gt;TIF: 最复杂&lt;/li&gt;
-      &lt;/ol&gt;
-    &lt;/blockquote&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;三-第三讲-bmp位图文件的存储格式&quot;&gt;三. 第三讲 BMP位图文件的存储格式&lt;/h2&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;BMP文件组成:&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;位图文件头结构: BITMAPFILEHEADER&lt;/li&gt;
-    &lt;li&gt;位图信息头结构: BITMAPINFOHEADER&lt;/li&gt;
-    &lt;li&gt;位图颜色表: RGBQUAD(有的可能没有颜色表, 具体有没有, 参见第二讲)&lt;/li&gt;
-    &lt;li&gt;位图像素数据&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;BMP文件头: 14个字节&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;typedef struct tagBITMAPFILEHEADER
-{
-    WORD bfType; // BM: BMP文件标识(前两个字节), 一个字节是B, 一个字节是M
-    DWORD bfSize; // 文件大小
-    WORD bfReserved1; // 0
-    WORD bfReserved2; // 0
-    DWORD bfOffBits; // 位图数据的起始位置
-} BITMAPFILEHEDADER; 
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;BMP信息头结构: 40个字节&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;typedef struct tagBITMAPINFOHEADER
-{
-    DWORD biSize; // 本结构的大小: 40个字节
-    LONG biWidth; // 位图宽度, 像素为单位
-    LONG biHeight; // 位图高度, 像素为单位
-    WORD biPlanes; // 位平面数, 是标准的一般是1
-    WORD biBitCount; // 每个像素所需的位数
-    DWORD biCompression; // 位图压缩类型: BMP位图一般不压缩, 取0
-    DWORD biSizeImage; // 位图大小
-    LONG biXpelsPerMeter; // 水平分辨率(像素点/米)
-    LONG biYPelsPerMeter; // 垂直分辨率(像素点/米)
-    DWORD biCIrUsed; // 颜色数: 如果是标准颜色, 如16, 24, 256等位颜色, 则是0; 如果是自己定义, 则需要将颜色数写在这
-    DWORD biCIrImportant; // 重要的颜色数
-} BITMAPINFOHEADER;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;颜色表:&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;typedef struct tagRGBQUAD 
-{
-    BYTE rgbBlue; // 蓝色
-    BYTE rgbGreen; // 绿色
-    BYTE rgbRed; // 红色
-    BYTE rgbReserved; // 保留字节; 0
-} RGBQUAD;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;位图信息 – BITMAPINFO结构: 图像显示时作为参数传入函数&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;struct tagBITMAPINFO
-{
-    BITMAPINFOHEADER bmiHeader;
-    RGBQUAD bmiColors[1]; // 颜色表(上的第一项)
-} BITMAPINFO;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;四-几何变换基础&quot;&gt;四. 几何变换基础&lt;/h2&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;讲解平移, 缩放, 旋转, 镜像等的矩阵和原理&lt;/p&gt;
-&lt;/blockquote&gt;
-</description>
-        <pubDate>Mon, 22 Oct 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/10/22/%E6%95%B0%E5%AD%97%E5%9B%BE%E5%83%8F%E5%A4%84%E7%90%86/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/10/22/%E6%95%B0%E5%AD%97%E5%9B%BE%E5%83%8F%E5%A4%84%E7%90%86/</guid>
-        
-        <category>数字图像处理</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>OpenGL笔记</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;p&gt;阅读OpenGL中文文档笔记&lt;/p&gt;
-
-&lt;p&gt;&lt;a href=&quot;https://learnopengl-cn.github.io/01%20Getting%20started/01%20OpenGL/&quot;&gt;中文文档&lt;/a&gt;&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;一-入门&quot;&gt;一. &lt;a href=&quot;https://learnopengl-cn.github.io/01%20Getting%20started/01%20OpenGL/&quot;&gt;入门&lt;/a&gt;&lt;/h2&gt;
-
-&lt;h3 id=&quot;11-opengl&quot;&gt;1.1 OpenGL&lt;/h3&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;什么是OpenGL: 并不是API, 而是一个规范; OpenGL规范严格规定了每个函数该如何执行，以及它们的输出值。至于内部具体每个函数是如何实现(Implement)的，将由OpenGL库的开发者自行决定; OpenGL基于显卡, 所以OpenGL API大多由显卡厂商提供&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;核心模式与立即渲染模式&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;立即渲染模式(固定渲染管线): 用于早期OpenGL; 封装性好, 使用方便, 但是效率低, 灵活性不够&lt;/li&gt;
-    &lt;li&gt;核心模式: 从OpenGL3.2开始, 规范文档开始废弃立即渲染模式; 当使用OpenGL的核心模式时，OpenGL迫使我们使用现代的函数。当我们试图使用一个已废弃的函数时，OpenGL会抛出一个错误并终止绘图&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;状态机: OpenGL状态通常被成为OpenGL上下文; OpenGL本质上是一个大状态机(理解状态函数和状态使用函数)&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h3 id=&quot;12-hello-window&quot;&gt;1.2 Hello Window&lt;/h3&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;视口: ViewPort; OpenGL渲染窗口的尺寸大小&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;双缓冲: 应用程序使用单缓冲绘图时可能会存在图像闪烁的问题。 这是因为生成的图像不是一下子被绘制出来的，而是按照从左到右，由上而下逐像素地绘制而成的。最终图像不是在瞬间显示给用户，而是通过一步一步生成的，这会导致渲染的结果很不真实。为了规避这些问题，我们应用双缓冲渲染窗口应用程序。前缓冲保存着最终输出的图像，它会在屏幕上显示；而所有的的渲染指令都会在后缓冲上绘制。当所有的渲染指令执行完毕后，我们交换(Swap)前缓冲和后缓冲，这样图像就立即呈显出来，之前提到的不真实感就消除了&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h3 id=&quot;13-hello-三角形&quot;&gt;1.3 Hello 三角形&lt;/h3&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;图形渲染管线: 又称为管线; 指的是一堆原始图形数据途经一个输送管道，期间经过各种变化处理最终出现在屏幕的过程;  在OpenGL中，任何事物都在3D空间中，而屏幕和窗口却是2D像素数组，这导致OpenGL的大部分工作都是关于把3D坐标转变为适应你屏幕的2D像素; 3D坐标转为2D坐标的处理过程是由OpenGL的图形渲染管线管理的; 图形渲染管线可以被划分为两个主要部分：第一部分把你的3D坐标转换为2D坐标，第二部分是把2D坐标转变为实际的有颜色的像素&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;着色器: 图形渲染管线可以被划分为几个阶段，每个阶段将会把前一个阶段的输出作为输入。所有这些阶段都是高度专门化的（它们都有一个特定的函数），并且很容易并行执行。正是由于它们具有并行执行的特性，当今大多数显卡都有成千上万的小处理核心，它们在GPU上为每一个（渲染管线）阶段运行各自的小程序，从而在图形渲染管线中快速处理你的数据。这些小程序叫做着色器; 而且因为它们运行在GPU上，所以它们可以给我们节约宝贵的CPU时间&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;如下为每个图形渲染管线的抽象展示; 其中蓝色部分是可以注入自定义着色器的部分&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/图形渲染管线.png&quot; alt=&quot;图形渲染管线&quot; /&gt;&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;图元(Primitive): 为了让OpenGL知道我们的坐标和颜色值构成的到底是什么，OpenGL需要你去指定这些数据所表示的渲染类型。我们是希望把这些数据渲染成一系列的点？一系列的三角形？还是仅仅是一个长长的线？做出的这些提示叫做图元(Primitive)，任何一个绘制指令的调用都将把图元传递给OpenGL。这是其中的几个：GL_POINTS、GL_TRIANGLES、GL_LINE_STRIP。&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;一个顶点(Vertex)是一个3D坐标的数据的集合。而顶点数据是用顶点属性(Vertex Attribute)表示的，它可以包含任何我们想用的数据&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;顶点着色器(Vertex Shader): 顶点着色器主要的目的是把3D坐标转为另一种3D坐标, 同时顶点着色器允许我们对顶点属性进行一些基本处理&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;图元装配(Primitive Assembly): 将顶点着色器输出的所有顶点作为输入（如果是GL_POINTS，那么就是一个顶点），并所有的点装配成指定图元的形状; 图元装配阶段的输出会传递给几何着色器(Geometry Shader)。几何着色器把图元形式的一系列顶点的集合作为输入，它可以通过产生新顶点构造出新的（或是其它的）图元来生成其他形状&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;光栅化阶段: 几何着色器的输出会被传入光栅化阶段(Rasterization Stage)，这里它会把图元映射为最终屏幕上相应的像素，生成供片段着色器(Fragment Shader)使用的片段(Fragment)。在片段着色器运行之前会执行裁切(Clipping)。裁切会丢弃超出你的视图以外的所有像素，用来提升执行效率&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;片段着色器: 片段着色器的主要目的是计算一个像素的最终颜色，这也是所有OpenGL高级效果产生的地方。通常，片段着色器包含3D场景的数据（比如光照、阴影、光的颜色等等），这些数据可以被用来计算最终像素的颜色&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;在所有对应颜色值确定以后，最终的对象将会被传到最后一个阶段，我们叫做Alpha测试和混合(Blending)阶段。这个阶段检测片段的对应的深度（和模板(Stencil)）值（后面会讲），用它们来判断这个像素是其它物体的前面还是后面，决定是否应该丢弃。这个阶段也会检查alpha值（alpha值定义了一个物体的透明度）并对物体进行混合(Blend)。所以，即使在片段着色器中计算出来了一个像素输出的颜色，在渲染多个三角形的时候最后的像素颜色也可能完全不同。&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;标准化设备坐标: 开始绘制图形之前，我们必须先给OpenGL输入一些顶点数据。OpenGL是一个3D图形库，所以我们在OpenGL中指定的所有坐标都是3D坐标（x、y和z）。OpenGL不是简单地把所有的3D坐标变换为屏幕上的2D像素；OpenGL仅当3D坐标在3个轴（x、y和z）上都为-1.0到1.0的范围内时才处理它。所有在所谓的标准化设备坐标(Normalized Device Coordinates)范围内的坐标才会最终呈现在屏幕上（在这个范围以外的坐标都不会显示）&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/标准化设备坐标.png&quot; alt=&quot;标准化设备坐标&quot; /&gt;&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;深度: 通常深度可以理解为z坐标，它代表一个像素在空间中和你的距离，如果离你远就可能被别的像素遮挡，你就看不到它了，它会被丢弃，以节省资源。&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;着色器程序: 着色器程序对象(Shader Program Object)是多个着色器合并之后并最终链接完成的版本。如果要使用刚才编译的着色器我们必须把它们链接(Link)为一个着色器程序对象，然后在渲染对象的时候激活这个着色器程序。已激活着色器程序的着色器将在我们发送渲染调用的时候被使用&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;glVertexAttribPointer&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/glVertexAttribPointer.png&quot; alt=&quot;glVertexAttribPointer&quot; /&gt;&lt;/p&gt;
-
-&lt;h3 id=&quot;14-glsl&quot;&gt;1.4 GLSL&lt;/h3&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;着色器只是一种把输入转化为输出的程序。着色器也是一种非常独立的程序，因为它们之间不能相互通信&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;GLSL基本数据类型: int, float, double, uint, bool&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;容器类型: Vector, Matrix&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;如果我们打算从一个着色器向另一个着色器发送数据，我们必须在发送方着色器中声明一个输出，在接收方着色器中声明一个类似的输入。当类型和名字都一样的时候，OpenGL就会把两个变量链接到一起，它们之间就能发送数据了（这是在链接程序对象时完成的）&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;Uniform: Uniform是一种从CPU中的应用向GPU中的着色器发送数据的方式, 但uniform和顶点属性有些不同。首先，uniform是全局的(Global)。全局意味着uniform变量必须在每个着色器程序对象中都是独一无二的，而且它可以被着色器程序的任意着色器在任意阶段访问。第二，无论你把uniform值设置成什么，uniform会一直保存它们的数据，直到它们被重置或更新。&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;如果你声明了一个uniform却在GLSL代码中没用过，编译器会静默移除这个变量，导致最后编译出的版本中并不会包含它，这可能导致几个非常麻烦的错误，记住这点！&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h3 id=&quot;15-纹理&quot;&gt;1.5 纹理&lt;/h3&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;纹理: 纹理是一个2D图片（甚至也有1D和3D的纹理），它可以用来添加物体的细节&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;为了能够把纹理映射(Map)到三角形上，我们需要指定三角形的每个顶点各自对应纹理的哪个部分。这样每个顶点就会关联着一个纹理坐标(Texture Coordinate)，用来标明该从纹理图像的哪个部分采样（译注：采集片段颜色）。之后在图形的其它片段上进行片段插值(Fragment Interpolation)。&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;采样: 使用纹理坐标获取纹理颜色叫做采样&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;纹理坐标起始于(0, 0)，也就是纹理图片的左下角，终始于(1, 1)，即纹理图片的右上角; 如下图&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/纹理坐标.png&quot; alt=&quot;纹理坐标&quot; /&gt;&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;纹理环绕方式: 纹理坐标的范围通常是从(0, 0)到(1, 1)，那如果我们把纹理坐标设置在范围之外会发生什么？OpenGL默认的行为是重复这个纹理图像&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/纹理环绕方式.png&quot; alt=&quot;纹理环绕方式&quot; /&gt;&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;纹理过滤: 纹理坐标不依赖于分辨率(Resolution)，它可以是任意浮点值，所以OpenGL需要知道怎样将纹理像素(Texture Pixel，也叫Texel，译注1)映射到纹理坐标(Texture Pixel也叫Texel，你可以想象你打开一张.jpg格式图片，不断放大你会发现它是由无数像素点组成的，这个点就是纹理像素；注意不要和纹理坐标搞混，纹理坐标是你给模型顶点设置的那个数组，OpenGL以这个顶点的纹理坐标数据去查找纹理图像上的像素，然后进行采样提取纹理像素的颜色); 纹理过滤主要有两种: GL_NEAREST和GL_LINEAR; 当进行放大(Magnify)和缩小(Minify)操作的时候可以设置纹理过滤的选项(使用glTexParameteri())&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;邻近过滤(GL_NEAREST): 默认纹理过滤方式; 当设置为GL_NEAREST的时候，OpenGL会选择中心点最接近纹理坐标的那个像素&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;线性过滤(GL_LINEAR): 会基于纹理坐标附近的纹理像素，计算出一个插值，近似出这些纹理像素之间的颜色。一个纹理像素的中心距离纹理坐标越近，那么这个纹理像素的颜色对最终的样本颜色的贡献越大(GL_LINEAR可以产生更真实的输出)&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;多级渐远纹理: 简单来说就是一系列的纹理图像，后一个纹理图像是前一个的二分之一; 多级渐远纹理背后的理念很简单：距观察者的距离超过一定的阈值，OpenGL会使用不同的多级渐远纹理，即最适合物体的距离的那个。由于距离远，解析度不高也不会被用户注意到。同时，多级渐远纹理另一加分之处是它的性能非常好(glGenerateMipmaps())&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;纹理单元: 一个纹理的位置值通常称为一个纹理单元(Texture Unit)。一个纹理的默认纹理单元是0，它是默认的激活纹理单元; 纹理单元的主要目的是让我们在着色器中可以使用多于一个的纹理。通过把纹理单元赋值给采样器，我们可以一次绑定多个纹理，只要我们首先激活对应的纹理单元&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h3 id=&quot;15-变换&quot;&gt;1.5 变换&lt;/h3&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;向量: 有大小和方向; 其实就是一个&lt;code class=&quot;highlighter-rouge&quot;&gt;N*1&lt;/code&gt;的矩阵&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;向量运算:&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;向量与标量运算&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/向量与标量运算.png&quot; alt=&quot;向量与标量运算&quot; /&gt;&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;向量取反: 个分量都取反&lt;/li&gt;
-    &lt;li&gt;向量之间加减: 各分量之间对应加减&lt;/li&gt;
-    &lt;li&gt;向量乘积&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;点乘: 点乘是通过将对应分量逐个相乘，然后再把所得积相加来计算的&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/点乘.png&quot; alt=&quot;点乘&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/点乘2.png&quot; alt=&quot;点乘2&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;叉乘:&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/叉乘.png&quot; alt=&quot;叉乘&quot; /&gt;&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;矩阵运算&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;矩阵与标量运算&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/矩阵与标量运算.png&quot; alt=&quot;矩阵与标量运算&quot; /&gt;&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;矩阵之间加减: 对应项加减即可&lt;/li&gt;
-    &lt;li&gt;矩阵数乘: 将该数和矩阵每一项想乘&lt;/li&gt;
-    &lt;li&gt;矩阵相乘: 只有当左侧矩阵的列数与右侧矩阵的行数相等，两个矩阵才能相乘; 矩阵相乘不遵守交换律&lt;/li&gt;
-    &lt;li&gt;矩阵与向量相乘:&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;缩放:&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/矩阵与向量运算之缩放.png&quot; alt=&quot;矩阵与向量运算&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;位移:&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/矩阵与向量运算之位移.png&quot; alt=&quot;矩阵与向量运算&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;沿x轴旋转:&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/矩阵与向量运算之沿x轴旋转.png&quot; alt=&quot;沿x轴旋转&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;沿y轴旋转:&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/矩阵与向量运算之沿y轴旋转.png&quot; alt=&quot;沿y轴旋转&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;沿z轴旋转:&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/矩阵与向量运算之沿z轴旋转.png&quot; alt=&quot;沿z轴旋转&quot; /&gt;&lt;/p&gt;
-
-&lt;h3 id=&quot;16-坐标系统&quot;&gt;1.6 坐标系统&lt;/h3&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;将坐标变换为标准化设备坐标，接着再转化为屏幕坐标的过程通常是分步进行的，也就是类似于流水线那样子。在流水线中，物体的顶点在最终转化为屏幕坐标之前还会被变换到多个坐标系统(Coordinate System)。将物体的坐标变换到几个过渡坐标系(Intermediate Coordinate System)的优点在于，在这些特定的坐标系统中，一些操作或运算更加方便和容易&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;对我们来说比较重要的有五类坐标系统&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;局部空间(Local Space，或者称为物体空间(Object Space))&lt;/li&gt;
-    &lt;li&gt;世界空间(World Space)&lt;/li&gt;
-    &lt;li&gt;观察空间(View Space，或者称为视觉空间(Eye Space))&lt;/li&gt;
-    &lt;li&gt;裁剪空间(Clip Space)&lt;/li&gt;
-    &lt;li&gt;屏幕空间(Screen Space)&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;为了将坐标从一个坐标系变换到另一个坐标系，我们需要用到几个变换矩阵，最重要的几个分别是模型(Model)、观察(View)、投影(Projection)三个矩阵&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;顶点坐标起始于局部空间(Local Space)，在这里它称为局部坐标(Local Coordinate)，它在之后会变为世界坐标(World Coordinate)，观察坐标(View Coordinate)，裁剪坐标(Clip Coordinate)，并最后以屏幕坐标(Screen Coordinate)的形式结束; 如下图&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/坐标系统.png&quot; alt=&quot;坐标系统&quot; /&gt;&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;之所以将顶点变换到各个不同的空间的原因是有些操作在特定的坐标系统中才有意义且更方便。例如，当需要对物体进行修改的时候，在局部空间中来操作会更说得通；如果要对一个物体做出一个相对于其它物体位置的操作时，在世界坐标系中来做这个才更说得通，等等&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;局部空间: 物体所在的坐标空间，即对象最开始所在的地方&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;世界空间: 物体的坐标将会从局部变换到世界空间；该变换是由模型矩阵(Model Matrix)实现的&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;观察空间: 观察空间经常被人们称之OpenGL的摄像机(Camera); 观察空间是将世界空间坐标转化为用户视野前方的坐标而产生的结果; 因此观察空间就是从摄像机的视角所观察到的空间; 这通常用一个观察矩阵(View Matrix)完成，它被用来将世界坐标变换到观察空间&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;裁剪空间:  在一个顶点着色器运行的最后，OpenGL期望所有的坐标都能落在一个特定的范围内，且任何在这个范围之外的点都应该被裁剪掉(Clipped)。被裁剪掉的坐标就会被忽略，所以剩下的坐标就将变为屏幕上可见的片段。这也就是裁剪空间(Clip Space)名字的由来; 为了将顶点坐标从观察变换到裁剪空间，我们需要定义一个投影矩阵(Projection
-Matrix)，它指定了一个范围的坐标(如果只是图元(Primitive)，例如三角形，的一部分超出了裁剪体积(Clipping Volume)，则OpenGL会重新构建这个三角形为一个或多个三角形让其能够适合这个裁剪范围)(一旦所有顶点被变换到裁剪空间，最终的操作——透视除法(Perspective Division)将会执行，在这个过程中我们将位置向量的x，y，z分量分别除以向量的齐次w分量；透视除法是将4D裁剪空间坐标变换为3D标准化设备坐标的过程。这一步会在每一个顶点着色器运行的最后被自动执行)&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;透视投影: 离你越远的东西看起来更小; 使用透视投影矩阵来完成的; 一旦坐标在裁剪空间内之后，透视除法就会被应用到裁剪空间坐标上, 即将顶点坐标中的每个分量除以w分量; 透视投影如下图; 位于视景体之内的物体被投影到金字塔的顶点, 也就是照相机或观察点的位置; 靠近观察点的物体看上去更大一些, 因为和远处的物体相比, 它占据了视景体中相对较大的区域(实际上从相机(观察点)的角度看顶面和底面, 其占据的空间大小相同, 都是视口大小); 平截头体的四个侧面, 顶面和底面对应与视景体的6个裁剪平面, 位于这些平面之外的物体将被裁剪掉, 不会出现在最终的图像中;&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/透视投影.png&quot; alt=&quot;透视投影&quot; /&gt;&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;一个顶点坐标会根据以下过程被变换到裁剪坐标(注意矩阵运算的顺序是相反的（记住我们需要从右往左阅读矩阵的乘法)): 最后的顶点应该被赋值到顶点着色器中的gl_Position，OpenGL将会自动进行透视除法和裁剪&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/裁剪坐标.png&quot; alt=&quot;裁剪坐标&quot; /&gt;&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;OpenGL存储深度信息在一个叫做Z缓冲(Z-buffer)的缓冲中，它允许OpenGL决定何时覆盖一个像素而何时不覆盖&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;Z缓冲(深度缓冲): 深度值存储在每个片段里面（作为片段的z值），当片段想要输出它的颜色时，OpenGL会将它的深度值和z缓冲进行比较，如果当前的片段在其它片段之后，它将会被丢弃，否则将会覆盖。这个过程称为深度测试(Depth Testing)，它是由OpenGL自动完成的&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;视景体 : 管线会确定的一个可视空间区域, 由 上平面(up), 下平面(down), 左平面(left), 右平面(right), 远平面(far), 近平面(near) 六个平面组成&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;视景体与投影 : 视景体内的物体会投影到近平面, 视景体之外的内容会被裁减掉, 例如眼睛看不到的范围就是处于视景体外即被裁减掉的&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h3 id=&quot;17-摄像机&quot;&gt;1.7 摄像机&lt;/h3&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;OpenGL本身没有摄像机(Camera)的概念，但我们可以通过把场景中的所有物体往相反方向移动的方式来模拟出摄像机，产生一种我们在移动的感觉，而不是场景在移动。&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;二-光照&quot;&gt;二. 光照&lt;/h2&gt;
-
-&lt;h3 id=&quot;21-颜色&quot;&gt;2.1 颜色&lt;/h3&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;物体的颜色为物体从一个光源反射各个颜色分量的大小&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;物体的颜色是其和光源颜色的向量乘积&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/颜色.png&quot; alt=&quot;颜色&quot; /&gt;&lt;/p&gt;
-
-&lt;h3 id=&quot;22-基础光照&quot;&gt;2.2 基础光照&lt;/h3&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;冯氏光照模型(Phong Lighting Model): 冯氏光照模型的主要结构由3个分量组成：环境(Ambient)、漫反射(Diffuse)和镜面(Specular)光照&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/冯氏光照模型.png&quot; alt=&quot;冯氏光照模型&quot; /&gt;&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;当计算光照时我们通常不关心一个向量的模长或它的位置，我们只关心它们的方向。所以，几乎所有的计算都使用单位向量完成，因为这简化了大部分的计算（比如点乘）。所以当进行光照计算时，确保你总是对相关向量进行标准化，来保证它们是真正地单位向量。忘记对向量进行标准化是一个十分常见的错误&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;每当我们应用一个不等比缩放时（注意：等比缩放不会破坏法线，因为法线的方向没被改变，仅仅改变了法线的长度，而这很容易通过标准化来修复），法向量就不会再垂直于对应的表面了，这样光照就会被破坏; 如下图; 修复这个行为的诀窍是使用一个为法向量专门定制的模型矩阵。这个矩阵称之为法线矩阵(Normal Matrix)&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/OpenGL/缩放导致法向量破坏.png&quot; alt=&quot;缩放导致法向量破坏&quot; /&gt;&lt;/p&gt;
-
-&lt;h3 id=&quot;23-材质&quot;&gt;2.3 材质&lt;/h3&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;在现实世界里，每个物体会对光产生不同的反应; 有些物体反射光的时候不会有太多的散射(Scatter)，因而产生一个较小的高光点，而有些物体则会散射很多，产生一个有着更大半径的高光点。如果我们想要在OpenGL中模拟多种类型的物体，我们必须为每个物体分别定义一个材质(Material)属性。&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;可以用这三个分量来定义一个材质颜色(Material Color)：环境光照(Ambient Lighting)、漫反射光照(Diffuse Lighting)和镜面光照(Specular Lighting), 再添加一个反光度(Shininess), 就能够对物体的颜色输出有着精细的控制了&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;我们为每个冯氏光照模型的分量都定义一个颜色向量。ambient材质向量定义了在环境光照下这个物体反射得是什么颜色，通常这是和物体颜色相同的颜色。diffuse材质向量定义了在漫反射光照下物体的颜色。（和环境光照一样）漫反射颜色也要设置为我们需要的物体颜色。specular材质向量设置的是镜面光照对物体的颜色影响（或者甚至可能反射一个物体特定的镜面高光颜色）。最后，shininess影响镜面高光的散射/半径&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;具体材质的该四个分量可以参见: http://devernay.free.fr/cours/opengl/materials.html&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;物体过亮的原因是环境光、漫反射和镜面光这三个颜色对任何一个光源都会去全力反射。光源对环境光、漫反射和镜面光分量也具有着不同的强度&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h3 id=&quot;24-光照贴图&quot;&gt;2.4 光照贴图&lt;/h3&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;漫反射贴图&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;镜面光贴图&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h3 id=&quot;25-投光物&quot;&gt;2.5 投光物&lt;/h3&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;平行光: 当我们使用一个假设光源处于无限远处的模型时，它就被称为定向光，因为它的所有光线都有着相同的方向，它与光源的位置是没有关系的&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;点光源: 定向光对于照亮整个场景的全局光源是非常棒的，但除了定向光之外我们也需要一些分散在场景中的点光源(Point Light)。点光源是处于世界中某一个位置的光源，它会朝着所有方向发光，但光线会随着距离逐渐衰减&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;聚光: 聚光是位于环境中某个位置的光源，它只朝一个特定方向而不是所有方向照射光线。这样的结果就是只有在聚光方向的特定半径内的物体才会被照亮，其它的物体都会保持黑暗。聚光很好的例子就是路灯或手电筒。&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-</description>
-        <pubDate>Sat, 13 Oct 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/10/13/OpenGL%E7%AC%94%E8%AE%B0/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/10/13/OpenGL%E7%AC%94%E8%AE%B0/</guid>
-        
-        <category>OpenGL</category>
-        
-        <category>Android</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>Activity生命周期</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;生命周期讲解&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;一-概述&quot;&gt;一. 概述&lt;/h2&gt;
-
-&lt;p&gt;本文将分析和总结各种情况下, &lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;的生命周期情况, 包括正常情况下, 异常情况下(如: 用户屏幕旋转, 资源分配不足等)以及特殊情况下(如: 当&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;上覆盖对话框或者透明&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;, 当按下&lt;code class=&quot;highlighter-rouge&quot;&gt;Home&lt;/code&gt;键回到桌面时, 当屏幕熄灭时)&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;生命周期的调用情况; 同时还将简述各个方法下适于做什么工作等&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;二-正常情况&quot;&gt;二. 正常情况&lt;/h2&gt;
-
-&lt;h3 id=&quot;21-单独的activity分析&quot;&gt;2.1 单独的Activity分析&lt;/h3&gt;
-
-&lt;p&gt;如下为一张典型的&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;生命周期图(摘自官方文档); 也是正常情况下, 一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;的经历&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/Activity/Activity生命周期.png&quot; alt=&quot;Activity生命周期&quot; /&gt;&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;记忆的时候可以通过两两配对来记&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;下面将结合上图讲解各个状态:&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;onCreate()&lt;/code&gt;: 一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;启动时只调用一次, 表示&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;创建; 可以进行一些数据绑定, 类变量初始化或者上一次&lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;恢复等工作(通过&lt;code class=&quot;highlighter-rouge&quot;&gt;savedInstanceState&lt;/code&gt;实现)&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;onStart()&lt;/code&gt;: 可见, 处于后台, 不能交互&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;onResume()&lt;/code&gt;: 可见, 处于前台&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;onPause()&lt;/code&gt;: 时间短暂, 处于后台; 如果在&lt;code class=&quot;highlighter-rouge&quot;&gt;onPause&lt;/code&gt;的时候再快速的回到当前&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;, 那么&lt;code class=&quot;highlighter-rouge&quot;&gt;onResume&lt;/code&gt;会被调用(一般用户操作很难实现这一场景); 在&lt;code class=&quot;highlighter-rouge&quot;&gt;Android7.0&lt;/code&gt;或者更高, 应用可以在多窗口模式下运行, 但是只要每个时刻只有一个应用可以得到焦点, 那么此时就需要暂停另一个应用(处于&lt;code class=&quot;highlighter-rouge&quot;&gt;onPause()&lt;/code&gt;状态); (一个处于onPause状态的Activity可能仍然是完全可见的, 比如说在多窗口模式下); 不应该在&lt;code class=&quot;highlighter-rouge&quot;&gt;onPause()&lt;/code&gt;执行数据保存工作, 因为该阶段非常短暂, 同时只有&lt;code class=&quot;highlighter-rouge&quot;&gt;onPause()&lt;/code&gt;执行完,
-新&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;onResume()&lt;/code&gt;才会执行&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;onStop()&lt;/code&gt;: 不可见, 可以执行一些稍微重量级的工作, 比如资源释放与数据保存&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;onDestroy()&lt;/code&gt;: 表示&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;销毁, 可以做一些最终的回收工作和资源释放&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;onRestart()&lt;/code&gt;: 表示当当前&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;从不可见重新变为可见状态时调用&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h3 id=&quot;22-activity启动新activity分析&quot;&gt;2.2 Activity启动新Activity分析&lt;/h3&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;这里以Activity A正常启动Activity B的情况分析&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;当&lt;code class=&quot;highlighter-rouge&quot;&gt;A&lt;/code&gt;启动&lt;code class=&quot;highlighter-rouge&quot;&gt;B&lt;/code&gt;的时候, 会依次执行&lt;code class=&quot;highlighter-rouge&quot;&gt;A.onPause()&lt;/code&gt; –&amp;gt; &lt;code class=&quot;highlighter-rouge&quot;&gt;B.onCreate()&lt;/code&gt; –&amp;gt; &lt;code class=&quot;highlighter-rouge&quot;&gt;B.onStart()&lt;/code&gt; –&amp;gt; &lt;code class=&quot;highlighter-rouge&quot;&gt;B.onResume()&lt;/code&gt; –&amp;gt; &lt;code class=&quot;highlighter-rouge&quot;&gt;A.onStop()&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;可以看出, 只有当&lt;code class=&quot;highlighter-rouge&quot;&gt;A&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;onPause()&lt;/code&gt;方法执行完成之后, &lt;code class=&quot;highlighter-rouge&quot;&gt;B&lt;/code&gt;的一系列方法才会调用; 这也说明了&lt;code class=&quot;highlighter-rouge&quot;&gt;onPause()&lt;/code&gt;方法中不能执行耗时操作, 因为新&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;onResume()&lt;/code&gt;是在其之后执行的, 如果&lt;code class=&quot;highlighter-rouge&quot;&gt;onPause()&lt;/code&gt;中执行太耗时的操作的话, 会影响新&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;的显示; 我们应当尽量在&lt;code class=&quot;highlighter-rouge&quot;&gt;onStop()&lt;/code&gt;中操作, 使新&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;尽快显示出来并出现在前台&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;三-异常情况&quot;&gt;三. 异常情况&lt;/h2&gt;
-
-&lt;h3 id=&quot;31-资源相关系统配置改变导致activity被杀死并重新创建&quot;&gt;3.1 资源相关系统配置改变导致Activity被杀死并重新创建&lt;/h3&gt;
-
-&lt;p&gt;默认情况下, 如果不做特殊处理, 当系统配置发生改变之后, &lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;就会被杀死并重建; 比如: 当手机进行横竖屏切换的时候, &lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;默认就会被销毁重建&lt;/p&gt;
-
-&lt;p&gt;在这种情况下, &lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;会依次调用&lt;code class=&quot;highlighter-rouge&quot;&gt;onPause&lt;/code&gt; –&amp;gt; &lt;code class=&quot;highlighter-rouge&quot;&gt;onSaveInstanceState&lt;/code&gt; –&amp;gt; &lt;code class=&quot;highlighter-rouge&quot;&gt;onStop&lt;/code&gt; –&amp;gt; &lt;code class=&quot;highlighter-rouge&quot;&gt;onDestroy&lt;/code&gt; –&amp;gt; &lt;code class=&quot;highlighter-rouge&quot;&gt;onCreate&lt;/code&gt; –&amp;gt; &lt;code class=&quot;highlighter-rouge&quot;&gt;onStart&lt;/code&gt; –&amp;gt; &lt;code class=&quot;highlighter-rouge&quot;&gt;onRestoreInstanceState&lt;/code&gt; –&amp;gt; &lt;code class=&quot;highlighter-rouge&quot;&gt;onResume&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;需要注意的是这里和正常情况下不同的是, 需要等到&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;销毁之后才能开始重新创建; 另一个就是, 在&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;销毁的时候, 会调用&lt;code class=&quot;highlighter-rouge&quot;&gt;onSaveInstanceState&lt;/code&gt;来保存当前&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;的状态, 该方法的调用在&lt;code class=&quot;highlighter-rouge&quot;&gt;onStop&lt;/code&gt;之前, 但是和&lt;code class=&quot;highlighter-rouge&quot;&gt;onPause&lt;/code&gt;没有既定的时序关系; 但是&lt;code class=&quot;highlighter-rouge&quot;&gt;onRestoreInstanceState&lt;/code&gt;的调用确是在&lt;code class=&quot;highlighter-rouge&quot;&gt;onStart&lt;/code&gt;之后, 有既定的时序关系;&lt;/p&gt;
-
-&lt;p&gt;当&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;销毁重建保存数据的方法是: 委托下级子元素调用其自己的&lt;code class=&quot;highlighter-rouge&quot;&gt;onSaveInstanceState&lt;/code&gt;来保存自己的状态和数据; 即让其关联&lt;code class=&quot;highlighter-rouge&quot;&gt;Window&lt;/code&gt;保存数据, &lt;code class=&quot;highlighter-rouge&quot;&gt;Window&lt;/code&gt;再委托子&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;进行数据保存, 最终会调用每个子&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;View.onSaveInstanceState()&lt;/code&gt;来保存自己的数据&lt;/p&gt;
-
-&lt;p&gt;当进行数据恢复的时候, &lt;code class=&quot;highlighter-rouge&quot;&gt;onCreate&lt;/code&gt;中的&lt;code class=&quot;highlighter-rouge&quot;&gt;Bundle savedInstanceState&lt;/code&gt;参数不为&lt;code class=&quot;highlighter-rouge&quot;&gt;null&lt;/code&gt;, 可以在此处进行数据恢复, 但是推荐在&lt;code class=&quot;highlighter-rouge&quot;&gt;onRestoreInstanceState&lt;/code&gt;中进行数据恢复&lt;/p&gt;
-
-&lt;h3 id=&quot;32-资源内存不足导致低优先级activity被杀死&quot;&gt;3.2 资源内存不足导致低优先级Activity被杀死&lt;/h3&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;优先级:&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;前台&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;: 正在和用户交互的&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;, 优先级最高&lt;/li&gt;
-    &lt;li&gt;可见但非前台&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;: 比如&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;中弹出了一个对话框, 导致&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;可见但是位于后台, 无法与用户直接交互&lt;/li&gt;
-    &lt;li&gt;后台&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;: 已经被暂停的&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;, 比如执行了&lt;code class=&quot;highlighter-rouge&quot;&gt;onStop&lt;/code&gt;, 优先级最低&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;被杀死的可能性如下:&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/Activity/系统杀死Activity.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;四-特殊情况&quot;&gt;四. 特殊情况&lt;/h2&gt;
-
-&lt;h3 id=&quot;41-按下home键或者当屏幕熄灭&quot;&gt;4.1 按下Home键或者当屏幕熄灭&lt;/h3&gt;
-
-&lt;p&gt;这种情况下会调用&lt;code class=&quot;highlighter-rouge&quot;&gt;onPause&lt;/code&gt; –&amp;gt; &lt;code class=&quot;highlighter-rouge&quot;&gt;onSaveInstanceState&lt;/code&gt; –&amp;gt; &lt;code class=&quot;highlighter-rouge&quot;&gt;onStop&lt;/code&gt;; 需要注意的是这里仍然调用了&lt;code class=&quot;highlighter-rouge&quot;&gt;onSaveInstanceState&lt;/code&gt;; 但是该情况下是不会调用&lt;code class=&quot;highlighter-rouge&quot;&gt;onRestoreInstanceState&lt;/code&gt;, 原因下面说明&lt;/p&gt;
-
-&lt;p&gt;关于&lt;code class=&quot;highlighter-rouge&quot;&gt;onSaveInstanceState&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;onRestoreInstanceState&lt;/code&gt;调用的几点说明:&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;onSaveInstanceState&lt;/code&gt;的调用: &lt;code class=&quot;highlighter-rouge&quot;&gt;onSaveInstanceState&lt;/code&gt;会在当&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;有可能被销毁的时候调用, 用于进行数据保存; 注意, 只要是&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;有可能被销毁都会调用方法; 比如: 按下&lt;code class=&quot;highlighter-rouge&quot;&gt;Home&lt;/code&gt;键或者屏幕熄灭&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;进行后台的时候, 该&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;可能被回收, 所以此时会调用&lt;code class=&quot;highlighter-rouge&quot;&gt;onSaveInstanceState&lt;/code&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;onRestoreInstanceState&lt;/code&gt;的调用和&lt;code class=&quot;highlighter-rouge&quot;&gt;onSaveInstanceState&lt;/code&gt;的调用不一定是成对的, &lt;code class=&quot;highlighter-rouge&quot;&gt;onRestoreInstanceState&lt;/code&gt;要调用的前提是当前&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;&lt;strong&gt;确实&lt;/strong&gt;被系统销毁了&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h3 id=&quot;42-透明对话框或者透明activity&quot;&gt;4.2 透明对话框或者透明Activity&lt;/h3&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;当在&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;上覆盖一层透明对话框的时候, 不会使&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;进入后台(不会调用任何方法), 但是&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;不可和当前用户交互&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;当当前&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;启动一个透明&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;的时候, 会调用前一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;onPause&lt;/code&gt;, 但是不会调用前一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;onStop&lt;/code&gt;, 此时前一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Activity&lt;/code&gt;可见但是处于后台&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h2 id=&quot;五-注&quot;&gt;五. 注&lt;/h2&gt;
-
-&lt;p&gt;验证代码参见: &lt;a href=&quot;https://github.com/HusterYP/UI/blob/master/UIList/app/src/main/java/com/example/yuanping/uilist/lifecycle/ReadMe.md&quot;&gt;Github&lt;/a&gt;&lt;/p&gt;
-
-</description>
-        <pubDate>Sat, 13 Oct 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/10/13/Activity%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/10/13/Activity%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F/</guid>
-        
-        <category>Android</category>
         
         
       </item>

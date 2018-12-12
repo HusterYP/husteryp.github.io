@@ -295,7 +295,54 @@
   </li>
 </ol>
 
-<h2 id="五-注">五. 注</h2>
+<hr />
+
+<h2 id="五-补充">五. 补充</h2>
+
+<ol>
+  <li>考虑<code class="highlighter-rouge">Activity A</code>跳转到<code class="highlighter-rouge">B</code>的情况: 如果<code class="highlighter-rouge">A</code>跳转到<code class="highlighter-rouge">B</code>(使用<code class="highlighter-rouge">startActivityForResult()</code>), <code class="highlighter-rouge">A</code>被回收的之后再初始化, 此时从<code class="highlighter-rouge">B</code>返回, 那么<code class="highlighter-rouge">A</code>的<code class="highlighter-rouge">onActivityResult()</code>是否还会调用: <a href="https://www.jianshu.com/p/65b4200f0682">参考博客</a>; 结果如下:</li>
+</ol>
+
+<blockquote>
+  <p>在跳转后前一个页面被回收的情况下, 再回到前一个页面, <code class="highlighter-rouge">onActivityResult</code>依然会被调用, 而且是在<code class="highlighter-rouge">onCreate</code>和 <code class="highlighter-rouge">onRestoreInstanceState</code>两个状态恢复结点之后调用, 所以只要做好状态的保存和恢复工作, 就不用担心在<code class="highlighter-rouge">onActivityResult</code>回调时 因相关数据丢失而造成的异常了</p>
+</blockquote>
+
+<ol>
+  <li>单纯的使用<code class="highlighter-rouge">startActivityForResult()</code>的生命周期经历情况是:
+    <blockquote>
+      <ol>
+        <li>B onPause</li>
+        <li>A onActivityResult</li>
+        <li>A onRestart</li>
+        <li>A onStart</li>
+        <li>A onResume</li>
+        <li>B onStop</li>
+        <li>B onDestroy</li>
+      </ol>
+    </blockquote>
+  </li>
+  <li><code class="highlighter-rouge">A</code>启动<code class="highlighter-rouge">B</code>, <code class="highlighter-rouge">B</code>返回到<code class="highlighter-rouge">A</code>, 经历:
+    <blockquote>
+      <ol>
+        <li>A onPause (—-&gt; A启动B)</li>
+        <li>B onCreate</li>
+        <li>B onStart</li>
+        <li>B onResuem</li>
+        <li>A onStop</li>
+        <li>B onPause(—–&gt; B返回A)</li>
+        <li>A onRestart</li>
+        <li>A onStart</li>
+        <li>A onResume</li>
+        <li>B onStop</li>
+        <li>B onDestroy</li>
+      </ol>
+    </blockquote>
+  </li>
+</ol>
+
+<hr />
+
+<h2 id="六-注">六. 注</h2>
 
 <p>验证代码参见: <a href="https://github.com/HusterYP/UI/blob/master/UIList/app/src/main/java/com/example/yuanping/uilist/lifecycle/ReadMe.md">Github</a></p>
 
@@ -350,13 +397,13 @@
                             
         				
                             
-                				<a href="/tags/#Algorithm" title="Algorithm" rel="3">
+                				<a href="/tags/#Algorithm" title="Algorithm" rel="4">
                                     Algorithm
                                 </a>
                             
         				
                             
-                				<a href="/tags/#Draft" title="Draft" rel="3">
+                				<a href="/tags/#Draft" title="Draft" rel="4">
                                     Draft
                                 </a>
                             
@@ -370,7 +417,7 @@
                             
         				
                             
-                				<a href="/tags/#Android" title="Android" rel="9">
+                				<a href="/tags/#Android" title="Android" rel="10">
                                     Android
                                 </a>
                             
@@ -397,6 +444,10 @@
         				
                             
         				
+                            
+                				<a href="/tags/#Note" title="Note" rel="2">
+                                    Note
+                                </a>
                             
         				
         			</div>

@@ -154,13 +154,180 @@
             ">
     			
 <div class="post-preview">
+    <a href="/2018/12/12/ListView-%E4%B8%80/">
+        <h2 class="post-title">
+            ListView[一]
+        </h2>
+        
+        <h3 class="post-subtitle">
+            ListView基本使用
+        </h3>
+        
+        <div class="post-content-preview">
+            前言
+
+本文将从ListView的基本使用入手, 介绍常见的ListView性能优化问题
+
+ListView采用适配器模式, 关于ListView的优化主要体现在Adapter上; 本文也主要从Adapter入手, 分析常见的优化问题
+
+文章代码基于kotlin
+
+
+
+正文
+
+
+
+一. 最差版本
+
+ListView的性能问题主要是其通常用于展示大量数据造成的; 我们手指上下滑动的时候伴随着A...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by 袁平 on December 12, 2018
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
+    <a href="/2018/12/08/ListView/">
+        <h2 class="post-title">
+            ListView
+        </h2>
+        
+        <h3 class="post-subtitle">
+            ListView
+        </h3>
+        
+        <div class="post-content-preview">
+            前言
+
+ListView笔记
+
+
+
+正文
+
+
+
+问题: 展示大量数据, 处理内存开销和性能
+
+复用: 重新填写内容而已
+
+stable ID
+
+ListView相关内容:
+
+
+
+getView():
+
+
+  错误的使用方式: 如下; 每次都会创建一个新的View视图(会去解析XML, 这是非常耗时的); 特别是当用户滑动的时候, 这种写法将产生大量的View视图
+
+
+
+
+
+  正确的使用方式...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by 袁平 on December 8, 2018
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
+    <a href="/2018/12/06/%E7%BA%A2%E9%BB%91%E6%A0%91/">
+        <h2 class="post-title">
+            红黑树
+        </h2>
+        
+        <h3 class="post-subtitle">
+            红黑树Java实现
+        </h3>
+        
+        <div class="post-content-preview">
+            前言
+
+红黑树Java实现
+
+
+
+正文
+
+
+
+一. 概述
+
+红黑树是一颗平衡二叉树, 是为了避免二叉查找树在极端情况下形成单链表而表现出线性级别的时间复杂度; 红黑树的前身是2-3查找树, 为了便于理解红黑树的各种旋转操作, 需要先了解一下2-3查找树
+
+平衡二叉树始终要保证的是所有空链接(指向一棵空树的链接)到根节点的距离相等
+
+
+
+二. 2-3查找树
+
+2.1 基本概念
+
+为了保证树的平...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by 袁平 on December 6, 2018
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
+    <a href="/2018/11/24/AwesomeAndroid/">
+        <h2 class="post-title">
+            AwesomeAndroid
+        </h2>
+        
+        <h3 class="post-subtitle">
+            AwesomeAndroid
+        </h3>
+        
+        <div class="post-content-preview">
+            前言
+
+
+  记录一些有趣的Android知识, 内容不限~
+
+
+
+
+正文
+
+
+
+子线程更新UI
+
+考虑如下代码:
+
+注: MainActivity的Layout布局只有一个id为main_text的TextView
+
+class MainActivity : AppCompatActivity() {
+
+    override fun onCreate(savedInstanceStat...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by 袁平 on November 24, 2018
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
     <a href="/2018/11/18/Note/">
         <h2 class="post-title">
             Note
         </h2>
         
         <h3 class="post-subtitle">
-            各类笔记
+            各类笔记整理, 文章博客收集
         </h3>
         
         <div class="post-content-preview">
@@ -179,6 +346,10 @@
 一. Git
 
 超赞的Git操作讲解
+
+二. Android
+
+Android面试
 
         </div>
     </a>
@@ -384,152 +555,6 @@
 </div>
 <hr>
 
-<div class="post-preview">
-    <a href="/2018/10/28/Compiler/">
-        <h2 class="post-title">
-            编译器笔记与实验记录
-        </h2>
-        
-        <h3 class="post-subtitle">
-            Compiler
-        </h3>
-        
-        <div class="post-content-preview">
-            序言
-
-
-  编译器,教程: http://mooc.study.163.com/learn/1000002001?tid=1000003000#/learn/content?type=detail&amp;id=1000023001&amp;cid=1000019000
-  配套网站: http://staff.ustc.edu.cn/~bjhua/courses/compiler/201...
-        </div>
-    </a>
-    <p class="post-meta">
-        Posted by 袁平 on October 28, 2018
-    </p>
-</div>
-<hr>
-
-<div class="post-preview">
-    <a href="/2018/10/22/%E6%95%B0%E5%AD%97%E5%9B%BE%E5%83%8F%E5%A4%84%E7%90%86/">
-        <h2 class="post-title">
-            数字图像处理
-        </h2>
-        
-        <h3 class="post-subtitle">
-            数字图像处理笔记
-        </h3>
-        
-        <div class="post-content-preview">
-            前言
-
-数字图像处理笔记
-
-
-
-正文
-
-
-
-
-  可以使用Utrapdit软件查看图片的ASIIC值(可以看任何文件的ASIIC值)
-
-
-一. 第一讲 数字图像处理概述
-
-
-  图形和图像的区别:
-
-
-
-  
-    图形: 一条指令; 比如一条直线的表示
-    图像: 大矩阵, 里面的数据是每一点的颜色值
-  
-
-
-
-  
-    宽高相乘就是图像的像素
-  
-  
-    图像空间分辨...
-        </div>
-    </a>
-    <p class="post-meta">
-        Posted by 袁平 on October 22, 2018
-    </p>
-</div>
-<hr>
-
-<div class="post-preview">
-    <a href="/2018/10/13/OpenGL%E7%AC%94%E8%AE%B0/">
-        <h2 class="post-title">
-            OpenGL笔记
-        </h2>
-        
-        <h3 class="post-subtitle">
-            文档阅读笔记
-        </h3>
-        
-        <div class="post-content-preview">
-            前言
-
-阅读OpenGL中文文档笔记
-
-中文文档
-
-
-
-正文
-
-
-
-一. 入门
-
-1.1 OpenGL
-
-
-  
-    什么是OpenGL: 并不是API, 而是一个规范; OpenGL规范严格规定了每个函数该如何执行，以及它们的输出值。至于内部具体每个函数是如何实现(Implement)的，将由OpenGL库的开发者自行决定; OpenGL基于显卡, 所以OpenGL API大多由显卡厂...
-        </div>
-    </a>
-    <p class="post-meta">
-        Posted by 袁平 on October 13, 2018
-    </p>
-</div>
-<hr>
-
-<div class="post-preview">
-    <a href="/2018/10/13/Activity%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F/">
-        <h2 class="post-title">
-            Activity生命周期
-        </h2>
-        
-        <h3 class="post-subtitle">
-            Activity生命周期总结
-        </h3>
-        
-        <div class="post-content-preview">
-            前言
-
-Activity生命周期讲解
-
-
-
-正文
-
-
-
-一. 概述
-
-本文将分析和总结各种情况下, Activity的生命周期情况, 包括正常情况下, 异常情况下(如: 用户屏幕旋转, 资源分配不足等)以及特殊情况下(如: 当Activity上覆盖对话框或者透明Activity, 当按下Home键回到桌面时, 当屏幕熄灭时)Activity生命周期的调用情况; 同时还将简述各个方法下适于做什...
-        </div>
-    </a>
-    <p class="post-meta">
-        Posted by 袁平 on October 13, 2018
-    </p>
-</div>
-<hr>
-
 
 <!-- Pager -->
 
@@ -564,13 +589,13 @@ Activity生命周期讲解
                             
                         
                             
-                                <a href="/tags/#Algorithm" title="Algorithm" rel="3">
+                                <a href="/tags/#Algorithm" title="Algorithm" rel="4">
                                     Algorithm
                                 </a>
                             
                         
                             
-                                <a href="/tags/#Draft" title="Draft" rel="3">
+                                <a href="/tags/#Draft" title="Draft" rel="4">
                                     Draft
                                 </a>
                             
@@ -584,7 +609,7 @@ Activity生命周期讲解
                             
                         
                             
-                                <a href="/tags/#Android" title="Android" rel="9">
+                                <a href="/tags/#Android" title="Android" rel="10">
                                     Android
                                 </a>
                             
@@ -611,6 +636,10 @@ Activity生命周期讲解
                         
                             
                         
+                            
+                                <a href="/tags/#Note" title="Note" rel="2">
+                                    Note
+                                </a>
                             
                         
                     </div>

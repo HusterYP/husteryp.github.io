@@ -154,6 +154,150 @@
             ">
     			
 <div class="post-preview">
+    <a href="/2018/09/25/Java%E4%B9%8BIO%E6%B5%81/">
+        <h2 class="post-title">
+            Java之IO流
+        </h2>
+        
+        <h3 class="post-subtitle">
+            IO流相关API总结
+        </h3>
+        
+        <div class="post-content-preview">
+            前言
+
+本文将讲解Java中一个比较重要的模块–I/O流
+
+以下内容是对Java核心技术卷II的总结, 权做个人笔记~
+
+
+
+正文
+
+
+
+一. 概述
+
+Java I/O流指的是java.io包和java.nio包提供的各种操作文件和输入输出等的API, 具体可以分为两大类: 一类是面向字节的, 一类是面向字符的; 面向字节的API是以InputStream和OutputStream类为基类,...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by 袁平 on September 25, 2018
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
+    <a href="/2018/09/24/%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B9%8BView%E7%BB%98%E5%88%B6%E6%B5%81%E7%A8%8B/">
+        <h2 class="post-title">
+            自定义View之View绘制流程
+        </h2>
+        
+        <h3 class="post-subtitle">
+            Android源码分析之View绘制流程
+        </h3>
+        
+        <div class="post-content-preview">
+            前言
+
+Android源码分析之View系列之绘制流程
+
+
+
+正文
+
+
+
+一. 概述
+
+View的绘制流程分为三大步: measure, layout, draw; measure即测量, 测量View的大小; layout即布局, 按照一定的规则排布View; draw即绘制, 绘制View的外形; 这三步是和我们自定义View息息相关的, 熟悉和掌握这三大流程, 我们才能随心所欲的定制V...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by 袁平 on September 24, 2018
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
+    <a href="/2018/09/20/%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B9%8BView%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E6%9C%BA%E5%88%B6/">
+        <h2 class="post-title">
+            自定义View之View事件分发机制
+        </h2>
+        
+        <h3 class="post-subtitle">
+            View事件分发源码讲解
+        </h3>
+        
+        <div class="post-content-preview">
+            前言
+
+Android源码分析之View系列之事件分发机制
+
+
+
+正文
+
+
+
+一. 概述
+
+View的触摸事件分发是View系列中的一个重难点, 主要需要掌握的是MotionEvent的传递规则和处理规则, 这是自定义View中冲突处理的理论来源~
+
+触摸事件分发的处理主要是对MotionEvent的处理, MotionEvent封装了用户的一系列行为, 如: ACTION_DOWN(手指刚...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by 袁平 on September 20, 2018
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
+    <a href="/2018/09/15/Handler/">
+        <h2 class="post-title">
+            Handler
+        </h2>
+        
+        <h3 class="post-subtitle">
+            Handler源码分析, Android消息机制分析
+        </h3>
+        
+        <div class="post-content-preview">
+            前言
+
+
+  Android消息机制分析
+
+
+
+  Handler源码分析
+
+
+
+
+正文
+
+
+
+一. 概述
+
+Handler算是我们平时开发中比较常用的一个, Handler所代表的是Android中重要的一部分, 即消息机制; 本文将分析Handler的运行机制
+
+1.1 使用场景
+
+
+  
+    线程切换: 这个是使用Handler最常见和最频繁的场景了; 我们都知道, UI线程中不允...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by 袁平 on September 15, 2018
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
     <a href="/2018/09/11/Linux%E5%BC%80%E6%9C%BA%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/">
         <h2 class="post-title">
             Linux开机启动流程
@@ -382,167 +526,6 @@ LruCache内部使用了一个LinkedHashMap实例, 所以在继续往下看之前
 </div>
 <hr>
 
-<div class="post-preview">
-    <a href="/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/">
-        <h2 class="post-title">
-            Java集合框架之LinkedHashMap
-        </h2>
-        
-        <h3 class="post-subtitle">
-            LinkedHashMap源码讲解
-        </h3>
-        
-        <div class="post-content-preview">
-            前言
-
-
-  
-    前面我们对Java集合框架有了一个基本的认识; 本文将主要讲解LinkedHashMap的实现原理和处理细节
-    LinkedHashMap继承于HashMap, 所以需要先对HashMap有一个基本的认识, 可以参见Java集合框架之HashMap
-  
-
-
-文章源码基于JDK8
-
-Java集合框架系列博客:
-
-
-  
-    Java集合框架概述
-  
-  
-...
-        </div>
-    </a>
-    <p class="post-meta">
-        Posted by 袁平 on August 28, 2018
-    </p>
-</div>
-<hr>
-
-<div class="post-preview">
-    <a href="/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BSet/">
-        <h2 class="post-title">
-            Java集合框架之Set
-        </h2>
-        
-        <h3 class="post-subtitle">
-            讲解Set实现类
-        </h3>
-        
-        <div class="post-content-preview">
-            前言
-
-
-  前面我们对Java集合框架有了一个基本的认识, 这里我们从几大接口入手, 逐步讲解其实现类; 下面要讲解的是Set的实现类, 即常用的HashSet, TreeSet和LinkedHashSet
-
-
-文章源码基于JDK8
-
-Java集合框架系列博客:
-
-
-  
-    Java集合框架概述
-  
-  
-    Java集合框架之List
-  
-  
-    Java集合框架之H...
-        </div>
-    </a>
-    <p class="post-meta">
-        Posted by 袁平 on August 27, 2018
-    </p>
-</div>
-<hr>
-
-<div class="post-preview">
-    <a href="/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BList/">
-        <h2 class="post-title">
-            Java集合框架之List
-        </h2>
-        
-        <h3 class="post-subtitle">
-            讲解List的实现类
-        </h3>
-        
-        <div class="post-content-preview">
-            
-
-前言
-
-
-  前面我们对Java集合框架有了一个基本的认识, 这里我们从几大接口入手, 逐步讲解其实现类; 下面要讲解的是List的实现类, 即常用的ArrayList和LinkedList
-
-
-文章源码基于JDK8
-
-Java集合框架系列博客:
-
-
-  
-    Java集合框架概述
-  
-  
-    Java集合框架之List
-  
-  
-    Java集合框架之HashMap
-...
-        </div>
-    </a>
-    <p class="post-meta">
-        Posted by 袁平 on August 27, 2018
-    </p>
-</div>
-<hr>
-
-<div class="post-preview">
-    <a href="/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/">
-        <h2 class="post-title">
-            Java集合框架之HashMap
-        </h2>
-        
-        <h3 class="post-subtitle">
-            HashMap源码解析
-        </h3>
-        
-        <div class="post-content-preview">
-            前言
-
-
-  前面我们对Java集合框架有了一个基本的认识; 本文将主要讲解HashMap的实现原理和处理细节
-
-
-文章源码基于JDK8
-
-Java集合框架系列博客:
-
-
-  
-    Java集合框架概述
-  
-  
-    Java集合框架之List
-  
-  
-    Java集合框架之HashMap
-  
-  
-    Java集合框架之Set
-  
-  
-    Java集合框架之...
-        </div>
-    </a>
-    <p class="post-meta">
-        Posted by 袁平 on August 27, 2018
-    </p>
-</div>
-<hr>
-
 
 <!-- Pager -->
 
@@ -581,13 +564,13 @@ Java集合框架系列博客:
                             
                         
                             
-                                <a href="/tags/#Algorithm" title="Algorithm" rel="3">
+                                <a href="/tags/#Algorithm" title="Algorithm" rel="4">
                                     Algorithm
                                 </a>
                             
                         
                             
-                                <a href="/tags/#Draft" title="Draft" rel="3">
+                                <a href="/tags/#Draft" title="Draft" rel="4">
                                     Draft
                                 </a>
                             
@@ -601,7 +584,7 @@ Java集合框架系列博客:
                             
                         
                             
-                                <a href="/tags/#Android" title="Android" rel="9">
+                                <a href="/tags/#Android" title="Android" rel="10">
                                     Android
                                 </a>
                             
@@ -628,6 +611,10 @@ Java集合框架系列博客:
                         
                             
                         
+                            
+                                <a href="/tags/#Note" title="Note" rel="2">
+                                    Note
+                                </a>
                             
                         
                     </div>
