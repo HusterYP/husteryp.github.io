@@ -1,0 +1,33 @@
+<h1 id="前言">前言</h1>
+<blockquote>
+  <p>近日, Android Studio新建项目一直Gradle失败, 网上各种搜, 说是设置代理, 然而代理设置之后不能使用, 搞了一天, 差点就滚去重装AS了, 不过终于还是搞清楚问题出在哪里了, 以此记录</p>
+</blockquote>
+
+<h1 id="正文">正文</h1>
+
+<h2 id="一-问题描述">一. 问题描述</h2>
+<ul>
+  <li>新建项目失败</li>
+  <li>完好的项目第二次打开之后, Gradle失败</li>
+  <li>使用Help-&gt;Check for Updates 提示联网失败</li>
+  <li>SDK 无法联网下载</li>
+</ul>
+
+<p><img src="/img/post/AndroidStudio/timeout.png" alt="联网失败" /></p>
+
+<h2 id="二-解决">二. 解决</h2>
+<ul>
+  <li>根本原因还是ShadowSocks的代理设置有问题, 之前使用的是Socks5代理, 改为Http代理就好了, 如下</li>
+  <li>在网上查了一下, Socks5是局部代理, Android Studio 本身支持 socks5 代理，但是 gradle 只支持 http 代理，这也导致了虽然开着 shadowsocks 却无法更新 SDK 或者下载 gradle 依赖;</li>
+</ul>
+
+<p><img src="/img/post/AndroidStudio/socks.png" alt="Socks5代理" /></p>
+
+<p>改为</p>
+
+<p><img src="/img/post/AndroidStudio/http.png" alt="Http代理" /></p>
+
+<h2 id="参考">参考</h2>
+<ul>
+  <li><a href="https://hellovass.info/2017/04/04/%E7%9C%9F%C2%B7Android%20Studio%20%E4%BB%A3%E7%90%86%E8%AE%BE%E7%BD%AE%E6%8C%87%E5%8D%97/">参考博客</a></li>
+</ul>

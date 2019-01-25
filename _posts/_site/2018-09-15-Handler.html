@@ -1,0 +1,339 @@
+<h1 id="前言">前言</h1>
+
+<blockquote>
+  <p>Android消息机制分析</p>
+</blockquote>
+
+<blockquote>
+  <p>Handler源码分析</p>
+</blockquote>
+
+<hr />
+
+<h1 id="正文">正文</h1>
+
+<hr />
+
+<h2 id="一-概述">一. 概述</h2>
+
+<p><code class="highlighter-rouge">Handler</code>算是我们平时开发中比较常用的一个, <code class="highlighter-rouge">Handler</code>所代表的是<code class="highlighter-rouge">Android</code>中重要的一部分, 即消息机制; 本文将分析<code class="highlighter-rouge">Handler</code>的运行机制</p>
+
+<h3 id="11-使用场景">1.1 使用场景</h3>
+
+<ol>
+  <li>
+    <p>线程切换: 这个是使用<code class="highlighter-rouge">Handler</code>最常见和最频繁的场景了; 我们都知道, <code class="highlighter-rouge">UI</code>线程中不允许执行耗时操作, 那么当我们需要先去获取数据(耗时)再进行<code class="highlighter-rouge">UI</code>展示或者交互的时候, 线程切换就必不可少了</p>
+  </li>
+  <li>
+    <p>任务延时: 即在未来某个时刻再执行任务, 这个主要是通过<code class="highlighter-rouge">Handler.postDelayed()</code>和<code class="highlighter-rouge">Handler.sendMessageDelayed()</code>完成的(实际上<code class="highlighter-rouge">postDelayed()</code>也是通过<code class="highlighter-rouge">sendMessageDelayed()</code>完成的)</p>
+  </li>
+</ol>
+
+<h3 id="12-为什么会有handler">1.2 为什么会有Handler</h3>
+
+<p>我们都知道<code class="highlighter-rouge">Handler</code>的作用主要是用于切换线程, 那么为什么会出现<code class="highlighter-rouge">Handler</code>喃; 我们以<code class="highlighter-rouge">UI</code>线程中执行耗时操作为例, 对于耗时操作, 特别是在需要实时交互的应用中, 肯定是需要设计为多线程的, 那么<code class="highlighter-rouge">Android</code>设计之初为什么不使用多线程去访问<code class="highlighter-rouge">UI</code>呢, 最致命的一点就是, 多线程存在并发访问的不确定性, 这就会造成<code class="highlighter-rouge">UI</code>表现的不可预期性, 造成用户体验极差; 当然, 对于多线程并发的问题还是有很多方式去避免和解决的, 最常见的一个就是加锁, 那么为什么不采用多线程访问,
+对<code class="highlighter-rouge">UI</code>加锁的方式实现呢, 一个是加锁会使<code class="highlighter-rouge">UI</code>逻辑变得复杂, 另一个是加锁会降低效率, 阻塞某些线程的执行</p>
+
+<p>所以, 基于很多方面的考虑, 特别是对于<code class="highlighter-rouge">Android</code>应用这样交互性很强的场景而言, 使得需要去实现自己的一套异步通信机制, 需要达到的目标是, 线程之间的独立性保持和数据交互的便利性, 这也是<code class="highlighter-rouge">Handler</code>实现的</p>
+
+<h3 id="13-概述">1.3 概述</h3>
+
+<p>在<code class="highlighter-rouge">Android</code>消息机制中, 有非常重要的几个部分, 也是我们分析的切入点:</p>
+
+<ol>
+  <li>
+    <p><strong>MessageQueue</strong>: 单链表, 实现消息存储; 是<code class="highlighter-rouge">Java</code>层和<code class="highlighter-rouge">Native</code>层的连接纽带</p>
+  </li>
+  <li>
+    <p><strong>Looper</strong>: 无限循环查询是否有新消息</p>
+  </li>
+  <li>
+    <p><strong>Handler</strong>: 消息接受和分发处理的中转站</p>
+  </li>
+</ol>
+
+<p>以下是我们使用<code class="highlighter-rouge">Handler</code>最常见的一种写法, 我们通常会重写<code class="highlighter-rouge">handleMessage()</code>来实现自己的逻辑; 当在其他线程中通过<code class="highlighter-rouge">Handler.sendMessage()</code>来发送消息时, 我们就会在<code class="highlighter-rouge">handleMessage()</code>中接收到该消息</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>    private final Handler mHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            // do somthing with msg
+            super.handleMessage(msg);
+        }
+    };
+
+    new Thread() {
+        @Override
+        public void run() {
+           mHandler.sendEmptyMessage(0);
+        }
+    }.start();
+</code></pre></div>
+
+<p><code class="highlighter-rouge">Handler</code>进行线程切换和消息传递的一个大致流程是, 当我们通过<code class="highlighter-rouge">sendMessage()</code>发送消息的时候, <code class="highlighter-rouge">MessageQueue</code>负责存储该消息, <code class="highlighter-rouge">Looper</code>会无限循环的去检查<code class="highlighter-rouge">MessageQueue</code>中是否有消息, 如果有则调用<code class="highlighter-rouge">Handler</code>的<code class="highlighter-rouge">dispatchMessage()</code>进行消息分发, 最终会回到<code class="highlighter-rouge">handleMessage</code>中进行处理</p>
+
+<p>在开始讲解之前, 需要先明确几个结论(在稍后会验证): 每个线程都可以有自己的<code class="highlighter-rouge">Looper</code>, 但是默认没有创建(除了<code class="highlighter-rouge">UI</code>线程外); <code class="highlighter-rouge">Looper</code>是创建<code class="highlighter-rouge">Handler</code>所必须的(否则会抛异常); <code class="highlighter-rouge">MessageQueue</code>和<code class="highlighter-rouge">Looper</code>是一一对应的关系, 也就是说每个线程会有自己的<code class="highlighter-rouge">MessageQueue</code>和<code class="highlighter-rouge">Looper</code>; <code class="highlighter-rouge">Handler</code>在哪个线程中创建就在哪个线程中处理消息, 其他线程发送的消息存储在对应<code class="highlighter-rouge">Handler</code>所对应的<code class="highlighter-rouge">MessageQueue</code>中</p>
+
+<hr />
+
+<h2 id="二-构造函数">二. 构造函数</h2>
+
+<p><code class="highlighter-rouge">Handler</code>提供了七个构造函数, 如下表</p>
+
+<table>
+  <tbody>
+    <tr>
+      <td>Handler()</td>
+      <td>Handler(Callback callback)</td>
+      <td>Handler(Looper looper)</td>
+    </tr>
+    <tr>
+      <td>Handler(Looper looper, Callback callback)</td>
+      <td>Handler(boolean async)</td>
+      <td>Handler(Callback callback, boolean async)</td>
+    </tr>
+    <tr>
+      <td>Handler(Looper looper, Callback callback, boolean async)</td>
+      <td> </td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<p>这七个构造函数最常用的是默认构造函数(即不带参数那个), 其他几个, 一类是带<code class="highlighter-rouge">Callback</code>的, 是提供的消息处理函数, 我们使用<code class="highlighter-rouge">Handler</code>一般都会重写其<code class="highlighter-rouge">handleMessage()</code>方法来处理消息, 但是也可以不重写<code class="highlighter-rouge">handleMessage()</code>, 而是在构造<code class="highlighter-rouge">Handler</code>的时候传入一个<code class="highlighter-rouge">Callback</code>回调, <code class="highlighter-rouge">Callback</code>是<code class="highlighter-rouge">Handler</code>中的一个接口, 如下; 另一类是带标志位<code class="highlighter-rouge">async</code>的, 是设置消息是否为异步处理, <code class="highlighter-rouge">Handler</code>中的消息默认是同步处理的</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>    public interface Callback {
+        public boolean handleMessage(Message msg);
+    }
+</code></pre></div>
+
+<p>这里我们以构造函数<code class="highlighter-rouge">Handler(Callback callback, boolean async)</code>进行分析, 如下; 可以看出, 这里的<code class="highlighter-rouge">mLooper</code>是通过<code class="highlighter-rouge">Looper.myLooper()</code>获取的, 如果我们获取为<code class="highlighter-rouge">null</code>也就是说当前线程没有<code class="highlighter-rouge">Looper</code>的话, 会抛出异常, 这个异常也是我们大多数初学者会遇到的; 这里也验证了上面所说的, <code class="highlighter-rouge">Looper</code>是<code class="highlighter-rouge">Handler</code>构造所必须的, 如果当前线程没有<code class="highlighter-rouge">Looper</code>的话, 会抛异常(至于为什么说是当前线程, 接下来马上分析~)</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>    public Handler(Callback callback, boolean async) {
+        ...
+        mLooper = Looper.myLooper();
+        if (mLooper == null) {
+            throw new RuntimeException(
+                "Can't create handler inside thread " + Thread.currentThread()
+                        + " that has not called Looper.prepare()");
+        }
+        mQueue = mLooper.mQueue;
+        mCallback = callback;
+        mAsynchronous = async;
+    }
+</code></pre></div>
+
+<p>那么<code class="highlighter-rouge">Looper.myLooper()</code>又是如何获取当前线程的<code class="highlighter-rouge">Looper</code>的呢; 如下, 可以看出是通过<code class="highlighter-rouge">sThreadLocal</code>获取的, <code class="highlighter-rouge">sThreadLocal</code>是一个<code class="highlighter-rouge">ThreadLocal</code>类型的实例</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>    public static @Nullable Looper myLooper() {
+        return sThreadLocal.get();
+    }
+</code></pre></div>
+
+<p><code class="highlighter-rouge">ThreadLocal</code>不是一个线程, 而是用于在每个线程中存储数据的, <code class="highlighter-rouge">ThreadLocal</code>可以在不同的线程中互不干扰的存储并提供数据; 那么它是如何实现在不同线程中互不干扰的存取数据的呢, 我们先来看其<code class="highlighter-rouge">set()</code>方法, 可以看出, 其实际上会先去检查当前线程是否持有<code class="highlighter-rouge">ThreadLocalMap</code>, 如果有的话, 直接将<code class="highlighter-rouge">value</code>存储进去即可, 否则, 初始化当前线程的<code class="highlighter-rouge">ThreadLocalMap</code>然后再存放值, 这样就可以根据不同的线程来存取各自线程的值了</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>    public void set(T value) {
+        Thread t = Thread.currentThread();
+        ThreadLocalMap map = getMap(t);
+        if (map != null)
+            map.set(this, value);
+        else
+            createMap(t, value);
+    }
+</code></pre></div>
+
+<p>那么我们要构造<code class="highlighter-rouge">Handler</code>就必须获取当前线程的<code class="highlighter-rouge">Looper</code>, 那么我们又是什么时候构造和存储的<code class="highlighter-rouge">Looper</code>喃; 前面我们说了, 每个线程都可以有自己的<code class="highlighter-rouge">Looper</code>, 但是除了<code class="highlighter-rouge">UI</code>线程以外都默认没有创建; 我们先来看<code class="highlighter-rouge">UI</code>线程中是什么时候创建的<code class="highlighter-rouge">Looper</code>, <code class="highlighter-rouge">UI</code>线程就是<code class="highlighter-rouge">ActivityThread</code>, 在其<code class="highlighter-rouge">main()</code>函数中, 我们发现了如下与<code class="highlighter-rouge">Looper</code>相关的语句, 这实际上是开启了主线程的消息处理(因为要处理各种事件, 所以一开始就开启了)</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>public static void main(String[] args) {
+    ...
+    Looper.prepareMainLooper();
+    ...
+    Looper.loop();
+}
+</code></pre></div>
+
+<p>我们继续看<code class="highlighter-rouge">Looper.prepareMainLooper()</code>, 其中实际上是调用了<code class="highlighter-rouge">prepare()</code>, 如下; 这里我们看到了熟悉的<code class="highlighter-rouge">ThreadLocal.set()</code>, 而且存储的是一个新的<code class="highlighter-rouge">Looper</code>, 那么这里就将线程和各自的<code class="highlighter-rouge">Looper</code>联系起来了, 我们在<code class="highlighter-rouge">Handler</code>构造函数中获取的也就是和各个线程相关的<code class="highlighter-rouge">Looper</code>了</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>    private static void prepare(boolean quitAllowed) {
+        if (sThreadLocal.get() != null) {
+            throw new RuntimeException("Only one Looper may be created per thread");
+        }
+        sThreadLocal.set(new Looper(quitAllowed));
+    }
+</code></pre></div>
+
+<p>到这里我们知道了, <code class="highlighter-rouge">perpare</code>实际上是在准备<code class="highlighter-rouge">Looper</code>, 那么<code class="highlighter-rouge">Looper.loop()</code>又是在做啥呢, 其实<code class="highlighter-rouge">Looper.loop()</code>是开启消息处理循环, 前面我们说了<code class="highlighter-rouge">Looper</code>不断的去检测<code class="highlighter-rouge">MessageQueue</code>中是否有消息, 实际上就是在<code class="highlighter-rouge">loop()</code>中开启的</p>
+
+<p>这里我们暂时不讲<code class="highlighter-rouge">loop()</code>, 而是放到后面讲消息处理的时候讲; 我们平时使用<code class="highlighter-rouge">Handler</code>的时候, 大多是在<code class="highlighter-rouge">UI</code>
+线程中创建的, 因为上面我们已经看到了, <code class="highlighter-rouge">UI</code>线程中默认是创建了<code class="highlighter-rouge">Looper</code>的, 所以不需要我们再去手动创建, 但是我们如何在子线程中构造和使用<code class="highlighter-rouge">Handler</code>呢; 其实在<code class="highlighter-rouge">Looper</code>的文档中已经给出了示例, 如下; 其实, 和上面<code class="highlighter-rouge">UI</code>线程中<code class="highlighter-rouge">Looper</code>的处理过程差不多, 只是由于<code class="highlighter-rouge">UI</code>线程的特殊性, 所以单独给它准备了一个方法~(实际上是做一些其他特殊判断和处理)</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>class LooperThread extends Thread {
+      public Handler mHandler;
+
+      public void run() {
+          Looper.prepare();
+ 
+          mHandler = new Handler() {
+              public void handleMessage(Message msg) {
+                  // process incoming messages here
+              }
+          };
+
+          Looper.loop();
+      }
+}
+</code></pre></div>
+
+<hr />
+
+<h3 id="三-消息发送">三. 消息发送</h3>
+
+<p>当我们需要通过<code class="highlighter-rouge">Handler</code>发送消息时, 可以使用两个系列, 一个是<code class="highlighter-rouge">postXXX</code>系列, 一个<code class="highlighter-rouge">sendXXX</code>系列</p>
+
+<p><strong>postXXX</strong>: <code class="highlighter-rouge">post</code>系列主要是发送一个自定义的<code class="highlighter-rouge">Runnable</code>事件, 然后去执行(延迟执行)自定义事件</p>
+
+<table>
+  <tbody>
+    <tr>
+      <td>post(Runnable r)</td>
+    </tr>
+    <tr>
+      <td>postAtTime(Runnable r, long uptimeMillis)</td>
+    </tr>
+    <tr>
+      <td>postAtTime(Runnable r, Object token, long uptimeMillis)</td>
+    </tr>
+    <tr>
+      <td>postDelayed(Runnable r, long delayMillis)</td>
+    </tr>
+    <tr>
+      <td>postDelayed(Runnable r, Object token, long delayMillis)</td>
+    </tr>
+    <tr>
+      <td>postAtFrontOfQueue(Runnable r)</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>sendXXX</strong>: <code class="highlighter-rouge">send</code>系列主要是发送封装的一个<code class="highlighter-rouge">msg</code>, 然后根据<code class="highlighter-rouge">msg</code>带的<code class="highlighter-rouge">tag</code>或者数据在<code class="highlighter-rouge">handleMessage()</code>中进行处理</p>
+
+<table>
+  <tbody>
+    <tr>
+      <td>sendMessage(Message msg)</td>
+    </tr>
+    <tr>
+      <td>sendEmptyMessage(int what)</td>
+    </tr>
+    <tr>
+      <td>sendEmptyMessageDelayed(int what, long delayMillis)</td>
+    </tr>
+    <tr>
+      <td>sendEmptyMessageAtTime(int what, long uptimeMillis)</td>
+    </tr>
+    <tr>
+      <td>sendMessageDelayed(Message msg, long delayMillis)</td>
+    </tr>
+    <tr>
+      <td>sendMessageAtTime(Message msg, long uptimeMillis)</td>
+    </tr>
+    <tr>
+      <td>sendMessageAtFrontOfQueue(Message msg)</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>但是, 实际上<code class="highlighter-rouge">post</code>系列最终还是将<code class="highlighter-rouge">Runnable</code>事件封装为了一个<code class="highlighter-rouge">Message</code>对象交给了<code class="highlighter-rouge">send</code>系列处理, 而不管是<code class="highlighter-rouge">postXXX</code>还是<code class="highlighter-rouge">sendXXX</code>, 最终转到的都是<code class="highlighter-rouge">enqueueMessage()</code>进行处理; 另外, 不管是<code class="highlighter-rouge">post</code>的<code class="highlighter-rouge">Runnable</code>还是<code class="highlighter-rouge">send</code>的<code class="highlighter-rouge">int what</code>等其他类型, 其实最终都会将每一条消息封装为一个<code class="highlighter-rouge">Message</code>对象进行传递</p>
+
+<hr />
+
+<h2 id="四-消息存储">四. 消息存储</h2>
+
+<p>前面我们说过, <code class="highlighter-rouge">MessageQueue</code>会对发送的消息进行存储, 这一步就是在<code class="highlighter-rouge">enqueueMessage()</code>中处理的; 如下; 需要注意的是这里传入的<code class="highlighter-rouge">MessageQueue</code>是在创建<code class="highlighter-rouge">Handler</code>时创建, 也就是说和<code class="highlighter-rouge">Handler</code>相关, 因为涉及到多线程的处理, 所以需要清楚<code class="highlighter-rouge">MessageQueue</code>的来源, 不然消息处理的时候就混了~</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>    private boolean enqueueMessage(MessageQueue queue, Message msg, long uptimeMillis) {
+        msg.target = this;
+        if (mAsynchronous) {
+            msg.setAsynchronous(true);
+        }
+        return queue.enqueueMessage(msg, uptimeMillis);
+    }
+</code></pre></div>
+
+<p>这里我们简单看一下<code class="highlighter-rouge">MessageQueue</code>中<code class="highlighter-rouge">Message</code>的组织方式, 如下, <code class="highlighter-rouge">MessageQueue.enqueueMessage()</code>, 可以看出是很明显的单链表的存储方式, 之所以用单链表, 是因为单链表在增加和删除节点上有优势</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>boolean enqueueMessage(Message msg, long when) {
+    ...
+    needWake = mBlocked &amp;&amp; p.target == null &amp;&amp; msg.isAsynchronous();
+    Message prev;
+    for (;;) {
+        prev = p;
+        p = p.next;
+        if (p == null || when &lt; p.when) {
+            break;
+        }
+        if (needWake &amp;&amp; p.isAsynchronous()) {
+            needWake = false;
+        }
+    }
+    msg.next = p; // invariant: p == prev.next
+    prev.next = msg;
+    ...
+}
+</code></pre></div>
+
+<hr />
+
+<h2 id="五-消息处理">五. 消息处理</h2>
+
+<p>还记得前面我们还有一个问题没有解决吗, 就是<code class="highlighter-rouge">Looper.loop()</code>过程, <code class="highlighter-rouge">Looper.loop()</code>过程实际上就是开启循环处理消息的过程~</p>
+
+<p>该函数如下; 首先获取消息处理线程的<code class="highlighter-rouge">Looper</code>, 前面我们已经看到了, <code class="highlighter-rouge">Looper.loop()</code>是在消息处理线程中调用的, 所以这里获取到的, 也就是消息处理线程, 即创建<code class="highlighter-rouge">Handler</code>的线程; 之后获取对应线程的消息队列, 即<code class="highlighter-rouge">MessageQueue</code>, 需要注意这里的<code class="highlighter-rouge">MessageQueue</code>和<code class="highlighter-rouge">Looper</code>关联的, 而<code class="highlighter-rouge">Looper</code>的获取是通过<code class="highlighter-rouge">Thread.currentThread()</code>来判断和获取的, 那么这里就能获取到和对应<code class="highlighter-rouge">Handler</code>相关联的<code class="highlighter-rouge">MessageQueue</code>, 当我们在不同线程中调用<code class="highlighter-rouge">Handler.sendMsg</code>的时候, 插入的也是和该<code class="highlighter-rouge">Handler</code>关联的<code class="highlighter-rouge">MessageQueue</code>, 这样, 一整条完整的线就串成了:  不同的线程往需要发送消息的线程的<code class="highlighter-rouge">MessageQueue</code>中插入<code class="highlighter-rouge">Message</code>, 而和线程关联的<code class="highlighter-rouge">Looper</code>又从该<code class="highlighter-rouge">MessageQueue</code>中不断获取<code class="highlighter-rouge">Message</code>处理, 这样就完成了线程的切换 !!</p>
+
+<p>接下来就是用一个死循环(<code class="highlighter-rouge">for</code>)开始消息处理了; 逻辑也比较简单, 其实就是不断的从<code class="highlighter-rouge">MessageQueue</code>中获取消息(<code class="highlighter-rouge">MessageQueue.next()</code>), 然后回调<code class="highlighter-rouge">Handler.dispatchMessage(msg)</code>分发, 需要注意的是, 这里的<code class="highlighter-rouge">msg.target</code>实际上是存储的对应<code class="highlighter-rouge">Handler</code>的引用</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>public static void loop() {
+    final Looper me = myLooper();
+    ...
+    final MessageQueue queue = me.mQueue;
+    ...
+
+     for (;;) {
+        Message msg = queue.next(); // might block
+        // 如果消息为null, 不处理咯
+        if (msg == null) {
+            // No message indicates that the message queue is quitting.
+            return;
+        }
+        ...
+        msg.target.dispatchMessage(msg);
+     }
+
+}
+
+</code></pre></div>
+
+<p>我们看一下<code class="highlighter-rouge">dispatchMessage</code>的处理逻辑, 如下; 逻辑也很简单, 就是消息处理的优先级: 如果<code class="highlighter-rouge">Message</code>自身设置了<code class="highlighter-rouge">Callback</code>, 就直接执行<code class="highlighter-rouge">Message</code>的<code class="highlighter-rouge">Callback</code>(这种情况对应前面说的<code class="highlighter-rouge">post(Runnable)</code>的情况); 如果构造<code class="highlighter-rouge">Handler</code>的时候设置了<code class="highlighter-rouge">Callback</code>那么交给该<code class="highlighter-rouge">Callback</code>处理, 否则回调<code class="highlighter-rouge">handleMessage()</code>处理</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>    public void dispatchMessage(Message msg) {
+        if (msg.callback != null) {
+            handleCallback(msg);
+        } else {
+            if (mCallback != null) {
+                if (mCallback.handleMessage(msg)) {
+                    return;
+                }
+            }
+            handleMessage(msg);
+        }
+    }
+</code></pre></div>
+
+<p>这里还要注意的一点是从<code class="highlighter-rouge">MessageQueue</code>中获取消息时, 即<code class="highlighter-rouge">MessageQueue.next()</code>, 这是一个阻塞方法, 也就是说当<code class="highlighter-rouge">MessageQueue</code>中没有消息的时候, 会阻塞在这里, 直到<code class="highlighter-rouge">MessageQueue</code>中再次存储消息</p>
+
+<hr />
+
+<h2 id="六-总结">六. 总结</h2>
+
+<p>到这里<code class="highlighter-rouge">Handler</code>的整个<code class="highlighter-rouge">Java</code>层面的运行机制我们就讲解完啦~ , 到这里我们对整个<code class="highlighter-rouge">Android</code>的消息传递和处理机制也有了比较详细的了解了; 为加深记忆, 可以对着源码自己再过一遍过程~</p>
+

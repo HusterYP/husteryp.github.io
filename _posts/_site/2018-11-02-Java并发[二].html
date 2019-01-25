@@ -1,0 +1,143 @@
+<h1 id="前言">前言</h1>
+
+<blockquote>
+  <p>主要讲解了<code class="highlighter-rouge">Executor</code>框架</p>
+</blockquote>
+
+<hr />
+
+<h1 id="正文">正文</h1>
+
+<hr />
+
+<h2 id="一-executor框架">一. Executor框架</h2>
+
+<ol>
+  <li>线程池: 可以通过<code class="highlighter-rouge">Executors</code>中的静态工厂方法之一来创建一个线程池</li>
+</ol>
+
+<blockquote>
+  <ol>
+    <li><code class="highlighter-rouge">newFixedThreadPool</code>: 创建一个固定长度的线程池, 每当提交一个任务时就创建一个线程, 直到达到线程池的最大数量, 这是线程池规模将不再变化(如果某个线程发生异常终止, 那么线程池会补充一个线程)</li>
+    <li><code class="highlighter-rouge">newCachedThreadPool</code>: 创建一个可缓存的线程池, 如果线程池的当前规模超过了处理需求时, 那么将回收空闲的线程, 而当需求增加时, 则可以添加新的线程, 线程池的规模不存在任何限制</li>
+    <li><code class="highlighter-rouge">newSingleThreadExecutor</code>: 一个单线程的<code class="highlighter-rouge">Executor</code>, 它创建单个工作者线程来执行任务, 如果这个线程异常结束, 会创建另一个线程来代替;<code class="highlighter-rouge">newSingleThreadExecutor</code>能确保依照任务在队列中的顺序来执行(如: <code class="highlighter-rouge">FIFO</code>, <code class="highlighter-rouge">LIFO</code>, 优先级)</li>
+    <li><code class="highlighter-rouge">newScheduledThreadPool</code>: 创建了一个固定长度的线程池, 而且以延迟或定时的方式来执行任务, 类似于<code class="highlighter-rouge">Timer</code></li>
+  </ol>
+</blockquote>
+
+<ol>
+  <li><code class="highlighter-rouge">Executor</code>生命周期: 为了解决执行服务的生命周期问题, <code class="highlighter-rouge">Executor</code>扩展了<code class="highlighter-rouge">ExecutorService</code>接口; <code class="highlighter-rouge">ExecutorService</code>的生命周期有三种状态: 运行, 关闭, 已终止; 提供了如下方法:</li>
+</ol>
+
+<blockquote>
+  <ol>
+    <li><code class="highlighter-rouge">shutdown()</code>: 执行平缓的关闭过程, 不再接受新任务, 同时等待已经提交的任务执行完成(包括那些还未开始执行的任务)</li>
+    <li><code class="highlighter-rouge">shutdownNow()</code>: 执行粗暴的关闭过程, 尝试取消所有运行中的任务, 并且不再启动队列中尚未开始执行的任务</li>
+    <li><code class="highlighter-rouge">awaitTermination()</code>: 等待<code class="highlighter-rouge">ExecutorService</code>到达终止状态, 或者通过<code class="highlighter-rouge">isTerminated()</code>来轮循是否已经终止</li>
+  </ol>
+</blockquote>
+
+<ol>
+  <li>延迟任务与周期任务: <code class="highlighter-rouge">Timer</code>与<code class="highlighter-rouge">ScheduleThreadPoolExecutor</code></li>
+</ol>
+
+<blockquote>
+  <ol>
+    <li><code class="highlighter-rouge">Timer</code>: 在执行所有定时任务时只会创建一个线程, 如果某个任务执行时间过长, 那么将破坏其他<code class="highlighter-rouge">TimerTask</code>的定时精确性; <code class="highlighter-rouge">Timer</code>线程并不捕获异常, 因此当<code class="highlighter-rouge">TimerTask</code>抛出未检查异常时将终止定时线程</li>
+  </ol>
+</blockquote>
+
+<p>考虑下列程序, 运行<code class="highlighter-rouge">1</code>秒之后结束, 而不是运行<code class="highlighter-rouge">6</code>秒; 同时还会抛出异常</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>public class OutOfTime {
+    public static void main(String[] args) throws InterruptedException {
+        Timer timer = new Timer();
+        timer.schedule(new ThrowTask(), 1);
+        SECONDS.sleep(1);
+        timer.schedule(new ThrowTask(), 5);
+        SECONDS.sleep(5);
+    }
+
+    public static class ThrowTask extends TimerTask {
+
+        @Override
+        public void run() {
+            throw new RuntimeException();
+        }
+    }
+}
+</code></pre></div>
+
+<ol>
+  <li>携带结果的任务<code class="highlighter-rouge">Callable</code>与<code class="highlighter-rouge">Future</code>:</li>
+</ol>
+
+<blockquote>
+  <ol>
+    <li><code class="highlighter-rouge">Callable</code>任务主入口点(即<code class="highlighter-rouge">call</code>)将返回一个值, 并可能抛出一个异常</li>
+    <li><code class="highlighter-rouge">Future</code>: 表示一个任务的生命周期, 并提供了相应的方法来判断是否已经完成或取消, 以及获取任务的结果和取消任务等</li>
+  </ol>
+</blockquote>
+
+<p>二者区别参见其提供方法:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>public interface Callable&lt;V&gt; {
+    V call() throws Exception;
+}
+</code></pre></div>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>public interface Future&lt;V&gt; {
+    boolean cancel(boolean mayInterruptIfRunning);
+    boolean isCancelled();
+    boolean isDone();
+    V get() throws InterruptedException, ExecutionException;
+    V get(long timeout, TimeUnit unit)
+        throws InterruptedException, ExecutionException, TimeoutException;
+}
+</code></pre></div>
+
+<hr />
+
+<h2 id="二-中断">二. 中断</h2>
+
+<ol>
+  <li>
+    <p>有三个中断方法: <code class="highlighter-rouge">interrupt()</code>, <code class="highlighter-rouge">isInterrupted()</code>, 静态的<code class="highlighter-rouge">interrupted()</code>(<code class="highlighter-rouge">Thread.interrupted()</code>)</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">interrupt()</code>能中断目标线程, 而<code class="highlighter-rouge">isInterrupt()</code>能返回目标线程的中断状态, 静态的<code class="highlighter-rouge">interrupted()</code>将清除当前线程的中断状态并返回它之前的值; 这也是清除中断状态的唯一方法</p>
+  </li>
+  <li>
+    <p>阻塞库方法, 如: <code class="highlighter-rouge">Thread.sleep()</code>, <code class="highlighter-rouge">Object.wait()</code>等, 都检查线程何时中断, 它们在响应中断时执行的操作包括: 清除中断状态, 抛出<code class="highlighter-rouge">InterruptedException</code></p>
+  </li>
+  <li>
+    <p>调用<code class="highlighter-rouge">interrupt()</code>并不意味着立即停止目标线程正在进行的工作, 而只是传递了请求中断的消息(由线程自己去决定如何处理中断)</p>
+  </li>
+  <li>
+    <p>中断是实现取消最合理的方式</p>
+  </li>
+  <li>响应中断:
+    <blockquote>
+      <ol>
+        <li>传递异常</li>
+        <li>恢复中断状态</li>
+      </ol>
+    </blockquote>
+  </li>
+  <li>不可阻塞中断: 许多可阻塞的方法都是通过提前返回或者抛出<code class="highlighter-rouge">InterruptedException</code>来响应中断请求的; 但是并非所有的可阻塞方法或者阻塞机制都能响应中断, 有如下两种情况:</li>
+</ol>
+
+<blockquote>
+  <ol>
+    <li>当线程执行同步的<code class="highlighter-rouge">Socket I/O</code>时</li>
+    <li>等待获得内置锁而阻塞时: 但是<code class="highlighter-rouge">Lock</code>类中提供了<code class="highlighter-rouge">lockInterruptibly</code>方法来允许在等待一个锁的同时仍能响应中断</li>
+  </ol>
+</blockquote>
+
+<hr />
+
+<h2 id="三-守护线程">三. 守护线程</h2>
+
+<p>线程可以分为两种: 普通线程和守护线程; 在<code class="highlighter-rouge">JVM</code>启动时创建的所有线程中, ,除了主线程以外, 其他的线程都是守护线程(例如垃圾回收器以及其他执行辅助工作的线程); 当创建一个新线程时, 新线程将继承它的线程的守护状态</p>
+
+<p>普通线程与守护线程的区别仅在于当线程退出时发生的操作, 当一个线程退出时, <code class="highlighter-rouge">JVM</code>会检查其他正在运行的线程, 如果这些线程都是守护线程, 那么<code class="highlighter-rouge">JVM</code>会正常退出操作, 当<code class="highlighter-rouge">JVM</code>停止时, 所有仍然存在的守护线程都将被抛弃–既不会执行<code class="highlighter-rouge">finally</code>代码块, 也不会执行回卷栈, 而<code class="highlighter-rouge">JVM</code>只是直接退出</p>

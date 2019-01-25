@@ -200,7 +200,7 @@ Canvas自带的几何变换内部其实也是使用的Matrix
 Matrix可以自定义执行顺序, 通常Matrix的方法都是成对的, 比如: preTranslate()(往前插入)和postTranslate()(往后插入)
 Camare可以用于辅助Matrix计算; 比如: 如下代码</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>protected void onDraw(Canvas canvas) {
+<div class="highlighter-rouge"><pre class="highlight"><code>protected void onDraw(Canvas canvas) {
     canvas.save();
 
     camare.save();
@@ -213,7 +213,7 @@ Camare可以用于辅助Matrix计算; 比如: 如下代码</p>
 
     canvas.restore();
 }
-</code></pre></div></div>
+</code></pre></div>
 <p>Camare坐标系: 使用的是三维坐标系, 原点也是View左上角; x轴右正左负, y轴上正下负(注意y轴不一样咯, 和View坐标系相反), z轴垂直于View, 内正外负(朝屏幕里面为正, 朝屏幕外面为负); 还包含了一个虚拟的Camare对象, 即一个虚拟的相机, 默认在z轴负向, 即View坐标原点的正上方
 Camare的旋转方向没有规律, 见Download文件夹下照片
 Camare也是可以沿着x, y, z轴平移的, 比如沿着z轴平移, 就相当于将物体远离或者靠近相机, 即起到放大缩小的作用, 但是由于这种情况也可以直接使用Canvas的scale()等来做到, 所以实际开发中一般都用Canvas自带的方法来实现
@@ -334,10 +334,10 @@ PropertyValuesHolder 的进阶使用：使用 PropertyValuesHolder.ofKeyframe() 
 
 <p>如果是使用 ViewPropertyAnimator, 如下代码; 不过一定要注意，只有你在对 translationX translationY rotation alpha 等无需调用 invalidate() 的属性做动画的时候，这种方法才适用，因为这种方法本身利用的就是当界面不发生时，缓存未更新所带来的时间的节省。所以简单地说——
 <strong>这种方式不适用于基于自定义属性绘制的动画</strong>。一定记得这句话。</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>view.animate()
+<div class="highlighter-rouge"><pre class="highlight"><code>view.animate()
         .rotationY(90)
         .withLayer(); // withLayer() 可以自动完成上面这段代码的复杂操作
-</code></pre></div></div>
+</code></pre></div>
 
 <p>由于设置了 View Layer 后，View 在初次绘制时以及每次  invalidate() 后重绘时，需要进行两次的绘制工作（一次绘制到 Layer，一次从 Layer 绘制到显示屏），所以其实它的每次绘制的效率是被降低了的。所以一定要慎重使用 View Layer，在需要用到它的时候再去使用。</p>
 
@@ -464,7 +464,7 @@ PropertyValuesHolder 的进阶使用：使用 PropertyValuesHolder.ofKeyframe() 
                             
         				
                             
-                				<a href="/tags/#Java" title="Java" rel="13">
+                				<a href="/tags/#Java" title="Java" rel="14">
                                     Java
                                 </a>
                             
@@ -475,6 +475,10 @@ PropertyValuesHolder 的进阶使用：使用 PropertyValuesHolder.ofKeyframe() 
                                 </a>
                             
         				
+                            
+                				<a href="/tags/#Hust" title="Hust" rel="2">
+                                    Hust
+                                </a>
                             
         				
                             
@@ -609,7 +613,7 @@ PropertyValuesHolder 的进阶使用：使用 PropertyValuesHolder.ofKeyframe() 
                     
                 </ul>
                 <p class="copyright text-muted">
-                    Copyright &copy; 袁平 2018
+                    Copyright &copy; 袁平 2019
                     <br>
                 </p>
             </div>

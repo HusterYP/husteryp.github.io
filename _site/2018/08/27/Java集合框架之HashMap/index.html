@@ -213,18 +213,18 @@
 
 <p><code class="highlighter-rouge">Hash</code>规则就是如何将一个<code class="highlighter-rouge">key</code>映射到对应的数组索引位置; 首先来看如何得到一个<code class="highlighter-rouge">key</code>的<code class="highlighter-rouge">Hash</code>值; 如下<code class="highlighter-rouge">hash()</code>函数, 该函数也叫扰动函数, 扰动函数做 的事情是将<code class="highlighter-rouge">key</code>的<code class="highlighter-rouge">hash</code>值的高位与低位做异或运算(以<code class="highlighter-rouge">32</code>位计算, <code class="highlighter-rouge">16</code>正好是<code class="highlighter-rouge">32</code>的一半)(这里说明一下<code class="highlighter-rouge">&gt;&gt;&gt;</code>是无符号右移, 高位补0), 这样做的目的是为了混合高低位的信息, 使得取余计算索引值的时候, 不仅仅只是低位起作用, 减少冲突发生的可能性</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    static final int hash(Object key) {
+<div class="highlighter-rouge"><pre class="highlight"><code>    static final int hash(Object key) {
         int h;
         return (key == null) ? 0 : (h = key.hashCode()) ^ (h &gt;&gt;&gt; 16);
     }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>这里需要联系索引值的计算来理解, 如下, 取存放一个键值对为例, 索引值的计算式子为<code class="highlighter-rouge">(n - 1) &amp; hash</code>(注意该式实际上等价于<code class="highlighter-rouge">hash % n</code>, 即为了保证在有效索引范围内, 对<code class="highlighter-rouge">hash</code>取余, 只是这里为了提高效率, 使用位运算代替了模运算, 关于优化程序性能, 可以<a href="https://husteryp.github.io/2018/08/24/Details/">参见博客</a>), 这里的<code class="highlighter-rouge">n</code>是数组的长度, 因为在<code class="highlighter-rouge">HashMap</code>中, 数组长度始终取的是<code class="highlighter-rouge">2</code>的整数次幂, 所以这里<code class="highlighter-rouge">n - 1</code>就相当于是一个掩码(全<code class="highlighter-rouge">1</code>, 比如默认初始长度<code class="highlighter-rouge">16</code>, 减一后为<code class="highlighter-rouge">15</code>, 二进制为<code class="highlighter-rouge">1111</code>), 高位补<code class="highlighter-rouge">0</code>, 进行与运算时, 就相当于只取了低位, 本来理想状态下, 如果数组长度足够大的话, 其实不需要扰动函数也可以, 因为数组长度足够大, 相当于<code class="highlighter-rouge">n</code>值足够大, 那么取的有效位也就足够大, 发生冲突的概率也就相对降低了; 但是实际情况是,
 需要在空间利用率, 时间消耗和冲突频率之间取一个折中值, 空间上是不可能达到理想情况的, 那么这时候就需要一个扰动函数, 将高位的影响保留下来, 减少冲突, 因为如果只看低位的话, 冲突发生的频率还是很高的;</p>
 
 <p>当然, 如果这里你还是没有弄清楚的话, 可以参见<a href="https://www.zhihu.com/question/20733617">HashMap中的hash原理</a></p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>     final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
+<div class="highlighter-rouge"><pre class="highlight"><code>     final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
                    boolean evict) {
         Node&lt;K,V&gt;[] tab; Node&lt;K,V&gt; p; int n, i;
         if ((tab = table) == null || (n = tab.length) == 0)
@@ -233,7 +233,7 @@
             tab[i] = newNode(hash, key, value, null);
         ...
      }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>此外, 这里还想额外补充一点的是关于对象的<code class="highlighter-rouge">hashCode()</code>方法和<code class="highlighter-rouge">equals()</code>方法: <code class="highlighter-rouge">Java</code>中每一种数据类型的<code class="highlighter-rouge">hashCode()</code>方法都必须和<code class="highlighter-rouge">equals()</code>方法一致, 也就是说, 如果<code class="highlighter-rouge">a.equals(b)</code>返回<code class="highlighter-rouge">true</code>, 那么<code class="highlighter-rouge">a.hashCode()</code>必然和<code class="highlighter-rouge">b.hashCode()</code>相等; 相反, 如果两个对象的<code class="highlighter-rouge">hashCode()</code>不同, 我们就知道该两个对象不同, 但是如果两个对象的<code class="highlighter-rouge">hashCode()</code>相等, 这两个对象也可能不同, 此时还需要使用<code class="highlighter-rouge">equals()</code>去判断</p>
 
@@ -263,7 +263,7 @@
   <li>传入初始容量与加载因子: 但是并不是说指定的初始容量是多少, 构造的<code class="highlighter-rouge">HashMap</code>容量就是多少; <code class="highlighter-rouge">HashMap</code>的初始容量是取大于<code class="highlighter-rouge">initialCapacity</code>的最小<code class="highlighter-rouge">2</code>的整数次幂的数(比如传入<code class="highlighter-rouge">20</code>的话, 实际容量就会取<code class="highlighter-rouge">32</code>); 这里的作用主要在<code class="highlighter-rouge">tableSizeFor()</code>函数中(如下); 这里之所以要取成<code class="highlighter-rouge">2</code>的整数次幂, 是为了方便用各种位运算代替算数运算, 提高效率(比如上面的用与运算代替取模运算)</li>
 </ol>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    public HashMap(int initialCapacity, float loadFactor) {
+<div class="highlighter-rouge"><pre class="highlight"><code>    public HashMap(int initialCapacity, float loadFactor) {
         if (initialCapacity &lt; 0)
             throw new IllegalArgumentException("Illegal initial capacity: " +
                                                initialCapacity);
@@ -275,9 +275,9 @@
         this.loadFactor = loadFactor;
         this.threshold = tableSizeFor(initialCapacity);
     }
-</code></pre></div></div>
+</code></pre></div>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    // 返回大于cap的最小的2的整数次幂的数
+<div class="highlighter-rouge"><pre class="highlight"><code>    // 返回大于cap的最小的2的整数次幂的数
     static final int tableSizeFor(int cap) {
         int n = cap - 1;
         n |= n &gt;&gt;&gt; 1;
@@ -287,42 +287,42 @@
         n |= n &gt;&gt;&gt; 16;
         return (n &lt; 0) ? 1 : (n &gt;= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : n + 1;
     }
-</code></pre></div></div>
+</code></pre></div>
 
 <ol>
   <li>传入初始容量: 如下; 当只是指定初始容量时, 则使用默认装载因子<code class="highlighter-rouge">0.75</code>(<code class="highlighter-rouge">static final float DEFAULT_LOAD_FACTOR = 0.75f;</code>)</li>
 </ol>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    public HashMap(int initialCapacity) {
+<div class="highlighter-rouge"><pre class="highlight"><code>    public HashMap(int initialCapacity) {
         this(initialCapacity, DEFAULT_LOAD_FACTOR); // DEFAULT_LOAD_FACTOR = 0.75
     }
 
-</code></pre></div></div>
+</code></pre></div>
 
 <ol>
   <li>默认构造函数: 都使用默认值, 其中装载因子默认<code class="highlighter-rouge">0.75</code>, 初始容量默认<code class="highlighter-rouge">DEFAULT_INITIAL_CAPACITY = 1 &lt;&lt; 4</code>(即<code class="highlighter-rouge">16</code>);</li>
 </ol>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    public HashMap() {
+<div class="highlighter-rouge"><pre class="highlight"><code>    public HashMap() {
         this.loadFactor = DEFAULT_LOAD_FACTOR; // all other fields defaulted
     }
-</code></pre></div></div>
+</code></pre></div>
 
 <ol>
   <li>从已有数据构建: 使用默认装载因子; 同时通过传入数据数量进行构建</li>
 </ol>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    public HashMap(Map&lt;? extends K, ? extends V&gt; m) {
+<div class="highlighter-rouge"><pre class="highlight"><code>    public HashMap(Map&lt;? extends K, ? extends V&gt; m) {
         this.loadFactor = DEFAULT_LOAD_FACTOR;
         putMapEntries(m, false);
     }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>上述构造函数中, 使用默认值时, 都是只指定了<code class="highlighter-rouge">loadFactor</code>的默认值, 没有明确设定初始容量值, 那么该初始容量值又是在哪里指定的呢? 其实, 默认初始容量值是在<code class="highlighter-rouge">resize()</code>函数中指定的, 接下来马上讲解 !</p>
 
 <p>扩容, 由<code class="highlighter-rouge">resize()</code>函数作用; <code class="highlighter-rouge">resize()</code>函数比较长, 具体逻辑可以参见下面代码和注释来理解; 作用主要有两方面: 一个是初始化<code class="highlighter-rouge">table</code>, 另一个是扩容, 即将<code class="highlighter-rouge">table</code>大小增大一倍</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    final Node&lt;K,V&gt;[] resize() {
+<div class="highlighter-rouge"><pre class="highlight"><code>    final Node&lt;K,V&gt;[] resize() {
         Node&lt;K,V&gt;[] oldTab = table;
         int oldCap = (oldTab == null) ? 0 : oldTab.length;
         int oldThr = threshold;
@@ -361,19 +361,19 @@
         }
         return newTab;
     }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>可以看出, <code class="highlighter-rouge">resize()</code>的时候进行了空间重新分配和数据的移动, 是一个相对比较耗时的操作, 所以应该合理设置初始容量和加载因子(一般都使用默认加载因子), 来减少扩容次数</p>
 
 <p>上面我们详细了解了一下扩容函数<code class="highlighter-rouge">resize()</code>的过程, 接下来要解决的是什么时候进行扩容; 其实这个问题, 我们直接看什么时候调用了<code class="highlighter-rouge">resize()</code>即可; 调用关系主要分为两类, 如下; 可以很明显的看出, 当超出阈值的时候, 需要进行扩容; 当<code class="highlighter-rouge">table</code>为<code class="highlighter-rouge">null</code>, 即尚未初始化的时候, 需要进行初始化; 其实这也对应了上面所说的<code class="highlighter-rouge">resize()</code>函数的两个作用: 容量倍增和初始化</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    if (s &gt; threshold)
+<div class="highlighter-rouge"><pre class="highlight"><code>    if (s &gt; threshold)
         resize();
-</code></pre></div></div>
+</code></pre></div>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    if ((tab = table) == null || (n = tab.length) == 0)
+<div class="highlighter-rouge"><pre class="highlight"><code>    if ((tab = table) == null || (n = tab.length) == 0)
         n = (tab = resize()).length;
-</code></pre></div></div>
+</code></pre></div>
 
 <hr />
 
@@ -386,7 +386,7 @@
 
 <p>要看如何解决冲突, 当然是在存放一个值的时候咯! 如下<code class="highlighter-rouge">putVal()</code>; 逻辑比较简单, 结合注释过一遍即可</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
+<div class="highlighter-rouge"><pre class="highlight"><code>    final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
                    boolean evict) {
         Node&lt;K,V&gt;[] tab; Node&lt;K,V&gt; p; int n, i;
 
@@ -430,7 +430,7 @@
         ...
         return null;
     }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>接下来主要看两种数据结构的组织方式</p>
 
@@ -438,7 +438,7 @@
 
 <p>链表节点是<code class="highlighter-rouge">Node</code>, 如下; 也是常规的单链表数据结构, 只是数据域多了一个键值(<code class="highlighter-rouge">key</code>); 比较简单, 没话说！</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    static class Node&lt;K,V&gt; implements Map.Entry&lt;K,V&gt; {
+<div class="highlighter-rouge"><pre class="highlight"><code>    static class Node&lt;K,V&gt; implements Map.Entry&lt;K,V&gt; {
         final int hash; // 软缓存
         final K key;
         V value;
@@ -453,7 +453,7 @@
         
         ...
     }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>这里需要提一个小的知识点：</p>
 
@@ -465,7 +465,7 @@
 
 <p>这里, 我们简单看一下其节点组织方式</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    static final class TreeNode&lt;K,V&gt; extends LinkedHashMap.Entry&lt;K,V&gt; {
+<div class="highlighter-rouge"><pre class="highlight"><code>    static final class TreeNode&lt;K,V&gt; extends LinkedHashMap.Entry&lt;K,V&gt; {
         TreeNode&lt;K,V&gt; parent;  // red-black tree links
         TreeNode&lt;K,V&gt; left; // 指向左节点指针
         TreeNode&lt;K,V&gt; right; // 指向右节点指针
@@ -477,7 +477,7 @@
 
         ...
     }
-</code></pre></div></div>
+</code></pre></div>
 
 <hr />
 
@@ -595,7 +595,7 @@
                             
         				
                             
-                				<a href="/tags/#Java" title="Java" rel="13">
+                				<a href="/tags/#Java" title="Java" rel="14">
                                     Java
                                 </a>
                             
@@ -606,6 +606,10 @@
                                 </a>
                             
         				
+                            
+                				<a href="/tags/#Hust" title="Hust" rel="2">
+                                    Hust
+                                </a>
                             
         				
                             
@@ -740,7 +744,7 @@
                     
                 </ul>
                 <p class="copyright text-muted">
-                    Copyright &copy; 袁平 2018
+                    Copyright &copy; 袁平 2019
                     <br>
                 </p>
             </div>

@@ -1,0 +1,501 @@
+<h1 id="前言">前言</h1>
+
+<p>本文是对«深入理解Java虚拟机»第六章第七章以及其他博客的总结, 权做笔记~</p>
+
+<hr />
+
+<h1 id="正文">正文</h1>
+
+<hr />
+
+<h2 id="一-类文件结构">一. 类文件结构</h2>
+
+<p><code class="highlighter-rouge">Class</code>文件是一组以<code class="highlighter-rouge">8</code>位字节为基础单位的二进制流, 当遇到需要占据<code class="highlighter-rouge">8</code>位字节以上空间的数据项时, 则会按照高位在前的方式分割成若干个<code class="highlighter-rouge">8</code>位字节进行存储</p>
+
+<p><code class="highlighter-rouge">Class</code>文件格式采用一种类似于<code class="highlighter-rouge">C</code>语言结构体的伪结构来存储数据, 这种伪结构中只有两种数据类型: 无符号数和表; 无符号数是基本数据类型, 以<code class="highlighter-rouge">u1</code>, <code class="highlighter-rouge">u2</code>, <code class="highlighter-rouge">u4</code>, <code class="highlighter-rouge">u8</code>来分别代表<code class="highlighter-rouge">1</code>个字节,<code class="highlighter-rouge">2</code>个字节, <code class="highlighter-rouge">4</code>个字节和<code class="highlighter-rouge">8</code>个字节的无符号数, 无符号数可以用来描述数字, 索引引用, 数量值或者按照<code class="highlighter-rouge">UTF-8</code>编码构成字符串值; 表由多个无符号数或者其他表作为数据项构成的复合数据类型, 以<code class="highlighter-rouge">_info</code>结尾</p>
+
+<p>由于<code class="highlighter-rouge">Class</code>文件中没有分隔符, 所以哪个字节代表什么含义, 长度是多少, 先后顺序如何, 都被严格限定且不允许改变</p>
+
+<p><code class="highlighter-rouge">Class</code>文件格式见下表</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>类型</th>
+      <th>名称</th>
+      <th>数量</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>u4</td>
+      <td>magic</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>u2</td>
+      <td>minor_version</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>u2</td>
+      <td>major_version</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>u2</td>
+      <td>constant_pool_count</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>cp_info</td>
+      <td>constant_pool</td>
+      <td>constant_pool_count-1</td>
+    </tr>
+    <tr>
+      <td>u2</td>
+      <td>access_flags</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>u2</td>
+      <td>this_class</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>u2</td>
+      <td>super_class</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>u2</td>
+      <td>interfaces_count</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>u2</td>
+      <td>interfaces</td>
+      <td>interfaces_count</td>
+    </tr>
+    <tr>
+      <td>u2</td>
+      <td>fields_count</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>field_info</td>
+      <td>fields</td>
+      <td>fields_count</td>
+    </tr>
+    <tr>
+      <td>u2</td>
+      <td>methods_count</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>method_info</td>
+      <td>methods</td>
+      <td>methods_count</td>
+    </tr>
+    <tr>
+      <td>u2</td>
+      <td>attributes_count</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>attribute_info</td>
+      <td>attributes</td>
+      <td>attributes_count</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="11-简介">1.1 简介</h3>
+
+<ol>
+  <li>
+    <p><strong>魔数</strong>: 每个<code class="highlighter-rouge">Class</code>文件头<code class="highlighter-rouge">4</code>个字节称为魔数, 唯一作用是确定该文件是否是一个能被虚拟机接受的<code class="highlighter-rouge">Class</code>文件</p>
+  </li>
+  <li>
+    <p><strong>版本号</strong>: 紧接着魔数的四个字节存储的是<code class="highlighter-rouge">Class</code>文件的版本号: 第<code class="highlighter-rouge">5</code>和第<code class="highlighter-rouge">6</code>个字节是次版本号(<code class="highlighter-rouge">Minor Version</code>), 第<code class="highlighter-rouge">7</code>和第<code class="highlighter-rouge">8</code>个字节是主版本号(<code class="highlighter-rouge">Major Version</code>); 虚拟机必须拒绝执行超过其版本号的<code class="highlighter-rouge">Class</code>文件</p>
+  </li>
+  <li>
+    <p><strong>常量池</strong>: 紧接着主版本号之后的是常量池入口, 是一个表类型数据项; <code class="highlighter-rouge">Class</code>文件中只有常量池的容量计数是从<code class="highlighter-rouge">1</code>开始的; 常量池中主要存放两大类常量: 字面量和符号引用</p>
+  </li>
+</ol>
+
+<blockquote>
+  <ol>
+    <li>字面量: 如: 文本字符串, 声明为<code class="highlighter-rouge">final</code>的常量值等</li>
+    <li>符号引用: 类和接口的全限定名; 字段的名称和描述符; 方法的名称和描述符</li>
+  </ol>
+</blockquote>
+
+<ol>
+  <li>
+    <p><strong>访问标志</strong>: 常量池结束之后, 紧接着的两个字节代表访问标志; 用于表示一些类或者接口的层次信息</p>
+  </li>
+  <li>
+    <p><strong>类索引, 父类索引和接口索引集合</strong>: 用于确定类的继承关系; 除了<code class="highlighter-rouge">java.lang.Object</code>之外, 所有的<code class="highlighter-rouge">Java</code>类都有父类, 因此除了<code class="highlighter-rouge">java.lang.Object</code>外, 所有<code class="highlighter-rouge">Java</code>类的父类索引都不为<code class="highlighter-rouge">0</code></p>
+  </li>
+  <li>
+    <p><strong>字段表</strong>: 描述接口或者类中声明的变量; 字段包括类级变量以及实例级变量, 但不包括方法内部声明的局部变量</p>
+  </li>
+  <li>
+    <p><strong>方法表</strong>: 包括访问标志, 名称索引, 描述符索引, 属性表集合; 如果父类方法在子类中没有被重写, 方法表集合中就不会出现来自父类的方法信息, 但是, 同样的, 有可能会出现由编译器自动添加的方法, 最典型的便是类构造器<code class="highlighter-rouge">&lt;clinit&gt;</code>方法和实例构造器<code class="highlighter-rouge">&lt;init&gt;</code>方法</p>
+  </li>
+  <li>
+    <p><strong>属性表</strong>: <code class="highlighter-rouge">Java</code>虚拟机运行时会忽略掉它不认识的属性</p>
+  </li>
+</ol>
+
+<h3 id="12-常见问题">1.2 常见问题</h3>
+
+<ol>
+  <li><code class="highlighter-rouge">Java</code>程序中如果定义了超过<code class="highlighter-rouge">64KB</code>英文字符的变量或方法名, 将无法编译:</li>
+</ol>
+
+<blockquote>
+  <p>由于<code class="highlighter-rouge">Class</code>文件中方法, 字段等都需要引用<code class="highlighter-rouge">CONSTANT_Utf8_info</code>型常量来描述名称, 所以<code class="highlighter-rouge">CONSTANT_Utf8_info</code>型常量的最大长度也就是<code class="highlighter-rouge">Java</code>中方法, 字段名的最大长度; <code class="highlighter-rouge">u2</code>类型能表达的最大值是<code class="highlighter-rouge">65535</code>, 所以<code class="highlighter-rouge">Java</code>程序中如果定义了超过<code class="highlighter-rouge">64KB</code>英文字符的变量或方法名, 将无法编译</p>
+</blockquote>
+
+<hr />
+
+<h2 id="二-虚拟机类加载机制">二. 虚拟机类加载机制</h2>
+
+<h3 id="21-类加载的时机">2.1 类加载的时机</h3>
+
+<p>类从被加载到虚拟机内存中开始, 到卸载出内存为止, 其生命周期如下图:</p>
+
+<p><img src="/img/post/JVM/类的生命周期.png" alt="类的生命周期" /></p>
+
+<p>其中, 加载, 验证, 准备, 初始化和卸载这五个阶段的顺序是确定的, 解析阶段则不一定: 在某些情况下, 可以在初始化阶段之后再<strong>开始</strong>(注意, 是开始, 而不是<em>进行</em>或者<em>完成</em>)</p>
+
+<p>遇到以下五种情况必须立即对类进行<em>初始化</em>(而加载, 验证, 准备自然要在这之前完成):</p>
+
+<blockquote>
+  <ol>
+    <li>遇到<code class="highlighter-rouge">new</code>, <code class="highlighter-rouge">getstatic</code>, <code class="highlighter-rouge">putstatic</code>或<code class="highlighter-rouge">invokestatic</code>这<code class="highlighter-rouge">4</code>条字节码指令时, 如果类没有初始化, 需要出发初始化; 生成这<code class="highlighter-rouge">4</code>条指令的常见<code class="highlighter-rouge">Java</code>代码场景是: 使用<code class="highlighter-rouge">new</code>关键字实例化对象的时候, 读取或设置一个类的静态字段的时候(注意: 被<code class="highlighter-rouge">final</code>修饰, 已在编译期把结果放入常量池的静态字段除外(由此可见, 添加<code class="highlighter-rouge">final</code>修饰可以避免不必要的类加载)), 以及调用一个类的静态方法的时候</li>
+    <li>使用<code class="highlighter-rouge">java.lang.reflect</code>包的方法对类进行反射调用的时候</li>
+    <li>当初始化一个类, 如果发现其父类没有初始化, 则需先初始化其父类</li>
+    <li>虚拟机启动时, 用户需要指定一个要执行的主类(<code class="highlighter-rouge">main()</code>所在的类), 虚拟机会先初始化这个主类</li>
+    <li>当使用<code class="highlighter-rouge">JDK1.7</code>的动态语言支持(比如: <code class="highlighter-rouge">Groovy</code>等)时, 如果一个<code class="highlighter-rouge">java.lang.invoke.MethodHandle</code>实例最后的解析结果<code class="highlighter-rouge">REF_getStatic</code>, <code class="highlighter-rouge">REF_putStatic</code>, <code class="highlighter-rouge">REF_invokeStatic</code>的方法句柄, 并且这个方法句柄所对应的类没有进行过初始化, 则需先触发其初始化</li>
+  </ol>
+</blockquote>
+
+<h3 id="22-主动引用与被动引用">2.2 主动引用与被动引用</h3>
+
+<h4 id="221-构造函数-代码块-静态代码块的执行时机">2.2.1 构造函数, 代码块, 静态代码块的执行时机</h4>
+
+<p>考虑下列代码:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>public class Practice {
+
+    static {
+        System.out.println("Practice static code block");
+    }
+
+    {
+        System.out.println("Practice code block");
+    }
+
+    public Practice() {
+        System.out.println("Practice constructor");
+    }
+}
+</code></pre></div>
+
+<p>当<code class="highlighter-rouge">new</code>一个<code class="highlighter-rouge">Practice</code>对象时, 输出如下; 说明三者的执行顺序是: 静态代码块 –&gt; 代码块 –&gt; 构造函数</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>Practice static code block
+Practice code block
+Practice constructor
+</code></pre></div>
+
+<p>关于三者的执行时机与作用:</p>
+
+<ol>
+  <li><strong>静态代码块</strong>:</li>
+</ol>
+
+<blockquote>
+  <ol>
+    <li>用于给类初始化, 随着类的加载而执行, 只执行一次</li>
+    <li>在<code class="highlighter-rouge">main()</code>函数之前执行</li>
+    <li>一个类可以有多个静态代码块</li>
+  </ol>
+</blockquote>
+
+<ol>
+  <li><strong>代码块</strong>:</li>
+</ol>
+
+<blockquote>
+  <ol>
+    <li>实例对象相关, 给所有对象进行统一初始化(因为构造函数可以重载)</li>
+  </ol>
+</blockquote>
+
+<ol>
+  <li><strong>构造函数</strong>:</li>
+</ol>
+
+<blockquote>
+  <ol>
+    <li>初始化实例</li>
+  </ol>
+</blockquote>
+
+<h4 id="222-被动引用示例">2.2.2 被动引用示例</h4>
+
+<blockquote>
+  <p>前面所说的触发初始化的五个场景对应叫做主动引用</p>
+</blockquote>
+
+<ol>
+  <li>通过子类引用父类的静态字段, 不会导致子类初始化: 对于静态字段, 只有直接定义这个字段的类才会被初始化</li>
+</ol>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>public class NotInitialization {
+    public static void main(String[] args) {
+        System.out.println(SubClass.value);  // 不会初始化子类~
+    }
+}
+
+class SuperClass {
+    static {
+        System.out.println("SuperClass init");
+    }
+
+    public static int value = 123;
+}
+
+class SubClass extends SuperClass{
+    static {
+        System.out.println("Child init");
+    }
+}
+
+</code></pre></div>
+
+<p><strong>注</strong>: 后文为节省篇幅, 将重用这里的<code class="highlighter-rouge">SuperClass</code>和<code class="highlighter-rouge">SubClass</code>, 而不再重写~</p>
+
+<ol>
+  <li>通过数组定义来引用类, 不会触发此类的初始化: 虚拟机会为数组自动生成一个直接继承自<code class="highlighter-rouge">Object</code>的子类; <code class="highlighter-rouge">Java</code>中对数组的访问比<code class="highlighter-rouge">C/C++</code>更安全, 是因为这个类封装了数组元素的访问方法, 而<code class="highlighter-rouge">C/C++</code>直接翻译为数组指针的移动</li>
+</ol>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>public class NotInitialization {
+    public static void main(String[] args) {
+        SuperClass[] sca = new SuperClass[0];
+    }
+}
+</code></pre></div>
+
+<ol>
+  <li>常量在编译阶段会存入被调用类的常量池中, 本质上并没有直接引用到常量的类, 因此不会出发定义常量的类的初始化: 在编译阶段经过常量传播优化, 已经将次<code class="highlighter-rouge">Hello World</code>常量存储到了<code class="highlighter-rouge">NotInitialization</code>类的常量池中了, 以后<code class="highlighter-rouge">Initialization</code>对常量<code class="highlighter-rouge">ConstClass.HELLOWORLD</code>的引用都被转化为<code class="highlighter-rouge">NotInitialization</code>类对自身常量池的引用了~</li>
+</ol>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>public class NotInitialization {
+    public static void main(String[] args) {
+        System.out.println(ConstClass.CONST);
+    }
+}
+
+class ConstClass {
+    static {
+        System.out.println("ConstClass init");
+    }
+
+    public static final String HELLOWORLD="Hello World"; // 注意这里不能从static来理解, 因为即使有static, 但是没有final的话仍然会触发ConstClass的初始化~
+}
+</code></pre></div>
+
+<h3 id="23-类的加载过程">2.3 类的加载过程</h3>
+
+<blockquote>
+  <p>结合前面的图咯~</p>
+</blockquote>
+
+<h4 id="231-加载">2.3.1 加载</h4>
+
+<ol>
+  <li>
+    <p>通过一个类的全限定名来获取定义此类的二进制字节流</p>
+  </li>
+  <li>
+    <p>将这个字节流所代表的静态存储结构转化为方法区的运行时数据结构</p>
+  </li>
+  <li>
+    <p>在内存中生成一个代表这个类的<code class="highlighter-rouge">java.lang.Class</code>对象(该<code class="highlighter-rouge">Class</code>对象并没有明确规定是在<code class="highlighter-rouge">Java</code>堆中, 对于<code class="highlighter-rouge">HotSpot</code>虚拟机而言, <code class="highlighter-rouge">Class</code>对象比较特殊, 它虽然是对象, 但是存在于方法区中), 作为方法区这个类的各种数据的访问入口</p>
+  </li>
+</ol>
+
+<h4 id="232--验证">2.3.2  验证</h4>
+
+<ol>
+  <li>文件格式验证:</li>
+</ol>
+
+<blockquote>
+  <ol>
+    <li>是否以魔数<code class="highlighter-rouge">0xCAFEBABE</code>开头</li>
+    <li>主, 次版本号是否在当前虚拟机处理范围之内</li>
+    <li>常量池的常量中是否有不被支持的类型
+….</li>
+  </ol>
+</blockquote>
+
+<ol>
+  <li>元数据验证</li>
+</ol>
+
+<blockquote>
+  <ol>
+    <li>是否有父类</li>
+    <li>是否继承了不允许被继承的父类(被<code class="highlighter-rouge">final</code>修饰的父类)</li>
+    <li>如果这个类不是抽象类, 是否实现其父类或接口中要求实现的所有方法</li>
+    <li>是否非法覆盖(<code class="highlighter-rouge">final</code>方法), 重载是否正确
+…</li>
+  </ol>
+</blockquote>
+
+<ol>
+  <li>字节码验证</li>
+</ol>
+
+<blockquote>
+  <p>对类的方法体进行校验分析, 保证被校验的类在运行时不会危害虚拟机</p>
+</blockquote>
+
+<ol>
+  <li>符号引用验证</li>
+</ol>
+
+<blockquote>
+  <ol>
+    <li>符号引用中通过字符串描述的全限定名是否能找到对应的父类</li>
+    <li>符号引用中的类, 字段, 方法的访问性是否可以被当前类访问</li>
+    <li>指定类中是否存在符合方法的字段描述符以及简单名称所描述的方法和字段
+…</li>
+  </ol>
+</blockquote>
+
+<h4 id="233-准备">2.3.3 准备</h4>
+
+<p>正式为类变量分配内存并为其设置初始值</p>
+
+<h4 id="234-解析">2.3.4 解析</h4>
+
+<p>将常量池中的符号引用替换为直接引用</p>
+
+<h4 id="235-初始化">2.3.5 初始化</h4>
+
+<p>真正开始执行<code class="highlighter-rouge">Java</code>程序代码(字节码)或者说初始化阶段是执行类构造器<code class="highlighter-rouge">&lt;clinit&gt;()</code>方法的过程</p>
+
+<h5 id="235-1-类构造器方法">2.3.5-1 类构造器<clinit>()方法</clinit></h5>
+
+<ol>
+  <li><code class="highlighter-rouge">&lt;clinit&gt;()</code>方法是由编译器自动收集类中的所有类变量的赋值动作和静态语句块(<code class="highlighter-rouge">static</code>代码块)中的语句合并产生的; 静态语句块只能访问到定义在静态语句块之前的变量, 定义在它之后的变量, 在前面的静态语句块可以赋值, 但是不能访问, 如下代码</li>
+</ol>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>class Temp {
+    static {
+        value = 2;
+//        System.out.println(value); // 不能访问
+    }
+
+    static int value = 1;
+}
+</code></pre></div>
+
+<ol>
+  <li>
+    <p><code class="highlighter-rouge">&lt;clinit&gt;()</code>方法与构造函数(<code class="highlighter-rouge">&lt;init&gt;()</code>)不同, 虚拟机会保证子类的<code class="highlighter-rouge">&lt;clinit&gt;()</code>方法执行之前, 父类的<code class="highlighter-rouge">&lt;clinit&gt;()</code>方法已经执行完毕; 因此在虚拟机中第一个被执行的<code class="highlighter-rouge">&lt;clinit&gt;()</code>方法的类肯定是<code class="highlighter-rouge">java.lang.Object</code></p>
+  </li>
+  <li>
+    <p>由于父类的<code class="highlighter-rouge">&lt;clinit&gt;()</code>方法先于子类的执行, 也就意味着父类中的静态语句块要先于子类的变量赋值操作; 注意如下代码;</p>
+  </li>
+</ol>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>class SuperClass {
+    public static int A = 1;
+    static {
+        A = 2;
+    }
+}
+
+class SubClass extends SuperClass{
+    public static int B = A; // 注意这里的B应该为2, 而不是1
+}
+</code></pre></div>
+
+<ol>
+  <li>
+    <p><code class="highlighter-rouge">&lt;clinit&gt;()</code>方法对于类或接口来说不是必需的, 如果一个类没有静态语句块, 也没有对变量的赋值操作, 那么编译器可以不为这个类生成<code class="highlighter-rouge">&lt;clinit&gt;()</code>方法</p>
+  </li>
+  <li>
+    <p>接口中不能有静态语句块, 但是可以有变量的初始化赋值操作, 因此接口与类一样也会生成<code class="highlighter-rouge">&lt;clinit&gt;()</code>方法; 但接口与类不同的是, 执行接口的<code class="highlighter-rouge">&lt;clinit&gt;()</code>方法不需要先执行父接口的<code class="highlighter-rouge">&lt;clinit&gt;()</code>方法, 只有当父接口中定义的变量使用时, 父接口才会初始化; 另外, 接口的实现类在初始化时也一样不会执行接口的<code class="highlighter-rouge">&lt;clinit&gt;()</code>方法</p>
+  </li>
+  <li>
+    <p>虚拟机会保证一个类的<code class="highlighter-rouge">&lt;clinit&gt;()</code>方法在多线程环境中被正确的加锁, 同步; 只能有一个线程去执行<code class="highlighter-rouge">&lt;clinit&gt;()</code></p>
+  </li>
+</ol>
+
+<h3 id="24-类加载器">2.4 类加载器</h3>
+
+<p>任意一个类, 都是由加载它的类加载器和这个类本身一同确立其在<code class="highlighter-rouge">Java</code>虚拟机中的唯一性; 更通俗一些是: 比较两个类是否<em>相等</em>, 只有在这两个类是由同一个类加载器加载的前提下才有意义, 否则, 即使这两个类来自同一个<code class="highlighter-rouge">Class</code>文件, 被同一个虚拟机加载, 只要加载它们的类加载器不同, 那这两个类就必定不相等(这里所谓的相等, 包括代表<code class="highlighter-rouge">Class</code>对象的<code class="highlighter-rouge">equals()</code>方法, <code class="highlighter-rouge">isAssignableFrom()</code>方法, <code class="highlighter-rouge">isInstance()</code>方法的返回结果, 以及使用<code class="highlighter-rouge">instanceof</code>关键字做对象所属关系判断等情况); 如下代码:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>import java.io.IOException;
+import java.io.InputStream;
+
+public class ClassLoaderTest {
+    public static void main(String[] args) throws Exception {
+        ClassLoader loader = new ClassLoader() {
+            @Override
+            public Class&lt;?&gt; loadClass(String name) throws ClassNotFoundException {
+                try {
+                    String fileName = name.substring(name.lastIndexOf(".") + 1) + ".class";
+                    InputStream inputStream = getClass().getResourceAsStream(fileName);
+                    if (inputStream == null) {
+                        return super.loadClass(name);
+                    }
+                    byte[] bytes = new byte[inputStream.available()];
+                    inputStream.read(bytes);
+                    return defineClass(name, bytes, 0, bytes.length);
+                } catch (IOException e) {
+                }
+                return null;
+            }
+        };
+
+        Object obj = loader.loadClass("Practice").newInstance();
+        System.out.println(obj.getClass());
+        System.out.println(obj instanceof Practice); // 及时是Practice实例, 但是这里仍然返回false
+    }
+}
+</code></pre></div>
+
+<h3 id="25-双亲委派模型">2.5 双亲委派模型</h3>
+
+<h4 id="251-类加载器分类">2.5.1 类加载器分类</h4>
+
+<ol>
+  <li>
+    <p>启动类加载器(<code class="highlighter-rouge">Bootstrap ClassLoader</code>): <code class="highlighter-rouge">C++</code>实现, 虚拟机自身一部分</p>
+  </li>
+  <li>
+    <p>扩展类加载器(<code class="highlighter-rouge">Extension ClassLoader</code>)</p>
+  </li>
+  <li>
+    <p>应用程序类加载器(<code class="highlighter-rouge">Application ClassLoader</code>): 如果没有定义自己的类加载器, 则为程序中默认的类加载器</p>
+  </li>
+</ol>
+
+<h4 id="252-双亲委派模型含义">2.5.2 双亲委派模型含义</h4>
+
+<p>如下图; 双亲委派模型要求除了顶层的启动类加载器外, 其余的类加载器都应当有自己的父类加载器;</p>
+
+<p><img src="/img/post/JVM/双亲委派模型.png" alt="双亲委派模型" /></p>
+
+<p>如果一个类加载器收到了类加载的请求, 它首先不会自己去尝试加载这个类, 而是把这个请求委派给父类加载器去完成, 每一个层次的类加载器都是如此; 因此所有的加载请求最终都应该传送到顶层的启动类加载器中, 只有当父类加载器反馈自己无法完成这个加载请求(它的搜索范围中没有找到所需的类)时, 子加载器才会尝试自己去加载</p>
+

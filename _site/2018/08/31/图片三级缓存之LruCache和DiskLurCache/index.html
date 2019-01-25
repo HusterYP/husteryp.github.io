@@ -190,18 +190,18 @@
 
 <p>先来看其构造函数: <code class="highlighter-rouge">LruCache</code>只有一个构造函数, 需要传递一个最大的缓存阈值; 同时需要注意的是, 这里构造<code class="highlighter-rouge">LinkedHashMap</code>的时候, 将<code class="highlighter-rouge">accessOrder</code>标志位设置为<code class="highlighter-rouge">true</code>了, 使得<code class="highlighter-rouge">LinkedHashMap</code>通过访问顺序来构造双向链表, 这在我们讲解<code class="highlighter-rouge">LinkedHashMap</code>源码的时候重点分析过, 这里不再赘述 !</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    public LruCache(int maxSize) {
+<div class="highlighter-rouge"><pre class="highlight"><code>    public LruCache(int maxSize) {
         if (maxSize &lt;= 0) {
             throw new IllegalArgumentException("maxSize &lt;= 0");
         }
         this.maxSize = maxSize;
         this.map = new LinkedHashMap&lt;K, V&gt;(0, 0.75f, true);
     }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>当然, <code class="highlighter-rouge">LruCache</code>还允许重新设置该阈值, 通过<code class="highlighter-rouge">trimToSize()</code>函数实现, 如下; 实现思路也很简单, 就是通过遍历当前缓存值, 然后不断删除最久未使用的缓存, 直到缓存量在阈值之下</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>     public void trimToSize(int maxSize) {
+<div class="highlighter-rouge"><pre class="highlight"><code>     public void trimToSize(int maxSize) {
         while (true) {
             K key;
             V value;
@@ -222,7 +222,7 @@
             entryRemoved(true, key, value, null);
         }
     }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>在我们平时使用的时候, 需要重点关注的有两个方法, 一个是<code class="highlighter-rouge">sizeOf()</code>, 另一个是<code class="highlighter-rouge">entryRemoved()</code>; 这两个方法通常都会根据实际需要重写; 两个方法也很简单, 下面分别讲解</p>
 
@@ -232,8 +232,8 @@
 
 <p>一般我们重写该方法是为了做一些旧数据的回收清理等特殊工作</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>protected void entryRemoved(boolean evicted, K key, V oldValue, V newValue) {}
-</code></pre></div></div>
+<div class="highlighter-rouge"><pre class="highlight"><code>protected void entryRemoved(boolean evicted, K key, V oldValue, V newValue) {}
+</code></pre></div>
 
 <hr />
 
@@ -247,7 +247,7 @@
 
 <p>先来看一下<code class="highlighter-rouge">DiskLruCache</code>的构造函数; 其只有一个构造函数, 如下; 其中<code class="highlighter-rouge">directory</code>表示缓存目录; <code class="highlighter-rouge">appVersion</code>表示应用版本号, 当该值改变时, <code class="highlighter-rouge">DiskLruCache</code>会清除所有缓存, 默认需要从网上拉取新数据; <code class="highlighter-rouge">valueCount</code>表示的是一个<code class="highlighter-rouge">key</code>可以对应多少个文件, 通常都传入<code class="highlighter-rouge">1</code>即可, 该值通常用于表示将一个大文件分成多个小文件存放, 存放的规则是, <code class="highlighter-rouge">key</code>后面加上自增的索引(如<code class="highlighter-rouge">key1</code>, <code class="highlighter-rouge">key2</code>等)(当然, 这些都是内部处理细节, 具体使用的时候可以不用管); <code class="highlighter-rouge">maxSize</code>表示的是缓存阈值(<code class="highlighter-rouge">byte</code>)</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private DiskLruCache(File directory, int appVersion, int valueCount, long maxSize) {
+<div class="highlighter-rouge"><pre class="highlight"><code>private DiskLruCache(File directory, int appVersion, int valueCount, long maxSize) {
     this.directory = directory;
     this.appVersion = appVersion;
     this.journalFile = new File(directory, JOURNAL_FILE);
@@ -256,11 +256,11 @@
     this.valueCount = valueCount;
     this.maxSize = maxSize;
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <p><code class="highlighter-rouge">DiskLruCache</code>的文件缓存依赖于日志文件, 即存储在同一文件夹下的名为<code class="highlighter-rouge">journal</code>的文件, 在该文件中, 存储了每个文件缓存的信息;  在开始之前, 需要先了解一下该文件的格式, 因为后面会去读取该日志文件, 做判断; 关于该文件格式, 可以参考<a href="https://blog.csdn.net/guolin_blog/article/details/28863651">Android DiskLruCache完全解析，硬盘缓存的最佳方案</a></p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>          libcore.io.DiskLruCache
+<div class="highlighter-rouge"><pre class="highlight"><code>          libcore.io.DiskLruCache
           1
           100
           2
@@ -273,30 +273,30 @@
           CLEAN 1ab96a171faeeee38496d8b330771a7a 1600 234
           READ 335c4c6028171cfddfbaae1a9c313c52
           READ 3400330d1dfc7f3f7f4b8d4d803dfcf6
-</code></pre></div></div>
+</code></pre></div>
 
 <p>在<code class="highlighter-rouge">DiskLruCache</code>中, 有三个重要的内部类, 一个是<code class="highlighter-rouge">Editor</code>, 用于文件写入; 一个是<code class="highlighter-rouge">Entry</code>, 表示一个文件信息节点; 还有一个是<code class="highlighter-rouge">Snapshot</code>, 表示文件节点的快照, 其实就是为了防止数据更改, 对<code class="highlighter-rouge">Entry</code>信息做了一层封装</p>
 
 <p>其中, 在<code class="highlighter-rouge">Editor</code>中有一个<code class="highlighter-rouge">Entry</code>成员变量, 在<code class="highlighter-rouge">Entry</code>中有一个<code class="highlighter-rouge">Editor</code>成员变量, 这是为了考虑在多线程中使用的时候, 通过判断携带的是不是同一个<code class="highlighter-rouge">Entry</code>或者<code class="highlighter-rouge">Editor</code>来判断是否是在同一个线程中操作同一个文件; 因为<code class="highlighter-rouge">DiskLruCache</code>不允许多个线程去操作同一个文件</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public final class Editor {
+<div class="highlighter-rouge"><pre class="highlight"><code>public final class Editor {
     private final Entry entry;
     ...
 }
-</code></pre></div></div>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private final class Entry {
+</code></pre></div>
+<div class="highlighter-rouge"><pre class="highlight"><code>private final class Entry {
     ...
     private Editor currentEditor;
     ...
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>另外, 这里还需要关注的一点是, <code class="highlighter-rouge">DiskLruCache</code>是如何判断哪些文件是旧文件; 这里我们发现了一个熟悉的身影, 即<code class="highlighter-rouge">
 private final LinkedHashMap&lt;String, Entry&gt; lruEntries = new LinkedHashMap&lt;String, Entry&gt;(0, 0.75f, true);</code>, 前面我们知道了<code class="highlighter-rouge">LruCache</code>是利用<code class="highlighter-rouge">LinkedHashMap</code>的访问特性来实现旧文件的判断和移除, 这里其实也是一样, 只不过这里存储的是<code class="highlighter-rouge">key</code>和<code class="highlighter-rouge">Entry</code>; 这也是前面日志文件<code class="highlighter-rouge">journal</code>的作用</p>
 
 <p>在初始化的时候, 会先去<code class="highlighter-rouge">journal</code>日志文件读取键值信息, 在<code class="highlighter-rouge">readJournal()</code>中不断的去读取<code class="highlighter-rouge">journal</code>文件, 然后调用<code class="highlighter-rouge">readJournalLine()</code>构建信息, 存储在<code class="highlighter-rouge">LinkedHashMap</code>中; 然后在<code class="highlighter-rouge">get()</code>值或者判断旧文件去移除的时候, 就直接去查询<code class="highlighter-rouge">LinkedHashMap</code>中的值就好了; 至于判断旧文件的原理, 和<code class="highlighter-rouge">LruCache</code>一样, 可以参见<a href="https://husteryp.github.io/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/">Java集合框架之LinkedHashMap</a></p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private void readJournal() throws IOException {
+<div class="highlighter-rouge"><pre class="highlight"><code>private void readJournal() throws IOException {
     ...
     while (true) {
         try {
@@ -308,9 +308,9 @@ private final LinkedHashMap&lt;String, Entry&gt; lruEntries = new LinkedHashMap&
     }
     ...
 }
-</code></pre></div></div>
+</code></pre></div>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private void readJournalLine(String line) throws IOException {
+<div class="highlighter-rouge"><pre class="highlight"><code>private void readJournalLine(String line) throws IOException {
     ...
     Entry entry = lruEntries.get(key);
     if (entry == null) {
@@ -319,7 +319,7 @@ private final LinkedHashMap&lt;String, Entry&gt; lruEntries = new LinkedHashMap&
     }
     ...
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <hr />
 
@@ -391,7 +391,7 @@ private final LinkedHashMap&lt;String, Entry&gt; lruEntries = new LinkedHashMap&
                             
         				
                             
-                				<a href="/tags/#Java" title="Java" rel="13">
+                				<a href="/tags/#Java" title="Java" rel="14">
                                     Java
                                 </a>
                             
@@ -402,6 +402,10 @@ private final LinkedHashMap&lt;String, Entry&gt; lruEntries = new LinkedHashMap&
                                 </a>
                             
         				
+                            
+                				<a href="/tags/#Hust" title="Hust" rel="2">
+                                    Hust
+                                </a>
                             
         				
                             
@@ -536,7 +540,7 @@ private final LinkedHashMap&lt;String, Entry&gt; lruEntries = new LinkedHashMap&
                     
                 </ul>
                 <p class="copyright text-muted">
-                    Copyright &copy; 袁平 2018
+                    Copyright &copy; 袁平 2019
                     <br>
                 </p>
             </div>

@@ -243,7 +243,7 @@
 
 <p><code class="highlighter-rouge">FFmpeg</code>编译生成的动态库默认格式为<code class="highlighter-rouge">xx.so.版本号</code>, 但是<code class="highlighter-rouge">Android</code>工程中只支持以<code class="highlighter-rouge">.so</code>结尾的动态库, 所以需要修改<code class="highlighter-rouge">FFmpeg</code>的配置文件, 修改其生成库文件名的格式; 编辑<code class="highlighter-rouge">FFmpeg</code>目录下的<code class="highlighter-rouge">configure</code>文件, 修改如下:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code># 将configure文件中的：
+<div class="highlighter-rouge"><pre class="highlight"><code># 将configure文件中的：
 SLIBNAME_WITH_MAJOR='$(SLIBNAME).$(LIBMAJOR)'
 LIB_INSTALL_EXTRA_CMD='$$(RANLIB) "$(LIBDIR)/$(LIBNAME)"'
 SLIB_INSTALL_NAME='$(SLIBNAME_WITH_VERSION)'
@@ -254,7 +254,7 @@ SLIBNAME_WITH_MAJOR='$(SLIBPREF)$(FULLNAME)-$(LIBMAJOR)$(SLIBSUF)'
 LIB_INSTALL_EXTRA_CMD='$$(RANLIB) "$(LIBDIR)/$(LIBNAME)"'
 SLIB_INSTALL_NAME='$(SLIBNAME_WITH_MAJOR)'
 SLIB_INSTALL_LINKS='$(SLIBNAME)'
-</code></pre></div></div>
+</code></pre></div>
 
 <p>为了减小<code class="highlighter-rouge">APK</code>大小, 我们只将需要的功能开启即可; 配置参数较多, 我们写一个脚本如下(名为<code class="highlighter-rouge">build-script.sh</code>)</p>
 
@@ -262,7 +262,7 @@ SLIB_INSTALL_LINKS='$(SLIBNAME)'
   <p>注: 下面的注释在运行脚本时需删除~</p>
 </blockquote>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#!/bin/bash</span>
+<div class="highlighter-rouge"><pre class="highlight"><code><span class="c">#!/bin/bash</span>
 
 <span class="nv">NDK</span><span class="o">=</span>/home/yuanping/Software/NDK/android-ndk-r15c  <span class="c"># NDK所在路径, 注意替换为你的</span>
 <span class="nv">SYSROOT</span><span class="o">=</span><span class="nv">$NDK</span>/platforms/android-19/arch-arm/
@@ -270,33 +270,33 @@ SLIB_INSTALL_LINKS='$(SLIBNAME)'
 <span class="k">function </span>build_one
 <span class="o">{</span>
 ./configure <span class="se">\</span>
-<span class="nt">--prefix</span><span class="o">=</span><span class="nv">$PREFIX</span> <span class="se">\</span>
-<span class="nt">--enable-shared</span> <span class="se">\ </span> <span class="c"># 生成动态库</span>
-<span class="nt">--disable-static</span> <span class="se">\ </span><span class="c"># 禁止生成静态库</span>
-<span class="nt">--disable-doc</span> <span class="se">\ </span> <span class="c"># 关闭不需要的功能, 下同</span>
-<span class="nt">--disable-ffplay</span> <span class="se">\</span>
-<span class="nt">--disable-ffprobe</span> <span class="se">\</span>
-<span class="nt">--disable-doc</span> <span class="se">\</span>
-<span class="nt">--disable-symver</span> <span class="se">\</span>
-<span class="nt">--disable-ffmpeg</span> <span class="se">\</span>
-<span class="nt">--enable-small</span> <span class="se">\</span>
-<span class="nt">--cross-prefix</span><span class="o">=</span><span class="nv">$TOOLCHAIN</span>/bin/arm-linux-androideabi- <span class="se">\</span>
-<span class="nt">--target-os</span><span class="o">=</span>linux <span class="se">\</span>
-<span class="nt">--arch</span><span class="o">=</span>arm <span class="se">\ </span>
-<span class="nt">--enable-cross-compile</span> <span class="se">\</span>
-<span class="nt">--sysroot</span><span class="o">=</span><span class="nv">$SYSROOT</span> <span class="se">\</span>
-<span class="nt">--extra-cflags</span><span class="o">=</span><span class="s2">"-Os -fpic </span><span class="nv">$ADDI_CFLAGS</span><span class="s2">"</span> <span class="se">\</span>
-<span class="nt">--extra-ldflags</span><span class="o">=</span><span class="s2">"</span><span class="nv">$ADDI_LDFLAGS</span><span class="s2">"</span> <span class="se">\</span>
+--prefix<span class="o">=</span><span class="nv">$PREFIX</span> <span class="se">\</span>
+--enable-shared <span class="se">\ </span> <span class="c"># 生成动态库</span>
+--disable-static <span class="se">\ </span><span class="c"># 禁止生成静态库</span>
+--disable-doc <span class="se">\ </span> <span class="c"># 关闭不需要的功能, 下同</span>
+--disable-ffplay <span class="se">\</span>
+--disable-ffprobe <span class="se">\</span>
+--disable-doc <span class="se">\</span>
+--disable-symver <span class="se">\</span>
+--disable-ffmpeg <span class="se">\</span>
+--enable-small <span class="se">\</span>
+--cross-prefix<span class="o">=</span><span class="nv">$TOOLCHAIN</span>/bin/arm-linux-androideabi- <span class="se">\</span>
+--target-os<span class="o">=</span>linux <span class="se">\</span>
+--arch<span class="o">=</span>arm <span class="se">\ </span>
+--enable-cross-compile <span class="se">\</span>
+--sysroot<span class="o">=</span><span class="nv">$SYSROOT</span> <span class="se">\</span>
+--extra-cflags<span class="o">=</span><span class="s2">"-Os -fpic </span><span class="nv">$ADDI_CFLAGS</span><span class="s2">"</span> <span class="se">\</span>
+--extra-ldflags<span class="o">=</span><span class="s2">"</span><span class="nv">$ADDI_LDFLAGS</span><span class="s2">"</span> <span class="se">\</span>
 <span class="nv">$ADDITIONAL_CONFIGURE_FLAG</span>
 make clean all
-make <span class="nt">-j3</span>
-make <span class="nb">install</span>
+make -j3
+make install
 <span class="o">}</span>
 <span class="nv">CPU</span><span class="o">=</span>armv7-a <span class="c"># CPU架构</span>
 <span class="nv">PREFIX</span><span class="o">=</span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/android/<span class="nv">$CPU</span> <span class="c"># 生成动态库所在路径</span>
 <span class="nv">ADDI_CFLAGS</span><span class="o">=</span><span class="s2">"-marm"</span>
 build_one
-</code></pre></div></div>
+</code></pre></div>
 
 <p>之后运行该脚本即可, 注意添加可执行权限(<code class="highlighter-rouge">sudo chmod a+x build-script.sh</code>)</p>
 
@@ -342,7 +342,7 @@ build_one
 
 <p>内容如下:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cmake_minimum_required(VERSION 3.4.1) # cmake最低版本
+<div class="highlighter-rouge"><pre class="highlight"><code>cmake_minimum_required(VERSION 3.4.1) # cmake最低版本
 
 add_library( # Sets the name of the library.
              wlffmpeg
@@ -427,13 +427,13 @@ target_link_libraries( # Specifies the target library.  # 链接
                        # included in the NDK.
                        ${log-lib} )
 
-</code></pre></div></div>
+</code></pre></div>
 
 <p>关于<code class="highlighter-rouge">CMake</code>配置可以参见<a href="https://developer.android.com/studio/projects/configure-cmake">文档</a></p>
 
 <p>在模块级别的<code class="highlighter-rouge">build.gradle</code>下配置:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>android {
+<div class="highlighter-rouge"><pre class="highlight"><code>android {
     ...
     defaultConfig {
         ...
@@ -457,11 +457,11 @@ target_link_libraries( # Specifies the target library.  # 链接
         }
     }
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>创建<code class="highlighter-rouge">FFmpeg.java</code>类, 使用静态代码块加载动态链接库, 定义<code class="highlighter-rouge">native</code>方法<code class="highlighter-rouge">playMyMedia()</code>, 如下:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class FFmpeg {
+<div class="highlighter-rouge"><pre class="highlight"><code>public class FFmpeg {
     static {
         System.loadLibrary("avutil-56");
         System.loadLibrary("swresample-3");
@@ -475,11 +475,11 @@ target_link_libraries( # Specifies the target library.  # 链接
 
     public native void playMyMedia(String url);
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>在<code class="highlighter-rouge">playMyMedia()</code>上快捷键<code class="highlighter-rouge">Alt + Enter</code>选择<code class="highlighter-rouge">create function xxx</code>, 可以自动创建对应的<code class="highlighter-rouge">.c</code>文件, 当然该<code class="highlighter-rouge">.c</code>文件也可以自命名, 此处命名为<code class="highlighter-rouge">player.c</code>; <code class="highlighter-rouge">player.c</code>的完整代码如下: 该代码摘自<a href="https://blog.csdn.net/ywl5320/article/details/75136986">博客</a></p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#include &lt;jni.h&gt;
+<div class="highlighter-rouge"><pre class="highlight"><code>#include &lt;jni.h&gt;
 #include "libavformat/avformat.h"
 #include &lt;android/log.h&gt;
 #define LOGI(FORMAT,...) __android_log_print(ANDROID_LOG_INFO,"HusterYP",FORMAT,##__VA_ARGS__);  // 输出到AS的log中
@@ -509,11 +509,11 @@ Java_com_gif_ping_jnidemo_FFmpeg_playMyMedia(JNIEnv *env, jobject instance, jstr
     }
     (*env)-&gt;ReleaseStringUTFChars(env, url_, url);
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>然后在<code class="highlighter-rouge">MainActivity</code>中使用, 也比较简单; 注意添加网络权限, 在<code class="highlighter-rouge">log</code>中就可以看到输出的视频信息啦~</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class MainActivity extends AppCompatActivity {
+<div class="highlighter-rouge"><pre class="highlight"><code>public class MainActivity extends AppCompatActivity {
 
     FFmpeg mFFmpeg;
 
@@ -529,7 +529,7 @@ Java_com_gif_ping_jnidemo_FFmpeg_playMyMedia(JNIEnv *env, jobject instance, jstr
         mFFmpeg.playMyMedia("http://video.xxx"); // 随便找一个视频url啦~
     }
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>到这里, 项目应该就能跑起来啦~</p>
 
@@ -611,7 +611,7 @@ Java_com_gif_ping_jnidemo_FFmpeg_playMyMedia(JNIEnv *env, jobject instance, jstr
                             
         				
                             
-                				<a href="/tags/#Java" title="Java" rel="13">
+                				<a href="/tags/#Java" title="Java" rel="14">
                                     Java
                                 </a>
                             
@@ -622,6 +622,10 @@ Java_com_gif_ping_jnidemo_FFmpeg_playMyMedia(JNIEnv *env, jobject instance, jstr
                                 </a>
                             
         				
+                            
+                				<a href="/tags/#Hust" title="Hust" rel="2">
+                                    Hust
+                                </a>
                             
         				
                             
@@ -756,7 +760,7 @@ Java_com_gif_ping_jnidemo_FFmpeg_playMyMedia(JNIEnv *env, jobject instance, jstr
                     
                 </ul>
                 <p class="copyright text-muted">
-                    Copyright &copy; 袁平 2018
+                    Copyright &copy; 袁平 2019
                     <br>
                 </p>
             </div>

@@ -1,0 +1,265 @@
+<h1 id="前言">前言</h1>
+
+<p>本文是对«深入理解Java虚拟机»第二章以及其他博客的阅读总结</p>
+
+<p>重点是需要去理解各区域存储的是什么, 以此从底层理解对象的创建与引用等过程; 同时还需要明确的一点是各部分会产生的异常, 以及产生异常的原因</p>
+
+<p><strong>注</strong>: 文中部分图片来自网络, 但是忘了出处, 侵删~</p>
+
+<hr />
+
+<h1 id="正文">正文</h1>
+
+<hr />
+
+<h2 id="一-基本概念">一. 基本概念</h2>
+
+<p>在开始讲解之前, 需要先明确关于<code class="highlighter-rouge">JVM</code>的一些基本概念</p>
+
+<p>我们都知道, <code class="highlighter-rouge">Java</code>是一个跨平台的语言, <code class="highlighter-rouge">Java</code>跨平台的基本支撑其实就是<code class="highlighter-rouge">JVM</code>对操作系统底层细节的屏蔽, 相当于加了一个中间层(计算机中的任何问题都可以加一个中间层解决~), <code class="highlighter-rouge">Java</code>不再像<code class="highlighter-rouge">C/C++</code>等语言一样直接翻译为针对特殊平台的机器码, 而是翻译为字节码, 也即是我们的<code class="highlighter-rouge">class</code>文件, 下图大概可以比较简明的概括了~; 字节码就相当于<code class="highlighter-rouge">Java</code>世界中的汇编, 而<code class="highlighter-rouge">JVM</code>则不是跨平台的, 只是不同平台的<code class="highlighter-rouge">JVM</code>都能识别和运行标准格式的字节码文件而已</p>
+
+<p><img src="/img/post/JVM/Java编译.png" alt="Java编译" /></p>
+
+<p>关于<code class="highlighter-rouge">JVM</code>运行<code class="highlighter-rouge">class</code>文件, 我觉得下图已经可以比较准确的表达了</p>
+
+<p><img src="/img/post/JVM/JVM.png" alt="JVM" /></p>
+
+<p>我们下面要讲的就是<code class="highlighter-rouge">Runtime Data Area</code>部分</p>
+
+<hr />
+
+<h2 id="二-运行时数据区">二. 运行时数据区</h2>
+
+<p><code class="highlighter-rouge">JVM</code>会在执行<code class="highlighter-rouge">Java</code>程序的时候把它所管理的内存划分为若干个不同的数据区, 如下:</p>
+
+<p><img src="/img/post/JVM/JVM内存区域.png" alt="JVM" /></p>
+
+<h3 id="21-程序计数器">2.1 程序计数器</h3>
+
+<blockquote>
+  <p>线程私有</p>
+</blockquote>
+
+<h4 id="211-存储数据类型">2.1.1 存储数据类型</h4>
+
+<p>指向下一条需要执行的字节码指令; 如果线程正在执行一个<code class="highlighter-rouge">Java</code>方法, 该计数器记录的是正在执行的虚拟机字节码指令的地址; 如果正在执行<code class="highlighter-rouge">Native</code>方法, 该计数器值则为空(<code class="highlighter-rouge">Undefined</code>)</p>
+
+<h4 id="212-异常情况">2.1.2 异常情况</h4>
+
+<p>该区域是是唯一一个在<code class="highlighter-rouge">Java</code>虚拟机中没有规定任何<code class="highlighter-rouge">OutOfMemoryError</code>情况的区域</p>
+
+<h3 id="22-java虚拟机栈">2.2 Java虚拟机栈</h3>
+
+<blockquote>
+  <p>线程私有</p>
+</blockquote>
+
+<h4 id="221-存储数据类型">2.2.1 存储数据类型</h4>
+
+<p>描述<code class="highlighter-rouge">Java</code>方法执行的内存模型, 每个方法调用就对应着一个栈帧的入栈和出栈; 一个栈帧里面存储了局部变量表, 操作数栈, 动态链接, 方法出口等信息</p>
+
+<p>局部变量表存储了编译器可知的各种基本数据类型, 对象引用, <code class="highlighter-rouge">returnAddress</code>; 局部变量表的大小在编译期间即可确定, 运行期间大小不变</p>
+
+<h4 id="222-异常情况">2.2.2 异常情况</h4>
+
+<ol>
+  <li><strong>StackOverflowError</strong>: 线程请求栈深度大于虚拟机允许深度</li>
+</ol>
+
+<p>异常示例代码:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>public class JavaVMStackSOF {
+
+    private int stackLength = 1;
+
+    public void stackLeak() {
+        stackLength++;
+        stackLeak();
+    }
+
+    public static void main(String[] args) {
+        JavaVMStackSOF sof = new JavaVMStackSOF();
+        try {
+            sof.stackLeak();
+        } catch (Throwable e) {
+            System.out.println("Stack Length: " + sof.stackLength);
+            throw e;
+        }
+    }
+}
+</code></pre></div>
+
+<ol>
+  <li><strong>OutOfMemoryError</strong>: 虚拟机栈动态扩展时无法申请到足够内存</li>
+</ol>
+
+<p>异常示例代码:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>public class JavaVMStackOOM {
+
+    private void dontStop() {
+        while (true) {
+        }
+    }
+
+    public void stackLeakByThread() {
+        while (true) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    dontStop();
+                }
+            }).start();
+        }
+    }
+
+    public static void main(String[] args) {
+        JavaVMStackOOM oom = new JavaVMStackOOM();
+        oom.stackLeakByThread();
+    }
+}
+</code></pre></div>
+
+<p><strong>注</strong>: 由于操作系统分配给每个进程的内存空间是有限制的, 所以如果是由于建立过多的线程导致内存溢出, 在不能减少线程数或者更换<code class="highlighter-rouge">64</code>位虚拟机的情况下, 可以选择通过减少最大堆和减少栈容量来换取更多的线程</p>
+
+<h3 id="23-本地方法栈">2.3 本地方法栈</h3>
+
+<blockquote>
+  <p>线程私有</p>
+</blockquote>
+
+<h4 id="231-存储数据类型">2.3.1 存储数据类型</h4>
+
+<p>和虚拟机栈类似, 只是本地方法栈提供的是<code class="highlighter-rouge">Native</code>方法服务</p>
+
+<h4 id="232-异常情况">2.3.2 异常情况</h4>
+
+<p><code class="highlighter-rouge">StackOverflowError</code>和<code class="highlighter-rouge">OutOfMemoryError</code></p>
+
+<h3 id="24-java堆">2.4 Java堆</h3>
+
+<blockquote>
+  <ol>
+    <li>线程共享</li>
+    <li>垃圾收集管理的主要区域</li>
+  </ol>
+</blockquote>
+
+<h4 id="241-存储数据类型">2.4.1 存储数据类型</h4>
+
+<p>几乎所有的对象实例都在这里分配</p>
+
+<h4 id="242-异常情况">2.4.2 异常情况</h4>
+
+<p><code class="highlighter-rouge">OutOfMemoryError</code></p>
+
+<p>异常示例:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>public class JavaVMHeapOOM {
+
+    static class HeapOOM {
+    }
+
+    public static void main(String[] args) {
+        List&lt;HeapOOM&gt; list = new ArrayList();
+        while (true) {
+            list.add(new HeapOOM());
+        }
+    }
+}
+</code></pre></div>
+
+<h3 id="25-方法区">2.5 方法区</h3>
+
+<blockquote>
+  <ol>
+    <li>线程共享</li>
+    <li>该区域的垃圾回收目标主要是针对常量池的回收和对类型的卸载</li>
+  </ol>
+</blockquote>
+
+<h4 id="251-存储数据类型">2.5.1 存储数据类型</h4>
+
+<p>存储已被虚拟机加载的类信息, 常量, 静态变量, 即使编译器编译后的代码等数据</p>
+
+<h4 id="252-运行时常量池">2.5.2 运行时常量池</h4>
+
+<p>运行时常量池是方法区的一部分, 但是<code class="highlighter-rouge">JDK6</code>之后, 常量池被放入了堆中;</p>
+
+<p><code class="highlighter-rouge">Class</code>文件中也有常量池部分, 即编译期生成的各种字面量和符号引用, 这部分将在类加载后进入方法区的运行时常量池中, 此外还会把翻译出来的直接引用也存储在运行时常量池中</p>
+
+<p>运行时常量池相对于<code class="highlighter-rouge">Class</code>文件常量池的另外一个最重要的特征是具备动态性, 即运行期间也可以将新的常量放入池中, 比如<code class="highlighter-rouge">String</code>的<code class="highlighter-rouge">intern()</code>方法</p>
+
+<p><code class="highlighter-rouge">String.intern()</code>作用是: 如果字符串常量池中已经包含一个等于此<code class="highlighter-rouge">String</code>对象的字符串, 则返回代表池中这个字符串的<code class="highlighter-rouge">String</code>对象; 否则, 将此<code class="highlighter-rouge">String</code>对象包含的字符串添加到常量池中, 并且返回此<code class="highlighter-rouge">String</code>对象的引用</p>
+
+<p>同样, 收方法区的限制, 当常量池无法再申请到内存时会抛出<code class="highlighter-rouge">OutOfMemoryError</code></p>
+
+<h4 id="253-异常情况">2.5.3 异常情况</h4>
+
+<p><code class="highlighter-rouge">OutOfMemoryError</code>: 方法区无法满足内存分配需求</p>
+
+<p>异常示例:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>public class RuntimeConstantPoolOOM {
+    public static void main(String[] args) {
+        List&lt;String&gt; list = new ArrayList&lt;&gt;();
+        int i = 0;
+        while (true) {
+            list.add(String.valueOf(i++).intern());
+        }
+    }
+}
+</code></pre></div>
+
+<h3 id="26-直接内存">2.6 直接内存</h3>
+
+<p>直接内存不是虚拟机运行时数据区的一部分, 但是也被频繁使用, 如: 在<code class="highlighter-rouge">JDK1.4</code>中新加入了<code class="highlighter-rouge">NIO</code>类, 引入了一种基于通道(<code class="highlighter-rouge">Chanel</code>)和缓冲区(<code class="highlighter-rouge">Buffer</code>)的<code class="highlighter-rouge">I/O</code>方式, 它可以使用<code class="highlighter-rouge">Native</code>函数库直接分配堆外内存, 然后通过一个存储在<code class="highlighter-rouge">Java</code>堆中的<code class="highlighter-rouge">DirectByteBuffer</code>对象作为这块内存的引用进行操作, 避免了在<code class="highlighter-rouge">Java</code>堆和<code class="highlighter-rouge">Native</code>堆中来回复制数据, 提高性能</p>
+
+<p>同样会产生<code class="highlighter-rouge">OutOfMemoryError</code></p>
+
+<hr />
+
+<h2 id="三-常见问题">三. 常见问题</h2>
+
+<p><strong>注</strong>: 下文摘自文末参考链接, 权作个人笔记~</p>
+
+<ol>
+  <li>
+    <p>程序运行永远都是在栈中进行的，因而参数传递时, 只存在传递基本类型和对象引用的问题, 不会直接传对象本身;  但是传引用的错觉是如何造成的呢? 在运行栈中, 基本类型和引用的处理是一样的, 都是传值, 所以, 如果是传引用的方法调用, 也同时可以理解为“传引用值”的传值调用, 即引用的处理跟基本类型是完全一样的; 但是当进入被调用方法时, 被传递的这个引用的值, 被程序解释(或者查找)到堆中的对象, 这个时候才对应到真正的对象; 如果此时进行修改; 修改的是引用对应的对象; 而不是引用本身; 即: 修改的是堆中的数据; 所以这个修改是可以保持的了</p>
+  </li>
+  <li>
+    <p>我产生的对象不多呀, 为什么还会产生<code class="highlighter-rouge">OutOfMemory</code>?</p>
+  </li>
+</ol>
+
+<p>答: 你继承层次忒多了, <code class="highlighter-rouge">Heap</code>中产生的对象是先产生父类, 然后才产生子类, 明白不?</p>
+
+<ol>
+  <li>
+    <p><code class="highlighter-rouge">OutOfMemory</code>错误分几种?
+答: 分两种, 分别是<code class="highlighter-rouge">OutOfMemoryError:java heap size</code>和<code class="highlighter-rouge">OutOfMemoryError: PermGen space</code>, 两种都是内存溢出, <code class="highlighter-rouge">heap size</code>是说申请不到新的内存了, 这个很常见，检查应用或调整堆内存大小; <code class="highlighter-rouge">PermGenspace</code>是因为永久存储区满了, 这个也很常见, 一般在热发布的环境中出现, 是因为每次发布应用系统都不重启, 久而久之永久存储区中的死对象太多导致新对象无法申请内存, 一般重新启动一下即可</p>
+  </li>
+  <li>
+    <p>为什么不建议在程序中显式的生命<code class="highlighter-rouge">System.gc()</code>?
+答: 因为显式声明是做堆内存全扫描, 也就是<code class="highlighter-rouge">Full GC</code>, 是需要停止所有的活动的(<code class="highlighter-rouge">Stop The World Collection</code>), 你的应用能承受这个吗?</p>
+  </li>
+</ol>
+
+<hr />
+
+<h2 id="四-参考链接">四. 参考链接</h2>
+
+<ol>
+  <li>
+    <p>http://www.importnew.com/1993.html</p>
+  </li>
+  <li>
+    <p>http://www.cnblogs.com/dolphin0520/p/3783345.html</p>
+  </li>
+  <li>
+    <p>http://hllvm.group.iteye.com/group/wiki/2905-JVM</p>
+  </li>
+  <li>
+    <p>http://hllvm.group.iteye.com/group/wiki/?show_full=true</p>
+  </li>
+</ol>

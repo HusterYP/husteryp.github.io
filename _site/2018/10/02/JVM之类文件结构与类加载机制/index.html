@@ -357,7 +357,7 @@
 
 <p>考虑下列代码:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class Practice {
+<div class="highlighter-rouge"><pre class="highlight"><code>public class Practice {
 
     static {
         System.out.println("Practice static code block");
@@ -371,14 +371,14 @@
         System.out.println("Practice constructor");
     }
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>当<code class="highlighter-rouge">new</code>一个<code class="highlighter-rouge">Practice</code>对象时, 输出如下; 说明三者的执行顺序是: 静态代码块 –&gt; 代码块 –&gt; 构造函数</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Practice static code block
+<div class="highlighter-rouge"><pre class="highlight"><code>Practice static code block
 Practice code block
 Practice constructor
-</code></pre></div></div>
+</code></pre></div>
 
 <p>关于三者的执行时机与作用:</p>
 
@@ -424,7 +424,7 @@ Practice constructor
   <li>通过子类引用父类的静态字段, 不会导致子类初始化: 对于静态字段, 只有直接定义这个字段的类才会被初始化</li>
 </ol>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class NotInitialization {
+<div class="highlighter-rouge"><pre class="highlight"><code>public class NotInitialization {
     public static void main(String[] args) {
         System.out.println(SubClass.value);  // 不会初始化子类~
     }
@@ -444,7 +444,7 @@ class SubClass extends SuperClass{
     }
 }
 
-</code></pre></div></div>
+</code></pre></div>
 
 <p><strong>注</strong>: 后文为节省篇幅, 将重用这里的<code class="highlighter-rouge">SuperClass</code>和<code class="highlighter-rouge">SubClass</code>, 而不再重写~</p>
 
@@ -452,18 +452,18 @@ class SubClass extends SuperClass{
   <li>通过数组定义来引用类, 不会触发此类的初始化: 虚拟机会为数组自动生成一个直接继承自<code class="highlighter-rouge">Object</code>的子类; <code class="highlighter-rouge">Java</code>中对数组的访问比<code class="highlighter-rouge">C/C++</code>更安全, 是因为这个类封装了数组元素的访问方法, 而<code class="highlighter-rouge">C/C++</code>直接翻译为数组指针的移动</li>
 </ol>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class NotInitialization {
+<div class="highlighter-rouge"><pre class="highlight"><code>public class NotInitialization {
     public static void main(String[] args) {
         SuperClass[] sca = new SuperClass[0];
     }
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <ol>
   <li>常量在编译阶段会存入被调用类的常量池中, 本质上并没有直接引用到常量的类, 因此不会出发定义常量的类的初始化: 在编译阶段经过常量传播优化, 已经将次<code class="highlighter-rouge">Hello World</code>常量存储到了<code class="highlighter-rouge">NotInitialization</code>类的常量池中了, 以后<code class="highlighter-rouge">Initialization</code>对常量<code class="highlighter-rouge">ConstClass.HELLOWORLD</code>的引用都被转化为<code class="highlighter-rouge">NotInitialization</code>类对自身常量池的引用了~</li>
 </ol>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class NotInitialization {
+<div class="highlighter-rouge"><pre class="highlight"><code>public class NotInitialization {
     public static void main(String[] args) {
         System.out.println(ConstClass.CONST);
     }
@@ -476,7 +476,7 @@ class ConstClass {
 
     public static final String HELLOWORLD="Hello World"; // 注意这里不能从static来理解, 因为即使有static, 但是没有final的话仍然会触发ConstClass的初始化~
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <h3 id="23-类的加载过程">2.3 类的加载过程</h3>
 
@@ -566,7 +566,7 @@ class ConstClass {
   <li><code class="highlighter-rouge">&lt;clinit&gt;()</code>方法是由编译器自动收集类中的所有类变量的赋值动作和静态语句块(<code class="highlighter-rouge">static</code>代码块)中的语句合并产生的; 静态语句块只能访问到定义在静态语句块之前的变量, 定义在它之后的变量, 在前面的静态语句块可以赋值, 但是不能访问, 如下代码</li>
 </ol>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class Temp {
+<div class="highlighter-rouge"><pre class="highlight"><code>class Temp {
     static {
         value = 2;
 //        System.out.println(value); // 不能访问
@@ -574,7 +574,7 @@ class ConstClass {
 
     static int value = 1;
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <ol>
   <li>
@@ -585,7 +585,7 @@ class ConstClass {
   </li>
 </ol>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class SuperClass {
+<div class="highlighter-rouge"><pre class="highlight"><code>class SuperClass {
     public static int A = 1;
     static {
         A = 2;
@@ -595,7 +595,7 @@ class ConstClass {
 class SubClass extends SuperClass{
     public static int B = A; // 注意这里的B应该为2, 而不是1
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <ol>
   <li>
@@ -613,7 +613,7 @@ class SubClass extends SuperClass{
 
 <p>任意一个类, 都是由加载它的类加载器和这个类本身一同确立其在<code class="highlighter-rouge">Java</code>虚拟机中的唯一性; 更通俗一些是: 比较两个类是否<em>相等</em>, 只有在这两个类是由同一个类加载器加载的前提下才有意义, 否则, 即使这两个类来自同一个<code class="highlighter-rouge">Class</code>文件, 被同一个虚拟机加载, 只要加载它们的类加载器不同, 那这两个类就必定不相等(这里所谓的相等, 包括代表<code class="highlighter-rouge">Class</code>对象的<code class="highlighter-rouge">equals()</code>方法, <code class="highlighter-rouge">isAssignableFrom()</code>方法, <code class="highlighter-rouge">isInstance()</code>方法的返回结果, 以及使用<code class="highlighter-rouge">instanceof</code>关键字做对象所属关系判断等情况); 如下代码:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>import java.io.IOException;
+<div class="highlighter-rouge"><pre class="highlight"><code>import java.io.IOException;
 import java.io.InputStream;
 
 public class ClassLoaderTest {
@@ -641,7 +641,7 @@ public class ClassLoaderTest {
         System.out.println(obj instanceof Practice); // 及时是Practice实例, 但是这里仍然返回false
     }
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <h3 id="25-双亲委派模型">2.5 双亲委派模型</h3>
 
@@ -732,7 +732,7 @@ public class ClassLoaderTest {
                             
         				
                             
-                				<a href="/tags/#Java" title="Java" rel="13">
+                				<a href="/tags/#Java" title="Java" rel="14">
                                     Java
                                 </a>
                             
@@ -743,6 +743,10 @@ public class ClassLoaderTest {
                                 </a>
                             
         				
+                            
+                				<a href="/tags/#Hust" title="Hust" rel="2">
+                                    Hust
+                                </a>
                             
         				
                             
@@ -877,7 +881,7 @@ public class ClassLoaderTest {
                     
                 </ul>
                 <p class="copyright text-muted">
-                    Copyright &copy; 袁平 2018
+                    Copyright &copy; 袁平 2019
                     <br>
                 </p>
             </div>

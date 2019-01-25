@@ -1,0 +1,233 @@
+<h1 id="前言">前言</h1>
+
+<p>本文将要讲解的是在自定义<code class="highlighter-rouge">View</code>中常用的一些工具类</p>
+
+<hr />
+
+<h1 id="正文">正文</h1>
+
+<hr />
+
+<h2 id="一-canvas">一. Canvas</h2>
+
+<p>drawXXX: 绘制相关</p>
+
+<p>clipXXX: 裁剪; 使用裁剪的时候, 通常需要配合save()和restore()一起使用, 否则之后所有的绘制都会被裁剪
+范围裁切有两个方法： clipRect() 和 clipPath()</p>
+
+<hr />
+
+<p>几何变换(平移, 旋转, 伸缩等):</p>
+
+<p>几何变换的使用大概分为三类：</p>
+<ol>
+  <li>使用 Canvas 来做常见的二维变换；</li>
+  <li>使用 Matrix 来做常见和不常见的二维变换；</li>
+  <li>使用 Camera 来做三维变换。</li>
+</ol>
+
+<p>Matrix; 或者自带的translate(), rotate(), scale(), skew()(错切); 
+需要注意的是, Canvas自带的几何变换是倒序的, 比如: 如果translate()在rotate()前面, 则实际执行顺序是先rotate(), 再translate(); 
+Canvas自带的几何变换内部其实也是使用的Matrix
+Matrix可以自定义执行顺序, 通常Matrix的方法都是成对的, 比如: preTranslate()(往前插入)和postTranslate()(往后插入)
+Camare可以用于辅助Matrix计算; 比如: 如下代码</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>protected void onDraw(Canvas canvas) {
+    canvas.save();
+
+    camare.save();
+    camare.rotateX(30);
+    canvas.translate(centerX, centerY); // 注意这里的顺序要倒着, 因为上面说了, Canvas几何变换的顺序是倒着的
+    camare.applyToCanvas(canvas); // 同时, 由于camare执行旋转操作的时候, 是以原点为中心的, 所以, 如果这里不配合canvas的平移操作来使用的话, 最终图像是歪的; 但是camare又不支持设置中心, 所以就只能先将图像平移到原点, camare作用完之后再平移回原来的位置; 注意, 虽然Camare也有translate()方法, 但是Camare的变换是会带着整个三维坐标系一起的, 而且它在变换结束之后才会做投影, 而不是一旋转完就立即投影到Canvas上去, 这样如果用Camare做移动,
+    那么绘制出来的结果就完全不是预期的样子了(这里的解释不是很懂)
+    canvas.translate(-centerX, -centerY);
+    camare.restore();
+
+    canvas.restore();
+}
+</code></pre></div>
+<p>Camare坐标系: 使用的是三维坐标系, 原点也是View左上角; x轴右正左负, y轴上正下负(注意y轴不一样咯, 和View坐标系相反), z轴垂直于View, 内正外负(朝屏幕里面为正, 朝屏幕外面为负); 还包含了一个虚拟的Camare对象, 即一个虚拟的相机, 默认在z轴负向, 即View坐标原点的正上方
+Camare的旋转方向没有规律, 见Download文件夹下照片
+Camare也是可以沿着x, y, z轴平移的, 比如沿着z轴平移, 就相当于将物体远离或者靠近相机, 即起到放大缩小的作用, 但是由于这种情况也可以直接使用Canvas的scale()等来做到, 所以实际开发中一般都用Canvas自带的方法来实现
+Camare还可以通过setLocation()来设置虚拟相机的位置, 这种的使用情况是, 比如进行旋转时会造成物体投影太大(因为相机离物体太近), 此时可以通过setLocation()来设置相机位置远离物体, 使投影缩小; 一般使用时都是沿着z轴移动Camare, 不常见沿着x, y轴移动的
+Camare变换的时候也需要save()和restore()</p>
+
+<hr />
+
+<p>重写其他方法体现遮盖(联系draw过程, 如: 绘制前景, 绘制背景等)</p>
+
+<p>drawColor: 可以用于填充背景或者设置半透明蒙版</p>
+
+<h2 id="二-paint">二. Paint</h2>
+
+<p>关于Paint, 请参见: https://hencoder.com/ui-1-2/</p>
+
+<ol>
+  <li>颜色: 
+setColor()</li>
+</ol>
+
+<p>setShader(): 着色器, 着色器设置的是一个颜色方案，或者说是一套着色规则; 当设置了 Shader 之后，Paint 在绘制图形和文字时就不使用 setColor/ARGB() 设置的颜色了，而是使用  Shader 的方案中的颜色。LinearGradient RadialGradient SweepGradient BitmapShader ComposeShader</p>
+
+<p>setColorFilter(): ColorFilter; 共有三个子类：LightingColorFilter PorterDuffColorFilter 和 ColorMatrixColorFilter</p>
+
+<p>setXfermode(): Xfermode 指的是你要绘制的内容和 Canvas 的目标位置的内容应该怎样结合计算出最终的颜色; 唯一子类: PorterDuffXfermode</p>
+
+<ol>
+  <li>效果</li>
+</ol>
+
+<p>抗锯齿、填充/轮廓、线条宽度等</p>
+
+<p>setAntiAlias()</p>
+
+<p>setStyle()</p>
+
+<p>线条形状: setStrokeWidth(float width),  setStrokeCap(Paint.Cap cap), setStrokeJoin(Paint.Join join),  setStrokeMiter(float miter)</p>
+
+<p>色彩优化: setDither(boolean dither) 和  setFilterBitmap(boolean filter)</p>
+
+<p>setPathEffect(): PathEffect 分为两类，单一效果的 CornerPathEffect DiscretePathEffect DashPathEffect PathDashPathEffect ，和组合效果的 SumPathEffect ComposePathEffect</p>
+
+<p>什么是硬件加速: https://developer.android.com/guide/topics/graphics/hardware-accel</p>
+
+<p>setShadowLayer(): 在绘制层下方添加效果
+setMaskFilter(): 在绘制层上方添加效果; BlurMaskFilter 和 EmbossMaskFilter</p>
+
+<p>获取绘制的 Path</p>
+
+<h3 id="drawtext相关">drawText()相关</h3>
+
+<h2 id="三-动画">三. 动画</h2>
+
+<p>动画可以分为两类：Animation 和 Transition；其中 Animation 又可以再分为 View Animation 和 Property Animation 两类： View Animation 是纯粹基于 framework 的绘制转变，比较简单
+Property Animation，属性动画，这是在 Android 3.0 开始引入的新的动画形式
+还有一类动画是 Transition。 Transition 这个词的本意是转换，在 Android 里指的是切换界面时的动画效果</p>
+
+<p>一个动画需要考虑取消</p>
+
+<p>以下介绍属性动画:</p>
+
+<p>ViewPropertyAnimator: imageView.animate().translationX(500); 默认动画时长300ms, 默认插值器为AccelerateDecelerateInterpolator()(先加速后减速)
+view.setTranslationX()等方法内部没有调用invalidate()来实现重绘, 而是直接使用了硬件加速实现重绘, 这样更加高效, 但是好像自定义绘制不能用, 只能使用invalidate(), 为什么?</p>
+
+<p>ObjectAnimator: 拼接出set方法名, 然后去调用set方法; 如果只是传入了一个值(ofXXX()有很多重载函数), 该值表示终止值, 但是起始值无法得到, 那么就还需要提供一个get方法来得到初始属性值</p>
+
+<p>Interpolator: AccelerateDecelerateInterpolator, LinearInterpolator, AccelerateInterpolator, DecelerateInterpolator, AnticipateInterpolator, OvershootInterpolator, AnticipateOvershootInterpolator, BounceInterpolator, CycleInterpolator, PathInterpolator
+Android 5.0 （API 21）引入了三个新的 Interpolator 模型，并把它们加入了 support v4 包中: 
+FastOutLinearInInterpolator, FastOutSlowInInterpolator, LinearOutSlowInInterpolator</p>
+
+<p>设置监听器: 
+ViewPropertyAnimator 用的是 setListener() 和 setUpdateListener() 方法, 要移除监听器时通过 set[Update]Listener(null) 填 null 值来移除; ViewPropertyAnimator 则独有 withStartAction() 和 withEndAction() 方法，可以设置一次性的动画开始或结束的监听</p>
+
+<p>ObjectAnimator 则是用 addListener() 和 addUpdateListener() 来添加一个或多个监听器，移除监听器则是通过 remove[Update]Listener() 来指定移除对象; ObjectAnimator 支持使用 pause() 方法暂停，所以它还多了一个 addPauseListener() / removePauseListener() 的支持</p>
+
+<p>AnimatorListener: onAnimationStart, onAnimationEnd, onAnimationCancel(当动画被通过 cancel() 方法取消时，这个方法被调用。
+需要说明一下的是，就算动画被取消，onAnimationEnd() 也会被调用。所以当动画被取消时，如果设置了 AnimatorListener，那么 onAnimationCancel() 和 onAnimationEnd() 都会被调用。onAnimationCancel() 会先于 onAnimationEnd() 被调用。), onAnimationRepeat(ViewPropertyAnimator 不支持重复，所以这个方法对 ViewPropertyAnimator 相当于无效)</p>
+
+<p>ViewPropertyAnimator.withStartAction/EndAction(): ViewPropertyAnimator 的独有方法, 它们和 set/addListener() 中回调的 onAnimationStart() / onAnimationEnd() 相比起来的不同主要有两点：</p>
+<ol>
+  <li>withStartAction() / withEndAction() 是一次性的，在动画执行结束后就自动弃掉了，就算之后再重用 ViewPropertyAnimator 来做别的动画，用它们设置的回调也不会再被调用。而 set/addListener() 所设置的  AnimatorListener 是持续有效的，当动画重复执行时，回调总会被调用。</li>
+  <li>withEndAction() 设置的回调只有在动画正常结束时才会被调用，而在动画被取消时不会被执行。这点和 AnimatorListener.onAnimationEnd() 的行为是不一致的。</li>
+</ol>
+
+<p>TypeEvaluator: 
+在需要的时候, 还可以自定义TypeEvaluator来实现自己针对某一特定属性值来设计自己的算法
+ObjectAnimator.setEvaluator()
+ArgbEvaluator</p>
+
+<p>PropertyValuesHolder: 同一个动画中改变多个属性; ViewPropertyAnimator可以直接连用即可, 但是ObjectAnimator不能直接连用, 此时可以使用PropertyValuesHolder来同时在一个动画中改变多个属性</p>
+
+<p>AnimatorSet 多个动画配合执行; 还可以定义动画的执行顺序</p>
+
+<p>PropertyValuesHolders.ofKeyframe() 把同一个属性拆分</p>
+
+<p>「关于复杂的属性关系来做动画」，就这么三种：
+使用 PropertyValuesHolder 来对多个属性同时做动画；
+使用 AnimatorSet 来同时管理调配多个动画；
+PropertyValuesHolder 的进阶使用：使用 PropertyValuesHolder.ofKeyframe() 来把一个属性拆分成多段，执行更加精细的属性动画。</p>
+
+<p>ValueAnimator 最基本的轮子; ValueAnimator 是 ObjectAnimator 的父类，实际上，ValueAnimator 就是一个不能指定目标对象版本的 ObjectAnimator</p>
+
+<h2 id="四-硬件加速">四. 硬件加速</h2>
+
+<p>文档: https://developer.android.google.cn/guide/topics/graphics/hardware-accel</p>
+
+<p>在 Android 里，硬件加速专指把 View 中绘制的计算工作交给 GPU 来处理。进一步地再明确一下，这个「绘制的计算工作」指的就是把绘制方法中的那些  Canvas.drawXXX() 变成实际的像素这件事</p>
+
+<p>在硬件加速关闭的时候，Canvas 绘制的工作方式是：把要绘制的内容写进一个 Bitmap，然后在之后的渲染过程中，这个 Bitmap 的像素内容被直接用于渲染到屏幕。这种绘制方式的主要计算工作在于把绘制操作转换为像素的过程（例如由一句 Canvas.drawCircle() 来获得一个具体的圆的像素信息），这个过程的计算是由 CPU 来完成的
+而在硬件加速开启时，Canvas 的工作方式改变了：它只是把绘制的内容转换为 GPU 的操作保存了下来，然后就把它交给 GPU，最终由 GPU 来完成实际的显示工作(在硬件加速开启时，CPU 做的事只是把绘制工作转换成 GPU 的操作，这个工作量相对来说是非常小的。)</p>
+
+<p>关闭硬件加速: view.setLayerType(LAYER_TYPE_SOFTWARE, null);</p>
+
+<p>View Layer，又称为离屏缓冲（Off-screen Buffer），它的作用是单独启用一块地方来绘制这个 View ，而不是使用软件绘制的 Bitmap 或者通过硬件加速的 GPU; 当设置了 View Layer 的时候，它的绘制会被缓存下来，而且缓存的是最终的绘制结果</p>
+
+<p>在进行移动、旋转等（无需调用 invalidate()）的属性动画的时候开启 Hardware Layer 将会极大地提升动画的效率，因为在动画过程中 View 本身并没有发生改变，只是它的位置或角度改变了，而这种改变是可以由 GPU 通过简单计算就完成的，并不需要重绘整个 View; (打开硬件加速: view.setLayerType(LAYER_TYPE_NONE, null);)</p>
+
+<p>如果是使用 ViewPropertyAnimator, 如下代码; 不过一定要注意，只有你在对 translationX translationY rotation alpha 等无需调用 invalidate() 的属性做动画的时候，这种方法才适用，因为这种方法本身利用的就是当界面不发生时，缓存未更新所带来的时间的节省。所以简单地说——
+<strong>这种方式不适用于基于自定义属性绘制的动画</strong>。一定记得这句话。</p>
+<div class="highlighter-rouge"><pre class="highlight"><code>view.animate()
+        .rotationY(90)
+        .withLayer(); // withLayer() 可以自动完成上面这段代码的复杂操作
+</code></pre></div>
+
+<p>由于设置了 View Layer 后，View 在初次绘制时以及每次  invalidate() 后重绘时，需要进行两次的绘制工作（一次绘制到 Layer，一次从 Layer 绘制到显示屏），所以其实它的每次绘制的效率是被降低了的。所以一定要慎重使用 View Layer，在需要用到它的时候再去使用。</p>
+
+<p>setLayerType(): 
+参数为 LAYER_TYPE_SOFTWARE 时，使用软件来绘制 View Layer，绘制到一个 Bitmap，并顺便关闭硬件加速；
+参数为 LAYER_TYPE_HARDWARE 时，使用 GPU 来绘制 View Layer，绘制到一个 OpenGL texture（如果硬件加速关闭，那么行为和  VIEW_TYPE_SOFTWARE 一致）；
+参数为 LAYER_TYPE_NONE 时，关闭 View Layer。</p>
+
+<p>View Layer 可以加速无 invalidate() 时的刷新效率，但对于需要调用  invalidate() 的刷新无法加速</p>
+
+<h2 id="五-布局">五. 布局</h2>
+
+<p><a href="https://hencoder.com/ui-2-1/">参考博客</a></p>
+
+<p>onMeasure()测量完成之后通过setMeasuredDimension()来设置的测量尺寸只是该View的一个期望尺寸, 表示View觉得自己这么大比较合适, 之后它的父View就会根据这个期望尺寸再去判断(只是一个参考), 至于最终父View是允许子View就这么大, 还是要求再去测量一次, 还是说直接重新指派一个新的尺寸, 由父View决定, 最终会通过layout参数传递</p>
+
+<p>布局过程自定义方式:</p>
+<blockquote>
+  <ol>
+    <li>重写 onMeasure() 来修改已有的 View 的尺寸；</li>
+    <li>重写 onMeasure() 来全新定制自定义 View 的尺寸；</li>
+    <li>重写 onMeasure() 和 onLayout() 来全新定制自定义 ViewGroup 的内部布局</li>
+  </ol>
+</blockquote>
+
+<p>父View对子View的尺寸限制:</p>
+<blockquote>
+  <ol>
+    <li>这个限制怎么来的: 开发者对子View的要求</li>
+    <li>子View的onMeasure应该怎么做来让自己符合这个限制: 使用resolveSize()方法(resolveSize()方法内部其实就是通过三种mode的不同情况来返回是使用子View的测量值, 还是父View的限制值)</li>
+  </ol>
+</blockquote>
+
+<p>全新定制自定义View:</p>
+<blockquote>
+  <ol>
+    <li>通过onMeasure()重新去计算(不用调用super.onMeasure()了)</li>
+    <li>将计算出来的结果通过resolveSize()过滤一遍, 使得其符合父View的限制, 之后再通过setMeasureDimension()来设置即可</li>
+  </ol>
+</blockquote>
+
+<p>onMeasure()的重写:</p>
+<blockquote>
+  <ol>
+    <li>调用每个子View的measure(), 让子View自我测量</li>
+    <li>根据子View给出的尺寸, 得出子View的位置, 并保存它们的尺寸和位置</li>
+    <li>根据子View的位置和尺寸计算出自己的尺寸, 并用setMeasureDimesion()保存</li>
+  </ol>
+</blockquote>
+
+<p>关于保存子View位置的两点说明:</p>
+<blockquote>
+  <ol>
+    <li>不是所有的Layout都需要保存子View的位置(因为有的Layout可以在布局阶段实时推出子View的位置, 比如LinearLayout)</li>
+    <li>有些时候对某些子View需要重复测量两次或多次才能得到正确的尺寸和位置</li>
+  </ol>
+</blockquote>
+
+<p><img src="/img/post/View/onMeasure模板.png" alt="onMeasure模板" /></p>
+
+<p><img src="/img/post/View/onLayout模板.png" alt="onLayout模板" /></p>

@@ -5,9 +5,293 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Wed, 12 Dec 2018 21:58:57 +0800</pubDate>
-    <lastBuildDate>Wed, 12 Dec 2018 21:58:57 +0800</lastBuildDate>
-    <generator>Jekyll v3.8.3</generator>
+    <pubDate>Thu, 24 Jan 2019 19:40:20 +0800</pubDate>
+    <lastBuildDate>Thu, 24 Jan 2019 19:40:20 +0800</lastBuildDate>
+    <generator>Jekyll v3.8.5</generator>
+    
+      <item>
+        <title>Objective-C入门要点</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;近日开始入坑iOS，正所谓工欲善其事，必先利其器；iOS的两大基础利器莫过于OC和Swift这两门语言了；笔者先接触的是OC，时至今日也近一月，以此总结，记录OC的一些要点和难点&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;一-面向对象&quot;&gt;一. 面向对象&lt;/h2&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;OC是C的一个扩展集，在C的基础上添加了面向对象和消息传递等机制；作为一门面向对象的语言，自然需要探讨面向对象三大特性在OC上的体现&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h3 id=&quot;11-封装&quot;&gt;1.1 封装&lt;/h3&gt;
+
+&lt;p&gt;笔者认为，封装更多的是体现在类或者说类的设计上面，有点带设计模式那个层次，如果真要从语法层面去讲解的话，更契合的还是类，方法，成员变量的访问修饰符&lt;/p&gt;
+
+&lt;p&gt;OC中类没有访问修饰符，OC中也没有package的概念&lt;/p&gt;
+
+&lt;p&gt;OC中方法也没有权限修饰符一说，在头文件中声明的方法都相当于是public的，如果要定义私有方法，则只需在.m文件中实现，但不需要在.h文件声明&lt;/p&gt;
+
+&lt;p&gt;成员变量权限访问修饰方法主要有如下三种；除了以下三种外，还有一个是@package，它修饰属性的时候，只能在当前框架中才能呗访问，用的比较少&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;修饰符&lt;/th&gt;
+      &lt;th&gt;类内部&lt;/th&gt;
+      &lt;th&gt;子类&lt;/th&gt;
+      &lt;th&gt;任何地方&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;private&lt;/td&gt;
+      &lt;td&gt;YES&lt;/td&gt;
+      &lt;td&gt;NO&lt;/td&gt;
+      &lt;td&gt;NO&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;protected（默认）&lt;/td&gt;
+      &lt;td&gt;YES&lt;/td&gt;
+      &lt;td&gt;YES&lt;/td&gt;
+      &lt;td&gt;NO&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;public&lt;/td&gt;
+      &lt;td&gt;YES&lt;/td&gt;
+      &lt;td&gt;YES&lt;/td&gt;
+      &lt;td&gt;YES&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;h3 id=&quot;12-继承&quot;&gt;1.2 继承&lt;/h3&gt;
+
+&lt;p&gt;OC只支持单继承，如果要实现多继承，可以采用如下三种方式：&lt;/p&gt;
+
+&lt;h4 id=&quot;121-通过组合实现&quot;&gt;1.2.1 通过组合实现&lt;/h4&gt;
+
+&lt;p&gt;组合实际上就是说如果一个类无法实现某个功能，那么就将该需求转接到另一个类实现，比较简单，就是将能实现该功能的类作为自己的一个成员变量&lt;/p&gt;
+
+&lt;h4 id=&quot;122-通过协议实现&quot;&gt;1.2.2 通过协议实现&lt;/h4&gt;
+
+&lt;p&gt;协议类似于Java中的接口，但是也有所不同，参见下面对协议的讲解；OC中只能继承一个类，但是可以实现多个协议&lt;/p&gt;
+
+&lt;h4 id=&quot;123-通过category实现&quot;&gt;1.2.3 通过Category实现&lt;/h4&gt;
+
+&lt;p&gt;Category可以实现在不继承类的基础上实现对类的扩展；这里使用Category实现多继承举例如下：Child已经继承了Father，想要再对Child扩展方法，可以使用Category扩展&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;// 文件：Child.h
+&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;@interface&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Child&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Father&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;showChild&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;@end&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// 文件：Child+Hello.h
+&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;@interface&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Child&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;Hello&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;hello&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;@end&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// 文件：Child+Hello.m
+&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;@implementation&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Child&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;Hello&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;hello&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;@end&lt;/span&gt;
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;13-多态&quot;&gt;1.3 多态&lt;/h3&gt;
+
+&lt;p&gt;Java中多态的实现依赖于重写，重载和向上转型（动态链接）；但是OC中方法不能重载，可以重写，其余的和普通Java多态的概念和用法基本相同；另外，Java中多态还有一个重要的点就是接口，依赖于接口达到的运行时动态绑定，与之对应的，在OC中可以使用协议实现&lt;/p&gt;
+
+&lt;p&gt;这里还需要注意的是，重新认识OC中的方法签名，OC的语法比较冗余，举例如下：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;// 函数原型如下，方法签名为：addNumber1:andNumber2:
+- (NSInteger)addNumber1:(NSInteger)number1 andNumber2:(NSInteger)number2;
+
+// 函数原型如下，方法签名为：add::
+- (NSInteger)add:(NSInteger)number1 :(NSInteger)number2;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;二-协议&quot;&gt;二. 协议&lt;/h2&gt;
+
+&lt;p&gt;OC中的协议相当于Java中的接口，很多设计模式都依赖于协议；但是OC中的协议于Java中的接口也有一些细微的差别；&lt;/p&gt;
+
+&lt;p&gt;一般而言，协议应该与对应的类声明在同一个头文件中，与Java中接口不同的是，协议的中的方法不是必须都实现的，可以使用&lt;code class=&quot;highlighter-rouge&quot;&gt;@optional&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;@required&lt;/code&gt;来声明方法，但是使用@required修饰的协议方法也不是必须实现的，如果没有实现，编译会报警告；但是如果调用了一个没有实现的协议方法的话，运行时会崩溃&lt;/p&gt;
+
+&lt;p&gt;协议中不能有默认方法实现，这点与Java中的接口相同，但是OC的协议中不能定义变量；协议可以被class，struct，enum实现&lt;/p&gt;
+
+&lt;p&gt;协议的使用场景：&lt;/p&gt;
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;需要由别的类实现的方法&lt;/li&gt;
+    &lt;li&gt;声明未知类的接口&lt;/li&gt;
+    &lt;li&gt;两个类之间的通信&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;三-define宏定义&quot;&gt;三. define：宏定义&lt;/h2&gt;
+
+&lt;p&gt;OC中的宏定义是非常强大的，合理使用可以极大的简化和优雅代码&lt;/p&gt;
+
+&lt;h3 id=&quot;31-defineconstenum定义常量&quot;&gt;3.1 define，const，enum定义常量&lt;/h3&gt;
+
+&lt;p&gt;define宏：只是在预处理器里进行文本替换，没有类型，不做任何类型检查，编译器可以对相同的字符串进行优化。只保存一份到 .rodata 段。甚至有相同后缀的字符串也可以优化，你可以用GCC 编译测试，”Hello world” 与 “world” 两个字符串，只存储前面一个。取的时候只需要给前面和中间的地址，如果是整形、浮点型会有多份拷贝，但这些数写在指令中。占的只是代码段而已，大量用宏会导致二进制文件变大&lt;/p&gt;
+
+&lt;p&gt;const常量：共享一块内存空间，就算项目中N处用到，也不会分配N块内存空间，可以根据const修饰的位置设定能否修改，在编译阶段会执行类型检查&lt;/p&gt;
+
+&lt;p&gt;enum枚举：只能定义int类型&lt;/p&gt;
+
+&lt;p&gt;推荐使用const常量&lt;/p&gt;
+
+&lt;p&gt;部分摘自&lt;a href=&quot;https://www.jianshu.com/p/f83335e036b5&quot;&gt;博客&lt;/a&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;32-宏定义&quot;&gt;3.2 宏定义&lt;/h3&gt;
+
+&lt;p&gt;使用宏定义可以将一些冗杂的语句简化，使得调用简明；常用宏可以参见&lt;a href=&quot;https://my.oschina.net/leejan97/blog/354904&quot;&gt;博客&lt;/a&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;四-property修饰符&quot;&gt;四. @property修饰符&lt;/h2&gt;
+
+&lt;p&gt;本来@property是和@synthesize共用来实现自动生成set和get方法的，但是Xcode4.4之后，@property得到了增强，只使用@property即可生成set和get方法，同时还会自动生成一个带下划线的同名私有变量（需要注意的是，当我们自己写了对应的set和get方法时，该带下划线的同名变量将不可用，解决办法参见&lt;a href=&quot;https://www.jianshu.com/p/baef6d5a41d3&quot;&gt;博客&lt;/a&gt;）&lt;/p&gt;
+
+&lt;p&gt;但是@property的使用难点在于理解其修饰符，常见的几组如下：&lt;/p&gt;
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;atomic, nonatomic：是否线程安全；默认为atomic，线程安全，但是会影响性能，一般使用nonatomic&lt;/li&gt;
+    &lt;li&gt;retain, copy, assign：默认为assign，该修饰符对属性只是简单的赋值，不更改引用计数，常用于基本数据类型，如：int，short等；retain一般用于修饰指针，会持有对象，增加引用计数
+readonly, readwrite
+strong, getter=method, setter=method, unsafe_unretained&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;weak和assign的区别：weak和assign的区别主要是体现在两者修饰OC对象时的差异。上面也介绍过，assign通常用来修饰基本数据类型，如int、float、BOOL等，weak用来修饰OC对象，如UIButton、UIView等；weak不能修饰基本数据类型&lt;/p&gt;
+
+&lt;p&gt;推荐博客：
+https://hk.saowen.com/a/1bdf81decab39874080a44833b2fc47eb8a59355e9ae2b997565552d63991f4d
+https://hk.saowen.com/a/7b29e511436f99243478a22570615137266de714cbcda782e798ab04a4611d5e  及其后文链接
+https://hk.saowen.com/a/e7b69dbe7dfea4e5a00ebd4ef4a73a61403c8351d319eb901a05388d38513dbf  及其后文链接&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;五-xcode与模拟器快捷键&quot;&gt;五. Xcode与模拟器快捷键&lt;/h2&gt;
+
+&lt;p&gt;说实话，刚从Android Studio转到Xcode实际上是很不习惯的，很明显的一个就是IDE写代码不顺手，AS各种快捷键与插件写起代码来简直上天～&lt;/p&gt;
+
+&lt;p&gt;但既已入坑，还是自己去适应呗&lt;/p&gt;
+
+&lt;p&gt;Xcode常用快捷键：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;cmd + shift + o      快速打开文件
+cmd + 1              切换成 Project Navigator (cmd + 2~7 也可以做相应切换，不过不常用）
+cmd + ctrl + 上     在 .h 和 .m 文件之间切换
+cmd + enter          切换成 standard editor
+cmd + opt + enter    切换成 assistant editor
+cmd + shift + y      切换 Console View 的显示或隐藏
+cmd + 0              隐藏左边的导航 (Navigator) 区
+cmd + opt + 0        隐藏右边的工具 (Utility) 区
+ctrl  + 6            列出当前文件中所有的方法，可以输入关键词来过滤。这个相当赞，可以快速定位到想编辑的方法。
+                     我直接把这个快键盘改成了 ctrl+o，这样按起来更顺手。
+cmd + ctrl + 左 / 右   到上 / 下一次编辑的位置，在 2 个编辑位置跳转的时候很方便。
+cmd + opt + j        跳转到文件过滤区
+cmd + shift + f      在工程中查找
+cmd + r              运行，如果选上直接 kill 掉上次进程的话，每次直接一按就可以重新运行了
+cmd + b              编译工程
+cmd + shift + k      清空编译好的文件
+cmd + .              结束本次调试
+ESC                  调出代码补全
+cmd + 单击           查看该方法的实现
+opt + 单击           查看该方法的文档
+cmd + t              新建一个 tab 栏
+cmd + shift + [      在 tab 栏之间切换
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;模拟器常用快捷键：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;SHIFT+CMD+H	回到桌面
+CMD+Q		退出模拟器
+CMD+S		模拟器截屏(所截图片都在桌面上)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;六-内存管理&quot;&gt;六. 内存管理&lt;/h2&gt;
+
+&lt;p&gt;内存管理是一个比较难的点，东西也很多，并非三言两语就能阐述清楚，后面有机会再另起新篇&lt;/p&gt;
+</description>
+        <pubDate>Wed, 23 Jan 2019 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2019/01/23/Objective-C%E5%85%A5%E9%97%A8%E8%A6%81%E7%82%B9/</link>
+        <guid isPermaLink="true">http://localhost:4000/2019/01/23/Objective-C%E5%85%A5%E9%97%A8%E8%A6%81%E7%82%B9/</guid>
+        
+        <category>Java</category>
+        
+        
+      </item>
+    
+      <item>
+        <title>大三上总结</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;大三上总结&lt;/p&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;h2 id=&quot;技术&quot;&gt;技术&lt;/h2&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;看书：
+    &lt;blockquote&gt;
+      &lt;ol&gt;
+        &lt;li&gt;«深入理解计算机系统»&lt;/li&gt;
+        &lt;li&gt;«现代操作系统»&lt;/li&gt;
+        &lt;li&gt;«Java并发编程实战»&lt;/li&gt;
+        &lt;li&gt;«深入理解Java虚拟机»回滚&lt;/li&gt;
+      &lt;/ol&gt;
+    &lt;/blockquote&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;博客，总结：https://husteryp.github.io/&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;iOS：Swift，OC&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h2 id=&quot;思考&quot;&gt;思考&lt;/h2&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;思想转变
+    &lt;blockquote&gt;
+      &lt;ol&gt;
+        &lt;li&gt;技术方向 –&amp;gt; 生活&lt;/li&gt;
+        &lt;li&gt;年轻真好~&lt;/li&gt;
+      &lt;/ol&gt;
+    &lt;/blockquote&gt;
+  &lt;/li&gt;
+  &lt;li&gt;外院：如何去弥补这个非班科的差距；决定方向后可以去实习&lt;/li&gt;
+&lt;/ol&gt;
+
+</description>
+        <pubDate>Tue, 01 Jan 2019 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2019/01/01/%E5%A4%A7%E4%B8%89%E4%B8%8A%E6%80%BB%E7%BB%93/</link>
+        <guid isPermaLink="true">http://localhost:4000/2019/01/01/%E5%A4%A7%E4%B8%89%E4%B8%8A%E6%80%BB%E7%BB%93/</guid>
+        
+        <category>Hust</category>
+        
+        
+      </item>
     
       <item>
         <title>ListView[一]</title>
@@ -29,7 +313,7 @@
 
 &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ListView&lt;/code&gt;的性能问题主要是其通常用于展示大量数据造成的; 我们手指上下滑动的时候伴随着&lt;code class=&quot;highlighter-rouge&quot;&gt;Adapter.getView()&lt;/code&gt;方法的不断调用, &lt;code class=&quot;highlighter-rouge&quot;&gt;getView()&lt;/code&gt;的主要作用是去解析&lt;code class=&quot;highlighter-rouge&quot;&gt;XML&lt;/code&gt;生成&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;视图, 但是这一过程是一个耗时操作, 如果每次滑动都去&lt;code class=&quot;highlighter-rouge&quot;&gt;inflate&lt;/code&gt;的话, 势必会造成界面的卡顿, 如下即是这种情况: 每次都去&lt;code class=&quot;highlighter-rouge&quot;&gt;inflate&lt;/code&gt;一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Item&lt;/code&gt;, 然后再&lt;code class=&quot;highlighter-rouge&quot;&gt;findViewById()&lt;/code&gt;再进行设置&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;// 最差版本
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;// 最差版本
 class MyAdapter(val context: Context) : BaseAdapter() {
 
     var data = ArrayList&amp;lt;String&amp;gt;()
@@ -49,7 +333,7 @@ class MyAdapter(val context: Context) : BaseAdapter() {
     // 其他方法按照常规写, 故此省略
     ...
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
 &lt;hr /&gt;
 
@@ -57,7 +341,7 @@ class MyAdapter(val context: Context) : BaseAdapter() {
 
 &lt;p&gt;为了避免每次滑动的时候都要&lt;code class=&quot;highlighter-rouge&quot;&gt;inflate&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;Google&lt;/code&gt;官方提供了&lt;code class=&quot;highlighter-rouge&quot;&gt;ListView&lt;/code&gt;的缓存机制, 即将滑动出屏幕外面的&lt;code class=&quot;highlighter-rouge&quot;&gt;Item&lt;/code&gt;缓存下来, 因为通常情况下&lt;code class=&quot;highlighter-rouge&quot;&gt;ListView&lt;/code&gt;要展示的数据类型都是相同的, 所以可以复用同样的&lt;code class=&quot;highlighter-rouge&quot;&gt;Item&lt;/code&gt;界面, 只是展示数据不同; 我们注意到&lt;code class=&quot;highlighter-rouge&quot;&gt;getView()&lt;/code&gt;的参数中有一个&lt;code class=&quot;highlighter-rouge&quot;&gt;convertView&lt;/code&gt;, 这个便是被缓存下来的&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;, 所以我们第一次优化可以如下: 主要就是判断&lt;code class=&quot;highlighter-rouge&quot;&gt;convertView&lt;/code&gt;是否为空, 如果为空, 说明没有缓存的&lt;code class=&quot;highlighter-rouge&quot;&gt;Item&lt;/code&gt;, 此时就需要去&lt;code class=&quot;highlighter-rouge&quot;&gt;inflate&lt;/code&gt;, 否则, 直接更改展示数据即可&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class MyAdapter(val context: Context) : BaseAdapter() {
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class MyAdapter(val context: Context) : BaseAdapter() {
 
     var data = ArrayList&amp;lt;String&amp;gt;()
     private val mInflater by lazy {
@@ -79,7 +363,7 @@ class MyAdapter(val context: Context) : BaseAdapter() {
     // 其他方法按照常规写, 故此省略
     ...
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
 &lt;hr /&gt;
 
@@ -91,7 +375,7 @@ class MyAdapter(val context: Context) : BaseAdapter() {
 
 &lt;p&gt;另外, 还需要提一下的是这里保存&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewHolder&lt;/code&gt;用的是&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;tag&lt;/code&gt;, 其实我们还可以用这个&lt;code class=&quot;highlighter-rouge&quot;&gt;tag&lt;/code&gt;保存许多我们需要的值, 而不用局限与&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewHolder&lt;/code&gt;&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class MyAdapter(val context: Context) : BaseAdapter() {
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class MyAdapter(val context: Context) : BaseAdapter() {
 
     var data = ArrayList&amp;lt;String&amp;gt;()
     private val mInflater by lazy {
@@ -121,7 +405,7 @@ class MyAdapter(val context: Context) : BaseAdapter() {
         }
     }
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
 &lt;hr /&gt;
 
@@ -131,7 +415,7 @@ class MyAdapter(val context: Context) : BaseAdapter() {
 
 &lt;p&gt;如下; 当加载大图时, 使用异步的&lt;code class=&quot;highlighter-rouge&quot;&gt;AsyncTask&lt;/code&gt;去网络下载好后再展示到界面&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class MyAdapter(private val context: Context) : BaseAdapter() {
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class MyAdapter(private val context: Context) : BaseAdapter() {
 
     private val mInflater by lazy {
         context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
@@ -185,7 +469,7 @@ class MyAdapter(val context: Context) : BaseAdapter() {
         }
     }
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
 &lt;p&gt;上述代码其实还有问题; 只是解决了异步加载, 但是由于&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;视图的缓存复用, 当滑动的时候会出现&lt;code class=&quot;highlighter-rouge&quot;&gt;Item&lt;/code&gt;展示图片不断改变的现象; 关于此问题的解决可以参见&lt;a href=&quot;https://blog.csdn.net/guolin_blog/article/details/45586553&quot;&gt;博客&lt;/a&gt; (&lt;strong&gt;注:&lt;/strong&gt; 上述代码图片&lt;code class=&quot;highlighter-rouge&quot;&gt;URL&lt;/code&gt;也来自该博客)&lt;/p&gt;
 </description>
@@ -288,7 +572,7 @@ class MyAdapter(val context: Context) : BaseAdapter() {
 
 &lt;p&gt;对ListView设置Item的点击监听:&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;listView.setOnItemClickListener(new OnItemClickListener() {
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;listView.setOnItemClickListener(new OnItemClickListener() {
     @Override
     public void onItemClick(AdapterView&amp;lt;?&amp;gt; parent, View view,
         int position, long id) {
@@ -297,7 +581,7 @@ class MyAdapter(val context: Context) : BaseAdapter() {
             .show();
     }
 });
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
 &lt;p&gt;获取LayoutInflator可以使用&lt;code class=&quot;highlighter-rouge&quot;&gt;context.getSystemService(Context.LAYOUT_INFLATER_SERVICE)&lt;/code&gt;&lt;/p&gt;
 
@@ -408,7 +692,7 @@ class MyAdapter(val context: Context) : BaseAdapter() {
 
 &lt;p&gt;注: &lt;code class=&quot;highlighter-rouge&quot;&gt;MainActivity&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;Layout&lt;/code&gt;布局只有一个&lt;code class=&quot;highlighter-rouge&quot;&gt;id&lt;/code&gt;为&lt;code class=&quot;highlighter-rouge&quot;&gt;main_text&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;TextView&lt;/code&gt;&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class MainActivity : AppCompatActivity() {
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -424,7 +708,7 @@ class MyAdapter(val context: Context) : BaseAdapter() {
         }.start()
     }
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
 &lt;p&gt;如上代码中, 在第二个子线程中跟新&lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;的时候失败了, 报错: &lt;code class=&quot;highlighter-rouge&quot;&gt;Only the original thread that created a view hierarchy can touch its views&lt;/code&gt;; 即常见的不能在子线程中更新&lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;; 但是在第一个子线程中跟新&lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;成功了, 原因是: 线程的检查是在&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewRootImp&lt;/code&gt;中的&lt;code class=&quot;highlighter-rouge&quot;&gt;checkThread()&lt;/code&gt;中, 但是在&lt;code class=&quot;highlighter-rouge&quot;&gt;onCreate()&lt;/code&gt;中, 此时&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewRootImp&lt;/code&gt;还没有创建, 所以此时无法&lt;code class=&quot;highlighter-rouge&quot;&gt;checkThread()&lt;/code&gt;, 实际上, &lt;code class=&quot;highlighter-rouge&quot;&gt;ViewRootImp&lt;/code&gt;的创建是在&lt;code class=&quot;highlighter-rouge&quot;&gt;onResume()&lt;/code&gt;方法回调之后, 在&lt;code class=&quot;highlighter-rouge&quot;&gt;WindowManagerGlobal&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;addView&lt;/code&gt;中创建的; 所以如果这里的&lt;code class=&quot;highlighter-rouge&quot;&gt;initView&lt;/code&gt;即使是在&lt;code class=&quot;highlighter-rouge&quot;&gt;onResume()&lt;/code&gt;中调用也是同样的现象&lt;/p&gt;
 </description>
@@ -547,7 +831,7 @@ class MyAdapter(val context: Context) : BaseAdapter() {
 
 &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;FFmpeg&lt;/code&gt;编译生成的动态库默认格式为&lt;code class=&quot;highlighter-rouge&quot;&gt;xx.so.版本号&lt;/code&gt;, 但是&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;工程中只支持以&lt;code class=&quot;highlighter-rouge&quot;&gt;.so&lt;/code&gt;结尾的动态库, 所以需要修改&lt;code class=&quot;highlighter-rouge&quot;&gt;FFmpeg&lt;/code&gt;的配置文件, 修改其生成库文件名的格式; 编辑&lt;code class=&quot;highlighter-rouge&quot;&gt;FFmpeg&lt;/code&gt;目录下的&lt;code class=&quot;highlighter-rouge&quot;&gt;configure&lt;/code&gt;文件, 修改如下:&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# 将configure文件中的：
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# 将configure文件中的：
 SLIBNAME_WITH_MAJOR='$(SLIBNAME).$(LIBMAJOR)'
 LIB_INSTALL_EXTRA_CMD='$$(RANLIB) &quot;$(LIBDIR)/$(LIBNAME)&quot;'
 SLIB_INSTALL_NAME='$(SLIBNAME_WITH_VERSION)'
@@ -558,7 +842,7 @@ SLIBNAME_WITH_MAJOR='$(SLIBPREF)$(FULLNAME)-$(LIBMAJOR)$(SLIBSUF)'
 LIB_INSTALL_EXTRA_CMD='$$(RANLIB) &quot;$(LIBDIR)/$(LIBNAME)&quot;'
 SLIB_INSTALL_NAME='$(SLIBNAME_WITH_MAJOR)'
 SLIB_INSTALL_LINKS='$(SLIBNAME)'
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
 &lt;p&gt;为了减小&lt;code class=&quot;highlighter-rouge&quot;&gt;APK&lt;/code&gt;大小, 我们只将需要的功能开启即可; 配置参数较多, 我们写一个脚本如下(名为&lt;code class=&quot;highlighter-rouge&quot;&gt;build-script.sh&lt;/code&gt;)&lt;/p&gt;
 
@@ -566,7 +850,7 @@ SLIB_INSTALL_LINKS='$(SLIBNAME)'
   &lt;p&gt;注: 下面的注释在运行脚本时需删除~&lt;/p&gt;
 &lt;/blockquote&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;#!/bin/bash&lt;/span&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;#!/bin/bash&lt;/span&gt;
 
 &lt;span class=&quot;nv&quot;&gt;NDK&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;/home/yuanping/Software/NDK/android-ndk-r15c  &lt;span class=&quot;c&quot;&gt;# NDK所在路径, 注意替换为你的&lt;/span&gt;
 &lt;span class=&quot;nv&quot;&gt;SYSROOT&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$NDK&lt;/span&gt;/platforms/android-19/arch-arm/
@@ -574,33 +858,33 @@ SLIB_INSTALL_LINKS='$(SLIBNAME)'
 &lt;span class=&quot;k&quot;&gt;function &lt;/span&gt;build_one
 &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
 ./configure &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
-&lt;span class=&quot;nt&quot;&gt;--prefix&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$PREFIX&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
-&lt;span class=&quot;nt&quot;&gt;--enable-shared&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\ &lt;/span&gt; &lt;span class=&quot;c&quot;&gt;# 生成动态库&lt;/span&gt;
-&lt;span class=&quot;nt&quot;&gt;--disable-static&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\ &lt;/span&gt;&lt;span class=&quot;c&quot;&gt;# 禁止生成静态库&lt;/span&gt;
-&lt;span class=&quot;nt&quot;&gt;--disable-doc&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\ &lt;/span&gt; &lt;span class=&quot;c&quot;&gt;# 关闭不需要的功能, 下同&lt;/span&gt;
-&lt;span class=&quot;nt&quot;&gt;--disable-ffplay&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
-&lt;span class=&quot;nt&quot;&gt;--disable-ffprobe&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
-&lt;span class=&quot;nt&quot;&gt;--disable-doc&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
-&lt;span class=&quot;nt&quot;&gt;--disable-symver&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
-&lt;span class=&quot;nt&quot;&gt;--disable-ffmpeg&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
-&lt;span class=&quot;nt&quot;&gt;--enable-small&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
-&lt;span class=&quot;nt&quot;&gt;--cross-prefix&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$TOOLCHAIN&lt;/span&gt;/bin/arm-linux-androideabi- &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
-&lt;span class=&quot;nt&quot;&gt;--target-os&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;linux &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
-&lt;span class=&quot;nt&quot;&gt;--arch&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;arm &lt;span class=&quot;se&quot;&gt;\ &lt;/span&gt;
-&lt;span class=&quot;nt&quot;&gt;--enable-cross-compile&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
-&lt;span class=&quot;nt&quot;&gt;--sysroot&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$SYSROOT&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
-&lt;span class=&quot;nt&quot;&gt;--extra-cflags&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;-Os -fpic &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$ADDI_CFLAGS&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
-&lt;span class=&quot;nt&quot;&gt;--extra-ldflags&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$ADDI_LDFLAGS&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+--prefix&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$PREFIX&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+--enable-shared &lt;span class=&quot;se&quot;&gt;\ &lt;/span&gt; &lt;span class=&quot;c&quot;&gt;# 生成动态库&lt;/span&gt;
+--disable-static &lt;span class=&quot;se&quot;&gt;\ &lt;/span&gt;&lt;span class=&quot;c&quot;&gt;# 禁止生成静态库&lt;/span&gt;
+--disable-doc &lt;span class=&quot;se&quot;&gt;\ &lt;/span&gt; &lt;span class=&quot;c&quot;&gt;# 关闭不需要的功能, 下同&lt;/span&gt;
+--disable-ffplay &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+--disable-ffprobe &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+--disable-doc &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+--disable-symver &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+--disable-ffmpeg &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+--enable-small &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+--cross-prefix&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$TOOLCHAIN&lt;/span&gt;/bin/arm-linux-androideabi- &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+--target-os&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;linux &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+--arch&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;arm &lt;span class=&quot;se&quot;&gt;\ &lt;/span&gt;
+--enable-cross-compile &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+--sysroot&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$SYSROOT&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+--extra-cflags&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;-Os -fpic &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$ADDI_CFLAGS&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+--extra-ldflags&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$ADDI_LDFLAGS&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
 &lt;span class=&quot;nv&quot;&gt;$ADDITIONAL_CONFIGURE_FLAG&lt;/span&gt;
 make clean all
-make &lt;span class=&quot;nt&quot;&gt;-j3&lt;/span&gt;
-make &lt;span class=&quot;nb&quot;&gt;install&lt;/span&gt;
+make -j3
+make install
 &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
 &lt;span class=&quot;nv&quot;&gt;CPU&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;armv7-a &lt;span class=&quot;c&quot;&gt;# CPU架构&lt;/span&gt;
 &lt;span class=&quot;nv&quot;&gt;PREFIX&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;pwd&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt;/android/&lt;span class=&quot;nv&quot;&gt;$CPU&lt;/span&gt; &lt;span class=&quot;c&quot;&gt;# 生成动态库所在路径&lt;/span&gt;
 &lt;span class=&quot;nv&quot;&gt;ADDI_CFLAGS&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;-marm&quot;&lt;/span&gt;
 build_one
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
 &lt;p&gt;之后运行该脚本即可, 注意添加可执行权限(&lt;code class=&quot;highlighter-rouge&quot;&gt;sudo chmod a+x build-script.sh&lt;/code&gt;)&lt;/p&gt;
 
@@ -646,7 +930,7 @@ build_one
 
 &lt;p&gt;内容如下:&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;cmake_minimum_required(VERSION 3.4.1) # cmake最低版本
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;cmake_minimum_required(VERSION 3.4.1) # cmake最低版本
 
 add_library( # Sets the name of the library.
              wlffmpeg
@@ -731,13 +1015,13 @@ target_link_libraries( # Specifies the target library.  # 链接
                        # included in the NDK.
                        ${log-lib} )
 
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
 &lt;p&gt;关于&lt;code class=&quot;highlighter-rouge&quot;&gt;CMake&lt;/code&gt;配置可以参见&lt;a href=&quot;https://developer.android.com/studio/projects/configure-cmake&quot;&gt;文档&lt;/a&gt;&lt;/p&gt;
 
 &lt;p&gt;在模块级别的&lt;code class=&quot;highlighter-rouge&quot;&gt;build.gradle&lt;/code&gt;下配置:&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;android {
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;android {
     ...
     defaultConfig {
         ...
@@ -761,11 +1045,11 @@ target_link_libraries( # Specifies the target library.  # 链接
         }
     }
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
 &lt;p&gt;创建&lt;code class=&quot;highlighter-rouge&quot;&gt;FFmpeg.java&lt;/code&gt;类, 使用静态代码块加载动态链接库, 定义&lt;code class=&quot;highlighter-rouge&quot;&gt;native&lt;/code&gt;方法&lt;code class=&quot;highlighter-rouge&quot;&gt;playMyMedia()&lt;/code&gt;, 如下:&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class FFmpeg {
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class FFmpeg {
     static {
         System.loadLibrary(&quot;avutil-56&quot;);
         System.loadLibrary(&quot;swresample-3&quot;);
@@ -779,11 +1063,11 @@ target_link_libraries( # Specifies the target library.  # 链接
 
     public native void playMyMedia(String url);
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
 &lt;p&gt;在&lt;code class=&quot;highlighter-rouge&quot;&gt;playMyMedia()&lt;/code&gt;上快捷键&lt;code class=&quot;highlighter-rouge&quot;&gt;Alt + Enter&lt;/code&gt;选择&lt;code class=&quot;highlighter-rouge&quot;&gt;create function xxx&lt;/code&gt;, 可以自动创建对应的&lt;code class=&quot;highlighter-rouge&quot;&gt;.c&lt;/code&gt;文件, 当然该&lt;code class=&quot;highlighter-rouge&quot;&gt;.c&lt;/code&gt;文件也可以自命名, 此处命名为&lt;code class=&quot;highlighter-rouge&quot;&gt;player.c&lt;/code&gt;; &lt;code class=&quot;highlighter-rouge&quot;&gt;player.c&lt;/code&gt;的完整代码如下: 该代码摘自&lt;a href=&quot;https://blog.csdn.net/ywl5320/article/details/75136986&quot;&gt;博客&lt;/a&gt;&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;#include &amp;lt;jni.h&amp;gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;#include &amp;lt;jni.h&amp;gt;
 #include &quot;libavformat/avformat.h&quot;
 #include &amp;lt;android/log.h&amp;gt;
 #define LOGI(FORMAT,...) __android_log_print(ANDROID_LOG_INFO,&quot;HusterYP&quot;,FORMAT,##__VA_ARGS__);  // 输出到AS的log中
@@ -813,11 +1097,11 @@ Java_com_gif_ping_jnidemo_FFmpeg_playMyMedia(JNIEnv *env, jobject instance, jstr
     }
     (*env)-&amp;gt;ReleaseStringUTFChars(env, url_, url);
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
 &lt;p&gt;然后在&lt;code class=&quot;highlighter-rouge&quot;&gt;MainActivity&lt;/code&gt;中使用, 也比较简单; 注意添加网络权限, 在&lt;code class=&quot;highlighter-rouge&quot;&gt;log&lt;/code&gt;中就可以看到输出的视频信息啦~&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class MainActivity extends AppCompatActivity {
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class MainActivity extends AppCompatActivity {
 
     FFmpeg mFFmpeg;
 
@@ -833,7 +1117,7 @@ Java_com_gif_ping_jnidemo_FFmpeg_playMyMedia(JNIEnv *env, jobject instance, jstr
         mFFmpeg.playMyMedia(&quot;http://video.xxx&quot;); // 随便找一个视频url啦~
     }
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
 &lt;p&gt;到这里, 项目应该就能跑起来啦~&lt;/p&gt;
 
@@ -900,7 +1184,7 @@ Java_com_gif_ping_jnidemo_FFmpeg_playMyMedia(JNIEnv *env, jobject instance, jstr
 
 &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;fork&lt;/code&gt;函数调用一次但是返回两次, 一次是在父进程中, 另一次是在新创建的子进程中, 参见一下代码&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;int main() 
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;int main() 
 {
     pid_t pid;
     int x = 1;
@@ -913,12 +1197,12 @@ Java_com_gif_ping_jnidemo_FFmpeg_playMyMedia(JNIEnv *env, jobject instance, jstr
     printf(&quot;Parent: x = %d\n&quot;, --x); // 父进程
     exit(0);
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
 &lt;p&gt;输出(注意由于并发不定性, 所以输出顺序不定):&lt;/p&gt;
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Parent: x = 0
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Parent: x = 0
 Child: x = 2
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
 &lt;p&gt;注意理解上述程序:&lt;/p&gt;
 
@@ -959,7 +1243,7 @@ Child: x = 2
   &lt;li&gt;信号量: 用一个整型变量来累计唤醒次数&lt;/li&gt;
 &lt;/ol&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;#define N 100 // 缓冲区的槽数目
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;#define N 100 // 缓冲区的槽数目
 typedef int semaphore; // 信号量是一种特殊类型的整型数据
 semaphore mutex = 1; // 控制对临界区的访问
 semaphore empty = N; // 计数缓冲区的空槽数目
@@ -994,7 +1278,7 @@ void consumer(void)
         comsume_item(item);
     }
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
 &lt;ol&gt;
   &lt;li&gt;
@@ -1088,7 +1372,7 @@ void consumer(void)
   &lt;p&gt;以数据库为例&lt;/p&gt;
 &lt;/blockquote&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;typedef int semaphore;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;typedef int semaphore;
 semaphore mutex = 1; 
 semaphore db = 1; // 控制对数据库的访问
 int rc = 0; // 正在读或者即将读的进程数目
@@ -1122,7 +1406,7 @@ void writer(void)
         up(&amp;amp;db); // 释放互斥访问
     }
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
 &lt;hr /&gt;
 
@@ -1179,7 +1463,7 @@ void writer(void)
   &lt;/li&gt;
 &lt;/ol&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;        Object fromAcct = new Object(); // 这里的锁对象也可以是其他
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;        Object fromAcct = new Object(); // 这里的锁对象也可以是其他
         Object toAcct = new Object();
         Object tieLock = new Object();
         int fromHash = System.identityHashCode(fromAcct);
@@ -1205,7 +1489,7 @@ void writer(void)
                 }
             }
         }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 
 &lt;ol&gt;
   &lt;li&gt;
@@ -1230,464 +1514,6 @@ void writer(void)
         <pubDate>Fri, 09 Nov 2018 00:00:00 +0800</pubDate>
         <link>http://localhost:4000/2018/11/09/Java%E5%B9%B6%E5%8F%91-%E4%B8%89/</link>
         <guid isPermaLink="true">http://localhost:4000/2018/11/09/Java%E5%B9%B6%E5%8F%91-%E4%B8%89/</guid>
-        
-        <category>Java</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>Java并发[二]</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;主要讲解了&lt;code class=&quot;highlighter-rouge&quot;&gt;Executor&lt;/code&gt;框架&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;一-executor框架&quot;&gt;一. Executor框架&lt;/h2&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;线程池: 可以通过&lt;code class=&quot;highlighter-rouge&quot;&gt;Executors&lt;/code&gt;中的静态工厂方法之一来创建一个线程池&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;newFixedThreadPool&lt;/code&gt;: 创建一个固定长度的线程池, 每当提交一个任务时就创建一个线程, 直到达到线程池的最大数量, 这是线程池规模将不再变化(如果某个线程发生异常终止, 那么线程池会补充一个线程)&lt;/li&gt;
-    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;newCachedThreadPool&lt;/code&gt;: 创建一个可缓存的线程池, 如果线程池的当前规模超过了处理需求时, 那么将回收空闲的线程, 而当需求增加时, 则可以添加新的线程, 线程池的规模不存在任何限制&lt;/li&gt;
-    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;newSingleThreadExecutor&lt;/code&gt;: 一个单线程的&lt;code class=&quot;highlighter-rouge&quot;&gt;Executor&lt;/code&gt;, 它创建单个工作者线程来执行任务, 如果这个线程异常结束, 会创建另一个线程来代替;&lt;code class=&quot;highlighter-rouge&quot;&gt;newSingleThreadExecutor&lt;/code&gt;能确保依照任务在队列中的顺序来执行(如: &lt;code class=&quot;highlighter-rouge&quot;&gt;FIFO&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;LIFO&lt;/code&gt;, 优先级)&lt;/li&gt;
-    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;newScheduledThreadPool&lt;/code&gt;: 创建了一个固定长度的线程池, 而且以延迟或定时的方式来执行任务, 类似于&lt;code class=&quot;highlighter-rouge&quot;&gt;Timer&lt;/code&gt;&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Executor&lt;/code&gt;生命周期: 为了解决执行服务的生命周期问题, &lt;code class=&quot;highlighter-rouge&quot;&gt;Executor&lt;/code&gt;扩展了&lt;code class=&quot;highlighter-rouge&quot;&gt;ExecutorService&lt;/code&gt;接口; &lt;code class=&quot;highlighter-rouge&quot;&gt;ExecutorService&lt;/code&gt;的生命周期有三种状态: 运行, 关闭, 已终止; 提供了如下方法:&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;shutdown()&lt;/code&gt;: 执行平缓的关闭过程, 不再接受新任务, 同时等待已经提交的任务执行完成(包括那些还未开始执行的任务)&lt;/li&gt;
-    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;shutdownNow()&lt;/code&gt;: 执行粗暴的关闭过程, 尝试取消所有运行中的任务, 并且不再启动队列中尚未开始执行的任务&lt;/li&gt;
-    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;awaitTermination()&lt;/code&gt;: 等待&lt;code class=&quot;highlighter-rouge&quot;&gt;ExecutorService&lt;/code&gt;到达终止状态, 或者通过&lt;code class=&quot;highlighter-rouge&quot;&gt;isTerminated()&lt;/code&gt;来轮循是否已经终止&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;延迟任务与周期任务: &lt;code class=&quot;highlighter-rouge&quot;&gt;Timer&lt;/code&gt;与&lt;code class=&quot;highlighter-rouge&quot;&gt;ScheduleThreadPoolExecutor&lt;/code&gt;&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Timer&lt;/code&gt;: 在执行所有定时任务时只会创建一个线程, 如果某个任务执行时间过长, 那么将破坏其他&lt;code class=&quot;highlighter-rouge&quot;&gt;TimerTask&lt;/code&gt;的定时精确性; &lt;code class=&quot;highlighter-rouge&quot;&gt;Timer&lt;/code&gt;线程并不捕获异常, 因此当&lt;code class=&quot;highlighter-rouge&quot;&gt;TimerTask&lt;/code&gt;抛出未检查异常时将终止定时线程&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;考虑下列程序, 运行&lt;code class=&quot;highlighter-rouge&quot;&gt;1&lt;/code&gt;秒之后结束, 而不是运行&lt;code class=&quot;highlighter-rouge&quot;&gt;6&lt;/code&gt;秒; 同时还会抛出异常&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class OutOfTime {
-    public static void main(String[] args) throws InterruptedException {
-        Timer timer = new Timer();
-        timer.schedule(new ThrowTask(), 1);
-        SECONDS.sleep(1);
-        timer.schedule(new ThrowTask(), 5);
-        SECONDS.sleep(5);
-    }
-
-    public static class ThrowTask extends TimerTask {
-
-        @Override
-        public void run() {
-            throw new RuntimeException();
-        }
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;携带结果的任务&lt;code class=&quot;highlighter-rouge&quot;&gt;Callable&lt;/code&gt;与&lt;code class=&quot;highlighter-rouge&quot;&gt;Future&lt;/code&gt;:&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Callable&lt;/code&gt;任务主入口点(即&lt;code class=&quot;highlighter-rouge&quot;&gt;call&lt;/code&gt;)将返回一个值, 并可能抛出一个异常&lt;/li&gt;
-    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Future&lt;/code&gt;: 表示一个任务的生命周期, 并提供了相应的方法来判断是否已经完成或取消, 以及获取任务的结果和取消任务等&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;二者区别参见其提供方法:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public interface Callable&amp;lt;V&amp;gt; {
-    V call() throws Exception;
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public interface Future&amp;lt;V&amp;gt; {
-    boolean cancel(boolean mayInterruptIfRunning);
-    boolean isCancelled();
-    boolean isDone();
-    V get() throws InterruptedException, ExecutionException;
-    V get(long timeout, TimeUnit unit)
-        throws InterruptedException, ExecutionException, TimeoutException;
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;二-中断&quot;&gt;二. 中断&lt;/h2&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;有三个中断方法: &lt;code class=&quot;highlighter-rouge&quot;&gt;interrupt()&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;isInterrupted()&lt;/code&gt;, 静态的&lt;code class=&quot;highlighter-rouge&quot;&gt;interrupted()&lt;/code&gt;(&lt;code class=&quot;highlighter-rouge&quot;&gt;Thread.interrupted()&lt;/code&gt;)&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;interrupt()&lt;/code&gt;能中断目标线程, 而&lt;code class=&quot;highlighter-rouge&quot;&gt;isInterrupt()&lt;/code&gt;能返回目标线程的中断状态, 静态的&lt;code class=&quot;highlighter-rouge&quot;&gt;interrupted()&lt;/code&gt;将清除当前线程的中断状态并返回它之前的值; 这也是清除中断状态的唯一方法&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;阻塞库方法, 如: &lt;code class=&quot;highlighter-rouge&quot;&gt;Thread.sleep()&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;Object.wait()&lt;/code&gt;等, 都检查线程何时中断, 它们在响应中断时执行的操作包括: 清除中断状态, 抛出&lt;code class=&quot;highlighter-rouge&quot;&gt;InterruptedException&lt;/code&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;调用&lt;code class=&quot;highlighter-rouge&quot;&gt;interrupt()&lt;/code&gt;并不意味着立即停止目标线程正在进行的工作, 而只是传递了请求中断的消息(由线程自己去决定如何处理中断)&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;中断是实现取消最合理的方式&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;响应中断:
-    &lt;blockquote&gt;
-      &lt;ol&gt;
-        &lt;li&gt;传递异常&lt;/li&gt;
-        &lt;li&gt;恢复中断状态&lt;/li&gt;
-      &lt;/ol&gt;
-    &lt;/blockquote&gt;
-  &lt;/li&gt;
-  &lt;li&gt;不可阻塞中断: 许多可阻塞的方法都是通过提前返回或者抛出&lt;code class=&quot;highlighter-rouge&quot;&gt;InterruptedException&lt;/code&gt;来响应中断请求的; 但是并非所有的可阻塞方法或者阻塞机制都能响应中断, 有如下两种情况:&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;当线程执行同步的&lt;code class=&quot;highlighter-rouge&quot;&gt;Socket I/O&lt;/code&gt;时&lt;/li&gt;
-    &lt;li&gt;等待获得内置锁而阻塞时: 但是&lt;code class=&quot;highlighter-rouge&quot;&gt;Lock&lt;/code&gt;类中提供了&lt;code class=&quot;highlighter-rouge&quot;&gt;lockInterruptibly&lt;/code&gt;方法来允许在等待一个锁的同时仍能响应中断&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;三-守护线程&quot;&gt;三. 守护线程&lt;/h2&gt;
-
-&lt;p&gt;线程可以分为两种: 普通线程和守护线程; 在&lt;code class=&quot;highlighter-rouge&quot;&gt;JVM&lt;/code&gt;启动时创建的所有线程中, ,除了主线程以外, 其他的线程都是守护线程(例如垃圾回收器以及其他执行辅助工作的线程); 当创建一个新线程时, 新线程将继承它的线程的守护状态&lt;/p&gt;
-
-&lt;p&gt;普通线程与守护线程的区别仅在于当线程退出时发生的操作, 当一个线程退出时, &lt;code class=&quot;highlighter-rouge&quot;&gt;JVM&lt;/code&gt;会检查其他正在运行的线程, 如果这些线程都是守护线程, 那么&lt;code class=&quot;highlighter-rouge&quot;&gt;JVM&lt;/code&gt;会正常退出操作, 当&lt;code class=&quot;highlighter-rouge&quot;&gt;JVM&lt;/code&gt;停止时, 所有仍然存在的守护线程都将被抛弃–既不会执行&lt;code class=&quot;highlighter-rouge&quot;&gt;finally&lt;/code&gt;代码块, 也不会执行回卷栈, 而&lt;code class=&quot;highlighter-rouge&quot;&gt;JVM&lt;/code&gt;只是直接退出&lt;/p&gt;
-</description>
-        <pubDate>Fri, 02 Nov 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/11/02/Java%E5%B9%B6%E5%8F%91-%E4%BA%8C/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/11/02/Java%E5%B9%B6%E5%8F%91-%E4%BA%8C/</guid>
-        
-        <category>Java</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>Java并发[一]</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Java并发编程实战第一部分总结&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;一-基本概念&quot;&gt;一. 基本概念&lt;/h2&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;先检查后执行&lt;/strong&gt;: 首先观察到某个条件为真(例如文件X不存在), 然后根据这个观察结果采用相应的动作(创建文件X), 但事实上, 在你观察到这个结果以及开始穿件文件之间, 观察结果可能变得无效(另一个线程创建了文件X), 从而导致各种问题(未预期异常, 数据被覆盖, 文件被破坏等)&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;每个&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;对象都可以用作一个实现同步的锁, 这些锁被称为内置锁或监视锁(&lt;code class=&quot;highlighter-rouge&quot;&gt;synchronized&lt;/code&gt;)&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;不要在构造过程中使&lt;code class=&quot;highlighter-rouge&quot;&gt;this&lt;/code&gt;引用逸出: 当且仅当对象的构造函数返回时, 对象才处于可预测的和一致的状态, 因此, 当从对象的构造函数中发布对象时, 只是发布了一个尚未构造完成的对象, 如果&lt;code class=&quot;highlighter-rouge&quot;&gt;this&lt;/code&gt;引用在构造过程中逸出, 那么这种对象就被认为是不正确的构造; 常见场景是:&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;在构造函数中创建线程: 在构造函数中创建线程并没有错, 但是最好不要立即启动它&lt;/li&gt;
-    &lt;li&gt;在构造函数中注册事件监听: 依据是非静态内部类会持有外部类的引用&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;考虑下列程序&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class ThisEscape {
-    public ThisEscape(EventSource source) {
-        source.registerListener(new EventListener() { // this逸出
-            public void onEvent(Event e) { 
-                doSomething(); 
-            }
-        });
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;使用静态工厂方法来防止&lt;code class=&quot;highlighter-rouge&quot;&gt;this&lt;/code&gt;引用在构造过程中逸出&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class SafeListener {
-    private final EventListener listener;
-
-    private SafeListener() {
-        listener = new EventListener() {
-            public void onEvent(Event e) {
-                doSomething();
-            }
-        };
-    }
-
-    public static SafeListener newInstance(EventSource source) {
-        SafeListener listener = new SafeListener();
-        source.registerListener(listener.listener);
-        return listener;
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;一个正确构造的对象可以通过以下方式来安全的发布:
-    &lt;blockquote&gt;
-      &lt;ol&gt;
-        &lt;li&gt;在静态初始化函数中初始化一个对象引用&lt;/li&gt;
-        &lt;li&gt;将对象的引用保存到&lt;code class=&quot;highlighter-rouge&quot;&gt;volatile&lt;/code&gt;类型的域或者&lt;code class=&quot;highlighter-rouge&quot;&gt;AtomicReferance&lt;/code&gt;对象中&lt;/li&gt;
-        &lt;li&gt;将对象的引用保存到某个正确构造对象的&lt;code class=&quot;highlighter-rouge&quot;&gt;final&lt;/code&gt;类型域中&lt;/li&gt;
-        &lt;li&gt;将对象的引用保存到一个由锁保护的域中&lt;/li&gt;
-      &lt;/ol&gt;
-    &lt;/blockquote&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;要安全的发布一个静态构造的对象, 最简单和安全的方式是使用静态的初始化器: 静态初始化器由&lt;code class=&quot;highlighter-rouge&quot;&gt;JVM&lt;/code&gt;在类的初始化阶段执行, 由于在&lt;code class=&quot;highlighter-rouge&quot;&gt;JVM&lt;/code&gt;内部存在着同步机制, 因此通过这种方式初始化的任何对象都可以被安全的发布&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public static Holder holder = new Holder();
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;二-synchronized&quot;&gt;二. synchronized&lt;/h2&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;synchronized&lt;/code&gt;使用的是对象锁, 修饰方法, 代码块或局部执行代码时, 使用的是当前锁对象; 修饰静态方法时, 使用的&lt;code class=&quot;highlighter-rouge&quot;&gt;XX.class&lt;/code&gt;锁对象&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;内置锁(&lt;code class=&quot;highlighter-rouge&quot;&gt;synchronized&lt;/code&gt;)可重入; 可重入: 如果某个线程试图获得一个已经由它自己持有的锁, 那么这个请求就会成功, 而不会造成死锁
-考虑如下代码, 子类改写了父类的&lt;code class=&quot;highlighter-rouge&quot;&gt;synchronized&lt;/code&gt;方法, 然后调用父类中的方法, 此时如果没有可重入的锁, 那么这段代码将产生死锁&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class Widget {
-    public synchronized void doSomething() {
-        System.out.println(&quot;Widget&quot;);
-    }
-}
-
-class LoggingWidget extends Widget {
-    @Override
-    public synchronized void doSomething() {
-        System.out.println(&quot;LoggingWidget&quot;);
-        super.doSomething();
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;关键字&lt;code class=&quot;highlighter-rouge&quot;&gt;synchronized&lt;/code&gt;不能被继承:
-    &lt;blockquote&gt;
-      &lt;p&gt;1、子类继承父类时, 如果没有重写父类中的同步方法, 子类同一对象, 在不同线程并发调用该方法时, 具有同步效果&lt;/p&gt;
-      &lt;ol&gt;
-        &lt;li&gt;子类继承父类, 并且重写父类中的同步方法,但没有添加关键字&lt;code class=&quot;highlighter-rouge&quot;&gt;synchronized&lt;/code&gt;, 子类同一对象, 在不同线程并发调用该方法时, 不再具有同步效果&lt;/li&gt;
-      &lt;/ol&gt;
-    &lt;/blockquote&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class Widget {
-    public synchronized void doSomething() {
-        System.out.println(Thread.currentThread() + &quot; Widget&quot;);
-    }
-}
-
-class LoggingWidget extends Widget {
-    @Override
-    public void doSomething() { // 这里没有加synchronized
-        System.out.println(Thread.currentThread() + &quot; LoggingWidget&quot;); // 由于子类的doSomething()没有加synchronized方法, 所以子类的doSomething()不可同步
-        super.doSomething(); // 但是父类的doSomething()仍可同步
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;三-volatile&quot;&gt;三. volatile&lt;/h2&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;volatile&lt;/code&gt;变量用来确保将变量的更新操作通知到其他线程; 当把变量声明为&lt;code class=&quot;highlighter-rouge&quot;&gt;volatile&lt;/code&gt;类型后, 不会将该变量上的操作与其他内存操作一起重排序, &lt;code class=&quot;highlighter-rouge&quot;&gt;volatile&lt;/code&gt;变量不会被缓存在寄存器或者对其他处理器不可见的地方, 因此在读取&lt;code class=&quot;highlighter-rouge&quot;&gt;volatile&lt;/code&gt;类型的变量总会返回最新写入的值&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;在当前大多数处理器架构上, 读取&lt;code class=&quot;highlighter-rouge&quot;&gt;volatile&lt;/code&gt;变量的开销只比读取非&lt;code class=&quot;highlighter-rouge&quot;&gt;volatile&lt;/code&gt;变量的开销略高一些&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;对于非&lt;code class=&quot;highlighter-rouge&quot;&gt;volatile&lt;/code&gt;类型的&lt;code class=&quot;highlighter-rouge&quot;&gt;long&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;double&lt;/code&gt;变量(&lt;code class=&quot;highlighter-rouge&quot;&gt;64&lt;/code&gt;位), &lt;code class=&quot;highlighter-rouge&quot;&gt;JVM&lt;/code&gt;允许将&lt;code class=&quot;highlighter-rouge&quot;&gt;64&lt;/code&gt;位的读操作或写操作分解为两个&lt;code class=&quot;highlighter-rouge&quot;&gt;32&lt;/code&gt;位的操作; 当读取一个非&lt;code class=&quot;highlighter-rouge&quot;&gt;volatile&lt;/code&gt;类型的&lt;code class=&quot;highlighter-rouge&quot;&gt;long&lt;/code&gt;变量时, 如果对该变量的读操作和写操作在不同线程中执行, 那么很可能会读取到某个值的高&lt;code class=&quot;highlighter-rouge&quot;&gt;32&lt;/code&gt;位和另一个值的低&lt;code class=&quot;highlighter-rouge&quot;&gt;32&lt;/code&gt;位; 因此, 即使不考虑失效数据问题, 在多线程中使用共享且可变的&lt;code class=&quot;highlighter-rouge&quot;&gt;long&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;double&lt;/code&gt;等类型的变量也是不安全的, 除非用&lt;code class=&quot;highlighter-rouge&quot;&gt;volatile&lt;/code&gt;来声明他们, 或者用锁保护起来&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;四-同步工具类&quot;&gt;四. 同步工具类&lt;/h2&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;同步工具类可以根据其自身的状态来协调线程的控制流; 可以用作同步工具类的如: 阻塞队列, 信号量(Semaphore), 栅栏(Barrier), 闭锁(Latch)&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;h3 id=&quot;41-阻塞队列-blockingqueue&quot;&gt;4.1 阻塞队列-BlockingQueue&lt;/h3&gt;
-
-&lt;p&gt;阻塞队列提供了可阻塞的&lt;code class=&quot;highlighter-rouge&quot;&gt;put&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;take&lt;/code&gt;方法, 以及支持定时的&lt;code class=&quot;highlighter-rouge&quot;&gt;offer&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;poll&lt;/code&gt;方法, 如果队列已经满了, 那么&lt;code class=&quot;highlighter-rouge&quot;&gt;put&lt;/code&gt;方法将阻塞直到有空间可用; 如果队列为空, 那么&lt;code class=&quot;highlighter-rouge&quot;&gt;take&lt;/code&gt;方法将阻塞直到有元素可用(实际上是通过&lt;code class=&quot;highlighter-rouge&quot;&gt;while&lt;/code&gt;循环不断插入元素和获取元素, 以及结合信号量来实现的阻塞)&lt;/p&gt;
-
-&lt;p&gt;常用的接口&lt;code class=&quot;highlighter-rouge&quot;&gt;BlockingQueue&lt;/code&gt;的实现有: &lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedBlockingQueue&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;ArrayBlockingQueue&lt;/code&gt;, 这两个是&lt;code class=&quot;highlighter-rouge&quot;&gt;FIFO&lt;/code&gt;队列, 分别与&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedList&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;ArrayList&lt;/code&gt;类似; 还有一个是&lt;code class=&quot;highlighter-rouge&quot;&gt;PriorityBlockingQueue&lt;/code&gt;, 是一个优先级队列, 可以按照元素的自然顺序来排列, 也可以使用&lt;code class=&quot;highlighter-rouge&quot;&gt;Comparator&lt;/code&gt;来排列(如果它们实现了&lt;code class=&quot;highlighter-rouge&quot;&gt;Comparable&lt;/code&gt;方法); 最后一个&lt;code class=&quot;highlighter-rouge&quot;&gt;BlockingQueue&lt;/code&gt;的实现是&lt;code class=&quot;highlighter-rouge&quot;&gt;SynchronousQueue&lt;/code&gt;, 实际上它不是一个真正的队列, 因为它不会为队列中元素维护存储空间, 与其他队列不同的是, 它维护一组线程,
-这些线程在等待这把元素加入或移出队列, 因为&lt;code class=&quot;highlighter-rouge&quot;&gt;SynchronousQueue&lt;/code&gt;没有存储功能, 因此&lt;code class=&quot;highlighter-rouge&quot;&gt;put&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;take&lt;/code&gt;会一直阻塞, 直到有另一个线程已经准备好参与到交付过程中, 仅当有足够多的消费者, 并且总是有一个消费者准备好获取交付工作时, 才适合使用同步队列&lt;/p&gt;
-
-&lt;p&gt;这里再提一下&lt;strong&gt;双端队列&lt;/strong&gt;, 即&lt;code class=&quot;highlighter-rouge&quot;&gt;Deque&lt;/code&gt;(可以在队列头和队列尾高效插入和移除), 具体实现包括&lt;code class=&quot;highlighter-rouge&quot;&gt;ArrayDeque&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;LinkedBlockingDeque&lt;/code&gt;; 双端队列适用于工作密取, 即每个消费者都有自己的双端队列, 如果一个消费者完成了自己双端队列的全部工作, 那么它可以从其他消费者双端队列末尾秘密的获取工作(因为可以首尾插入和获取, 所以互不影响)&lt;/p&gt;
-
-&lt;h3 id=&quot;42-闭锁&quot;&gt;4.2 闭锁&lt;/h3&gt;
-
-&lt;h4 id=&quot;421-countdownlatch&quot;&gt;4.2.1 CountDownLatch&lt;/h4&gt;
-
-&lt;p&gt;作用: 可以延迟线程的进度直到其到达终止状态; 闭锁的作用相当于一扇门: 在闭锁到达结束状态之前, 这扇门一直是关闭的, 并且没有任何线程能通过, 当到达结束状态时, 这扇门会打开并允许所有的线程通过; 当闭锁到达结束状态后, 将不再改变状态, 因此这扇门永远保持打开状态; 闭锁可以用来确保某些活动直到其他活动都完成后才继续进行(可以使一个或多个线程等待一组事件发生)&lt;/p&gt;
-
-&lt;p&gt;闭锁状态包括一个计数器, 该计数器被初始化为一个正数, 表示需要等待的事件数量, &lt;code class=&quot;highlighter-rouge&quot;&gt;countDown&lt;/code&gt;递减计数器 , 表示有一个事件已经发生了, 而&lt;code class=&quot;highlighter-rouge&quot;&gt;await&lt;/code&gt;方法等待计数器达到零, 这表示所有需要等待的事件都已发生; 如果计数器值非零, 那么&lt;code class=&quot;highlighter-rouge&quot;&gt;await&lt;/code&gt;会一直阻塞直到计数器为零, 或者等待中的线程中断, 或者等待超时&lt;/p&gt;
-
-&lt;p&gt;用法参见下列程序:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class LatchTest {
-    public long timeTasks(int nThreads, final Runnable task) throws InterruptedException {
-        final CountDownLatch startGate = new CountDownLatch(1);
-        final CountDownLatch endGate = new CountDownLatch(nThreads);
-        for (int i = 0; i &amp;lt; nThreads; i++) {
-            Thread t = new Thread(() -&amp;gt; {
-                try {
-                    startGate.await(); // 等待所有线程准备完毕
-                    task.run();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } finally {
-                    endGate.countDown();
-                }
-            });
-            t.start();
-        }
-        long start = System.nanoTime();
-        startGate.countDown(); // 执行到这里, 说明所有线程准备好了, 可以开始执行了
-        endGate.await(); // 主线程等待任务执行完毕
-        long end = System.nanoTime();
-        return end - start;
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h4 id=&quot;422-futuretask&quot;&gt;4.2.2 FutureTask&lt;/h4&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;FutureTask&lt;/code&gt;也可以用作闭锁, 相当于一种可生成结果的&lt;code class=&quot;highlighter-rouge&quot;&gt;Runnable&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Future.get()&lt;/code&gt;: 如果任务已经完成, 那么&lt;code class=&quot;highlighter-rouge&quot;&gt;get()&lt;/code&gt;会立即返回结果, 否则&lt;code class=&quot;highlighter-rouge&quot;&gt;get()&lt;/code&gt;将阻塞直到任务进入完成状态, 然后返回结果或者抛出异常&lt;/p&gt;
-
-&lt;p&gt;基本使用参见如下代码:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class FutureTest {
-    private final FutureTask&amp;lt;String&amp;gt; futureTask = new FutureTask&amp;lt;String&amp;gt;(new Callable&amp;lt;String&amp;gt;() {
-        @Override
-        public String call() throws Exception {
-            // 耗时操作
-            return &quot;Hello&quot;;
-        }
-    });
-
-    private final Thread thread = new Thread(futureTask);
-
-    public void start() { // 不要在构造函数中构造和start线程: 参见上文安全发布
-        thread.start();
-    }
-
-    public String get() throws ExecutionException, InterruptedException {
-        return futureTask.get(); // 阻塞直到结束或者异常
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h3 id=&quot;43-信号量-semaphore&quot;&gt;4.3 信号量-Semaphore&lt;/h3&gt;
-
-&lt;p&gt;计数信号量用来控制同时访问某个特定资源的操作数量, 或者同时执行某个指定操作的数量&lt;/p&gt;
-
-&lt;p&gt;计算信号量的一种就简化形式是二值信号量, 即初始值为&lt;code class=&quot;highlighter-rouge&quot;&gt;1&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;Semaphore&lt;/code&gt;, 二值信号量可以用作互斥体, 并具备不可重入的加锁语义: 谁拥有这个唯一的许可, 谁就拥有了互斥锁&lt;/p&gt;
-
-&lt;p&gt;使用信号量实现有界阻塞容器:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class BoundedHashSet&amp;lt;T&amp;gt; {
-    private final Set&amp;lt;T&amp;gt; set;
-    private final Semaphore sem;
-
-    public BoundedHashSet(int bound) {
-        set = Collections.synchronizedSet(new HashSet&amp;lt;T&amp;gt;());
-        sem = new Semaphore(bound);
-    }
-
-    public boolean add(T t) throws InterruptedException {
-        sem.acquire();
-        boolean wasAdded = false;
-        try {
-            wasAdded = set.add(t);
-            return wasAdded;
-        } finally {
-            if (!wasAdded)
-                sem.release();
-        }
-    }
-
-    public boolean remove(T o) {
-        boolean wasRemoved = set.remove(o);
-        if (wasRemoved)
-            sem.release();
-        return wasRemoved;
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h3 id=&quot;44-栅栏-barrier&quot;&gt;4.4 栅栏-Barrier&lt;/h3&gt;
-
-&lt;p&gt;栅栏类似于闭锁, 它能阻塞一组线程直到某个事件发生, 栅栏与闭锁的关键区别在于, 所有线程必须同时到达栅栏位置, 才能继续执行, 闭锁用于等待事件, 而栅栏用于等待其他线程&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;CyclicBarrier&lt;/code&gt;可以使一定数量的参与方反复的在栅栏位置汇集, 它在并行迭代算法中非常有用; 当线程到达栅栏位置时将调用&lt;code class=&quot;highlighter-rouge&quot;&gt;await&lt;/code&gt;方法, 这个方法将阻塞直到所有线程都到达栅栏位置; 如果所有线程都到达了栅栏位置, 那么栅栏将打开, 此时所有线程都被释放, 而栅栏将被重置以便下次使用; 如果对&lt;code class=&quot;highlighter-rouge&quot;&gt;await&lt;/code&gt;调用超时, 或者&lt;code class=&quot;highlighter-rouge&quot;&gt;await&lt;/code&gt;阻塞的线程被中断, 那么栅栏就被认为是打破了, 所有阻塞的&lt;code class=&quot;highlighter-rouge&quot;&gt;await&lt;/code&gt;调用都将终止并抛出&lt;code class=&quot;highlighter-rouge&quot;&gt;BrokenBarrierException&lt;/code&gt;; 如果成功通过栅栏, 那么&lt;code class=&quot;highlighter-rouge&quot;&gt;await&lt;/code&gt;将为每个线程返回一个唯一到达索引号;
-&lt;code class=&quot;highlighter-rouge&quot;&gt;CyclicBarrier&lt;/code&gt;还可以使你将一个栅栏操作传递给构造函数, 这是一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Runnable&lt;/code&gt;, 当成功通过栅栏时会(在一个子任务线程中)执行它, 但在阻塞线程被释放之前是不能执行的&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;五-遗留&quot;&gt;五. 遗留&lt;/h2&gt;
-
-&lt;p&gt;Vector, Hashtable, CopyOnWriteArrayList(写入时复制: Copy-On-Write), CopyOnWriteArraySet, BlockingQueue, ConcurrentLinkedQueue, PriorityQueue
-Deque: ArrayDeque, LinkedBlockingDeque&lt;/p&gt;
-
-&lt;p&gt;三个interrupt()理解&lt;/p&gt;
-</description>
-        <pubDate>Wed, 31 Oct 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/10/31/Java%E5%B9%B6%E5%8F%91%E4%B8%80/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/10/31/Java%E5%B9%B6%E5%8F%91%E4%B8%80/</guid>
         
         <category>Java</category>
         

@@ -1,0 +1,115 @@
+<h1 id="前言">前言</h1>
+
+<blockquote>
+  <p><a href="https://husteryp.github.io/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/">前面</a>我们对Java集合框架有了一个基本的认识, 这里我们从几大接口入手, 逐步讲解其实现类; 下面要讲解的是<code class="highlighter-rouge">Set</code>的实现类, 即常用的<code class="highlighter-rouge">HashSet</code>, <code class="highlighter-rouge">TreeSet</code>和<code class="highlighter-rouge">LinkedHashSet</code></p>
+</blockquote>
+
+<p>文章源码基于<code class="highlighter-rouge">JDK8</code></p>
+
+<p><strong><code class="highlighter-rouge">Java</code>集合框架系列博客</strong>:</p>
+
+<ol>
+  <li>
+    <p><a href="https://husteryp.github.io/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/">Java集合框架概述</a></p>
+  </li>
+  <li>
+    <p><a href="https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BList/">Java集合框架之List</a></p>
+  </li>
+  <li>
+    <p><a href="https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/">Java集合框架之HashMap</a></p>
+  </li>
+  <li>
+    <p><a href="https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BSet/">Java集合框架之Set</a></p>
+  </li>
+  <li>
+    <p><a href="https://husteryp.github.io/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/">Java集合框架之LinkedHashMap</a></p>
+  </li>
+  <li>
+    <p><a href="https://husteryp.github.io/2018/09/06/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BQueue/">Java集合框架之Queue</a></p>
+  </li>
+</ol>
+
+<hr />
+
+<h1 id="正文">正文</h1>
+
+<hr />
+
+<h2 id="一-概述">一. 概述</h2>
+
+<p>需要注意的是, 本文要讲的<code class="highlighter-rouge">Set</code>的几个实现类内部都是基于<code class="highlighter-rouge">Map</code>实现的, 比如: <code class="highlighter-rouge">HashSet</code>基于<code class="highlighter-rouge">HashMap</code>, <code class="highlighter-rouge">TreeSet</code>基于<code class="highlighter-rouge">TreeMap</code>, <code class="highlighter-rouge">LinkedHashSet</code>基于<code class="highlighter-rouge">LinkedHashMap</code>, <code class="highlighter-rouge">Set</code>的<code class="highlighter-rouge">value</code>实际上就是<code class="highlighter-rouge">Map</code>中的<code class="highlighter-rouge">key</code>, 依赖于<code class="highlighter-rouge">Map</code>键值的唯一性实现<code class="highlighter-rouge">Set</code>中元素的不可重复; 所以在学习<code class="highlighter-rouge">Set</code>部分的时候, 只需要了解对应<code class="highlighter-rouge">Map</code>的特点和实现就可以了; 因此, 本文也不会详细讲解各<code class="highlighter-rouge">Set</code>实现类的代码细节, 而只是对每个实现类的特点进行一个总结</p>
+
+<hr />
+
+<h2 id="二-hashset">二. HashSet</h2>
+
+<p><code class="highlighter-rouge">HashSet</code>内部是基于<code class="highlighter-rouge">HashMap</code>实现的, 所以在讲解<code class="highlighter-rouge">HashSet</code>之前, 需要先看一下<code class="highlighter-rouge">HashMap</code>的实现, 可以参照<a href="https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/">Java集合框架之HashMap</a>, 该篇文章中详细介绍了<code class="highlighter-rouge">HashMap</code>的实现原理和特点, 推荐对<code class="highlighter-rouge">HashMap</code>有了一个大致的了解之后再开始往下读 ~</p>
+
+<p>总体而言, <code class="highlighter-rouge">HashSet</code>的代码比较简单, 其实现<code class="highlighter-rouge">Set</code>元素不重复性其实是利用<code class="highlighter-rouge">HashMap</code>键值的唯一性; 当我们存放一个<code class="highlighter-rouge">Value</code>的时候, 其实是将该<code class="highlighter-rouge">Value</code>当做<code class="highlighter-rouge">HashMap</code>中的键值的,  而实现的各种常规操作, 比如: <code class="highlighter-rouge">add()</code>, <code class="highlighter-rouge">remove()</code>, <code class="highlighter-rouge">contains()</code>等, 其实都是间接调用了<code class="highlighter-rouge">HashMap</code>中的相应操作</p>
+
+<p>所以, 这里不会去细讲<code class="highlighter-rouge">HashSet</code>代码, 了解<code class="highlighter-rouge">HashMap</code>之后, 其实是很简单的</p>
+
+<p>这里只是贴一下<code class="highlighter-rouge">HashSet</code>的特点:</p>
+
+<ol>
+  <li>
+    <p>没有重复元素, 允许<code class="highlighter-rouge">null</code></p>
+  </li>
+  <li>
+    <p>不保证<code class="highlighter-rouge">Set</code>的遍历顺序, 不保证元素的存储数据(具体原因可以见上面博客对<code class="highlighter-rouge">HashMap</code>的分析)</p>
+  </li>
+  <li>
+    <p>对<code class="highlighter-rouge">add()</code>, <code class="highlighter-rouge">remove()</code>, <code class="highlighter-rouge">contains()</code>, <code class="highlighter-rouge">size()</code>方法提供常量时间</p>
+  </li>
+  <li>
+    <p>非同步, 可以使用<code class="highlighter-rouge">Collections.synchronizedSet(new HashSet(...));</code></p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">Iterator</code>遍历的时候, 多线程抛出异常<code class="highlighter-rouge">ConcurrentModificationException</code>(遍历过程中修改数据, 但是可以使用<code class="highlighter-rouge">Iterator</code>自己提供的<code class="highlighter-rouge">remove()</code>方法, 该方法不会造成异常)(原因参见<a href="https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BList/">Java集合框架之List</a>中分析)</p>
+  </li>
+</ol>
+
+<hr />
+
+<h2 id="三-treeset">三. TreeSet</h2>
+
+<p>简要总结特点如下:</p>
+
+<ol>
+  <li>
+    <p>基于<code class="highlighter-rouge">TreeMap</code>实现</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">TreeSet</code>是一个有序的集合类, 默认为自然顺序, 也可根据提供的<code class="highlighter-rouge">Comparator</code>排序</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">add()</code>, <code class="highlighter-rouge">remove()</code>和<code class="highlighter-rouge">contains()</code>需要<code class="highlighter-rouge">logN</code>时间(是因为<code class="highlighter-rouge">TreeMap</code>是基于红黑树实现的)</p>
+  </li>
+  <li>
+    <p>非同步, 可以使用<code class="highlighter-rouge">Collections.synchronizedSortedSet(new TreeSet(...));</code></p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">Iterator</code>抛异常: <code class="highlighter-rouge">ConcurrentModificationException</code></p>
+  </li>
+</ol>
+
+<hr />
+
+<h2 id="四-linkedhashset">四. LinkedHashSet</h2>
+
+<p><code class="highlighter-rouge">LinkedHashSet</code>基于<code class="highlighter-rouge">LinkedHashMap</code>, 建议参照<code class="highlighter-rouge">LinkedHashMap</code>的源码分析: <a href="https://husteryp.github.io/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/">Java集合框架之LinkedHashMap</a></p>
+
+<p>总结特点如下:</p>
+
+<ol>
+  <li>
+    <p>访问有序(<code class="highlighter-rouge">LinkedHashMap</code>特点), 按照元素插入顺序访问(注意, 虽然<code class="highlighter-rouge">LinkedHashSet</code>基于<code class="highlighter-rouge">LinkedHashMap</code>实现, 而前面的文章分析了<code class="highlighter-rouge">LinkedHashMap</code>有两种访问顺序, 但是<code class="highlighter-rouge">LinkedHashSet</code>在构造<code class="highlighter-rouge">LinkedHashMap</code>的时候使用的默认访问顺序, 即插入顺序(<code class="highlighter-rouge">accessOrder = false</code>), 所以<code class="highlighter-rouge">LinkedHashSet</code>的访问顺序只有一种, 即元素的插入顺序, 而且需要注意的是, 重复插入元素时是不会改变访问顺序的)</p>
+  </li>
+  <li>
+    <p>非同步: 可以使用<code class="highlighter-rouge">Collections.synchronizedSet(new LinkedHashSet(...));</code></p>
+  </li>
+  <li>
+    <p>对<code class="highlighter-rouge">add()</code>, <code class="highlighter-rouge">contains()</code>和<code class="highlighter-rouge">remove()</code>提供常量时间(具体可以参见<a href="https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/">Java集合框架之HashMap</a>中对<code class="highlighter-rouge">HashMap</code>的分析)</p>
+  </li>
+</ol>
+

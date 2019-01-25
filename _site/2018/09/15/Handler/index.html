@@ -222,7 +222,7 @@
 
 <p>以下是我们使用<code class="highlighter-rouge">Handler</code>最常见的一种写法, 我们通常会重写<code class="highlighter-rouge">handleMessage()</code>来实现自己的逻辑; 当在其他线程中通过<code class="highlighter-rouge">Handler.sendMessage()</code>来发送消息时, 我们就会在<code class="highlighter-rouge">handleMessage()</code>中接收到该消息</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    private final Handler mHandler = new Handler() {
+<div class="highlighter-rouge"><pre class="highlight"><code>    private final Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
             // do somthing with msg
@@ -236,7 +236,7 @@
            mHandler.sendEmptyMessage(0);
         }
     }.start();
-</code></pre></div></div>
+</code></pre></div>
 
 <p><code class="highlighter-rouge">Handler</code>进行线程切换和消息传递的一个大致流程是, 当我们通过<code class="highlighter-rouge">sendMessage()</code>发送消息的时候, <code class="highlighter-rouge">MessageQueue</code>负责存储该消息, <code class="highlighter-rouge">Looper</code>会无限循环的去检查<code class="highlighter-rouge">MessageQueue</code>中是否有消息, 如果有则调用<code class="highlighter-rouge">Handler</code>的<code class="highlighter-rouge">dispatchMessage()</code>进行消息分发, 最终会回到<code class="highlighter-rouge">handleMessage</code>中进行处理</p>
 
@@ -270,14 +270,14 @@
 
 <p>这七个构造函数最常用的是默认构造函数(即不带参数那个), 其他几个, 一类是带<code class="highlighter-rouge">Callback</code>的, 是提供的消息处理函数, 我们使用<code class="highlighter-rouge">Handler</code>一般都会重写其<code class="highlighter-rouge">handleMessage()</code>方法来处理消息, 但是也可以不重写<code class="highlighter-rouge">handleMessage()</code>, 而是在构造<code class="highlighter-rouge">Handler</code>的时候传入一个<code class="highlighter-rouge">Callback</code>回调, <code class="highlighter-rouge">Callback</code>是<code class="highlighter-rouge">Handler</code>中的一个接口, 如下; 另一类是带标志位<code class="highlighter-rouge">async</code>的, 是设置消息是否为异步处理, <code class="highlighter-rouge">Handler</code>中的消息默认是同步处理的</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    public interface Callback {
+<div class="highlighter-rouge"><pre class="highlight"><code>    public interface Callback {
         public boolean handleMessage(Message msg);
     }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>这里我们以构造函数<code class="highlighter-rouge">Handler(Callback callback, boolean async)</code>进行分析, 如下; 可以看出, 这里的<code class="highlighter-rouge">mLooper</code>是通过<code class="highlighter-rouge">Looper.myLooper()</code>获取的, 如果我们获取为<code class="highlighter-rouge">null</code>也就是说当前线程没有<code class="highlighter-rouge">Looper</code>的话, 会抛出异常, 这个异常也是我们大多数初学者会遇到的; 这里也验证了上面所说的, <code class="highlighter-rouge">Looper</code>是<code class="highlighter-rouge">Handler</code>构造所必须的, 如果当前线程没有<code class="highlighter-rouge">Looper</code>的话, 会抛异常(至于为什么说是当前线程, 接下来马上分析~)</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    public Handler(Callback callback, boolean async) {
+<div class="highlighter-rouge"><pre class="highlight"><code>    public Handler(Callback callback, boolean async) {
         ...
         mLooper = Looper.myLooper();
         if (mLooper == null) {
@@ -289,18 +289,18 @@
         mCallback = callback;
         mAsynchronous = async;
     }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>那么<code class="highlighter-rouge">Looper.myLooper()</code>又是如何获取当前线程的<code class="highlighter-rouge">Looper</code>的呢; 如下, 可以看出是通过<code class="highlighter-rouge">sThreadLocal</code>获取的, <code class="highlighter-rouge">sThreadLocal</code>是一个<code class="highlighter-rouge">ThreadLocal</code>类型的实例</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    public static @Nullable Looper myLooper() {
+<div class="highlighter-rouge"><pre class="highlight"><code>    public static @Nullable Looper myLooper() {
         return sThreadLocal.get();
     }
-</code></pre></div></div>
+</code></pre></div>
 
 <p><code class="highlighter-rouge">ThreadLocal</code>不是一个线程, 而是用于在每个线程中存储数据的, <code class="highlighter-rouge">ThreadLocal</code>可以在不同的线程中互不干扰的存储并提供数据; 那么它是如何实现在不同线程中互不干扰的存取数据的呢, 我们先来看其<code class="highlighter-rouge">set()</code>方法, 可以看出, 其实际上会先去检查当前线程是否持有<code class="highlighter-rouge">ThreadLocalMap</code>, 如果有的话, 直接将<code class="highlighter-rouge">value</code>存储进去即可, 否则, 初始化当前线程的<code class="highlighter-rouge">ThreadLocalMap</code>然后再存放值, 这样就可以根据不同的线程来存取各自线程的值了</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    public void set(T value) {
+<div class="highlighter-rouge"><pre class="highlight"><code>    public void set(T value) {
         Thread t = Thread.currentThread();
         ThreadLocalMap map = getMap(t);
         if (map != null)
@@ -308,34 +308,34 @@
         else
             createMap(t, value);
     }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>那么我们要构造<code class="highlighter-rouge">Handler</code>就必须获取当前线程的<code class="highlighter-rouge">Looper</code>, 那么我们又是什么时候构造和存储的<code class="highlighter-rouge">Looper</code>喃; 前面我们说了, 每个线程都可以有自己的<code class="highlighter-rouge">Looper</code>, 但是除了<code class="highlighter-rouge">UI</code>线程以外都默认没有创建; 我们先来看<code class="highlighter-rouge">UI</code>线程中是什么时候创建的<code class="highlighter-rouge">Looper</code>, <code class="highlighter-rouge">UI</code>线程就是<code class="highlighter-rouge">ActivityThread</code>, 在其<code class="highlighter-rouge">main()</code>函数中, 我们发现了如下与<code class="highlighter-rouge">Looper</code>相关的语句, 这实际上是开启了主线程的消息处理(因为要处理各种事件, 所以一开始就开启了)</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static void main(String[] args) {
+<div class="highlighter-rouge"><pre class="highlight"><code>public static void main(String[] args) {
     ...
     Looper.prepareMainLooper();
     ...
     Looper.loop();
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>我们继续看<code class="highlighter-rouge">Looper.prepareMainLooper()</code>, 其中实际上是调用了<code class="highlighter-rouge">prepare()</code>, 如下; 这里我们看到了熟悉的<code class="highlighter-rouge">ThreadLocal.set()</code>, 而且存储的是一个新的<code class="highlighter-rouge">Looper</code>, 那么这里就将线程和各自的<code class="highlighter-rouge">Looper</code>联系起来了, 我们在<code class="highlighter-rouge">Handler</code>构造函数中获取的也就是和各个线程相关的<code class="highlighter-rouge">Looper</code>了</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    private static void prepare(boolean quitAllowed) {
+<div class="highlighter-rouge"><pre class="highlight"><code>    private static void prepare(boolean quitAllowed) {
         if (sThreadLocal.get() != null) {
             throw new RuntimeException("Only one Looper may be created per thread");
         }
         sThreadLocal.set(new Looper(quitAllowed));
     }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>到这里我们知道了, <code class="highlighter-rouge">perpare</code>实际上是在准备<code class="highlighter-rouge">Looper</code>, 那么<code class="highlighter-rouge">Looper.loop()</code>又是在做啥呢, 其实<code class="highlighter-rouge">Looper.loop()</code>是开启消息处理循环, 前面我们说了<code class="highlighter-rouge">Looper</code>不断的去检测<code class="highlighter-rouge">MessageQueue</code>中是否有消息, 实际上就是在<code class="highlighter-rouge">loop()</code>中开启的</p>
 
 <p>这里我们暂时不讲<code class="highlighter-rouge">loop()</code>, 而是放到后面讲消息处理的时候讲; 我们平时使用<code class="highlighter-rouge">Handler</code>的时候, 大多是在<code class="highlighter-rouge">UI</code>
 线程中创建的, 因为上面我们已经看到了, <code class="highlighter-rouge">UI</code>线程中默认是创建了<code class="highlighter-rouge">Looper</code>的, 所以不需要我们再去手动创建, 但是我们如何在子线程中构造和使用<code class="highlighter-rouge">Handler</code>呢; 其实在<code class="highlighter-rouge">Looper</code>的文档中已经给出了示例, 如下; 其实, 和上面<code class="highlighter-rouge">UI</code>线程中<code class="highlighter-rouge">Looper</code>的处理过程差不多, 只是由于<code class="highlighter-rouge">UI</code>线程的特殊性, 所以单独给它准备了一个方法~(实际上是做一些其他特殊判断和处理)</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class LooperThread extends Thread {
+<div class="highlighter-rouge"><pre class="highlight"><code>class LooperThread extends Thread {
       public Handler mHandler;
 
       public void run() {
@@ -350,7 +350,7 @@
           Looper.loop();
       }
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <hr />
 
@@ -419,18 +419,18 @@
 
 <p>前面我们说过, <code class="highlighter-rouge">MessageQueue</code>会对发送的消息进行存储, 这一步就是在<code class="highlighter-rouge">enqueueMessage()</code>中处理的; 如下; 需要注意的是这里传入的<code class="highlighter-rouge">MessageQueue</code>是在创建<code class="highlighter-rouge">Handler</code>时创建, 也就是说和<code class="highlighter-rouge">Handler</code>相关, 因为涉及到多线程的处理, 所以需要清楚<code class="highlighter-rouge">MessageQueue</code>的来源, 不然消息处理的时候就混了~</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    private boolean enqueueMessage(MessageQueue queue, Message msg, long uptimeMillis) {
+<div class="highlighter-rouge"><pre class="highlight"><code>    private boolean enqueueMessage(MessageQueue queue, Message msg, long uptimeMillis) {
         msg.target = this;
         if (mAsynchronous) {
             msg.setAsynchronous(true);
         }
         return queue.enqueueMessage(msg, uptimeMillis);
     }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>这里我们简单看一下<code class="highlighter-rouge">MessageQueue</code>中<code class="highlighter-rouge">Message</code>的组织方式, 如下, <code class="highlighter-rouge">MessageQueue.enqueueMessage()</code>, 可以看出是很明显的单链表的存储方式, 之所以用单链表, 是因为单链表在增加和删除节点上有优势</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>boolean enqueueMessage(Message msg, long when) {
+<div class="highlighter-rouge"><pre class="highlight"><code>boolean enqueueMessage(Message msg, long when) {
     ...
     needWake = mBlocked &amp;&amp; p.target == null &amp;&amp; msg.isAsynchronous();
     Message prev;
@@ -448,7 +448,7 @@
     prev.next = msg;
     ...
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <hr />
 
@@ -460,7 +460,7 @@
 
 <p>接下来就是用一个死循环(<code class="highlighter-rouge">for</code>)开始消息处理了; 逻辑也比较简单, 其实就是不断的从<code class="highlighter-rouge">MessageQueue</code>中获取消息(<code class="highlighter-rouge">MessageQueue.next()</code>), 然后回调<code class="highlighter-rouge">Handler.dispatchMessage(msg)</code>分发, 需要注意的是, 这里的<code class="highlighter-rouge">msg.target</code>实际上是存储的对应<code class="highlighter-rouge">Handler</code>的引用</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static void loop() {
+<div class="highlighter-rouge"><pre class="highlight"><code>public static void loop() {
     final Looper me = myLooper();
     ...
     final MessageQueue queue = me.mQueue;
@@ -479,11 +479,11 @@
 
 }
 
-</code></pre></div></div>
+</code></pre></div>
 
 <p>我们看一下<code class="highlighter-rouge">dispatchMessage</code>的处理逻辑, 如下; 逻辑也很简单, 就是消息处理的优先级: 如果<code class="highlighter-rouge">Message</code>自身设置了<code class="highlighter-rouge">Callback</code>, 就直接执行<code class="highlighter-rouge">Message</code>的<code class="highlighter-rouge">Callback</code>(这种情况对应前面说的<code class="highlighter-rouge">post(Runnable)</code>的情况); 如果构造<code class="highlighter-rouge">Handler</code>的时候设置了<code class="highlighter-rouge">Callback</code>那么交给该<code class="highlighter-rouge">Callback</code>处理, 否则回调<code class="highlighter-rouge">handleMessage()</code>处理</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    public void dispatchMessage(Message msg) {
+<div class="highlighter-rouge"><pre class="highlight"><code>    public void dispatchMessage(Message msg) {
         if (msg.callback != null) {
             handleCallback(msg);
         } else {
@@ -495,7 +495,7 @@
             handleMessage(msg);
         }
     }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>这里还要注意的一点是从<code class="highlighter-rouge">MessageQueue</code>中获取消息时, 即<code class="highlighter-rouge">MessageQueue.next()</code>, 这是一个阻塞方法, 也就是说当<code class="highlighter-rouge">MessageQueue</code>中没有消息的时候, 会阻塞在这里, 直到<code class="highlighter-rouge">MessageQueue</code>中再次存储消息</p>
 
@@ -570,7 +570,7 @@
                             
         				
                             
-                				<a href="/tags/#Java" title="Java" rel="13">
+                				<a href="/tags/#Java" title="Java" rel="14">
                                     Java
                                 </a>
                             
@@ -581,6 +581,10 @@
                                 </a>
                             
         				
+                            
+                				<a href="/tags/#Hust" title="Hust" rel="2">
+                                    Hust
+                                </a>
                             
         				
                             
@@ -715,7 +719,7 @@
                     
                 </ul>
                 <p class="copyright text-muted">
-                    Copyright &copy; 袁平 2018
+                    Copyright &copy; 袁平 2019
                     <br>
                 </p>
             </div>

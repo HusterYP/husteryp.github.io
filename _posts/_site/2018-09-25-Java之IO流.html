@@ -1,0 +1,154 @@
+<h1 id="前言">前言</h1>
+
+<p>本文将讲解<code class="highlighter-rouge">Java</code>中一个比较重要的模块–<code class="highlighter-rouge">I/O</code>流</p>
+
+<p>以下内容是对<strong>Java核心技术卷II</strong>的总结, 权做个人笔记~</p>
+
+<hr />
+
+<h1 id="正文">正文</h1>
+
+<hr />
+
+<h2 id="一-概述">一. 概述</h2>
+
+<p><code class="highlighter-rouge">Java I/O</code>流指的是<code class="highlighter-rouge">java.io</code>包和<code class="highlighter-rouge">java.nio</code>包提供的各种操作文件和输入输出等的<code class="highlighter-rouge">API</code>, 具体可以分为两大类: 一类是面向字节的, 一类是面向字符的; 面向字节的<code class="highlighter-rouge">API</code>是以<code class="highlighter-rouge">InputStream</code>和<code class="highlighter-rouge">OutputStream</code>类为基类, 每次以一个字节为单位进行读写操作; 面向字符的<code class="highlighter-rouge">API</code>指的是以<code class="highlighter-rouge">Reader</code>和<code class="highlighter-rouge">Writer</code>为基类, 每次以两个字节为单位进行读写操作, 面向字符的<code class="highlighter-rouge">API</code>主要是针对文本操作设计的</p>
+
+<p>可以参见下图:</p>
+
+<p><strong>面向字节</strong>:</p>
+
+<p><img src="/img/post/Java_IO/面向字节.png" alt="面向字节" /></p>
+
+<p><strong>面向字符</strong>:</p>
+
+<p><img src="/img/post/Java_IO/面向字符.png" alt="面向字符" /></p>
+
+<p><strong>注</strong>: <a href="https://blog.csdn.net/zhoupenglei/article/details/46312405">图片来源</a></p>
+
+<hr />
+
+<h2 id="二-重要概念">二. 重要概念</h2>
+
+<h3 id="21-流嵌套">2.1 流嵌套</h3>
+
+<p>即将不同功能的流嵌套起来, 过滤; 比如: <code class="highlighter-rouge">Java</code>中流默认是不被缓冲区缓存的, 也就是说每个<code class="highlighter-rouge">read()</code>的调用都会请求操作系统再分发一个字节, 相比之下, 请求一个数据块并将其置于缓冲区中会显得更加高效, 如果我们想使用缓冲机制, 以及用于文件输入方法, 可以使用<code class="highlighter-rouge">            BufferedInputStream inputStream = new BufferedInputStream(new FileInputStream("file"));</code></p>
+
+<h3 id="22-glob模式匹配">2.2 Glob模式匹配</h3>
+
+<p>即使用正则筛选文件, 如筛选文件后缀名为<code class="highlighter-rouge">java</code>的文件: <code class="highlighter-rouge">DirectoryStream&lt;Path&gt; entries = Files.newDirectoryStream(Paths.get("/"), "*.java");</code></p>
+
+<p><code class="highlighter-rouge">Glob</code>模式见下表:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>模式</th>
+      <th>描述</th>
+      <th>示例</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>*</td>
+      <td>匹配路径组成部分中0个或多个字符</td>
+      <td>*.java匹配当前目录中的所有Java文件</td>
+    </tr>
+    <tr>
+      <td>**</td>
+      <td>匹配跨目录边界的0个或多个字符</td>
+      <td>**.java匹配在所有子目录中的Java文件</td>
+    </tr>
+    <tr>
+      <td>?</td>
+      <td>匹配一个字符</td>
+      <td>????.java匹配所有四个字符的Java文件</td>
+    </tr>
+    <tr>
+      <td>[…]</td>
+      <td>匹配一个字符集合</td>
+      <td>Test[0-9A-F].java匹配Testx.java, 其中x是一个十六进制数字</td>
+    </tr>
+    <tr>
+      <td>{…}</td>
+      <td>匹配由逗号隔开的多个可选项之一</td>
+      <td>*.{java, class}匹配所有的Java文件和类class文件</td>
+    </tr>
+    <tr>
+      <td>\</td>
+      <td>转移上述任意模式中的字符</td>
+      <td><em>*</em>匹配所有文件名中包含*的文件</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="23-常用工具类">2.3 常用工具类</h3>
+
+<ol>
+  <li><strong>Files</strong>: 使得读写文件和操作文件及文件夹变得简单; 旧的<code class="highlighter-rouge">File</code>类中有一个方法可以用来获取一个目录下的所有文件构成的数组, 但是当目录中包含大量文件时, 这个方法的性能非常低, <code class="highlighter-rouge">Files</code>类设计了一个方法可以产生<code class="highlighter-rouge">Iterable</code>对象, 如下示例代码:</li>
+</ol>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>DirectoryStream&lt;Path&gt; entries = Files.newDirectoryStream(Paths.get("/"));
+Iterator&lt;Path&gt; iterator = entries.iterator();
+for (Path path : entries) {
+    System.out.println(path);
+}
+</code></pre></div>
+
+<ol>
+  <li><strong>Paths</strong>: <code class="highlighter-rouge">Paths</code>可以用来构造<code class="highlighter-rouge">Path</code>对象: <code class="highlighter-rouge">Paths.get(args)</code>, 可以接收一个或多个字符串, 并将它们用默认文件系统分隔符连接起来</li>
+</ol>
+
+<h3 id="24-内存映射文件">2.4 内存映射文件</h3>
+
+<p>大多数操作系统都可以利用虚拟内存实现来将一个文件或者文件的一部分”映射”到内存中, 然后这个文件就可以当做是内存数组一样的访问, 中比传统的文件操作要快得多; 如: <code class="highlighter-rouge">FileChannel</code></p>
+
+<h2 id="25-易忘类">2.5 易忘类</h2>
+
+<ol>
+  <li>
+    <p><code class="highlighter-rouge">InputStreamReader</code>, <code class="highlighter-rouge">OutputStreamWriter</code>: 可以指定编码</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">PrintWriter</code>: 以文本格式写出数据</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">RandomAccessFile</code>: 在任何位置查找或写入数据; 可以用于实现断点续传</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">DataInputStream</code>: 读取数字</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">ObjectInputStream</code>, <code class="highlighter-rouge">ObjectOutputStream</code>: 读取对象</p>
+  </li>
+</ol>
+
+<h3 id="26-文件操作处理效率">2.6 文件操作处理效率</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>方法</th>
+      <th>时间</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>普通输入流</td>
+      <td>110s</td>
+    </tr>
+    <tr>
+      <td>带缓冲的输入流</td>
+      <td>9.9s</td>
+    </tr>
+    <tr>
+      <td>随机方访问文件</td>
+      <td>162s</td>
+    </tr>
+    <tr>
+      <td>内存映射文件</td>
+      <td>7.2s</td>
+    </tr>
+  </tbody>
+</table>
+

@@ -154,6 +154,86 @@
             ">
     			
 <div class="post-preview">
+    <a href="/2018/09/01/%E5%9B%BE%E7%89%87%E7%BC%93%E5%AD%98%E4%B9%8BPicasso%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">
+        <h2 class="post-title">
+            图片缓存之Picasso源码分析
+        </h2>
+        
+        <h3 class="post-subtitle">
+            Picasso源码分析
+        </h3>
+        
+        <div class="post-content-preview">
+            前言
+
+
+  图片缓存系列之Picasso
+
+
+
+
+正文
+
+
+
+一. 概述
+
+在开始之前, 我想先贴两张比较具有概括性的流程图
+
+下面这张是对Picasso核心交互类的概括, 来自Android 三大图片缓存原理、特性对比
+
+
+
+下面这张是Picasso下载一张图片的时候的执行流程图, 来自Picasso学习笔记
+
+
+
+注: 笔者在看Picasso源码的时候, 发现其执行流程和上图有些不符,...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by 袁平 on September 1, 2018
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
+    <a href="/2018/08/31/%E5%9B%BE%E7%89%87%E4%B8%89%E7%BA%A7%E7%BC%93%E5%AD%98%E4%B9%8BLruCache%E5%92%8CDiskLurCache/">
+        <h2 class="post-title">
+            图片三级缓存之内存缓存和磁盘缓存
+        </h2>
+        
+        <h3 class="post-subtitle">
+            内存缓存用LruCache, 磁盘缓存用DiskLruCache
+        </h3>
+        
+        <div class="post-content-preview">
+            前言
+
+
+  本文主要分析Android中图片三级缓存中的前两级缓存, 即内存缓存(LruCache)和磁盘缓存(DiskLruCache), 分析其源码实现
+
+
+
+
+正文
+
+
+
+一. LruCache
+
+LruCache常用作内存缓存, 也就是第一级缓存
+
+LruCache内部使用了一个LinkedHashMap实例, 所以在继续往下看之前, 建议先了解一下LinkedHashMap的特性...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by 袁平 on August 31, 2018
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
     <a href="/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/">
         <h2 class="post-title">
             Java集合框架之LinkedHashMap
@@ -471,75 +551,6 @@ Collections that do not support modification operations (such as add, remove a..
 </div>
 <hr>
 
-<div class="post-preview">
-    <a href="/2018/08/24/Details/">
-        <h2 class="post-title">
-            Detail
-        </h2>
-        
-        <h3 class="post-subtitle">
-            记录一些有助于提高代码性能和平时一些难以想到的细节处理
-        </h3>
-        
-        <div class="post-content-preview">
-            
-
-前言
-
-  本文记录一些有助于提高代码性能和平时一些难以想到的细节处理
-
-
-正文
-
-一. 边界值
-
-1.1 基本类型的范围限制
-
-  一般而言, 看到基本类型, 特别是返回值或者涉及到计算的, 都应该考虑基本类型的范围限制
-
-
-
-  比如实现库函数: double Pow(double base, double exp)时, 需要考虑大数问题(如果要求是任意大的数字, 则需要使用特殊的数...
-        </div>
-    </a>
-    <p class="post-meta">
-        Posted by 袁平 on August 24, 2018
-    </p>
-</div>
-<hr>
-
-<div class="post-preview">
-    <a href="/2018/08/20/AndroidStudio%E4%BB%A3%E7%90%86%E8%AE%BE%E7%BD%AE%E8%B8%A9%E5%9D%91/">
-        <h2 class="post-title">
-            AndroidStudio代理设置
-        </h2>
-        
-        <h3 class="post-subtitle">
-            Android Studio踩坑
-        </h3>
-        
-        <div class="post-content-preview">
-            前言
-
-  近日, Android Studio新建项目一直Gradle失败, 网上各种搜, 说是设置代理, 然而代理设置之后不能使用, 搞了一天, 差点就滚去重装AS了, 不过终于还是搞清楚问题出在哪里了, 以此记录
-
-
-正文
-
-一. 问题描述
-
-  新建项目失败
-  完好的项目第二次打开之后, Gradle失败
-  使用Help-&gt;Check for Updates 提示联网失败
-...
-        </div>
-    </a>
-    <p class="post-meta">
-        Posted by 袁平 on August 20, 2018
-    </p>
-</div>
-<hr>
-
 
 <!-- Pager -->
 
@@ -592,7 +603,7 @@ Collections that do not support modification operations (such as add, remove a..
                             
                         
                             
-                                <a href="/tags/#Java" title="Java" rel="13">
+                                <a href="/tags/#Java" title="Java" rel="14">
                                     Java
                                 </a>
                             
@@ -603,6 +614,10 @@ Collections that do not support modification operations (such as add, remove a..
                                 </a>
                             
                         
+                            
+                                <a href="/tags/#Hust" title="Hust" rel="2">
+                                    Hust
+                                </a>
                             
                         
                             
@@ -710,7 +725,7 @@ Collections that do not support modification operations (such as add, remove a..
                     
                 </ul>
                 <p class="copyright text-muted">
-                    Copyright &copy; 袁平 2018
+                    Copyright &copy; 袁平 2019
                     <br>
                 </p>
             </div>

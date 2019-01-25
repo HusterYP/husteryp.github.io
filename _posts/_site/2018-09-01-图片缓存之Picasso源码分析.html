@@ -1,0 +1,380 @@
+<h1 id="前言">前言</h1>
+
+<blockquote>
+  <p>图片缓存系列之<code class="highlighter-rouge">Picasso</code></p>
+</blockquote>
+
+<hr />
+
+<h1 id="正文">正文</h1>
+
+<hr />
+
+<h2 id="一-概述">一. 概述</h2>
+
+<p>在开始之前, 我想先贴两张比较具有概括性的流程图</p>
+
+<p>下面这张是对<code class="highlighter-rouge">Picasso</code>核心交互类的概括, 来自<a href="http://www.trinea.cn/android/android-image-cache-compare/">Android 三大图片缓存原理、特性对比</a></p>
+
+<p><img src="/img/post/Picasso/picasso.png" alt="Picasso" /></p>
+
+<p>下面这张是<code class="highlighter-rouge">Picasso</code>下载一张图片的时候的执行流程图, 来自<a href="https://blog.csdn.net/chdjj/article/details/49964901">Picasso学习笔记</a></p>
+
+<p><img src="/img/post/Picasso/picasso执行流程图.png" alt="picasso流程图" /></p>
+
+<p><strong>注</strong>: 笔者在看<code class="highlighter-rouge">Picasso</code>源码的时候, 发现其执行流程和上图有些不符, 主要是没有最后的<code class="highlighter-rouge">Downloader</code>, 下载过程完全交给了<code class="highlighter-rouge">NetworkRequestHandler</code>去做, 应该是不同版本造成的; (本文对应<code class="highlighter-rouge">Picasso</code>源码版本为<code class="highlighter-rouge">picasso:2.71828</code>)</p>
+
+<p><code class="highlighter-rouge">Picasso</code>中比较重要的类在上面第一张图片已经列出, 主要是<code class="highlighter-rouge">Picasso</code>, <code class="highlighter-rouge">Dispatcher</code>, <code class="highlighter-rouge">RequestHandler</code>; 下面分别总述一下其作用:</p>
+
+<ol>
+  <li>
+    <p><code class="highlighter-rouge">Picasso</code>: 该类是我们使用的起点, 是图片下载, 图片转换, 图片缓存的<code class="highlighter-rouge">Manager</code>; 其提供的静态内部类<code class="highlighter-rouge">Builder</code>, 用于接收用户配置, 一般而言, 我们都使用<code class="highlighter-rouge">Picasso</code>的一个全局实例(单例);</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">Dispatcher</code>: 顾名思义, 就是一个调度中转站, 用于分发请求(下载请求, 暂停请求, 恢复请求等), 传递数据(数据成功返回时进行分发绑定), 错误处理分发等</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">RequestHandler</code>: 这是一个抽象类, 提供了数据处理的公共抽象; <code class="highlighter-rouge">Picasso</code>默认实现的有<code class="highlighter-rouge">AssetRequestHandler</code>, <code class="highlighter-rouge">ResourceRequestHandler</code>, <code class="highlighter-rouge">ResourceDrawableRequestHandler</code>, <code class="highlighter-rouge">NetworkRequestHandler</code>, <code class="highlighter-rouge">ContentStreamRequestHandler</code>, <code class="highlighter-rouge">ContactsPhotoRequestHandler</code>; 分别对应于不同的处理场景和模式, 其中最重要和最常见的就是<code class="highlighter-rouge">NetworkRequestHandler</code>了; 当然, 也可以自定义实现该类, 用于处理<code class="highlighter-rouge">Picasso</code>所没有涵盖的特殊情况(需要使用<code class="highlighter-rouge">Picasso.Builder.addRequestHandler(RequestHandler)</code>注册)</p>
+  </li>
+</ol>
+
+<p>下面, 笔者将主要分析网络请求这一部分, 包括: 一条<code class="highlighter-rouge">URL</code>被处理的完整流程,  暂停,恢复和取消请求机制, 缓存机制; 当然, <code class="highlighter-rouge">Picasso</code>还处理了很多其他情况, 如程序监控部分, 图片处理部分等, 但这些不是最主要的, 本文不再赘述</p>
+
+<hr />
+
+<h2 id="二-url处理流程">二. URL处理流程</h2>
+
+<p>开始之前, 需要先看一下<code class="highlighter-rouge">Picasso</code>的典型使用, 如下; 各部分的作用都已经标注清楚了, 下面将对每一个过程进行讲解</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>     PicassoProvider.get() // 单例, 用于得到一个全局唯一Picasso实例
+        .load(url) // 加载url
+        .placeholder(R.drawable.placeholder) // 设置图片加载过程中的占位图片
+        .error(R.drawable.error) // 设置出错后的占位图片
+        .fit() // 图片处理部分, 表示将图片适应ImageView大小
+        .tag(context) // 设置tag, 用于暂停, 恢复, 取消请求时使用
+        .into(view); // 加载成功后设置到哪个View中
+</code></pre></div>
+
+<p><code class="highlighter-rouge">PicassoProvider.get()</code>是实现的一个单例模式, 如下; 该模式比较常见, 不多讲</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>public static Picasso get() {
+    if (instance == null) {
+      synchronized (PicassoProvider.class) {
+        if (instance == null) {
+          Context autoContext = PicassoContentProvider.context;
+          if (autoContext == null) {
+            throw new NullPointerException("context == null");
+          }
+          instance = new Picasso.Builder(autoContext).build();
+        }
+      }
+    }
+    return instance;
+}
+</code></pre></div>
+
+<p>从上面我们可以看出, <code class="highlighter-rouge">Picasso</code>的实例是通过其静态内部类<code class="highlighter-rouge">Builder</code>进行<code class="highlighter-rouge">build</code>的, 这也是一种典型的设计模式–<code class="highlighter-rouge">Builder</code>模式; 该模式对于有很多参数要设置时是很方便的, 这里没有进行额外的参数设置, 使用的是<code class="highlighter-rouge">Picasso</code>内部的默认参数(比如: 默认缓存大小, 使用自带<code class="highlighter-rouge">RequestHandler</code>等进行请求处理等)</p>
+
+<p>之后的过程是将<code class="highlighter-rouge">URL</code>加载进去, 然后将该<code class="highlighter-rouge">URL</code>封装为一个<code class="highlighter-rouge">Request</code>实例, 返回一个<code class="highlighter-rouge">RequestCreator</code>实例, 然后在<code class="highlighter-rouge">into</code>的时候, 进行异步请求图片; 当然, 在之前, 还有一个<code class="highlighter-rouge">placeholder()</code>的过程, 该过程上面说了就是设置一个请求过程中的占位图片, 其内部做的也很简单, 只是将<code class="highlighter-rouge">ID</code>保留下来, 在<code class="highlighter-rouge">into()</code>中进行统一的逻辑处理</p>
+
+<p>接下来, 主要的处理逻辑都指向了<code class="highlighter-rouge">into()</code>函数, 下面我们来详细看其逻辑; 如下, 先设置占位图片, 然后将请求封装为一个<code class="highlighter-rouge">Action</code>实例提交到线程池中处理</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>public void into(@NonNull ImageView target, @Nullable Callback callback) {
+    ...
+    if (!data.hasImage()) {
+      picasso.cancelRequest(target);
+      if (setPlaceholder) {
+        setPlaceholder(target, getPlaceholderDrawable()); // 设置占位图片
+      }
+      return;
+    }
+    ...
+    Action action = new ImageViewAction(picasso, wrapper, request, callback);
+    picasso.enqueueAndSubmit(action); // 提交请求
+}
+</code></pre></div>
+
+<p>而<code class="highlighter-rouge">picasso.enqueueAndSubmit()</code>又只是单纯的去调用<code class="highlighter-rouge">submit()</code>, 在<code class="highlighter-rouge">submit()</code>中将任务分配给<code class="highlighter-rouge">Dispatcher</code>进行调度</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>void submit(Action action) {
+    dispatcher.dispatchSubmit(action);
+}
+</code></pre></div>
+
+<p>而<code class="highlighter-rouge">Dispatcher</code>进行调度实际上是通过<code class="highlighter-rouge">Handler</code>进行消息传递的, 该<code class="highlighter-rouge">Handler</code>实际上是<code class="highlighter-rouge">DispatcherHandler</code>, 我们直接去看其<code class="highlighter-rouge">handleMessage()</code>就好;</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>void dispatchSubmit(Action action) {
+    handler.sendMessage(handler.obtainMessage(REQUEST_SUBMIT, action));
+}
+</code></pre></div>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>public void handleMessage(final Message msg) {
+    case REQUEST_SUBMIT: {
+          Action action = (Action) msg.obj;
+          dispatcher.performSubmit(action);
+          break;
+    }
+    ...
+}
+</code></pre></div>
+
+<p>在<code class="highlighter-rouge">performSubmit()</code>中进行处理, 将请求再次封装为一个<code class="highlighter-rouge">BitmapHunter</code>, <code class="highlighter-rouge">BitmapHunter</code>是一个<code class="highlighter-rouge">Runnable</code>, 之后提交给线程池进行异步加载, 即下面的<code class="highlighter-rouge">service.submit()</code>, 这里的<code class="highlighter-rouge">service</code>实际上是<code class="highlighter-rouge">PicassoExecutorService</code>, 继承于<code class="highlighter-rouge">ThreadPoolExecutor</code>, 默认开了<code class="highlighter-rouge">3</code>个线程, 当然, 这部分与网络请求相关的<code class="highlighter-rouge">Picasso</code>内部也进行了判断, 比如在<code class="highlighter-rouge">Wifi</code>或者<code class="highlighter-rouge">2G</code>环境下采用不同的请求策略, 感兴趣的话可以自己跟着走一遍, 这里的主要目的是看一个网络请求的完整处理过程</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>  void performSubmit(Action action, boolean dismissFailed) {
+        ...
+        hunter = forRequest(action.getPicasso(), this, cache, stats, action);
+        hunter.future = service.submit(hunter);
+        ...
+  }
+</code></pre></div>
+
+<p>我们上面说了, <code class="highlighter-rouge">BitmapHunter</code>是一个<code class="highlighter-rouge">Runnable</code>, 线程池执行的时候, 就是去执行其<code class="highlighter-rouge">run()</code>方法, 在<code class="highlighter-rouge">run()</code>中, 有一个<code class="highlighter-rouge">hunt()</code>, 其作用是将请求得到的<code class="highlighter-rouge">Bitmap</code>封装为<code class="highlighter-rouge">Result</code>返回, 这里的<code class="highlighter-rouge">hunt()</code>是一个阻塞耗时方法, 但是<code class="highlighter-rouge">run()</code>异步运行, 所以也没有问题; 而在<code class="highlighter-rouge">hunt()</code>中, 又是通过<code class="highlighter-rouge">RequestHandler</code>的一个实现类<code class="highlighter-rouge">NetworkRequestHandler</code>去处理的, 处理过程也是常规的图片下载过程, 如下;</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>public void run() {
+    ...
+    result = hunt();
+    ...
+}
+</code></pre></div>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>public void load(@NonNull Picasso picasso, @NonNull final Request request, @NonNull
+  final Callback callback) {
+    ...
+    ResponseBody body = response.body();
+    ...
+    Bitmap bitmap = decodeStream(body.source(), request);
+    callback.onSuccess(new Result(bitmap, loadedFrom));
+    ...
+}
+</code></pre></div>
+
+<p>在图片接受完成之后, 再一步步函数返回, 封装为<code class="highlighter-rouge">Result</code>, 回传至<code class="highlighter-rouge">run()</code>中; 通过<code class="highlighter-rouge">Dispatcher</code>进行通知图片接受成功还是失败; 最终会在<code class="highlighter-rouge">deliver()</code>中调用主线程的<code class="highlighter-rouge">Handler</code>通知进行处理;</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>public void run() {
+    ...
+    if (result.getBitmap() == null &amp;&amp; result.getDrawable() == null) {
+        dispatcher.dispatchFailed(this);
+    } else {
+        dispatcher.dispatchComplete(this);
+    }
+    ...
+</code></pre></div>
+<div class="highlighter-rouge"><pre class="highlight"><code>private void deliver(BitmapHunter hunter) {
+    ...
+    mainThreadHandler.sendMessage(mainThreadHandler.obtainMessage(HUNTER_COMPLETE, hunter));
+}
+</code></pre></div>
+
+<p>而<code class="highlighter-rouge">mainThreadHandler</code>的处理逻辑在<code class="highlighter-rouge">Picasso</code>类中, 很明显, 到这里之后就是将图片设置到<code class="highlighter-rouge">View</code>了</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>static final Handler HANDLER = new Handler(Looper.getMainLooper()) {
+    @Override public void handleMessage(Message msg) {
+      switch (msg.what) {
+        case HUNTER_COMPLETE: {
+          BitmapHunter hunter = (BitmapHunter) msg.obj;
+          hunter.picasso.complete(hunter);
+          break;
+        }
+        ...
+      }
+    }
+};
+</code></pre></div>
+
+<p>至此, 从网络请求图片的一个完整过程就讲完了, 当然, 中间还涉及很多代码细节和处理, 最好自己跟着流程再一遍 ~</p>
+
+<hr />
+
+<h2 id="三-暂停-恢复-取消请求处理">三. 暂停, 恢复, 取消请求处理</h2>
+
+<p>暂停请求使用<code class="highlighter-rouge">picasso.pauseTag();</code>; 恢复请求使用<code class="highlighter-rouge">picasso.resumeTag();</code>; 取消请求使用<code class="highlighter-rouge">picasso.cancelRequest();</code>; 一般来说, 这些的使用场景是, 考虑当我们从网络加载图片填充到<code class="highlighter-rouge">GridView</code>的时候, 如果我们在用户不断滑动过程中不暂停请求的话, 那么就会造成加载的延迟和卡顿(因为在不断滑动过程中会产生许多网络请求); 一般比较通用的解决方法是给<code class="highlighter-rouge">GridView</code>添加<code class="highlighter-rouge">ScrollListener</code>(<code class="highlighter-rouge">GridScrollListener</code>), 监听滑动过程, 在滑动过程中暂停请求, 停止滑动时恢复请求即可</p>
+
+<p>那么暂停, 恢复, 取消请求的实现机制又是如何的呢, 下面我们将一一分析</p>
+
+<hr />
+
+<h3 id="31-暂停请求">3.1 暂停请求</h3>
+
+<p>我们直接看<code class="highlighter-rouge">picasso.pauseTag();</code>做了什么, 如下; 其直接交给了<code class="highlighter-rouge">Dispatcher</code>进行请求分发, 这也符合我们上面总述的时候讲的<code class="highlighter-rouge">Dispatcher</code>的功能; 之后<code class="highlighter-rouge">Dispatcher</code>仍然通过<code class="highlighter-rouge">Handler</code>进行事件分发, 如下; 而其对<code class="highlighter-rouge">TAG_PAUSE</code>事件的处理则是直接转交给了<code class="highlighter-rouge">dispatcher.performPauseTag(tag);</code>中</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>public void pauseTag(@NonNull Object tag) {
+    checkNotNull(tag, "tag == null");
+    dispatcher.dispatchPauseTag(tag);
+}
+</code></pre></div>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>void dispatchPauseTag(Object tag) {
+    handler.sendMessage(handler.obtainMessage(TAG_PAUSE, tag));
+}
+</code></pre></div>
+
+<p>在<code class="highlighter-rouge">performPauseTag()</code>中, 其实就是将<code class="highlighter-rouge">tag</code>保存到<code class="highlighter-rouge">pausedActions</code>中, 这是一个<code class="highlighter-rouge">Map</code></p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>void performPauseTag(Object tag) {
+    // Trying to pause a tag that is already paused.
+    if (!pausedTags.add(tag)) { // 如果已经添加, 则直接返回
+      return;
+    }
+
+    // Go through all active hunters and detach/pause the requests
+    // that have the paused tag. // 否则, 遍历BitmapHunter, 将对应tag保存下来
+    for (Iterator&lt;BitmapHunter&gt; it = hunterMap.values().iterator(); it.hasNext();) {
+        ...
+        pausedActions.put(single.getTarget(), single);
+        ...
+    }
+}
+</code></pre></div>
+
+<p>那么我们什么时候会用到该<code class="highlighter-rouge">tag</code>呢, 就是在使用<code class="highlighter-rouge">Dispatcher</code>分发请求的时候, 这里先去判断在<code class="highlighter-rouge">pausedTags</code>中是否有对应的<code class="highlighter-rouge">tag</code>记录, 如果有的话, 就不进行请求分发, 那么自然也就不会去下载图片了 ~</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>void performSubmit(Action action, boolean dismissFailed) {
+    if (pausedTags.contains(action.getTag())) {
+      pausedActions.put(action.getTarget(), action);
+      ...
+      return;
+    }
+    ...
+}
+</code></pre></div>
+
+<h3 id="32--恢复请求">3.2  恢复请求</h3>
+
+<p>恢复请求使用的是<code class="highlighter-rouge">picasso.resumeTag();</code>; 恢复请求的过程和暂停请求的过程差不多, 前面都是通过<code class="highlighter-rouge">Dispatcher</code>直接进行请求分发, 然后通过<code class="highlighter-rouge">Handler</code>去发送消息, 然后在<code class="highlighter-rouge">performResumeTag()</code>进行处理; 在<code class="highlighter-rouge">performResumeTag()</code>中, 一个是将<code class="highlighter-rouge">tag</code>从<code class="highlighter-rouge">pausedTags</code>中移除, 另一个是将原来的<code class="highlighter-rouge">Action</code>(封装了请求等信息)通过<code class="highlighter-rouge">mainThreadHandler</code>传递, 而<code class="highlighter-rouge">mainThreadHandler</code>对<code class="highlighter-rouge">REQUEST_BATCH_RESUME</code>的处理, 则是对每一个<code class="highlighter-rouge">Action</code>去调用<code class="highlighter-rouge">picasso.resumeAction()</code></p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>void performResumeTag(Object tag) {
+    // Trying to resume a tag that is not paused.
+    if (!pausedTags.remove(tag)) {
+      return;
+    }
+
+    List&lt;Action&gt; batch = null;
+    for (Iterator&lt;Action&gt; i = pausedActions.values().iterator(); i.hasNext();) {
+      Action action = i.next();
+      if (action.getTag().equals(tag)) {
+        if (batch == null) {
+          batch = new ArrayList&lt;&gt;();
+        }
+        batch.add(action);
+        i.remove();
+      }
+    }
+
+    if (batch != null) {
+      mainThreadHandler.sendMessage(mainThreadHandler.obtainMessage(REQUEST_BATCH_RESUME, batch));
+    }
+}
+</code></pre></div>
+
+<p>在<code class="highlighter-rouge">resumeAction()</code>中, 其实就是将请求交给了<code class="highlighter-rouge">enqueueAndSubmit()</code>, 而该过程在上面我们分析一个<code class="highlighter-rouge">URL</code>的完整请求过程的时候, 已经看到过该函数了; 接下来的过程就不赘述了</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>void resumeAction(Action action) {
+    ...
+    enqueueAndSubmit(action);
+    ...
+}
+</code></pre></div>
+
+<h3 id="33-取消请求">3.3 取消请求</h3>
+
+<p>取消请求用的是<code class="highlighter-rouge">picasso.cancelRequest();</code>, 该函数一共有三个重载函数, 但是最终都是交给了<code class="highlighter-rouge">cancelExistingRequest()</code>处理, 接下来的过程和上面的过程差不多, <code class="highlighter-rouge">dispatcher.dispatchCancel()</code>分发消息, 然后交给<code class="highlighter-rouge">Handler</code>传递消息, 最终调用<code class="highlighter-rouge">performCancel()</code>处理请求; 在<code class="highlighter-rouge">performCancel()</code>中, 其实就是将<code class="highlighter-rouge">BitmapHunter</code>移除就好了, 前面我们说过, <code class="highlighter-rouge">BitmapHunter</code>是一个<code class="highlighter-rouge">Runnable</code>, 所以将其移除之后, 自然就取消请求啦 ~</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>void performCancel(Action action) {
+    String key = action.getKey();
+    BitmapHunter hunter = hunterMap.get(key);
+    if (hunter != null) {
+      hunter.detach(action);
+      if (hunter.cancel()) {
+        hunterMap.remove(key);
+        ...
+      }
+    }
+    ...
+}
+</code></pre></div>
+
+<h3 id="34-小结">3.4 小结</h3>
+
+<p>到这里, 暂停, 恢复, 取消请求的过程我们已经有了比较详细的了解, 当然, 对于一个图片加载库来说, 这些接口也都是必备的</p>
+
+<hr />
+
+<h2 id="四-缓存">四. 缓存</h2>
+
+<p><code class="highlighter-rouge">Picasso</code>的缓存也分为内存缓存和磁盘缓存, 内存缓存基于<code class="highlighter-rouge">LruCache</code>可以自行配置缓存大小等, 磁盘缓存依赖与<code class="highlighter-rouge">Http</code>缓存, 不可配置</p>
+
+<p>至于内存缓存部分, 逻辑很常规, 在<a href="https://husteryp.github.io/2018/08/31/%E5%9B%BE%E7%89%87%E4%B8%89%E7%BA%A7%E7%BC%93%E5%AD%98%E4%B9%8BLruCache%E5%92%8CDiskLurCache/">图片三级缓存之内存缓存和磁盘缓存</a>中已经比较详细的讲过<code class="highlighter-rouge">LruCache</code>的源码了, 可以参照该博客; 在<code class="highlighter-rouge">Picasso</code>中默认使用的内存缓存最大容量是可用内存的<code class="highlighter-rouge">15%</code></p>
+
+<p>磁盘缓存, 实际上<code class="highlighter-rouge">Picasso</code>是交给了<code class="highlighter-rouge">OkHttp</code>去实现, 而没有明确的使用<code class="highlighter-rouge">DiskLruCache</code>去缓存; 使用的是<code class="highlighter-rouge">OkHttp</code>中的<code class="highlighter-rouge">okhttp3.Cache</code>, 该类中有一个<code class="highlighter-rouge">DiskLruCache</code>用于磁盘缓存; <code class="highlighter-rouge">DiskLruCache</code>的缓存策略可以参见<a href="https://husteryp.github.io/2018/08/31/%E5%9B%BE%E7%89%87%E4%B8%89%E7%BA%A7%E7%BC%93%E5%AD%98%E4%B9%8BLruCache%E5%92%8CDiskLurCache/">图片三级缓存之内存缓存和磁盘缓存</a>, 至于<code class="highlighter-rouge">OKHttp</code>的缓存策略会单独抽取一篇博客出来;
+这里只是简单提一下<code class="highlighter-rouge">Picasso</code>中默认的磁盘缓存策略, 即使用存储容量的<code class="highlighter-rouge">2%</code>, 但是不多于<code class="highlighter-rouge">50M</code>不少于<code class="highlighter-rouge">5M</code></p>
+
+<hr />
+
+<h2 id="五-总结">五. 总结</h2>
+
+<p><code class="highlighter-rouge">Pciasso</code>的主要源码就分析到这里, 最后还想贴一下<code class="highlighter-rouge">Picasso</code>的总体特性</p>
+
+<ol>
+  <li>
+    <p>轻量级的图片加载库</p>
+  </li>
+  <li>
+    <p>自带监控功能, 可以检测<code class="highlighter-rouge">cache hit/内存大小</code>等等数据</p>
+  </li>
+  <li>
+    <p>支持图片预加载</p>
+  </li>
+  <li>
+    <p>线程并发数依网络状态变化而变化, 优先级调度</p>
+  </li>
+  <li>
+    <p>支持图片变换, 图片压缩, 自适应</p>
+  </li>
+  <li>
+    <p>易扩展</p>
+  </li>
+</ol>
+
+<hr />
+
+<p><code class="highlighter-rouge">Picasso</code>是一个优秀的图片加载库, 其也具备了一个图片加载库应该具有的模块:</p>
+
+<ol>
+  <li>
+    <p>请求分发模块。负责封装请求,对请求进行优先级排序,并按照类型进行分发。</p>
+  </li>
+  <li>
+    <p>缓存模块。通常包括一个二级的缓存，内存缓存、磁盘缓存。并预置多种缓存策略。</p>
+  </li>
+  <li>
+    <p>下载模块。负责下载网络图片。</p>
+  </li>
+  <li>
+    <p>监控模块。负责监控缓存命中率、内存占用、加载图片平均耗时等。</p>
+  </li>
+  <li>
+    <p>图片处理模块。负责对图片进行压缩、变换等处理。</p>
+  </li>
+  <li>
+    <p>本地资源加载模块。负责加载本地资源，如assert、drawable、sdcard等。</p>
+  </li>
+  <li>
+    <p>显示模块。负责将图片输出显示。</p>
+  </li>
+</ol>
+
+<hr />
+
+<h2 id="六-参考链接">六. 参考链接</h2>
+
+<ol>
+  <li>
+    <p><a href="https://skykai521.github.io/2016/02/25/Picasso%E6%BA%90%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90/">Picasso源代码分析</a></p>
+  </li>
+  <li>
+    <p><a href="https://blog.csdn.net/chdjj/article/details/49964901">Picasso学习笔记</a></p>
+  </li>
+  <li>
+    <p><a href="http://www.trinea.cn/android/android-image-cache-compare/">Android 三大图片缓存原理、特性对比</a></p>
+  </li>
+</ol>

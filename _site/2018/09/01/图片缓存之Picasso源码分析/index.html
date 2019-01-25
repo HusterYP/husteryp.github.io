@@ -214,18 +214,18 @@
 
 <p>开始之前, 需要先看一下<code class="highlighter-rouge">Picasso</code>的典型使用, 如下; 各部分的作用都已经标注清楚了, 下面将对每一个过程进行讲解</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>     PicassoProvider.get() // 单例, 用于得到一个全局唯一Picasso实例
+<div class="highlighter-rouge"><pre class="highlight"><code>     PicassoProvider.get() // 单例, 用于得到一个全局唯一Picasso实例
         .load(url) // 加载url
         .placeholder(R.drawable.placeholder) // 设置图片加载过程中的占位图片
         .error(R.drawable.error) // 设置出错后的占位图片
         .fit() // 图片处理部分, 表示将图片适应ImageView大小
         .tag(context) // 设置tag, 用于暂停, 恢复, 取消请求时使用
         .into(view); // 加载成功后设置到哪个View中
-</code></pre></div></div>
+</code></pre></div>
 
 <p><code class="highlighter-rouge">PicassoProvider.get()</code>是实现的一个单例模式, 如下; 该模式比较常见, 不多讲</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static Picasso get() {
+<div class="highlighter-rouge"><pre class="highlight"><code>public static Picasso get() {
     if (instance == null) {
       synchronized (PicassoProvider.class) {
         if (instance == null) {
@@ -239,7 +239,7 @@
     }
     return instance;
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>从上面我们可以看出, <code class="highlighter-rouge">Picasso</code>的实例是通过其静态内部类<code class="highlighter-rouge">Builder</code>进行<code class="highlighter-rouge">build</code>的, 这也是一种典型的设计模式–<code class="highlighter-rouge">Builder</code>模式; 该模式对于有很多参数要设置时是很方便的, 这里没有进行额外的参数设置, 使用的是<code class="highlighter-rouge">Picasso</code>内部的默认参数(比如: 默认缓存大小, 使用自带<code class="highlighter-rouge">RequestHandler</code>等进行请求处理等)</p>
 
@@ -247,7 +247,7 @@
 
 <p>接下来, 主要的处理逻辑都指向了<code class="highlighter-rouge">into()</code>函数, 下面我们来详细看其逻辑; 如下, 先设置占位图片, 然后将请求封装为一个<code class="highlighter-rouge">Action</code>实例提交到线程池中处理</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void into(@NonNull ImageView target, @Nullable Callback callback) {
+<div class="highlighter-rouge"><pre class="highlight"><code>public void into(@NonNull ImageView target, @Nullable Callback callback) {
     ...
     if (!data.hasImage()) {
       picasso.cancelRequest(target);
@@ -260,23 +260,23 @@
     Action action = new ImageViewAction(picasso, wrapper, request, callback);
     picasso.enqueueAndSubmit(action); // 提交请求
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>而<code class="highlighter-rouge">picasso.enqueueAndSubmit()</code>又只是单纯的去调用<code class="highlighter-rouge">submit()</code>, 在<code class="highlighter-rouge">submit()</code>中将任务分配给<code class="highlighter-rouge">Dispatcher</code>进行调度</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>void submit(Action action) {
+<div class="highlighter-rouge"><pre class="highlight"><code>void submit(Action action) {
     dispatcher.dispatchSubmit(action);
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>而<code class="highlighter-rouge">Dispatcher</code>进行调度实际上是通过<code class="highlighter-rouge">Handler</code>进行消息传递的, 该<code class="highlighter-rouge">Handler</code>实际上是<code class="highlighter-rouge">DispatcherHandler</code>, 我们直接去看其<code class="highlighter-rouge">handleMessage()</code>就好;</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>void dispatchSubmit(Action action) {
+<div class="highlighter-rouge"><pre class="highlight"><code>void dispatchSubmit(Action action) {
     handler.sendMessage(handler.obtainMessage(REQUEST_SUBMIT, action));
 }
-</code></pre></div></div>
+</code></pre></div>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void handleMessage(final Message msg) {
+<div class="highlighter-rouge"><pre class="highlight"><code>public void handleMessage(final Message msg) {
     case REQUEST_SUBMIT: {
           Action action = (Action) msg.obj;
           dispatcher.performSubmit(action);
@@ -284,28 +284,28 @@
     }
     ...
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>在<code class="highlighter-rouge">performSubmit()</code>中进行处理, 将请求再次封装为一个<code class="highlighter-rouge">BitmapHunter</code>, <code class="highlighter-rouge">BitmapHunter</code>是一个<code class="highlighter-rouge">Runnable</code>, 之后提交给线程池进行异步加载, 即下面的<code class="highlighter-rouge">service.submit()</code>, 这里的<code class="highlighter-rouge">service</code>实际上是<code class="highlighter-rouge">PicassoExecutorService</code>, 继承于<code class="highlighter-rouge">ThreadPoolExecutor</code>, 默认开了<code class="highlighter-rouge">3</code>个线程, 当然, 这部分与网络请求相关的<code class="highlighter-rouge">Picasso</code>内部也进行了判断, 比如在<code class="highlighter-rouge">Wifi</code>或者<code class="highlighter-rouge">2G</code>环境下采用不同的请求策略, 感兴趣的话可以自己跟着走一遍, 这里的主要目的是看一个网络请求的完整处理过程</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  void performSubmit(Action action, boolean dismissFailed) {
+<div class="highlighter-rouge"><pre class="highlight"><code>  void performSubmit(Action action, boolean dismissFailed) {
         ...
         hunter = forRequest(action.getPicasso(), this, cache, stats, action);
         hunter.future = service.submit(hunter);
         ...
   }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>我们上面说了, <code class="highlighter-rouge">BitmapHunter</code>是一个<code class="highlighter-rouge">Runnable</code>, 线程池执行的时候, 就是去执行其<code class="highlighter-rouge">run()</code>方法, 在<code class="highlighter-rouge">run()</code>中, 有一个<code class="highlighter-rouge">hunt()</code>, 其作用是将请求得到的<code class="highlighter-rouge">Bitmap</code>封装为<code class="highlighter-rouge">Result</code>返回, 这里的<code class="highlighter-rouge">hunt()</code>是一个阻塞耗时方法, 但是<code class="highlighter-rouge">run()</code>异步运行, 所以也没有问题; 而在<code class="highlighter-rouge">hunt()</code>中, 又是通过<code class="highlighter-rouge">RequestHandler</code>的一个实现类<code class="highlighter-rouge">NetworkRequestHandler</code>去处理的, 处理过程也是常规的图片下载过程, 如下;</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void run() {
+<div class="highlighter-rouge"><pre class="highlight"><code>public void run() {
     ...
     result = hunt();
     ...
 }
-</code></pre></div></div>
+</code></pre></div>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void load(@NonNull Picasso picasso, @NonNull final Request request, @NonNull
+<div class="highlighter-rouge"><pre class="highlight"><code>public void load(@NonNull Picasso picasso, @NonNull final Request request, @NonNull
   final Callback callback) {
     ...
     ResponseBody body = response.body();
@@ -314,11 +314,11 @@
     callback.onSuccess(new Result(bitmap, loadedFrom));
     ...
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>在图片接受完成之后, 再一步步函数返回, 封装为<code class="highlighter-rouge">Result</code>, 回传至<code class="highlighter-rouge">run()</code>中; 通过<code class="highlighter-rouge">Dispatcher</code>进行通知图片接受成功还是失败; 最终会在<code class="highlighter-rouge">deliver()</code>中调用主线程的<code class="highlighter-rouge">Handler</code>通知进行处理;</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void run() {
+<div class="highlighter-rouge"><pre class="highlight"><code>public void run() {
     ...
     if (result.getBitmap() == null &amp;&amp; result.getDrawable() == null) {
         dispatcher.dispatchFailed(this);
@@ -326,16 +326,16 @@
         dispatcher.dispatchComplete(this);
     }
     ...
-</code></pre></div></div>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private void deliver(BitmapHunter hunter) {
+</code></pre></div>
+<div class="highlighter-rouge"><pre class="highlight"><code>private void deliver(BitmapHunter hunter) {
     ...
     mainThreadHandler.sendMessage(mainThreadHandler.obtainMessage(HUNTER_COMPLETE, hunter));
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>而<code class="highlighter-rouge">mainThreadHandler</code>的处理逻辑在<code class="highlighter-rouge">Picasso</code>类中, 很明显, 到这里之后就是将图片设置到<code class="highlighter-rouge">View</code>了</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>static final Handler HANDLER = new Handler(Looper.getMainLooper()) {
+<div class="highlighter-rouge"><pre class="highlight"><code>static final Handler HANDLER = new Handler(Looper.getMainLooper()) {
     @Override public void handleMessage(Message msg) {
       switch (msg.what) {
         case HUNTER_COMPLETE: {
@@ -347,7 +347,7 @@
       }
     }
 };
-</code></pre></div></div>
+</code></pre></div>
 
 <p>至此, 从网络请求图片的一个完整过程就讲完了, 当然, 中间还涉及很多代码细节和处理, 最好自己跟着流程再一遍 ~</p>
 
@@ -365,20 +365,20 @@
 
 <p>我们直接看<code class="highlighter-rouge">picasso.pauseTag();</code>做了什么, 如下; 其直接交给了<code class="highlighter-rouge">Dispatcher</code>进行请求分发, 这也符合我们上面总述的时候讲的<code class="highlighter-rouge">Dispatcher</code>的功能; 之后<code class="highlighter-rouge">Dispatcher</code>仍然通过<code class="highlighter-rouge">Handler</code>进行事件分发, 如下; 而其对<code class="highlighter-rouge">TAG_PAUSE</code>事件的处理则是直接转交给了<code class="highlighter-rouge">dispatcher.performPauseTag(tag);</code>中</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void pauseTag(@NonNull Object tag) {
+<div class="highlighter-rouge"><pre class="highlight"><code>public void pauseTag(@NonNull Object tag) {
     checkNotNull(tag, "tag == null");
     dispatcher.dispatchPauseTag(tag);
 }
-</code></pre></div></div>
+</code></pre></div>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>void dispatchPauseTag(Object tag) {
+<div class="highlighter-rouge"><pre class="highlight"><code>void dispatchPauseTag(Object tag) {
     handler.sendMessage(handler.obtainMessage(TAG_PAUSE, tag));
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>在<code class="highlighter-rouge">performPauseTag()</code>中, 其实就是将<code class="highlighter-rouge">tag</code>保存到<code class="highlighter-rouge">pausedActions</code>中, 这是一个<code class="highlighter-rouge">Map</code></p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>void performPauseTag(Object tag) {
+<div class="highlighter-rouge"><pre class="highlight"><code>void performPauseTag(Object tag) {
     // Trying to pause a tag that is already paused.
     if (!pausedTags.add(tag)) { // 如果已经添加, 则直接返回
       return;
@@ -392,11 +392,11 @@
         ...
     }
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>那么我们什么时候会用到该<code class="highlighter-rouge">tag</code>呢, 就是在使用<code class="highlighter-rouge">Dispatcher</code>分发请求的时候, 这里先去判断在<code class="highlighter-rouge">pausedTags</code>中是否有对应的<code class="highlighter-rouge">tag</code>记录, 如果有的话, 就不进行请求分发, 那么自然也就不会去下载图片了 ~</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>void performSubmit(Action action, boolean dismissFailed) {
+<div class="highlighter-rouge"><pre class="highlight"><code>void performSubmit(Action action, boolean dismissFailed) {
     if (pausedTags.contains(action.getTag())) {
       pausedActions.put(action.getTarget(), action);
       ...
@@ -404,13 +404,13 @@
     }
     ...
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <h3 id="32--恢复请求">3.2  恢复请求</h3>
 
 <p>恢复请求使用的是<code class="highlighter-rouge">picasso.resumeTag();</code>; 恢复请求的过程和暂停请求的过程差不多, 前面都是通过<code class="highlighter-rouge">Dispatcher</code>直接进行请求分发, 然后通过<code class="highlighter-rouge">Handler</code>去发送消息, 然后在<code class="highlighter-rouge">performResumeTag()</code>进行处理; 在<code class="highlighter-rouge">performResumeTag()</code>中, 一个是将<code class="highlighter-rouge">tag</code>从<code class="highlighter-rouge">pausedTags</code>中移除, 另一个是将原来的<code class="highlighter-rouge">Action</code>(封装了请求等信息)通过<code class="highlighter-rouge">mainThreadHandler</code>传递, 而<code class="highlighter-rouge">mainThreadHandler</code>对<code class="highlighter-rouge">REQUEST_BATCH_RESUME</code>的处理, 则是对每一个<code class="highlighter-rouge">Action</code>去调用<code class="highlighter-rouge">picasso.resumeAction()</code></p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>void performResumeTag(Object tag) {
+<div class="highlighter-rouge"><pre class="highlight"><code>void performResumeTag(Object tag) {
     // Trying to resume a tag that is not paused.
     if (!pausedTags.remove(tag)) {
       return;
@@ -432,22 +432,22 @@
       mainThreadHandler.sendMessage(mainThreadHandler.obtainMessage(REQUEST_BATCH_RESUME, batch));
     }
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>在<code class="highlighter-rouge">resumeAction()</code>中, 其实就是将请求交给了<code class="highlighter-rouge">enqueueAndSubmit()</code>, 而该过程在上面我们分析一个<code class="highlighter-rouge">URL</code>的完整请求过程的时候, 已经看到过该函数了; 接下来的过程就不赘述了</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>void resumeAction(Action action) {
+<div class="highlighter-rouge"><pre class="highlight"><code>void resumeAction(Action action) {
     ...
     enqueueAndSubmit(action);
     ...
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <h3 id="33-取消请求">3.3 取消请求</h3>
 
 <p>取消请求用的是<code class="highlighter-rouge">picasso.cancelRequest();</code>, 该函数一共有三个重载函数, 但是最终都是交给了<code class="highlighter-rouge">cancelExistingRequest()</code>处理, 接下来的过程和上面的过程差不多, <code class="highlighter-rouge">dispatcher.dispatchCancel()</code>分发消息, 然后交给<code class="highlighter-rouge">Handler</code>传递消息, 最终调用<code class="highlighter-rouge">performCancel()</code>处理请求; 在<code class="highlighter-rouge">performCancel()</code>中, 其实就是将<code class="highlighter-rouge">BitmapHunter</code>移除就好了, 前面我们说过, <code class="highlighter-rouge">BitmapHunter</code>是一个<code class="highlighter-rouge">Runnable</code>, 所以将其移除之后, 自然就取消请求啦 ~</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>void performCancel(Action action) {
+<div class="highlighter-rouge"><pre class="highlight"><code>void performCancel(Action action) {
     String key = action.getKey();
     BitmapHunter hunter = hunterMap.get(key);
     if (hunter != null) {
@@ -459,7 +459,7 @@
     }
     ...
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <h3 id="34-小结">3.4 小结</h3>
 
@@ -611,7 +611,7 @@
                             
         				
                             
-                				<a href="/tags/#Java" title="Java" rel="13">
+                				<a href="/tags/#Java" title="Java" rel="14">
                                     Java
                                 </a>
                             
@@ -622,6 +622,10 @@
                                 </a>
                             
         				
+                            
+                				<a href="/tags/#Hust" title="Hust" rel="2">
+                                    Hust
+                                </a>
                             
         				
                             
@@ -756,7 +760,7 @@
                     
                 </ul>
                 <p class="copyright text-muted">
-                    Copyright &copy; 袁平 2018
+                    Copyright &copy; 袁平 2019
                     <br>
                 </p>
             </div>

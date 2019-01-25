@@ -184,7 +184,7 @@
 
 <p><code class="highlighter-rouge">ListView</code>的性能问题主要是其通常用于展示大量数据造成的; 我们手指上下滑动的时候伴随着<code class="highlighter-rouge">Adapter.getView()</code>方法的不断调用, <code class="highlighter-rouge">getView()</code>的主要作用是去解析<code class="highlighter-rouge">XML</code>生成<code class="highlighter-rouge">View</code>视图, 但是这一过程是一个耗时操作, 如果每次滑动都去<code class="highlighter-rouge">inflate</code>的话, 势必会造成界面的卡顿, 如下即是这种情况: 每次都去<code class="highlighter-rouge">inflate</code>一个<code class="highlighter-rouge">Item</code>, 然后再<code class="highlighter-rouge">findViewById()</code>再进行设置</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// 最差版本
+<div class="highlighter-rouge"><pre class="highlight"><code>// 最差版本
 class MyAdapter(val context: Context) : BaseAdapter() {
 
     var data = ArrayList&lt;String&gt;()
@@ -204,7 +204,7 @@ class MyAdapter(val context: Context) : BaseAdapter() {
     // 其他方法按照常规写, 故此省略
     ...
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <hr />
 
@@ -212,7 +212,7 @@ class MyAdapter(val context: Context) : BaseAdapter() {
 
 <p>为了避免每次滑动的时候都要<code class="highlighter-rouge">inflate</code>, <code class="highlighter-rouge">Google</code>官方提供了<code class="highlighter-rouge">ListView</code>的缓存机制, 即将滑动出屏幕外面的<code class="highlighter-rouge">Item</code>缓存下来, 因为通常情况下<code class="highlighter-rouge">ListView</code>要展示的数据类型都是相同的, 所以可以复用同样的<code class="highlighter-rouge">Item</code>界面, 只是展示数据不同; 我们注意到<code class="highlighter-rouge">getView()</code>的参数中有一个<code class="highlighter-rouge">convertView</code>, 这个便是被缓存下来的<code class="highlighter-rouge">View</code>, 所以我们第一次优化可以如下: 主要就是判断<code class="highlighter-rouge">convertView</code>是否为空, 如果为空, 说明没有缓存的<code class="highlighter-rouge">Item</code>, 此时就需要去<code class="highlighter-rouge">inflate</code>, 否则, 直接更改展示数据即可</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class MyAdapter(val context: Context) : BaseAdapter() {
+<div class="highlighter-rouge"><pre class="highlight"><code>class MyAdapter(val context: Context) : BaseAdapter() {
 
     var data = ArrayList&lt;String&gt;()
     private val mInflater by lazy {
@@ -234,7 +234,7 @@ class MyAdapter(val context: Context) : BaseAdapter() {
     // 其他方法按照常规写, 故此省略
     ...
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <hr />
 
@@ -246,7 +246,7 @@ class MyAdapter(val context: Context) : BaseAdapter() {
 
 <p>另外, 还需要提一下的是这里保存<code class="highlighter-rouge">ViewHolder</code>用的是<code class="highlighter-rouge">View</code>的<code class="highlighter-rouge">tag</code>, 其实我们还可以用这个<code class="highlighter-rouge">tag</code>保存许多我们需要的值, 而不用局限与<code class="highlighter-rouge">ViewHolder</code></p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class MyAdapter(val context: Context) : BaseAdapter() {
+<div class="highlighter-rouge"><pre class="highlight"><code>class MyAdapter(val context: Context) : BaseAdapter() {
 
     var data = ArrayList&lt;String&gt;()
     private val mInflater by lazy {
@@ -276,7 +276,7 @@ class MyAdapter(val context: Context) : BaseAdapter() {
         }
     }
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <hr />
 
@@ -286,7 +286,7 @@ class MyAdapter(val context: Context) : BaseAdapter() {
 
 <p>如下; 当加载大图时, 使用异步的<code class="highlighter-rouge">AsyncTask</code>去网络下载好后再展示到界面</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class MyAdapter(private val context: Context) : BaseAdapter() {
+<div class="highlighter-rouge"><pre class="highlight"><code>class MyAdapter(private val context: Context) : BaseAdapter() {
 
     private val mInflater by lazy {
         context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
@@ -340,7 +340,7 @@ class MyAdapter(val context: Context) : BaseAdapter() {
         }
     }
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>上述代码其实还有问题; 只是解决了异步加载, 但是由于<code class="highlighter-rouge">View</code>视图的缓存复用, 当滑动的时候会出现<code class="highlighter-rouge">Item</code>展示图片不断改变的现象; 关于此问题的解决可以参见<a href="https://blog.csdn.net/guolin_blog/article/details/45586553">博客</a> (<strong>注:</strong> 上述代码图片<code class="highlighter-rouge">URL</code>也来自该博客)</p>
 
@@ -356,6 +356,10 @@ class MyAdapter(val context: Context) : BaseAdapter() {
                         <a href="/2018/12/08/ListView/" data-toggle="tooltip" data-placement="top" title="ListView">&larr; Previous Post</a>
                     </li>
                     
+                    
+                    <li class="next">
+                        <a href="/2019/01/01/%E5%A4%A7%E4%B8%89%E4%B8%8A%E6%80%BB%E7%BB%93/" data-toggle="tooltip" data-placement="top" title="大三上总结">Next Post &rarr;</a>
+                    </li>
                     
                 </ul>
 
@@ -404,7 +408,7 @@ class MyAdapter(val context: Context) : BaseAdapter() {
                             
         				
                             
-                				<a href="/tags/#Java" title="Java" rel="13">
+                				<a href="/tags/#Java" title="Java" rel="14">
                                     Java
                                 </a>
                             
@@ -415,6 +419,10 @@ class MyAdapter(val context: Context) : BaseAdapter() {
                                 </a>
                             
         				
+                            
+                				<a href="/tags/#Hust" title="Hust" rel="2">
+                                    Hust
+                                </a>
                             
         				
                             
@@ -549,7 +557,7 @@ class MyAdapter(val context: Context) : BaseAdapter() {
                     
                 </ul>
                 <p class="copyright text-muted">
-                    Copyright &copy; 袁平 2018
+                    Copyright &copy; 袁平 2019
                     <br>
                 </p>
             </div>

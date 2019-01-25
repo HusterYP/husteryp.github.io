@@ -1,0 +1,70 @@
+<h1 id="前言">前言</h1>
+
+<blockquote>
+  <p>讲解锁等高级主题</p>
+</blockquote>
+
+<hr />
+
+<h1 id="正文">正文</h1>
+
+<hr />
+
+<h2 id="一-死锁及其避免">一. 死锁及其避免</h2>
+
+<ol>
+  <li>
+    <p>死锁出现的原因通常是出现锁环路造成的, 不管是显示的还是隐式的</p>
+  </li>
+  <li>
+    <p>通过定义获取锁的顺序来避免死锁: 通过<code class="highlighter-rouge">System.identityHashCode(object)</code>来返回一个锁对象的<code class="highlighter-rouge">Object.hashCode()</code>的返回值; 通过这个值来定义锁的顺序, 并在整个应用程序中都按照这个顺序来获取锁, 那么就不会形成锁环路了</p>
+  </li>
+</ol>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>        Object fromAcct = new Object(); // 这里的锁对象也可以是其他
+        Object toAcct = new Object();
+        Object tieLock = new Object();
+        int fromHash = System.identityHashCode(fromAcct);
+        int toHash = System.identityHashCode(toAcct);
+        if (fromHash &lt; toHash) {
+            synchronized (fromAcct) {
+                synchronized (toAcct) {
+                    // doSomething
+                }
+            }
+        } else if (fromHash &gt; toHash) {
+            synchronized (toAcct) {
+                synchronized (fromAcct) {
+                    // doSomething
+                }
+            }
+        } else { // 这种情况主要是避免Hash冲突, 此时需要额外的锁
+            synchronized (tieLock) {
+                synchronized (fromAcct) {
+                    synchronized (toAcct) {
+                        // doSomething
+                    }
+                }
+            }
+        }
+</code></pre></div>
+
+<ol>
+  <li>
+    <p>使用开放调用(如果在调用某个方法时, 不需要持有锁, 那么这种调用就被成为开放调用)避免死锁: 这种情况下适用于持有不同锁的方法之间的相互调用(注意锁的级别是在方法上, 而不是代码块上)(相当于形成一个隐式的环); 将锁从方法上转移到需要同步的内部代码块上可以避免死锁</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">Lock.tryLock()</code>: 可以检测死锁和从死锁中恢复过来; 即指定一个超时时限, 在等待超过该时间后<code class="highlighter-rouge">tryLock()</code>会返回一个失败信息</p>
+  </li>
+  <li>
+    <p>需要注意的几点:</p>
+  </li>
+</ol>
+
+<blockquote>
+  <ol>
+    <li>对象分配操作的开销比同步的开销更低(实际上, 现在<code class="highlighter-rouge">Java</code>的分配操作已经比<code class="highlighter-rouge">C</code>语言的<code class="highlighter-rouge">malloc</code>调用更快</li>
+    <li><code class="highlighter-rouge">ConcurrentHashMap</code>的以前实现中(现在实现不同咯)采用分段锁, 使用了一个包含<code class="highlighter-rouge">16</code>个锁的数组, 每个锁保护散列桶的<code class="highlighter-rouge">1/16</code>, 这样就能够支持多达<code class="highlighter-rouge">16</code>个并发的写入器; <code class="highlighter-rouge">ConcurrentHashMap</code>中的<code class="highlighter-rouge">size</code>将对每个分段进行枚举并将每个分段中的元素数量相加, 而不是维护一个全局计数, 为了避免枚举每个计数, <code class="highlighter-rouge">ConcurrentHashMap</code>为每个分段都维护了一个独立的计数, 并通过每个分段的锁来维护这个值(这个地方有两点需要注意: 一个是<code class="highlighter-rouge">size</code>的计算是在每个<code class="highlighter-rouge">add</code>, <code class="highlighter-rouge">remove</code>操作都会改变一次, 这样虽然增加了<code class="highlighter-rouge">add</code>和<code class="highlighter-rouge">remove</code>的操作, 但是这会使得<code class="highlighter-rouge">size</code>的计算从<code class="highlighter-rouge">O(n)</code>变为<code class="highlighter-rouge">O(1)</code>; 另一个是为每个分段维护一个<code class="highlighter-rouge">size</code>, 而不是使用一个全局的共享<code class="highlighter-rouge">size</code>, 如果使用一个全局的共享<code class="highlighter-rouge">size</code>的话, ,实际上就破坏了分段锁的分段特性, 因为访问共享<code class="highlighter-rouge">size</code>的时候, 需要同步)</li>
+  </ol>
+</blockquote>
+

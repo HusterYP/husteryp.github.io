@@ -214,7 +214,7 @@ a^{n}=\begin{equation}
   <li>除了使用常规方法, 即一个n次循环计算乘方外, 可利用上面的公式来快速计算; 该公式是明显的递归式</li>
 </ul>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>double PowerWithUnsignedExponent(double base, unsigned int exponent) // 注意 
+<div class="highlighter-rouge"><pre class="highlight"><code>double PowerWithUnsignedExponent(double base, unsigned int exponent) // 注意 
 {
     if (0 == exponent) 
         return 1;
@@ -226,7 +226,7 @@ a^{n}=\begin{equation}
         result *= base;
     return result;
 } 
-</code></pre></div></div>
+</code></pre></div>
 
 <ul>
   <li>上面的代码中需要注意的几点
@@ -248,7 +248,7 @@ a^{n}=\begin{equation}
   <p>奇数二进制最后一位为1, 可利用与运算判断</p>
 </blockquote>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>if (1 == target &amp; 0x1) 
+<div class="highlighter-rouge"><pre class="highlight"><code>if (1 == target &amp; 0x1) 
 {
     // 奇数...
 }
@@ -256,7 +256,7 @@ else
 {
     // 偶数...
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <h4 id="22-2-位移运算代替乘除">2.2-2 位移运算代替乘除</h4>
 
@@ -282,11 +282,11 @@ else
   <li>不可直接使用<code class="highlighter-rouge">a == b</code>的形式判断, 因为计算机表示浮点数是无限循环小数, 但是float和double是有限的, 结果就会差那么一点点; 具体<a href="https://www.zhihu.com/question/21175703">参见回答</a>; 所以一般会将浮点数的判等转换为<code class="highlighter-rouge">&lt;=</code>或者<code class="highlighter-rouge">&gt;=</code>, 即如下重写一个<code class="highlighter-rouge">equals()</code>函数; 同时需要注意的是当用浮点常量和浮点变量相比较时, 不要忘了还是应该用这种比较噢</li>
 </ul>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>int equals(double a, double b) 
+<div class="highlighter-rouge"><pre class="highlight"><code>int equals(double a, double b) 
 {
     return fabs(a - b) &lt; exp;  // 其中exp为精度(如: 0.000001), 需要具体讨论得出
 }
-</code></pre></div></div>
+</code></pre></div>
 
 
                 <hr>
@@ -352,7 +352,7 @@ else
                             
         				
                             
-                				<a href="/tags/#Java" title="Java" rel="13">
+                				<a href="/tags/#Java" title="Java" rel="14">
                                     Java
                                 </a>
                             
@@ -363,6 +363,10 @@ else
                                 </a>
                             
         				
+                            
+                				<a href="/tags/#Hust" title="Hust" rel="2">
+                                    Hust
+                                </a>
                             
         				
                             
@@ -497,7 +501,7 @@ else
                     
                 </ul>
                 <p class="copyright text-muted">
-                    Copyright &copy; 袁平 2018
+                    Copyright &copy; 袁平 2019
                     <br>
                 </p>
             </div>

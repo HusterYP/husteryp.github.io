@@ -1,0 +1,252 @@
+<h1 id="前言">前言</h1>
+
+<p><code class="highlighter-rouge">Android</code>源码分析之<code class="highlighter-rouge">View</code>系列之事件分发机制</p>
+
+<hr />
+
+<h1 id="正文">正文</h1>
+
+<hr />
+
+<h2 id="一-概述">一. 概述</h2>
+
+<p><code class="highlighter-rouge">View</code>的触摸事件分发是<code class="highlighter-rouge">View</code>系列中的一个重难点, 主要需要掌握的是<code class="highlighter-rouge">MotionEvent</code>的传递规则和处理规则, 这是自定义<code class="highlighter-rouge">View</code>中冲突处理的理论来源~</p>
+
+<p>触摸事件分发的处理主要是对<code class="highlighter-rouge">MotionEvent</code>的处理, <code class="highlighter-rouge">MotionEvent</code>封装了用户的一系列行为, 如: <code class="highlighter-rouge">ACTION_DOWN</code>(手指刚触摸屏幕), <code class="highlighter-rouge">ACTION_MOVE</code>(手指在屏幕上滑动), <code class="highlighter-rouge">ACTION_UP</code>(手指抬起)等; 以及事件发生的坐标(通过<code class="highlighter-rouge">MotionEvent.getX()</code>, <code class="highlighter-rouge">MotionEvent.getY()</code>可以得到)等</p>
+
+<p>在开始讲解之前需要明确的一些概念是:</p>
+
+<ol>
+  <li>
+    <p>一个事件序列: 指的是一次完整的触摸过程, 即从<code class="highlighter-rouge">ACTION_DOWN</code>(手指触摸屏幕)开始, 到中间的一系列<code class="highlighter-rouge">ACTION_MOVE</code>(手指滑动), 最后到<code class="highlighter-rouge">ACTION_UP</code>为止(手指抬起); 总结起来就是<code class="highlighter-rouge">down...move...move..up</code></p>
+  </li>
+  <li>
+    <p>触摸事件的分发其实是一个从上到下不断递归传递和拦截的过程; 一个大致的传递流程是: <code class="highlighter-rouge">Activity</code> –&gt; <code class="highlighter-rouge">Window</code> –&gt; <code class="highlighter-rouge">ViewGroup</code> –&gt; <code class="highlighter-rouge">View</code>, 当然如果向下传递但是<code class="highlighter-rouge">MotionEvent</code>又没有消耗的话, 又会逐层返回, 最终将没有消耗的<code class="highlighter-rouge">MotionEvent</code>交给<code class="highlighter-rouge">Activity</code>处理</p>
+  </li>
+</ol>
+
+<hr />
+
+<h2 id="二-事件分发之源">二. 事件分发之源</h2>
+
+<p>触摸事件产生和分发的源头是在<code class="highlighter-rouge">Activity</code>中处理的, 即在<code class="highlighter-rouge">Activity</code>的<code class="highlighter-rouge">dispatchTouchEvent()</code>中; 如下; 处理思路也很简单, 只是单纯的向下分发而已, 如果事件没有得到处理, 那么最终就交给<code class="highlighter-rouge">Activity</code>的<code class="highlighter-rouge">onTouchEvent()</code>处理; 另外, 这里还为用户提供了一个监听和拦截事件的方法, 即<code class="highlighter-rouge">onUserInteraction()</code>, 该方法在<code class="highlighter-rouge">Activity</code>中是一个空实现, 可以重写该方法在事件向下传递之前进行特殊拦截和处理</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>    public boolean dispatchTouchEvent(MotionEvent ev) {
+        if (ev.getAction() == MotionEvent.ACTION_DOWN) {
+            onUserInteraction();  // 自定义事件拦截
+        }
+        if (getWindow().superDispatchTouchEvent(ev)) {  // 通过Window向下分发事件
+            return true;
+        }
+        return onTouchEvent(ev);  // 如果事件最终没有被处理, 那么交给Activity自己的onTouchEvent()来处理
+    }
+</code></pre></div>
+
+<p><code class="highlighter-rouge">Activity</code>中的<code class="highlighter-rouge">Window</code>实际上是<code class="highlighter-rouge">PhoneWindow</code>, 这里通过<code class="highlighter-rouge">PhoneWindow.superDispatchTouchEvent()</code>传递实际上是只是简单调用了<code class="highlighter-rouge">mDecor.superDispatchTouchEvent(event)</code>, 而这里的<code class="highlighter-rouge">mDecor</code>实际上是<code class="highlighter-rouge">DecorView</code>, 是一个<code class="highlighter-rouge">FrameLayout</code>(<code class="highlighter-rouge">ViewGroup</code>), 在<code class="highlighter-rouge">DecorView</code>的<code class="highlighter-rouge">superDispatchTouchEvent()</code>方法中, 也只是简单的将事件传递给<code class="highlighter-rouge">ViewGroup</code>进行分发(即<code class="highlighter-rouge">ViewGroup.dispatchTouchEvent()</code>); 到这里就将事件传递给<code class="highlighter-rouge">ViewGroup</code>和<code class="highlighter-rouge">View</code>处理了, 也是事件分发处理中最主要的一部分</p>
+
+<hr />
+
+<h2 id="三-viewgroup分发事件">三. ViewGroup分发事件</h2>
+
+<p><code class="highlighter-rouge">ViewGroup.dispatchTouchEvent()</code>中对事件的分发处理过程比较长, 实际上大致分成了三个部分来处理</p>
+
+<h3 id="31-事件拦截">3.1 事件拦截</h3>
+
+<p>首先, <code class="highlighter-rouge">ViewGroup</code>会判断是否进行事件拦截, 如下; 从后面将事件分发给子<code class="highlighter-rouge">View</code>的条件可以看出, 如果<code class="highlighter-rouge">ViewGroup</code>进行了事件拦截, 那么该事件序列将不再向下分发; 这里还需要注意的一点是, <code class="highlighter-rouge">ViewGroup</code>判断是否进行事件拦截的条件一个是为<code class="highlighter-rouge">ACTION_DOWN</code>时, 另一个是<code class="highlighter-rouge">mFirstTouchTarget != null</code>时; 也就是说一个事件序列的在开始时, 即<code class="highlighter-rouge">ACTION_DOWN</code>时一定会调用<code class="highlighter-rouge">ViewGroup</code>的<code class="highlighter-rouge">onInterceptTouchEvent</code>(当然, 还有一个影响因素是<code class="highlighter-rouge">FLAG_DISALLOW_INTERCEPT</code>, 我们稍后讲解); 至于<code class="highlighter-rouge">mFirstTouchTarget</code>的赋值是在后面分发给子<code class="highlighter-rouge">View</code>时, 如果有子<code class="highlighter-rouge">View</code>处理了事件那么<code class="highlighter-rouge">mFirstTouchTarget</code>将会被赋值;</p>
+
+<p>上面是<code class="highlighter-rouge">ViewGroup</code>进行事件拦截的基本思路, 简单总结起来就是:</p>
+
+<ol>
+  <li>
+    <p><code class="highlighter-rouge">ACTION_DOWN</code>时, 如果<code class="highlighter-rouge">ViewGroup</code>进行了事件拦截(<code class="highlighter-rouge">onInterceptTouchEvent()</code>返回<code class="highlighter-rouge">true</code>), 那么同一事件序列将不再向下分发(因为之后的<code class="highlighter-rouge">ACTION_MOVE</code>和<code class="highlighter-rouge">ACTION_UP</code>到来时, 由于之前<code class="highlighter-rouge">ACTION_DOWN</code>时进行了事件拦截, <code class="highlighter-rouge">mFirstTouchTarget</code>没有机会赋值, 所以仍然为<code class="highlighter-rouge">null</code>, 故直接走<code class="highlighter-rouge">else</code>语句, 即<code class="highlighter-rouge">intercepted = true</code>);</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">ACTION_DOWN</code>时, 如果<code class="highlighter-rouge">ViewGroup</code>不进行事件拦截, 并且在事件向下分发时, 有子<code class="highlighter-rouge">View</code>处理了事件, 那么<code class="highlighter-rouge">mFirstTouchTarget</code>将会被赋值, 即不为<code class="highlighter-rouge">null</code>, 此时仍然会继续调用<code class="highlighter-rouge">ViewGroup</code>的<code class="highlighter-rouge">onInterceptTouchEvent</code>判断是否进行事件拦截, 需要注意的是此时仍然在同一事件序列中</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">ACTION_DOWN</code>时, 如果<code class="highlighter-rouge">ViewGroup</code>不进行事件拦截, 并且在事件向下分发时, 也没有子<code class="highlighter-rouge">View</code>进行事件处理, 那么<code class="highlighter-rouge">mFirstTouchTarget</code>仍为<code class="highlighter-rouge">null</code>, 即走<code class="highlighter-rouge">else</code>, 交由<code class="highlighter-rouge">ViewGroup</code>处理事件</p>
+  </li>
+</ol>
+
+<p><strong>注</strong>: 只有当<code class="highlighter-rouge">ViewGroup</code>拦截了事件或者子<code class="highlighter-rouge">View</code>不处理事件时, <code class="highlighter-rouge">onInterceptTouchEvent</code>才只会调用一次</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>            // ViewGroup是否进行事件拦截
+            final boolean intercepted;
+            if (actionMasked == MotionEvent.ACTION_DOWN
+                    || mFirstTouchTarget != null) {
+                final boolean disallowIntercept = (mGroupFlags &amp; FLAG_DISALLOW_INTERCEPT) != 0;
+                if (!disallowIntercept) {
+                    intercepted = onInterceptTouchEvent(ev);
+                    ev.setAction(action); // restore action in case it was changed
+                } else {
+                    intercepted = false;
+                }
+            } else {
+                // There are no touch targets and this action is not an initial down
+                // so this view group continues to intercept touches.
+                intercepted = true;
+            }
+
+            if (!canceled &amp;&amp; !intercepted) { // 如果拦截事件, 将不再分发给子View
+                // 事件分发给子View
+                ....
+            }
+</code></pre></div>
+
+<p>另外, 上面还讲了, 在<code class="highlighter-rouge">ACTION_DOWN</code>时, 一定会调用<code class="highlighter-rouge">ViewGroup</code>的<code class="highlighter-rouge">onInterceptTouchEvent</code>, 这里还有一个影响因素是标志位<code class="highlighter-rouge">FLAG_DISALLOW_INTERCEPT</code>, 该标志位是通过<code class="highlighter-rouge">requestDisallowInterceptTouchEvent()</code>设置的, 作用是在子<code class="highlighter-rouge">View</code>中强制父<code class="highlighter-rouge">ViewGroup</code>不进行事件拦截, 但是该标志位不能影响<code class="highlighter-rouge">ACTION_DOWN</code>, 因为在一个事件序列开始之前会先进行状态重置, 如下; 在<code class="highlighter-rouge">resetTouchState()</code>中会将该标志位重置, 所以就不会影响<code class="highlighter-rouge">ACTION_DOWN</code>啦~</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>            if (actionMasked == MotionEvent.ACTION_DOWN) {
+                // Throw away all previous state when starting a new touch gesture.
+                // The framework may have dropped the up or cancel event for the previous gesture
+                // due to an app switch, ANR, or some other state change.
+                cancelAndClearTouchTargets(ev);
+                resetTouchState(); // 状态重置
+            }
+</code></pre></div>
+
+<h3 id="32-事件分发">3.2 事件分发</h3>
+
+<p>如果<code class="highlighter-rouge">ViewGroup</code>不进行事件拦截的话, 会将事件分发给子<code class="highlighter-rouge">View</code>处理; 事件分发的主要代码如下; 逻辑也比较简单, 就是遍历所有的子<code class="highlighter-rouge">View</code>, 然后通过<code class="highlighter-rouge">dispatchTransformedTouchEvent()</code>进行将事件传递给子<code class="highlighter-rouge">View</code></p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>                    if (!canceled &amp;&amp; !intercepted) {
+                        ...
+                        for (int i = childrenCount - 1; i &gt;= 0; i--) {
+                            if (dispatchTransformedTouchEvent(ev, false, child, idBitsToAssign)) {
+                                // Child wants to receive touch within its bounds.
+                                mLastTouchDownTime = ev.getDownTime();
+                                if (preorderedList != null) {
+                                    // childIndex points into presorted list, find original index
+                                    for (int j = 0; j &lt; childrenCount; j++) {
+                                        if (children[childIndex] == mChildren[j]) {
+                                            mLastTouchDownIndex = j;
+                                            break;
+                                        }
+                                    }
+                                } else {
+                                    mLastTouchDownIndex = childIndex;
+                                }
+                                mLastTouchDownX = ev.getX();
+                                mLastTouchDownY = ev.getY();
+                                newTouchTarget = addTouchTarget(child, idBitsToAssign); // 设置mFirstTouchTarget的值
+                                alreadyDispatchedToNewTouchTarget = true;
+                                break;
+                            }
+                        }
+                        ...
+                    }
+</code></pre></div>
+
+<p>我们继续来看<code class="highlighter-rouge">dispatchTransformedTouchEvent()</code>的处理过程, 如下; 从上面的代码中我们可以看出, 将事件分发给子<code class="highlighter-rouge">View</code>的时候, 调用<code class="highlighter-rouge">dispatchTransformedTouchEvent()</code>传入的<code class="highlighter-rouge">child</code>非空, 所以应该调用的是<code class="highlighter-rouge">child.dispatchTouchEvent(event)</code>, 这样就将事件传递到子<code class="highlighter-rouge">View</code>中去了; 这里关于子<code class="highlighter-rouge">View</code>的<code class="highlighter-rouge">dispatchTouchEvent()</code>处理在后文继续讲解</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>private boolean dispatchTransformedTouchEvent(MotionEvent event, boolean cancel,
+            View child, int desiredPointerIdBits) {
+        ...
+        if (newPointerIdBits == oldPointerIdBits) {
+            if (child == null || child.hasIdentityMatrix()) {
+                if (child == null) {
+                    handled = super.dispatchTouchEvent(event); // child非null
+                } else {
+                    final float offsetX = mScrollX - child.mLeft;
+                    final float offsetY = mScrollY - child.mTop;
+                    event.offsetLocation(offsetX, offsetY);
+
+                    handled = child.dispatchTouchEvent(event); // 调用child.dispatchTouchEvent(event)
+
+                    event.offsetLocation(-offsetX, -offsetY);
+                }
+                return handled;
+            }
+            transformedEvent = MotionEvent.obtain(event);
+        } else {
+            transformedEvent = event.split(newPointerIdBits);
+        }
+        ...
+}
+</code></pre></div>
+
+<p>上面我们说过, 如果子<code class="highlighter-rouge">View</code>处理了事件的话, 将会去设置<code class="highlighter-rouge">mFirstTouchTarget</code>的值, 该值的设置其实是在<code class="highlighter-rouge">addTouchTarget()</code>中, 也就是说, 当<code class="highlighter-rouge">dispatchTransformedTouchEvent()</code>返回<code class="highlighter-rouge">true</code>, 即有子<code class="highlighter-rouge">View</code>处理了事件的话, 就会去调用该函数, 也就证明了我们前面所说的; 我们来看<code class="highlighter-rouge">addTouchTarget()</code>, 如下; 可以看出这里实际上相当于一个单链表</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>    private TouchTarget addTouchTarget(@NonNull View child, int pointerIdBits) {
+        final TouchTarget target = TouchTarget.obtain(child, pointerIdBits);
+        target.next = mFirstTouchTarget; 
+        mFirstTouchTarget = target; // 设置mFirstTouchTarget
+        return target;
+    }
+</code></pre></div>
+
+<h3 id="33-viewgroup处理事件">3.3 ViewGroup处理事件</h3>
+
+<p>如果<code class="highlighter-rouge">ViewGroup</code>拦截了事件或者子<code class="highlighter-rouge">View</code>没有进行事件处理, 那么<code class="highlighter-rouge">ViewGroup</code>将进行事件处理, 如下; 可以看出, <code class="highlighter-rouge">ViewGroup</code>进行事件处理也是调用<code class="highlighter-rouge">dispatchTransformedTouchEvent()</code>, 只是传入的<code class="highlighter-rouge">child</code>为<code class="highlighter-rouge">null</code>, 那么从上面的<code class="highlighter-rouge">dispatchTransformedTouchEvent()</code>代码中我们可以看出, 如果<code class="highlighter-rouge">child</code>为<code class="highlighter-rouge">null</code>调用的应该就是<code class="highlighter-rouge">super.dispatchTouchEvent(event)</code>进行事件处理</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>            if (mFirstTouchTarget == null) {
+                // No touch targets so treat this as an ordinary view.
+                handled = dispatchTransformedTouchEvent(ev, canceled, null,
+                        TouchTarget.ALL_POINTER_IDS);
+            }
+</code></pre></div>
+
+<p>需要注意的是不管是<code class="highlighter-rouge">super.dispatchTouchEvent(event)</code>还是<code class="highlighter-rouge">child.dispatchTouchEvent(event)</code>, 调用的其实都是<code class="highlighter-rouge">View.dispatchTouchEvent()</code>, 所以接下来我们要看的就是<code class="highlighter-rouge">View</code>中对事件的处理</p>
+
+<hr />
+
+<h2 id="四-view事件处理">四. View事件处理</h2>
+
+<p>需要注意的是, <code class="highlighter-rouge">View</code>中没有<code class="highlighter-rouge">onInterceptTouchEvent()</code>方法来进行事件拦截; 我们这里关注的, 主要是<code class="highlighter-rouge">View</code>对事件的处理, 这里的<code class="highlighter-rouge">View</code>包括<code class="highlighter-rouge">ViewGroup</code>进行事件拦截之后对事件的处理以及子<code class="highlighter-rouge">View</code>对事件的处理; 因为从前面我们已经说了, 不管是调用的<code class="highlighter-rouge">super.dispatchTouchEvent()</code>(<code class="highlighter-rouge">ViewGroup</code>处理事件)还是<code class="highlighter-rouge">child.dispatchTouchEvent()</code>(子<code class="highlighter-rouge">View</code>处理事件), 其实都是调用的<code class="highlighter-rouge">View.dispatchTouchEvent()</code>; 所以二者对事件的处理实际上是一样的, 同时需要注意的是, 这一节不包括事件的分发了,
+事件分发在上一节中已经讲解完啦~</p>
+
+<p>触摸事件的处理主要涉及到<code class="highlighter-rouge">OnTouchListener</code>, <code class="highlighter-rouge">onTouchEvent</code>和<code class="highlighter-rouge">onClick</code>的处理优先级</p>
+
+<p>主要代码如下; 可以看出先处理的是<code class="highlighter-rouge">OnTouchListener</code>, 如果<code class="highlighter-rouge">View</code>没有设置<code class="highlighter-rouge">OnTouchListener</code>(<code class="highlighter-rouge">View.setOnTouchListener()</code>)的话, 再去处理<code class="highlighter-rouge">onTouchEvent()</code>,  所以<code class="highlighter-rouge">OnTouchListener</code>的优先级比<code class="highlighter-rouge">onTouchEvent</code>高; 同时还要注意的一点是, 如果设置了<code class="highlighter-rouge">OnTouchListener</code>的话, <code class="highlighter-rouge">View</code>的<code class="highlighter-rouge">onTouchEvent</code>将不再调用</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>public boolean dispatchTouchEvent(MotionEvent event) {
+    ...
+    if (li != null &amp;&amp; li.mOnTouchListener != null
+            &amp;&amp; (mViewFlags &amp; ENABLED_MASK) == ENABLED
+            &amp;&amp; li.mOnTouchListener.onTouch(this, event)) {  // OnTouchListener
+        result = true;
+    }
+    if (!result &amp;&amp; onTouchEvent(event)) { // onTouchEvent
+        result = true;
+    }
+    ...
+}
+</code></pre></div>
+
+<p>这里还有一个<code class="highlighter-rouge">onClick()</code>其实是在<code class="highlighter-rouge">onTouchEvent()</code>中处理的; 如下; <code class="highlighter-rouge">onClick</code>是在<code class="highlighter-rouge">performClickInternal()</code>中触发的, 可以看出, 要触发<code class="highlighter-rouge">onClick</code>需要的条件是: <code class="highlighter-rouge">View</code>是可以点击的(<code class="highlighter-rouge">clickable</code>), 这里的可点击包括了<code class="highlighter-rouge">CLICKABLE</code>和<code class="highlighter-rouge">LONG_CLICKABLE</code>, 注意<code class="highlighter-rouge">View</code>的<code class="highlighter-rouge">enable</code>属性不影响<code class="highlighter-rouge">onTouchEvent</code>的返回值, 只要它可点击, 那么<code class="highlighter-rouge">onTouchEvent()</code>就会处理该点击事件</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>public boolean onTouchEvent(MotionEvent event) {
+    if (clickable || (viewFlags &amp; TOOLTIP) == TOOLTIP) {
+        switch (action) {
+            case MotionEvent.ACTION_UP:
+                ...
+                if (!mHasPerformedLongPress &amp;&amp; !mIgnoreNextUpEvent) {
+                    if (!focusTaken) {
+                        // Use a Runnable and post this rather than calling
+                        // performClick directly. This lets other visual state
+                        // of the view update before click actions start.
+                        if (mPerformClick == null) {
+                            mPerformClick = new PerformClick();
+                        }
+                        if (!post(mPerformClick)) {
+                            performClickInternal();
+                        }
+                    }
+                }
+                ...
+    }
+}
+</code></pre></div>
+
+<p>而在<code class="highlighter-rouge">performClickInternal()</code>中, 则是去调用了<code class="highlighter-rouge">performClick()</code>进行处理, 在<code class="highlighter-rouge">performClick()</code>会判断, 如果设置了<code class="highlighter-rouge">OnClickListener</code>, 则会去调用<code class="highlighter-rouge">OnClickListener</code>, 代码比较简单, 就不贴啦~</p>
+
+<hr />
+
+<h2 id="五-总结">五. 总结</h2>
+
+<p>到这里, <code class="highlighter-rouge">View</code>的事件分发和处理流程就分析结束啦~; 我们最开始讲<strong>事件分发之源</strong>时讲<code class="highlighter-rouge">Activity</code>对事件的传递的时候, 如果<code class="highlighter-rouge">getWindow().superDispatchTouchEvent()</code>返回<code class="highlighter-rouge">false</code>的话, 就最终将事件交给<code class="highlighter-rouge">Activity</code>的<code class="highlighter-rouge">onTouchEvent()</code>处理, 这种情况其实对应的是<code class="highlighter-rouge">ViewGroup</code>和<code class="highlighter-rouge">View</code>都不进行事件处理, 那么就逐层回传咯~</p>
+
+<p>当然理论学习完了, 就应该实际测试一下, 这里笔者写了一个测试的<code class="highlighter-rouge">Demo</code>, <a href="https://github.com/HusterYP/UI/blob/master/UIList/app/src/main/java/com/example/yuanping/uilist/touch/TouchActivity.java">参见Github</a></p>
+
+<p>最后将上述流程总结为下图:</p>
+
+<p><img src="/img/post/View/View事件分发.png" alt="View事件分发机制" /></p>

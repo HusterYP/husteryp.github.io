@@ -1,0 +1,121 @@
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=default"></script>
+
+<h1 id="前言">前言</h1>
+<blockquote>
+  <p>本文记录一些有助于提高代码性能和平时一些难以想到的细节处理</p>
+</blockquote>
+
+<h1 id="正文">正文</h1>
+
+<h2 id="一-边界值">一. 边界值</h2>
+
+<h3 id="11-基本类型的范围限制">1.1 基本类型的范围限制</h3>
+<blockquote>
+  <p>一般而言, 看到基本类型, 特别是返回值或者涉及到计算的, 都应该考虑基本类型的范围限制</p>
+</blockquote>
+
+<ul>
+  <li>比如实现库函数: <code class="highlighter-rouge">double Pow(double base, double exp)</code>时, 需要考虑大数问题(如果要求是任意大的数字, 则需要使用特殊的数据结构来表示数据, 比如用字符串或者数组来表示大的数字, 以确保不会溢出(这也是大数问题的解决方法))</li>
+</ul>
+
+<h2 id="二-性能">二. 性能</h2>
+<blockquote>
+  <p>性能的影响一般分为时间性能和空间性能, 一般性能的提升考虑的方面有: 递归转循环, 位运算代替加减乘除, 算法改进(如: 利用全局有序或者局部有序使用二分等)</p>
+</blockquote>
+
+<h3 id="21-快速计算乘方">2.1 快速计算乘方</h3>
+<blockquote>
+  <p>计算 <script type="math/tex">a^{n}</script></p>
+</blockquote>
+
+<ul>
+  <li>公式如下</li>
+</ul>
+
+<script type="math/tex; mode=display">% <![CDATA[
+a^{n}=\begin{equation}
+\left\{
+             \begin{array}{**lr**}
+             a^{n/2}*a^{n/2}, & n为偶数 \\
+             a^{(n-1)/2}*a^{(n-1)/2} & n为奇数 \\
+             \end{array}
+\right.
+\end{equation} %]]></script>
+
+<ul>
+  <li>除了使用常规方法, 即一个n次循环计算乘方外, 可利用上面的公式来快速计算; 该公式是明显的递归式</li>
+</ul>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>double PowerWithUnsignedExponent(double base, unsigned int exponent) // 注意 
+{
+    if (0 == exponent) 
+        return 1;
+    if (1 == exponent) 
+        return base;
+    double result = PowerWithUnsignedExponent(base, exponent &gt;&gt; 1); // 注意
+    result *= result;
+    if (1 == exponent &amp; 0x1) // 注意
+        result *= base;
+    return result;
+} 
+</code></pre></div>
+
+<ul>
+  <li>上面的代码中需要注意的几点
+    <blockquote>
+      <ol>
+        <li>使用<code class="highlighter-rouge">unsigned</code>来进一步限定范围</li>
+        <li>判等时, 常量放在左边</li>
+        <li>使用移位运算代替乘除</li>
+        <li>使用与运算代替奇数和偶数判断</li>
+      </ol>
+    </blockquote>
+  </li>
+</ul>
+
+<h3 id="22-位运算">2.2 位运算</h3>
+
+<h4 id="22-1-奇偶判断">2.2-1 奇偶判断</h4>
+<blockquote>
+  <p>奇数二进制最后一位为1, 可利用与运算判断</p>
+</blockquote>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>if (1 == target &amp; 0x1) 
+{
+    // 奇数...
+}
+else 
+{
+    // 偶数...
+}
+</code></pre></div>
+
+<h4 id="22-2-位移运算代替乘除">2.2-2 位移运算代替乘除</h4>
+
+<ul>
+  <li>左移<code class="highlighter-rouge">&lt;&lt;</code>一位, 相当于乘2; 右移<code class="highlighter-rouge">&gt;&gt;</code>一位, 相当于除以2</li>
+  <li>注意移位规则
+    <blockquote>
+      <ol>
+        <li>左移: 右边直接补充0</li>
+        <li>右移: 如果是一个无符号数, 左边用0填充n位; 如果是有符号数, 左边使用其符号位填充n位</li>
+      </ol>
+    </blockquote>
+  </li>
+</ul>
+
+<h2 id="三-编码细节">三. 编码细节</h2>
+<blockquote>
+  <p>记录一些常见或者很隐晦的编码错误或陋习</p>
+</blockquote>
+
+<h3 id="31--浮点数的相等判断">3.1  浮点数的相等判断</h3>
+<ul>
+  <li>不可直接使用<code class="highlighter-rouge">a == b</code>的形式判断, 因为计算机表示浮点数是无限循环小数, 但是float和double是有限的, 结果就会差那么一点点; 具体<a href="https://www.zhihu.com/question/21175703">参见回答</a>; 所以一般会将浮点数的判等转换为<code class="highlighter-rouge">&lt;=</code>或者<code class="highlighter-rouge">&gt;=</code>, 即如下重写一个<code class="highlighter-rouge">equals()</code>函数; 同时需要注意的是当用浮点常量和浮点变量相比较时, 不要忘了还是应该用这种比较噢</li>
+</ul>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>int equals(double a, double b) 
+{
+    return fabs(a - b) &lt; exp;  // 其中exp为精度(如: 0.000001), 需要具体讨论得出
+}
+</code></pre></div>

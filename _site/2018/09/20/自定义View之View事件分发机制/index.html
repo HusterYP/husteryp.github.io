@@ -201,7 +201,7 @@
 
 <p>触摸事件产生和分发的源头是在<code class="highlighter-rouge">Activity</code>中处理的, 即在<code class="highlighter-rouge">Activity</code>的<code class="highlighter-rouge">dispatchTouchEvent()</code>中; 如下; 处理思路也很简单, 只是单纯的向下分发而已, 如果事件没有得到处理, 那么最终就交给<code class="highlighter-rouge">Activity</code>的<code class="highlighter-rouge">onTouchEvent()</code>处理; 另外, 这里还为用户提供了一个监听和拦截事件的方法, 即<code class="highlighter-rouge">onUserInteraction()</code>, 该方法在<code class="highlighter-rouge">Activity</code>中是一个空实现, 可以重写该方法在事件向下传递之前进行特殊拦截和处理</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    public boolean dispatchTouchEvent(MotionEvent ev) {
+<div class="highlighter-rouge"><pre class="highlight"><code>    public boolean dispatchTouchEvent(MotionEvent ev) {
         if (ev.getAction() == MotionEvent.ACTION_DOWN) {
             onUserInteraction();  // 自定义事件拦截
         }
@@ -210,7 +210,7 @@
         }
         return onTouchEvent(ev);  // 如果事件最终没有被处理, 那么交给Activity自己的onTouchEvent()来处理
     }
-</code></pre></div></div>
+</code></pre></div>
 
 <p><code class="highlighter-rouge">Activity</code>中的<code class="highlighter-rouge">Window</code>实际上是<code class="highlighter-rouge">PhoneWindow</code>, 这里通过<code class="highlighter-rouge">PhoneWindow.superDispatchTouchEvent()</code>传递实际上是只是简单调用了<code class="highlighter-rouge">mDecor.superDispatchTouchEvent(event)</code>, 而这里的<code class="highlighter-rouge">mDecor</code>实际上是<code class="highlighter-rouge">DecorView</code>, 是一个<code class="highlighter-rouge">FrameLayout</code>(<code class="highlighter-rouge">ViewGroup</code>), 在<code class="highlighter-rouge">DecorView</code>的<code class="highlighter-rouge">superDispatchTouchEvent()</code>方法中, 也只是简单的将事件传递给<code class="highlighter-rouge">ViewGroup</code>进行分发(即<code class="highlighter-rouge">ViewGroup.dispatchTouchEvent()</code>); 到这里就将事件传递给<code class="highlighter-rouge">ViewGroup</code>和<code class="highlighter-rouge">View</code>处理了, 也是事件分发处理中最主要的一部分</p>
 
@@ -240,7 +240,7 @@
 
 <p><strong>注</strong>: 只有当<code class="highlighter-rouge">ViewGroup</code>拦截了事件或者子<code class="highlighter-rouge">View</code>不处理事件时, <code class="highlighter-rouge">onInterceptTouchEvent</code>才只会调用一次</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>            // ViewGroup是否进行事件拦截
+<div class="highlighter-rouge"><pre class="highlight"><code>            // ViewGroup是否进行事件拦截
             final boolean intercepted;
             if (actionMasked == MotionEvent.ACTION_DOWN
                     || mFirstTouchTarget != null) {
@@ -261,24 +261,24 @@
                 // 事件分发给子View
                 ....
             }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>另外, 上面还讲了, 在<code class="highlighter-rouge">ACTION_DOWN</code>时, 一定会调用<code class="highlighter-rouge">ViewGroup</code>的<code class="highlighter-rouge">onInterceptTouchEvent</code>, 这里还有一个影响因素是标志位<code class="highlighter-rouge">FLAG_DISALLOW_INTERCEPT</code>, 该标志位是通过<code class="highlighter-rouge">requestDisallowInterceptTouchEvent()</code>设置的, 作用是在子<code class="highlighter-rouge">View</code>中强制父<code class="highlighter-rouge">ViewGroup</code>不进行事件拦截, 但是该标志位不能影响<code class="highlighter-rouge">ACTION_DOWN</code>, 因为在一个事件序列开始之前会先进行状态重置, 如下; 在<code class="highlighter-rouge">resetTouchState()</code>中会将该标志位重置, 所以就不会影响<code class="highlighter-rouge">ACTION_DOWN</code>啦~</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>            if (actionMasked == MotionEvent.ACTION_DOWN) {
+<div class="highlighter-rouge"><pre class="highlight"><code>            if (actionMasked == MotionEvent.ACTION_DOWN) {
                 // Throw away all previous state when starting a new touch gesture.
                 // The framework may have dropped the up or cancel event for the previous gesture
                 // due to an app switch, ANR, or some other state change.
                 cancelAndClearTouchTargets(ev);
                 resetTouchState(); // 状态重置
             }
-</code></pre></div></div>
+</code></pre></div>
 
 <h3 id="32-事件分发">3.2 事件分发</h3>
 
 <p>如果<code class="highlighter-rouge">ViewGroup</code>不进行事件拦截的话, 会将事件分发给子<code class="highlighter-rouge">View</code>处理; 事件分发的主要代码如下; 逻辑也比较简单, 就是遍历所有的子<code class="highlighter-rouge">View</code>, 然后通过<code class="highlighter-rouge">dispatchTransformedTouchEvent()</code>进行将事件传递给子<code class="highlighter-rouge">View</code></p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>                    if (!canceled &amp;&amp; !intercepted) {
+<div class="highlighter-rouge"><pre class="highlight"><code>                    if (!canceled &amp;&amp; !intercepted) {
                         ...
                         for (int i = childrenCount - 1; i &gt;= 0; i--) {
                             if (dispatchTransformedTouchEvent(ev, false, child, idBitsToAssign)) {
@@ -304,11 +304,11 @@
                         }
                         ...
                     }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>我们继续来看<code class="highlighter-rouge">dispatchTransformedTouchEvent()</code>的处理过程, 如下; 从上面的代码中我们可以看出, 将事件分发给子<code class="highlighter-rouge">View</code>的时候, 调用<code class="highlighter-rouge">dispatchTransformedTouchEvent()</code>传入的<code class="highlighter-rouge">child</code>非空, 所以应该调用的是<code class="highlighter-rouge">child.dispatchTouchEvent(event)</code>, 这样就将事件传递到子<code class="highlighter-rouge">View</code>中去了; 这里关于子<code class="highlighter-rouge">View</code>的<code class="highlighter-rouge">dispatchTouchEvent()</code>处理在后文继续讲解</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private boolean dispatchTransformedTouchEvent(MotionEvent event, boolean cancel,
+<div class="highlighter-rouge"><pre class="highlight"><code>private boolean dispatchTransformedTouchEvent(MotionEvent event, boolean cancel,
             View child, int desiredPointerIdBits) {
         ...
         if (newPointerIdBits == oldPointerIdBits) {
@@ -332,28 +332,28 @@
         }
         ...
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>上面我们说过, 如果子<code class="highlighter-rouge">View</code>处理了事件的话, 将会去设置<code class="highlighter-rouge">mFirstTouchTarget</code>的值, 该值的设置其实是在<code class="highlighter-rouge">addTouchTarget()</code>中, 也就是说, 当<code class="highlighter-rouge">dispatchTransformedTouchEvent()</code>返回<code class="highlighter-rouge">true</code>, 即有子<code class="highlighter-rouge">View</code>处理了事件的话, 就会去调用该函数, 也就证明了我们前面所说的; 我们来看<code class="highlighter-rouge">addTouchTarget()</code>, 如下; 可以看出这里实际上相当于一个单链表</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    private TouchTarget addTouchTarget(@NonNull View child, int pointerIdBits) {
+<div class="highlighter-rouge"><pre class="highlight"><code>    private TouchTarget addTouchTarget(@NonNull View child, int pointerIdBits) {
         final TouchTarget target = TouchTarget.obtain(child, pointerIdBits);
         target.next = mFirstTouchTarget; 
         mFirstTouchTarget = target; // 设置mFirstTouchTarget
         return target;
     }
-</code></pre></div></div>
+</code></pre></div>
 
 <h3 id="33-viewgroup处理事件">3.3 ViewGroup处理事件</h3>
 
 <p>如果<code class="highlighter-rouge">ViewGroup</code>拦截了事件或者子<code class="highlighter-rouge">View</code>没有进行事件处理, 那么<code class="highlighter-rouge">ViewGroup</code>将进行事件处理, 如下; 可以看出, <code class="highlighter-rouge">ViewGroup</code>进行事件处理也是调用<code class="highlighter-rouge">dispatchTransformedTouchEvent()</code>, 只是传入的<code class="highlighter-rouge">child</code>为<code class="highlighter-rouge">null</code>, 那么从上面的<code class="highlighter-rouge">dispatchTransformedTouchEvent()</code>代码中我们可以看出, 如果<code class="highlighter-rouge">child</code>为<code class="highlighter-rouge">null</code>调用的应该就是<code class="highlighter-rouge">super.dispatchTouchEvent(event)</code>进行事件处理</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>            if (mFirstTouchTarget == null) {
+<div class="highlighter-rouge"><pre class="highlight"><code>            if (mFirstTouchTarget == null) {
                 // No touch targets so treat this as an ordinary view.
                 handled = dispatchTransformedTouchEvent(ev, canceled, null,
                         TouchTarget.ALL_POINTER_IDS);
             }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>需要注意的是不管是<code class="highlighter-rouge">super.dispatchTouchEvent(event)</code>还是<code class="highlighter-rouge">child.dispatchTouchEvent(event)</code>, 调用的其实都是<code class="highlighter-rouge">View.dispatchTouchEvent()</code>, 所以接下来我们要看的就是<code class="highlighter-rouge">View</code>中对事件的处理</p>
 
@@ -368,7 +368,7 @@
 
 <p>主要代码如下; 可以看出先处理的是<code class="highlighter-rouge">OnTouchListener</code>, 如果<code class="highlighter-rouge">View</code>没有设置<code class="highlighter-rouge">OnTouchListener</code>(<code class="highlighter-rouge">View.setOnTouchListener()</code>)的话, 再去处理<code class="highlighter-rouge">onTouchEvent()</code>,  所以<code class="highlighter-rouge">OnTouchListener</code>的优先级比<code class="highlighter-rouge">onTouchEvent</code>高; 同时还要注意的一点是, 如果设置了<code class="highlighter-rouge">OnTouchListener</code>的话, <code class="highlighter-rouge">View</code>的<code class="highlighter-rouge">onTouchEvent</code>将不再调用</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public boolean dispatchTouchEvent(MotionEvent event) {
+<div class="highlighter-rouge"><pre class="highlight"><code>public boolean dispatchTouchEvent(MotionEvent event) {
     ...
     if (li != null &amp;&amp; li.mOnTouchListener != null
             &amp;&amp; (mViewFlags &amp; ENABLED_MASK) == ENABLED
@@ -380,11 +380,11 @@
     }
     ...
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>这里还有一个<code class="highlighter-rouge">onClick()</code>其实是在<code class="highlighter-rouge">onTouchEvent()</code>中处理的; 如下; <code class="highlighter-rouge">onClick</code>是在<code class="highlighter-rouge">performClickInternal()</code>中触发的, 可以看出, 要触发<code class="highlighter-rouge">onClick</code>需要的条件是: <code class="highlighter-rouge">View</code>是可以点击的(<code class="highlighter-rouge">clickable</code>), 这里的可点击包括了<code class="highlighter-rouge">CLICKABLE</code>和<code class="highlighter-rouge">LONG_CLICKABLE</code>, 注意<code class="highlighter-rouge">View</code>的<code class="highlighter-rouge">enable</code>属性不影响<code class="highlighter-rouge">onTouchEvent</code>的返回值, 只要它可点击, 那么<code class="highlighter-rouge">onTouchEvent()</code>就会处理该点击事件</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public boolean onTouchEvent(MotionEvent event) {
+<div class="highlighter-rouge"><pre class="highlight"><code>public boolean onTouchEvent(MotionEvent event) {
     if (clickable || (viewFlags &amp; TOOLTIP) == TOOLTIP) {
         switch (action) {
             case MotionEvent.ACTION_UP:
@@ -405,7 +405,7 @@
                 ...
     }
 }
-</code></pre></div></div>
+</code></pre></div>
 
 <p>而在<code class="highlighter-rouge">performClickInternal()</code>中, 则是去调用了<code class="highlighter-rouge">performClick()</code>进行处理, 在<code class="highlighter-rouge">performClick()</code>会判断, 如果设置了<code class="highlighter-rouge">OnClickListener</code>, 则会去调用<code class="highlighter-rouge">OnClickListener</code>, 代码比较简单, 就不贴啦~</p>
 
@@ -485,7 +485,7 @@
                             
         				
                             
-                				<a href="/tags/#Java" title="Java" rel="13">
+                				<a href="/tags/#Java" title="Java" rel="14">
                                     Java
                                 </a>
                             
@@ -496,6 +496,10 @@
                                 </a>
                             
         				
+                            
+                				<a href="/tags/#Hust" title="Hust" rel="2">
+                                    Hust
+                                </a>
                             
         				
                             
@@ -630,7 +634,7 @@
                     
                 </ul>
                 <p class="copyright text-muted">
-                    Copyright &copy; 袁平 2018
+                    Copyright &copy; 袁平 2019
                     <br>
                 </p>
             </div>
