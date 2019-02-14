@@ -140,7 +140,7 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/tags/#Java" title="Java">Java</a>
+                        <a class="tag" href="/tags/#Objective-C" title="Objective-C">Objective-C</a>
                         
                     </div>
                     <h1>Objective-C入门要点</h1>
@@ -324,22 +324,7 @@
 
 <p>本来@property是和@synthesize共用来实现自动生成set和get方法的，但是Xcode4.4之后，@property得到了增强，只使用@property即可生成set和get方法，同时还会自动生成一个带下划线的同名私有变量（需要注意的是，当我们自己写了对应的set和get方法时，该带下划线的同名变量将不可用，解决办法参见<a href="https://www.jianshu.com/p/baef6d5a41d3">博客</a>）</p>
 
-<p>但是@property的使用难点在于理解其修饰符，常见的几组如下：</p>
-<blockquote>
-  <ol>
-    <li>atomic, nonatomic：是否线程安全；默认为atomic，线程安全，但是会影响性能，一般使用nonatomic</li>
-    <li>retain, copy, assign：默认为assign，该修饰符对属性只是简单的赋值，不更改引用计数，常用于基本数据类型，如：int，short等；retain一般用于修饰指针，会持有对象，增加引用计数
-readonly, readwrite
-strong, getter=method, setter=method, unsafe_unretained</li>
-  </ol>
-</blockquote>
-
-<p>weak和assign的区别：weak和assign的区别主要是体现在两者修饰OC对象时的差异。上面也介绍过，assign通常用来修饰基本数据类型，如int、float、BOOL等，weak用来修饰OC对象，如UIButton、UIView等；weak不能修饰基本数据类型</p>
-
-<p>推荐博客：
-https://hk.saowen.com/a/1bdf81decab39874080a44833b2fc47eb8a59355e9ae2b997565552d63991f4d
-https://hk.saowen.com/a/7b29e511436f99243478a22570615137266de714cbcda782e798ab04a4611d5e  及其后文链接
-https://hk.saowen.com/a/e7b69dbe7dfea4e5a00ebd4ef4a73a61403c8351d319eb901a05388d38513dbf  及其后文链接</p>
+<p>但是@property的使用难点在于理解其修饰符，关于@property修饰符的使用涉及到内存管理，也是比较复杂的一部分，这里暂时搁置，找机会和内存管理一起讲解</p>
 
 <hr />
 
@@ -388,6 +373,31 @@ CMD+S		模拟器截屏(所截图片都在桌面上)
 
 <p>内存管理是一个比较难的点，东西也很多，并非三言两语就能阐述清楚，后面有机会再另起新篇</p>
 
+<p>————-分割线——————</p>
+
+<p><strong>Draft：暂存</strong>
+@property修饰符，常见的几组如下：</p>
+<blockquote>
+  <ol>
+    <li>atomic, nonatomic：是否线程安全；默认为atomic，线程安全，但是会影响性能，一般使用nonatomic</li>
+    <li>retain, copy, assign：默认为assign，该修饰符对属性只是简单的赋值，不更改引用计数，常用于基本数据类型，如：int，short等；retain一般用于修饰指针，会持有对象，增加引用计数</li>
+    <li>readonly, readwrite</li>
+    <li>strong, getter=method, setter=method, unsafe_unretained</li>
+  </ol>
+</blockquote>
+
+<p>weak和assign的区别：weak和assign的区别主要是体现在两者修饰OC对象时的差异。上面也介绍过，assign通常用来修饰基本数据类型，如int、float、BOOL等，weak用来修饰OC对象，如UIButton、UIView等；weak不能修饰基本数据类型</p>
+
+<p>相关博客推荐：</p>
+<blockquote>
+  <ol>
+    <li>https://hk.saowen.com/a/1bdf81decab39874080a44833b2fc47eb8a59355e9ae2b997565552d63991f4d</li>
+    <li>https://hk.saowen.com/a/7b29e511436f99243478a22570615137266de714cbcda782e798ab04a4611d5e  及其后文链接</li>
+    <li>https://hk.saowen.com/a/e7b69dbe7dfea4e5a00ebd4ef4a73a61403c8351d319eb901a05388d38513dbf  及其后文链接</li>
+    <li>https://stackoverflow.com/questions/2255861/property-retain-assign-copy-nonatomic-in-objective-c</li>
+  </ol>
+</blockquote>
+
 
                 <hr>
 
@@ -400,6 +410,10 @@ CMD+S		模拟器截屏(所截图片都在桌面上)
                         <a href="/2019/01/01/%E5%A4%A7%E4%B8%89%E4%B8%8A%E6%80%BB%E7%BB%93/" data-toggle="tooltip" data-placement="top" title="大三上总结">&larr; Previous Post</a>
                     </li>
                     
+                    
+                    <li class="next">
+                        <a href="/2019/02/14/Jira%E6%8F%92%E4%BB%B6/" data-toggle="tooltip" data-placement="top" title="Jira插件开发总结">Next Post &rarr;</a>
+                    </li>
                     
                 </ul>
 
@@ -489,6 +503,8 @@ CMD+S		模拟器截屏(所截图片都在桌面上)
                 				<a href="/tags/#Note" title="Note" rel="2">
                                     Note
                                 </a>
+                            
+        				
                             
         				
         			</div>

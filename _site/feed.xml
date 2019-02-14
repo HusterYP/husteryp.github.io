@@ -5,9 +5,94 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Thu, 24 Jan 2019 19:40:20 +0800</pubDate>
-    <lastBuildDate>Thu, 24 Jan 2019 19:40:20 +0800</lastBuildDate>
+    <pubDate>Thu, 14 Feb 2019 21:32:00 +0800</pubDate>
+    <lastBuildDate>Thu, 14 Feb 2019 21:32:00 +0800</lastBuildDate>
     <generator>Jekyll v3.8.5</generator>
+    
+      <item>
+        <title>Jira插件开发总结</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;最近接到个需求开发Jira插件，陆陆续续还是踩了很多坑，在此记录一下&lt;/p&gt;
+
+&lt;p&gt;Jira是比较常用的项目管理工具，由Java编写；Jira插件其实就是一个Jar包，借助于官方提供的SDK，可以很方便的获取各种数据和进行各种操作；但是有一个比较麻烦的是不同版本的Jira SDK的可用API不同，网上资料也较少，需要多看文档和摸索&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;一-环境搭建&quot;&gt;一. 环境搭建&lt;/h2&gt;
+
+&lt;p&gt;首先我们需要搭建一个能在本地测试的环境，不然频繁的导出Jar包到线上环境将极大降低效率；这里有一个坑是：Jira SDK对Java版本要求比较严格，当时笔者用的Jira SDK 8.0，Java版本是Java 11，但是始终跑不起来，出现问题如下图；查了比较久，最终将Java版本改到Java 8得以解决；&lt;a href=&quot;https://confluence.atlassian.com/adminjiraserver073/supported-platforms-861253018.html&quot;&gt;Jira与Java版本对应关系&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/Java_Jira/Jira.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;之后可以按照&lt;a href=&quot;https://developer.atlassian.com/server/jira/platform/role-members-jql-function-tutorial/&quot;&gt;官方教程&lt;/a&gt;写一个Hello World的Demo，先跑起来，熟悉一下开发流程；再推荐一篇&lt;a href=&quot;https://www.cnblogs.com/DevilMayCry-Samsara/p/6052286.html&quot;&gt;中文博客&lt;/a&gt;也比较详细&lt;/p&gt;
+
+&lt;p&gt;本地访问链接是：http://localhost:2990/jira&lt;/p&gt;
+
+&lt;p&gt;其实本地的Jira插件测试环境实际上是跑起来的一个Tomcat；这里记录几个有用的命令:&lt;/p&gt;
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;atlas-run&lt;/code&gt;/&lt;code class=&quot;highlighter-rouge&quot;&gt;atlas-debug&lt;/code&gt;：启动Tomcat，加载插件&lt;/li&gt;
+    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;atlas-mvn package&lt;/code&gt;：热更新，即如果代码有改动，那么可以运行此命令而不必重启Tomcat&lt;/li&gt;
+    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;atlas-clean&lt;/code&gt;：清除缓存，如果运行失败且无他法时，可以尝试用此命令清除一下缓存&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;二-定制插件&quot;&gt;二. 定制插件&lt;/h2&gt;
+
+&lt;p&gt;再编写插件之前，需要先了解一下相关概念，即Jira Function，参见&lt;a href=&quot;https://developer.atlassian.com/server/jira/platform/jql-function/&quot;&gt;官方文档&lt;/a&gt;；一般来说我们定制Jira插件都需要继承自&lt;code class=&quot;highlighter-rouge&quot;&gt;AbstractJqlFunction&lt;/code&gt;这个类，比较重要的有如下几个方法（注意：不同的SDK版本方法参数等可能有差异）&lt;/p&gt;
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;public MessageSet validate(ApplicationUser searcher, FunctionOperand operand, TerminalClause terminalClause)&lt;/code&gt;：该方法再构造函数之后调用，用于进行参数验证，用户访问权限验证等&lt;/li&gt;
+    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;public List&amp;lt;QueryLiteral&amp;gt; getValues(QueryCreationContext queryCreationContext, FunctionOperand operand, TerminalClause terminalClause)&lt;/code&gt;：该方法用于返回待展示的Item列表，我们的主要工作也在这个方法中&lt;/li&gt;
+    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;public int getMinimumNumberOfExpectedArguments()&lt;/code&gt;：返回接收的最少参数个数&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;前面也说了，不同版本的Jira SDK的可用API差异较大，这里举一个根据传入参数查询Issue列表的示例：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;	final ApplicationUser applicationUser = queryCreationContext.getApplicationUser();
+        final List&amp;lt;String&amp;gt; args = operand.getArgs();
+        final List&amp;lt;QueryLiteral&amp;gt; queryLiterals = new LinkedList&amp;lt;&amp;gt;();
+        JqlQueryParser parser = ComponentAccessor.getComponent(JqlQueryParser.class);
+        try {
+            Query query = parser.parseQuery(args.get(0));
+	    // private final SearchService searchService;
+            SearchResults searchResult = searchService.search(applicationUser, query, PagerFilter.getUnlimitedFilter());
+            List&amp;lt;Issue&amp;gt; issues = searchResult.getIssues();
+            for (Issue issue : issues) {
+                queryLiterals.add(new QueryLiteral(operand, issue.getId()));
+            }
+        } catch (Exception e) {
+            log.error(&quot;Error search: &quot;, e);
+	 }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;三-参考链接&quot;&gt;三. 参考链接&lt;/h2&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/pemcconnell/jira-jql-membersInRole&quot;&gt;Jira插件Demo&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/matthewlmcclure/jira-rankof-jql-function&quot;&gt;Jira插件Demo&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/kevshine/jira-opensource-jql-functions&quot;&gt;Jira插件Demo&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/mailru/jira-plugins-groovy&quot;&gt;Jira插件Demo&lt;/a&gt;&lt;/li&gt;
+&lt;/ol&gt;
+</description>
+        <pubDate>Thu, 14 Feb 2019 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2019/02/14/Jira%E6%8F%92%E4%BB%B6/</link>
+        <guid isPermaLink="true">http://localhost:4000/2019/02/14/Jira%E6%8F%92%E4%BB%B6/</guid>
+        
+        <category>Java</category>
+        
+        
+      </item>
     
       <item>
         <title>Objective-C入门要点</title>
@@ -169,22 +254,7 @@
 
 &lt;p&gt;本来@property是和@synthesize共用来实现自动生成set和get方法的，但是Xcode4.4之后，@property得到了增强，只使用@property即可生成set和get方法，同时还会自动生成一个带下划线的同名私有变量（需要注意的是，当我们自己写了对应的set和get方法时，该带下划线的同名变量将不可用，解决办法参见&lt;a href=&quot;https://www.jianshu.com/p/baef6d5a41d3&quot;&gt;博客&lt;/a&gt;）&lt;/p&gt;
 
-&lt;p&gt;但是@property的使用难点在于理解其修饰符，常见的几组如下：&lt;/p&gt;
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;atomic, nonatomic：是否线程安全；默认为atomic，线程安全，但是会影响性能，一般使用nonatomic&lt;/li&gt;
-    &lt;li&gt;retain, copy, assign：默认为assign，该修饰符对属性只是简单的赋值，不更改引用计数，常用于基本数据类型，如：int，short等；retain一般用于修饰指针，会持有对象，增加引用计数
-readonly, readwrite
-strong, getter=method, setter=method, unsafe_unretained&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;weak和assign的区别：weak和assign的区别主要是体现在两者修饰OC对象时的差异。上面也介绍过，assign通常用来修饰基本数据类型，如int、float、BOOL等，weak用来修饰OC对象，如UIButton、UIView等；weak不能修饰基本数据类型&lt;/p&gt;
-
-&lt;p&gt;推荐博客：
-https://hk.saowen.com/a/1bdf81decab39874080a44833b2fc47eb8a59355e9ae2b997565552d63991f4d
-https://hk.saowen.com/a/7b29e511436f99243478a22570615137266de714cbcda782e798ab04a4611d5e  及其后文链接
-https://hk.saowen.com/a/e7b69dbe7dfea4e5a00ebd4ef4a73a61403c8351d319eb901a05388d38513dbf  及其后文链接&lt;/p&gt;
+&lt;p&gt;但是@property的使用难点在于理解其修饰符，关于@property修饰符的使用涉及到内存管理，也是比较复杂的一部分，这里暂时搁置，找机会和内存管理一起讲解&lt;/p&gt;
 
 &lt;hr /&gt;
 
@@ -232,12 +302,37 @@ CMD+S		模拟器截屏(所截图片都在桌面上)
 &lt;h2 id=&quot;六-内存管理&quot;&gt;六. 内存管理&lt;/h2&gt;
 
 &lt;p&gt;内存管理是一个比较难的点，东西也很多，并非三言两语就能阐述清楚，后面有机会再另起新篇&lt;/p&gt;
+
+&lt;p&gt;————-分割线——————&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Draft：暂存&lt;/strong&gt;
+@property修饰符，常见的几组如下：&lt;/p&gt;
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;atomic, nonatomic：是否线程安全；默认为atomic，线程安全，但是会影响性能，一般使用nonatomic&lt;/li&gt;
+    &lt;li&gt;retain, copy, assign：默认为assign，该修饰符对属性只是简单的赋值，不更改引用计数，常用于基本数据类型，如：int，short等；retain一般用于修饰指针，会持有对象，增加引用计数&lt;/li&gt;
+    &lt;li&gt;readonly, readwrite&lt;/li&gt;
+    &lt;li&gt;strong, getter=method, setter=method, unsafe_unretained&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;weak和assign的区别：weak和assign的区别主要是体现在两者修饰OC对象时的差异。上面也介绍过，assign通常用来修饰基本数据类型，如int、float、BOOL等，weak用来修饰OC对象，如UIButton、UIView等；weak不能修饰基本数据类型&lt;/p&gt;
+
+&lt;p&gt;相关博客推荐：&lt;/p&gt;
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;https://hk.saowen.com/a/1bdf81decab39874080a44833b2fc47eb8a59355e9ae2b997565552d63991f4d&lt;/li&gt;
+    &lt;li&gt;https://hk.saowen.com/a/7b29e511436f99243478a22570615137266de714cbcda782e798ab04a4611d5e  及其后文链接&lt;/li&gt;
+    &lt;li&gt;https://hk.saowen.com/a/e7b69dbe7dfea4e5a00ebd4ef4a73a61403c8351d319eb901a05388d38513dbf  及其后文链接&lt;/li&gt;
+    &lt;li&gt;https://stackoverflow.com/questions/2255861/property-retain-assign-copy-nonatomic-in-objective-c&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
 </description>
         <pubDate>Wed, 23 Jan 2019 00:00:00 +0800</pubDate>
         <link>http://localhost:4000/2019/01/23/Objective-C%E5%85%A5%E9%97%A8%E8%A6%81%E7%82%B9/</link>
         <guid isPermaLink="true">http://localhost:4000/2019/01/23/Objective-C%E5%85%A5%E9%97%A8%E8%A6%81%E7%82%B9/</guid>
         
-        <category>Java</category>
+        <category>Objective-C</category>
         
         
       </item>
@@ -1434,88 +1529,6 @@ void writer(void)
         <guid isPermaLink="true">http://localhost:4000/2018/11/15/%E8%BF%9B%E7%A8%8B%E4%B8%8E%E7%BA%BF%E7%A8%8B/</guid>
         
         <category>操作系统</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>Java并发[三]</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;讲解锁等高级主题&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;一-死锁及其避免&quot;&gt;一. 死锁及其避免&lt;/h2&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;死锁出现的原因通常是出现锁环路造成的, 不管是显示的还是隐式的&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;通过定义获取锁的顺序来避免死锁: 通过&lt;code class=&quot;highlighter-rouge&quot;&gt;System.identityHashCode(object)&lt;/code&gt;来返回一个锁对象的&lt;code class=&quot;highlighter-rouge&quot;&gt;Object.hashCode()&lt;/code&gt;的返回值; 通过这个值来定义锁的顺序, 并在整个应用程序中都按照这个顺序来获取锁, 那么就不会形成锁环路了&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;        Object fromAcct = new Object(); // 这里的锁对象也可以是其他
-        Object toAcct = new Object();
-        Object tieLock = new Object();
-        int fromHash = System.identityHashCode(fromAcct);
-        int toHash = System.identityHashCode(toAcct);
-        if (fromHash &amp;lt; toHash) {
-            synchronized (fromAcct) {
-                synchronized (toAcct) {
-                    // doSomething
-                }
-            }
-        } else if (fromHash &amp;gt; toHash) {
-            synchronized (toAcct) {
-                synchronized (fromAcct) {
-                    // doSomething
-                }
-            }
-        } else { // 这种情况主要是避免Hash冲突, 此时需要额外的锁
-            synchronized (tieLock) {
-                synchronized (fromAcct) {
-                    synchronized (toAcct) {
-                        // doSomething
-                    }
-                }
-            }
-        }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;使用开放调用(如果在调用某个方法时, 不需要持有锁, 那么这种调用就被成为开放调用)避免死锁: 这种情况下适用于持有不同锁的方法之间的相互调用(注意锁的级别是在方法上, 而不是代码块上)(相当于形成一个隐式的环); 将锁从方法上转移到需要同步的内部代码块上可以避免死锁&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Lock.tryLock()&lt;/code&gt;: 可以检测死锁和从死锁中恢复过来; 即指定一个超时时限, 在等待超过该时间后&lt;code class=&quot;highlighter-rouge&quot;&gt;tryLock()&lt;/code&gt;会返回一个失败信息&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;需要注意的几点:&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;对象分配操作的开销比同步的开销更低(实际上, 现在&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;的分配操作已经比&lt;code class=&quot;highlighter-rouge&quot;&gt;C&lt;/code&gt;语言的&lt;code class=&quot;highlighter-rouge&quot;&gt;malloc&lt;/code&gt;调用更快&lt;/li&gt;
-    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ConcurrentHashMap&lt;/code&gt;的以前实现中(现在实现不同咯)采用分段锁, 使用了一个包含&lt;code class=&quot;highlighter-rouge&quot;&gt;16&lt;/code&gt;个锁的数组, 每个锁保护散列桶的&lt;code class=&quot;highlighter-rouge&quot;&gt;1/16&lt;/code&gt;, 这样就能够支持多达&lt;code class=&quot;highlighter-rouge&quot;&gt;16&lt;/code&gt;个并发的写入器; &lt;code class=&quot;highlighter-rouge&quot;&gt;ConcurrentHashMap&lt;/code&gt;中的&lt;code class=&quot;highlighter-rouge&quot;&gt;size&lt;/code&gt;将对每个分段进行枚举并将每个分段中的元素数量相加, 而不是维护一个全局计数, 为了避免枚举每个计数, &lt;code class=&quot;highlighter-rouge&quot;&gt;ConcurrentHashMap&lt;/code&gt;为每个分段都维护了一个独立的计数, 并通过每个分段的锁来维护这个值(这个地方有两点需要注意: 一个是&lt;code class=&quot;highlighter-rouge&quot;&gt;size&lt;/code&gt;的计算是在每个&lt;code class=&quot;highlighter-rouge&quot;&gt;add&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;remove&lt;/code&gt;操作都会改变一次, 这样虽然增加了&lt;code class=&quot;highlighter-rouge&quot;&gt;add&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;remove&lt;/code&gt;的操作, 但是这会使得&lt;code class=&quot;highlighter-rouge&quot;&gt;size&lt;/code&gt;的计算从&lt;code class=&quot;highlighter-rouge&quot;&gt;O(n)&lt;/code&gt;变为&lt;code class=&quot;highlighter-rouge&quot;&gt;O(1)&lt;/code&gt;; 另一个是为每个分段维护一个&lt;code class=&quot;highlighter-rouge&quot;&gt;size&lt;/code&gt;, 而不是使用一个全局的共享&lt;code class=&quot;highlighter-rouge&quot;&gt;size&lt;/code&gt;, 如果使用一个全局的共享&lt;code class=&quot;highlighter-rouge&quot;&gt;size&lt;/code&gt;的话, ,实际上就破坏了分段锁的分段特性, 因为访问共享&lt;code class=&quot;highlighter-rouge&quot;&gt;size&lt;/code&gt;的时候, 需要同步)&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-</description>
-        <pubDate>Fri, 09 Nov 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/11/09/Java%E5%B9%B6%E5%8F%91-%E4%B8%89/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/11/09/Java%E5%B9%B6%E5%8F%91-%E4%B8%89/</guid>
-        
-        <category>Java</category>
         
         
       </item>
