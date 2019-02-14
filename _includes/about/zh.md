@@ -1,8 +1,9 @@
 * [Unique Studio](https://www.hustunique.com/)
-* [华中科技大学](http://www.hust.edu.cn/?)在读(2016.9 -- )
+* [华中科技大学](http://www.hust.edu.cn/?)(2016.9 -- )
+* [ByteDance](https://bytedance.com/)
 * Android Developer
-* 开源爱好者
+* iOS Developer
 * [简书](https://www.jianshu.com/u/aa5c7f87405c)
 * [Github](https://github.com/HusterYP)
 * Email
-> `husteryp@163.com`  |  `husteryp@gmail.com`
+> `husteryp@163.com`  |  `1772662957@qq.com`
