@@ -5,8 +5,8 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Thu, 14 Feb 2019 21:32:00 +0800</pubDate>
-    <lastBuildDate>Thu, 14 Feb 2019 21:32:00 +0800</lastBuildDate>
+    <pubDate>Thu, 14 Feb 2019 21:32:43 +0800</pubDate>
+    <lastBuildDate>Thu, 14 Feb 2019 21:32:43 +0800</lastBuildDate>
     <generator>Jekyll v3.8.5</generator>
     
       <item>
@@ -83,6 +83,7 @@
   &lt;li&gt;&lt;a href=&quot;https://github.com/matthewlmcclure/jira-rankof-jql-function&quot;&gt;Jira插件Demo&lt;/a&gt;&lt;/li&gt;
   &lt;li&gt;&lt;a href=&quot;https://github.com/kevshine/jira-opensource-jql-functions&quot;&gt;Jira插件Demo&lt;/a&gt;&lt;/li&gt;
   &lt;li&gt;&lt;a href=&quot;https://github.com/mailru/jira-plugins-groovy&quot;&gt;Jira插件Demo&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://docs.atlassian.com/software/jira/docs/api/8.0.0/allclasses-noframe.html&quot;&gt;Jira SDK API&lt;/a&gt;&lt;/li&gt;
 &lt;/ol&gt;
 </description>
         <pubDate>Thu, 14 Feb 2019 00:00:00 +0800</pubDate>
