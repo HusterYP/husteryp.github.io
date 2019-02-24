@@ -5,9 +5,584 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Thu, 14 Feb 2019 21:32:43 +0800</pubDate>
-    <lastBuildDate>Thu, 14 Feb 2019 21:32:43 +0800</lastBuildDate>
+    <pubDate>Sun, 24 Feb 2019 15:55:07 +0800</pubDate>
+    <lastBuildDate>Sun, 24 Feb 2019 15:55:07 +0800</lastBuildDate>
     <generator>Jekyll v3.8.5</generator>
+    
+      <item>
+        <title>iOS多线程与网络</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;iOS多线程编程各种方式总结&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;一-概述&quot;&gt;一. 概述&lt;/h2&gt;
+
+&lt;p&gt;iOS中多线程的实现方式有如下四种：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/iOS_Thread/多线程实现方案的比较.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;本文主要总结常用的两种方式&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;二-gcd&quot;&gt;二. GCD&lt;/h2&gt;
+
+&lt;h3 id=&quot;21-gcd概述&quot;&gt;2.1 GCD概述&lt;/h3&gt;
+
+&lt;p&gt;GCD即Grand Central Dispatch，是苹果公司为多核的并行运算提出的解决方案，能自动合理地利用多核CPU（比如双核、四核），同时还能自动管理线程的生命周期（创建线程、调度任务、销毁线程），不需要手动管理；由C语言实现&lt;/p&gt;
+
+&lt;h3 id=&quot;22-gcd使用&quot;&gt;2.2 GCD使用&lt;/h3&gt;
+
+&lt;h4 id=&quot;221-主要方法&quot;&gt;2.2.1 主要方法&lt;/h4&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;dispatch_sync(dispatch_queue_t queue, dispatch_block_t block)&lt;/code&gt; ：同步&lt;/li&gt;
+    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;dispatch_async(dispatch_queue_t queue, dispatch_block_t block)&lt;/code&gt; ：异步&lt;/li&gt;
+    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;dispatch_barrier_async(dispatch_queue_t queue, dispatch_block_t block)&lt;/code&gt; ：等待前面的任务执行完成之后才执行，且它后面的任务等它执行完成之后才会执行；这里的 queue 不能是全局的并发队列（可用于解决读写锁的问题；如数据库操作中，读操作可以并行提高效率，写操作需要等待前面的读操作完成之后再执行，写操作执行完之后，之后的读操作又可以实现并行，如下）&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;	dispatch_async(queue, ^{
+            // reading
+        });
+        dispatch_async(queue, ^{
+            // reading
+        });
+        dispatch_barrier_sync(queue, ^{
+            // writing
+        });
+        dispatch_async(queue, ^{
+            // reading
+        });
+        dispatch_async(queue, ^{
+            // reading
+        });
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h4 id=&quot;222-队列&quot;&gt;2.2.2 队列&lt;/h4&gt;
+
+&lt;p&gt;GCD中有两个重要的概念：任务和队列&lt;/p&gt;
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;任务有两种执行方式：同步执行和异步执行，他们之间的区别是否会创建新的线程&lt;/li&gt;
+    &lt;li&gt;队列：用于存放任务。有两种队列， 串行队列和并行队列；区别如下：&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/iOS_Thread/串行队列和并行队列.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;可以通过如下方式获取或者创建队列：&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;使用 &lt;code class=&quot;highlighter-rouge&quot;&gt;dispatch_queue_create&lt;/code&gt; 创建（串行或并行）&lt;/li&gt;
+    &lt;li&gt;使用 &lt;code class=&quot;highlighter-rouge&quot;&gt;dispatch_get_global_queue&lt;/code&gt; 获取全局并发队列（所有应用程序都可用，且区分优先级）&lt;/li&gt;
+    &lt;li&gt;使用 &lt;code class=&quot;highlighter-rouge&quot;&gt;dispatch_get_main_queue&lt;/code&gt; 获得主队列&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;// 自己创建队列：第一个参数是标识符，用于 DEBUG 的时候标识唯一的队列；
+// 第二个参数用来表示创建的队列是串行的还是并行的，传入 DISPATCH_QUEUE_SERIAL 或 NULL 表示创建串行队列。传入 DISPATCH_QUEUE_CONCURRENT 表示创建并行队列
+
+  //串行队列
+  dispatch_queue_t queue = dispatch_queue_create(&quot;tk.bourne.testQueue&quot;, NULL);
+  dispatch_queue_t queue = dispatch_queue_create(&quot;tk.bourne.testQueue&quot;, DISPATCH_QUEUE_SERIAL);
+  //并行队列
+  dispatch_queue_t queue = dispatch_queue_create(&quot;tk.bourne.testQueue&quot;, DISPATCH_QUEUE_CONCURRENT);
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  // 全局并行队列：
+  dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h4 id=&quot;223-队列组dispatch-group&quot;&gt;2.2.3 队列组(Dispatch Group)&lt;/h4&gt;
+
+&lt;p&gt;可用于实现当并行执行block时，监听所有block执行结束&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;	dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+        dispatch_group_t group = dispatch_group_create();
+        dispatch_group_async(group, queue, ^{
+            NSLog(@&quot;Block 1&quot;);
+        });
+        dispatch_group_async(group, queue, ^{
+            NSLog(@&quot;Block 2&quot;);
+        });
+        dispatch_group_async(group, queue, ^{
+            NSLog(@&quot;Block 3&quot;);
+        });
+        dispatch_group_notify(group, dispatch_get_main_queue(), ^{
+            NSLog(@&quot;Done&quot;);
+        });
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;应用举例：分别执行两个耗时的操作，等两个异步操作都执行完之后，回到主线程执行操作；如果想要高效实现上述需求，可用队列组；如下&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;dispatch_group_t group =  dispatch_group_create();
+dispatch_group_async(group, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    // 执行1个耗时的异步操作
+});
+dispatch_group_async(group, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    // 执行1个耗时的异步操作
+});
+dispatch_group_notify(group, dispatch_get_main_queue(), ^{
+    // 等前面的异步操作都执行完毕后，回到主线程...
+});
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h4 id=&quot;224-其他&quot;&gt;2.2.4 其他&lt;/h4&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;延迟执行：通过&lt;code class=&quot;highlighter-rouge&quot;&gt;dispatch_walltime&lt;/code&gt;生成绝对时间&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;dispatch_time_t time = dispatch_time(DISPATCH_TIME_NOW, 3ull * NSEC_PER_SEC); // ull表示：unsigned long long 
+        dispatch_after(time, dispatch_get_main_queue(), ^{
+            
+});
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;dipatch_apply：相当于dipatch_sync和dispatch group的关联API，该函数将指定的block追加到指定的queue中，并等待全部处理执行结束；其也会阻塞直到执行完毕，可用其替代for循环
+    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+dispatch_apply(10, queue, ^(size_t index) { // index表示当前索引，自动增加
+  NSLog(@&quot;%zu&quot;, index);
+});
+NSLog(@&quot;Done&quot;); // 最后执行
+&lt;/code&gt;&lt;/pre&gt;    &lt;/div&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;dispatch_suspend / dispatch_resume：用于挂起和恢复queue&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Dispatch Semaphore：计数为0时等待，计数为1或大于1时，减1而不是等待&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;dispatch_once：保证在应用程序中只执行一次指定处理的API&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;Dispatch IO：当读取大文件时，将文件分成合适的大小并使用Global Queue读取的话，会快很多，如果想尝试提高文件读取速度，可以使用Dispatch IO&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h4 id=&quot;225-备注&quot;&gt;2.2.5 备注&lt;/h4&gt;
+
+&lt;p&gt;在iOS6.0之前，在GCD中每当使用带creat单词的函数创建对象之后，都应该对其进行一次release操作。在iOS6.0之后，GCD被纳入到了ARC的内存管理机制中，在使用GCD的时候我们就像对待普通OC对象一样对待GCD,因此不再需要我们调用release方法&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;三-nsoperation&quot;&gt;三. NSOperation&lt;/h2&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;本身是个抽象类，需要使用其子类：NSInvocationOperation，NSBlockOperation，或自定义子类&lt;/li&gt;
+    &lt;li&gt;默认情况下，调用 NSInvocationOperation 的 start 方法并不会开一条新线程去执行，而是在当前线程执行；需要把 NSOperation 放到一个 NSOperationQueue 中才会执行异步操作&lt;/li&gt;
+    &lt;li&gt;NSBlockOperation：只要 NSBlockOperation 封装的操作数 &amp;gt; 1，就会异步执行操作&lt;/li&gt;
+    &lt;li&gt;支持取消，暂停和恢复，还可以设置依赖来保证执行顺序，如 &lt;code class=&quot;highlighter-rouge&quot;&gt;[operationB addDependency:operationA]; // 操作B依赖于操作A&lt;/code&gt;；还可以在不同 queue 的 NSOperation 之间创建依赖关系&lt;/li&gt;
+    &lt;li&gt;支持监听一个操作的执行完毕：通过 &lt;code class=&quot;highlighter-rouge&quot;&gt;completionBlock&lt;/code&gt; 和 &lt;code class=&quot;highlighter-rouge&quot;&gt;setCompletionBlock&lt;/code&gt; 实现&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;四-网络请求&quot;&gt;四. 网络请求&lt;/h2&gt;
+
+&lt;p&gt;网络请求常用类：&lt;/p&gt;
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;NSURL：请求地址&lt;/li&gt;
+    &lt;li&gt;NSURLRequest：一个NSURLRequest对象就代表一个请求，它包含的信息有：一个 NSURL 对象，请求方法，请求头，请求体，请求超时等&lt;/li&gt;
+    &lt;li&gt;NSMutableURLRequest：NSURLRequest的子类&lt;/li&gt;
+    &lt;li&gt;NSURLConnection：负责发送请求；支持发送同步请求（sendSynchronousRequest）和异步请求（sendAsynchronousRequest）；还可以设置代理监听网络请求过程（开始响应，接收数据，结束响应，请求出错）&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;第三方框架：&lt;/p&gt;
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;ASIHttpRequest&lt;/li&gt;
+    &lt;li&gt;AFNetworking&lt;/li&gt;
+    &lt;li&gt;MKNetworkKit&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;iOS中发送 HTTP 请求的方案：&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;苹果原生
+    &lt;blockquote&gt;
+      &lt;ol&gt;
+        &lt;li&gt;NSURLConnection：用法简单，坑较多&lt;/li&gt;
+        &lt;li&gt;NSURLSession：功能比 NSURLConnection 强大，苹果推荐使用(但是NSURLSessionTask是一个抽象类，本身不能使用，只能使用它的子类：NSURLSessionDataTask\NSURLSessionUploadTask\NSURLSessionDownloadTask)&lt;/li&gt;
+        &lt;li&gt;CFNetwork：NSURL*的底层实现，纯C语言&lt;/li&gt;
+      &lt;/ol&gt;
+    &lt;/blockquote&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;两种为NSURLConnection设置代理方式的区别：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    //第一种设置方式：
+    //通过该方法设置代理，会自动的发送请求
+    // [[NSURLConnection alloc]initWithRequest:request delegate:self];
+
+    //第二种设置方式：
+    //设置代理，startImmediately为NO的时候，该方法不会自动发送请求
+    NSURLConnection *connect = [[NSURLConnection alloc]initWithRequest:request delegate:self startImmediately:NO];
+    //手动通过代码的方式来发送请求
+    //注意该方法内部会自动的把connect添加到当前线程的RunLoop中在默认模式下执行
+    [connect start];
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;五-数据解析&quot;&gt;五. 数据解析&lt;/h2&gt;
+
+&lt;p&gt;Json解析（转OC数据类型）：&lt;/p&gt;
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;第三方框架：JSONKit、SBJson、TouchJSON（性能从左到右，越差）&lt;/li&gt;
+    &lt;li&gt;苹果原生：NSJSONSerialization（性能最好）&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/iOS_Thread/Json转OC数据类型.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;XML解析：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;解析方式有两种：
+    &lt;blockquote&gt;
+      &lt;ol&gt;
+        &lt;li&gt;DOM：一次性将整个XML文档加载进内存，比较适合解析小文件&lt;/li&gt;
+        &lt;li&gt;SAX：从根元素开始，按顺序一个元素一个元素往下解析，比较适合解析大文件&lt;/li&gt;
+      &lt;/ol&gt;
+    &lt;/blockquote&gt;
+  &lt;/li&gt;
+  &lt;li&gt;解析API：
+    &lt;blockquote&gt;
+      &lt;ol&gt;
+        &lt;li&gt;官方原生：NSXMLParser，SAX方式解析&lt;/li&gt;
+        &lt;li&gt;libxml2：纯C语言，默认包含在iOS SDK中，同时支持DOM和SAX方式解析&lt;/li&gt;
+        &lt;li&gt;GDataXML：DOM方式解析，由Google开发，基于libxml2&lt;/li&gt;
+      &lt;/ol&gt;
+    &lt;/blockquote&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;六-runloop&quot;&gt;六. RunLoop&lt;/h2&gt;
+
+&lt;p&gt;RunLoop是iOS中比较重要的一点，较短篇幅无法讲完，后面有机会再另起新篇总结&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;七-参考博客&quot;&gt;七. 参考博客&lt;/h2&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;https://www.jianshu.com/p/0b0d9b1f1f19&lt;/li&gt;
+&lt;/ol&gt;
+
+</description>
+        <pubDate>Sun, 24 Feb 2019 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2019/02/24/iOS%E5%A4%9A%E7%BA%BF%E7%A8%8B/</link>
+        <guid isPermaLink="true">http://localhost:4000/2019/02/24/iOS%E5%A4%9A%E7%BA%BF%E7%A8%8B/</guid>
+        
+        <category>iOS</category>
+        
+        
+      </item>
+    
+      <item>
+        <title>常用算法思想</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;常见算法及其思想与对应题目总结&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;一-分治算法&quot;&gt;一. 分治算法&lt;/h2&gt;
+
+&lt;hr /&gt;
+
+&lt;h3 id=&quot;11-基本思想与适用场景&quot;&gt;1.1 基本思想与适用场景&lt;/h3&gt;
+
+&lt;p&gt;分治法，顾名思义，即分而治之，适用于当一个问题很复杂，难以解决，但是可以分解为许多容易解决的相似子问题，且子问题解合并起来即为原复杂问题解时的情况&lt;/p&gt;
+
+&lt;p&gt;从上面的描述中我们可以提取出分治法适用的几个&lt;strong&gt;要点&lt;/strong&gt;：&lt;/p&gt;
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;原问题可分解为许多&lt;strong&gt;相似&lt;/strong&gt;子问题&lt;/li&gt;
+    &lt;li&gt;子问题&lt;strong&gt;解可合&lt;/strong&gt;并为原问题解&lt;/li&gt;
+    &lt;li&gt;子问题独立，即子问题之间无公共子问题（非必须，涉及到分治法效率问题，若子问题之间不独立，分治法效率较低，一般使用动态规划）&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;上面的要点&lt;code class=&quot;highlighter-rouge&quot;&gt;2&lt;/code&gt;是适用分治法的关键，也是判断一个问题是否可以使用分治法解决的关键，如果一个问题不满足第二条，可以考虑使用贪心或者动态规划；从其特征可以看出，分治法通常伴随着递归（因为有相似子问题，明显的递归解决思路），递归也是我们通常解决此类问题的常用手段&lt;/p&gt;
+
+&lt;h3 id=&quot;12-应用举例&quot;&gt;1.2 应用举例&lt;/h3&gt;
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;二分搜索&lt;/li&gt;
+    &lt;li&gt;大整数乘法&lt;/li&gt;
+    &lt;li&gt;Strassen矩阵乘法&lt;/li&gt;
+    &lt;li&gt;棋盘覆盖&lt;/li&gt;
+    &lt;li&gt;合并排序&lt;/li&gt;
+    &lt;li&gt;快速排序&lt;/li&gt;
+    &lt;li&gt;线性时间选择&lt;/li&gt;
+    &lt;li&gt;最接近点对问题&lt;/li&gt;
+    &lt;li&gt;循环赛日程表&lt;/li&gt;
+    &lt;li&gt;汉诺塔&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;h3 id=&quot;13-参考链接&quot;&gt;1.3 参考链接&lt;/h3&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;https://www.cnblogs.com/steven_oyj/archive/2010/05/22/1741370.html&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;二-动态规划&quot;&gt;二. 动态规划&lt;/h2&gt;
+
+&lt;hr /&gt;
+
+&lt;h3 id=&quot;11-基本思想与适用场景-1&quot;&gt;1.1 基本思想与适用场景&lt;/h3&gt;
+
+&lt;p&gt;动态算法的核心是记住已经求过的解，在已知解的基础上继续求解；记住求解的方式有两种：一是&lt;strong&gt;自顶向下的备忘录法&lt;/strong&gt;，二是&lt;strong&gt;自底向上&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;自顶向下一般涉及到递归，通常需要传递一个容器来存储结果，在分治算法中也提到了，当子问题不独立时，此时可以考虑使用动态规划（效率问题，用空间换取时间），该容器存储的结果实际上就是用于结束重复的递归计算&lt;/p&gt;
+
+&lt;p&gt;自底向上即最开始就从子问题计算起，逐步往上，相当于递归的拆解（循环）&lt;/p&gt;
+
+&lt;p&gt;参见&lt;a href=&quot;https://www.zhihu.com/question/23995189&quot;&gt;动态规划的意义&lt;/a&gt;，将动态规划视为状态的转移来进行理解和区别&lt;/p&gt;
+
+&lt;p&gt;特征：&lt;/p&gt;
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;每个阶段的最优状态可以从之前某个阶段的某个或某些状态直接得到–最优子结构&lt;/li&gt;
+    &lt;li&gt;不管之前这个状态是如何得到的–无后效性&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;h3 id=&quot;12-应用举例-1&quot;&gt;1.2 应用举例&lt;/h3&gt;
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;Fibonacci数列问题&lt;/li&gt;
+    &lt;li&gt;钢条切割问题&lt;/li&gt;
+    &lt;li&gt;小朋友过桥问题&lt;/li&gt;
+    &lt;li&gt;背包模型&lt;/li&gt;
+    &lt;li&gt;最长单调子序列&lt;/li&gt;
+    &lt;li&gt;最大M子段和&lt;/li&gt;
+    &lt;li&gt;线性模型&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;h3 id=&quot;13-参考链接-1&quot;&gt;1.3 参考链接&lt;/h3&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;https://blog.csdn.net/u013309870/article/details/75193592&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;https://www.zhihu.com/question/23995189&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;三-贪心算法&quot;&gt;三. 贪心算法&lt;/h2&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;四-回溯法&quot;&gt;四. 回溯法&lt;/h2&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;五-分支限界法&quot;&gt;五. 分支限界法&lt;/h2&gt;
+</description>
+        <pubDate>Sat, 16 Feb 2019 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2019/02/16/%E5%B8%B8%E7%94%A8%E7%AE%97%E6%B3%95%E6%80%9D%E6%83%B3/</link>
+        <guid isPermaLink="true">http://localhost:4000/2019/02/16/%E5%B8%B8%E7%94%A8%E7%AE%97%E6%B3%95%E6%80%9D%E6%83%B3/</guid>
+        
+        <category>Algorithm</category>
+        
+        
+      </item>
+    
+      <item>
+        <title>iOS读书笔记</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;iOS 各类书籍读书笔记&lt;/p&gt;
+
+&lt;p&gt;摘要各本书中重难点&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;objective-c-编程之道ios-设计模式&quot;&gt;Objective-C 编程之道：iOS 设计模式&lt;/h2&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;中介者模式是至用一个对象来封装一组对象之间的交互逻辑，中介者通过避免对象间显示的相互引用来增进不同对象间的松耦合&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;备忘录模式允许对象按其想要的任何（或者任意复杂的）方式将自己的壮状态保存为一个对象，根据此模式这个对象被称为备忘录对象，然后某个其他对象，比如看管人对象，将备忘录对象保管在某处，通常是文件系统或内存中；看管人对象不知道有关备忘录对象的任何细节的格式，一段时间之后，接收到请求时，看管人对象将备忘录对象传回给原来的对象，让他根据在备忘录对象中保存的信息恢复其状态&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;代理模式的一个特点是同归虚拟代理，在接到请求时实现重型资源的懒加载&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;软件设计的黄金法则：变动需要抽象&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;桥接模式的目的是把抽象层次结构从其实现中分离出来，使其能够独立变更；抽象层定义了供客户端使用的上层抽象接口；可以&lt;a href=&quot;https://www.jianshu.com/p/e986af029490&quot;&gt;参见博客&lt;/a&gt;&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;外观模式为子系统中一组不同的接口提供统一的接口呢，外观模式定义了上层接口，通过降低复杂度和隐藏子系统间的通信及依存关系，让子系统更易于使用（其实就是对一系列复杂操作再次进行封装，隐藏调用或者实现细节）&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;中介者模式用于定义一个集中的场所，对象间的交互可以在一个中介者对象中处理；其他对象不必彼此交互，因此减少了它们之间的依存关系&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;观察者模式：iOS 中观察者模式可以通过通知和键值观察(KVO)来实现&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;迭代器模式：迭代器（Iterator）提供了一种顺序访问聚合对象(集合)中元素的方法，而无需暴露结构的底层表示和细节&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;装饰模式：即动态的为一个对象添加额外的指责，是继承的替代方案，属于结构型模式（继承是编译时静态绑定，装饰模式是可以在运行是动态绑定，即定义一个接口，然后动态的注入不同的实现类）&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;责任链模式：即如果一个对象不知道如何处理一个请求，则将该请求传递给另一个对象，这样继续传递下去&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;策略模式：提取公共接口，不同实现&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;命令模式：将请求封装为一个对象，从而可用不同的请求对客户进行参数化，对请求排队或者记录请求日志，以及支持可撤销的操作&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;享元模式：实现享元模式需要两个关键组件，通常是可共享的享元对象和保存他们的池&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;代理模式：代理是一种替代或占位，它控制对另一些对象的访问，而这些对象可能是远程对象，创建的开销较大的对象，或者是对安全性有要求的对象（NSProxy）&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;uicollectionview解析&quot;&gt;UICollectionView解析&lt;/h2&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;UICollectionViewCell 的层级结构见下图；UICollectionViewCell 有三个子 View ，下图中黑色矩形是 CollectioView Cell 自身，绿色矩形是 contentView，我们应该在contentView上面添加子 View，中间的两层 selectedBackgroundView 和 backgroundView 是可选的，并且可以在任何时候进行设置（当 backgroundView 被设置的时候，将会永远显示；selectedBackgroundView 在 Cell 被选中的时候设置，在 Cell 取消选中的时候移除，并且还可以为其设置动画）&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/iOS_Read_Note/UICollectionViewCell_Hierarchy.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;ios-drawing-practical-uikit-solution&quot;&gt;iOS Drawing: Practical UIKit Solution&lt;/h2&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;Context：包含了绘图的上下文环境；主要使用的有两种：
+    &lt;blockquote&gt;
+      &lt;ol&gt;
+        &lt;li&gt;Bitmap Context：使用像素数据来绘制&lt;/li&gt;
+        &lt;li&gt;PDF Contexta：矢量数据，以矢量的形式来绘制&lt;/li&gt;
+        &lt;li&gt;Core Image Context：帮助进行图像处理，如数字图像处理和计算机视觉等，通过GPU加速&lt;/li&gt;
+      &lt;/ol&gt;
+    &lt;/blockquote&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;iOS绘图程序主要基于UIKit和QuartzCore框架(QuertzCore框架通常被称作Quartz或者Quartz 2D)，它由新的Objective-C界面（UIKit提供）和老旧一些的C语言方法和核心基础类（QuartzCore）组成&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;在绘制图像的时候，有一个很重要的概念是上下文（Context），其实类似于一个大的状态机，每次改变都会改变其当前状态，可以通过 CGContextSaveGState 来暂存当前状态，之后通过 CGContextRestoreCState 来恢复状态；可以改变 Context 的属性如下图：&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/iOS_Read_Note/Context_State.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;需要注意的是 UIKit 中坐标系原点为屏幕坐上点，在Quartz中，原点位于左下点，如下图；&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/iOS_Read_Note/坐标系.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;Quartz 和 UIKit 绘图方法都是线程安全的&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;以CG开头Ref结尾的类型是指，指向对象的指针&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;坐标系转换，即把一个点从视图坐标系转换到它的父视图的坐标系中：CGPoint convertedPoint = [fahterView convertPoint:samplePoint fromView:childView]; 如果要反向转换，可以使用：转换回来，使用convertRect：toView：；前提是这些视图必须在同一个 UIWindow 中&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;CGAffineTransform 可以用于进行旋转，缩放，位移变换（其实也是一个变换矩阵，如下图）；一般都不使用 CGAffineTransformMake 方法来构建，通常使用 CGAffineTransformMakeScale（），CGAffineTransformMakeRotate（）或是CGAffineTransformMakeTranslation（）来分别构造缩放，旋转，位移矩阵；可以通过 UIKit 的 NSStringFromCGAffineTransform 方法打印处转换后的矩阵值；&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/iOS_Read_Note/CGAffineTransform.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;CGPoint，CGRect，CGSize，CGAffineTransform等几何元素并不是对象，如果要存储或者更加直观的打印这些几何元素，OC 也提供了对应的方法，如：
+    &lt;blockquote&gt;
+      &lt;ol&gt;
+        &lt;li&gt;转换为 strings&lt;/li&gt;
+      &lt;/ol&gt;
+    &lt;/blockquote&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/iOS_Read_Note/To_Strings.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;转换为字典&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/iOS_Read_Note/To_Dictionary.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;ol&gt;
+    &lt;li&gt;转换为值类型&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/iOS_Read_Note/To_Value.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;几何测试方法&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/iOS_Read_Note/Graph_Test.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+</description>
+        <pubDate>Fri, 15 Feb 2019 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2019/02/15/iOS%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/</link>
+        <guid isPermaLink="true">http://localhost:4000/2019/02/15/iOS%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/</guid>
+        
+        <category>iOS</category>
+        
+        
+      </item>
     
       <item>
         <title>Jira插件开发总结</title>
@@ -813,723 +1388,6 @@ class MyAdapter(val context: Context) : BaseAdapter() {
         <guid isPermaLink="true">http://localhost:4000/2018/11/24/AwesomeAndroid/</guid>
         
         <category>Note</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>Note</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;记录各类笔记, 包括各类优秀文章收集, 资料收集等!&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;一-git&quot;&gt;一. Git&lt;/h2&gt;
-
-&lt;p&gt;&lt;a href=&quot;https://www.jianshu.com/p/d4d5e07ea0cd&quot;&gt;超赞的Git操作讲解&lt;/a&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;二-android&quot;&gt;二. Android&lt;/h2&gt;
-
-&lt;p&gt;&lt;a href=&quot;https://qq634421026.github.io/2017/06/21/%E9%9D%A2%E8%AF%95%E9%A2%98%E6%95%B4%E7%90%86/&quot;&gt;Android面试&lt;/a&gt;&lt;/p&gt;
-</description>
-        <pubDate>Sun, 18 Nov 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/11/18/Note/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/11/18/Note/</guid>
-        
-        <category>Note</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>FFmpeg交叉编译与接入Android工程</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;本文主要讲解如何在&lt;code class=&quot;highlighter-rouge&quot;&gt;Linux&lt;/code&gt;上编译&lt;code class=&quot;highlighter-rouge&quot;&gt;FFmpeg&lt;/code&gt;, 以及将编译出来的动态库(&lt;code class=&quot;highlighter-rouge&quot;&gt;so&lt;/code&gt;)接入已有的&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;工程&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;一-ffmpeg交叉编译&quot;&gt;一. FFmpeg交叉编译&lt;/h2&gt;
-
-&lt;p&gt;本文选用的&lt;code class=&quot;highlighter-rouge&quot;&gt;FFmpeg&lt;/code&gt;版本是&lt;code class=&quot;highlighter-rouge&quot;&gt;FFmpeg 4.0&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;NDK&lt;/code&gt;版本是&lt;code class=&quot;highlighter-rouge&quot;&gt;Android-ndk-r15c&lt;/code&gt;, 注意在编译&lt;code class=&quot;highlighter-rouge&quot;&gt;FFmpeg&lt;/code&gt;时, 对&lt;code class=&quot;highlighter-rouge&quot;&gt;NDK&lt;/code&gt;版本有要求, 另外, 笔者最开始选用最新版本的&lt;code class=&quot;highlighter-rouge&quot;&gt;NDK&lt;/code&gt;, 总是编译不过, 去查证了一下, 发现从&lt;code class=&quot;highlighter-rouge&quot;&gt;Androud-ndk-r16&lt;/code&gt;开始, 其用于交叉编译都有问题了, 所以选用较低版本的&lt;code class=&quot;highlighter-rouge&quot;&gt;Androud-ndk&lt;/code&gt;; 本文选用的&lt;code class=&quot;highlighter-rouge&quot;&gt;FFmpeg&lt;/code&gt;版本和&lt;code class=&quot;highlighter-rouge&quot;&gt;NDK&lt;/code&gt;版本亲测可编译通过; 先提供下载地址:&lt;/p&gt;
-
-&lt;p&gt;&lt;a href=&quot;https://ffmpeg.org/releases/ffmpeg-4.0.tar.bz2&quot;&gt;FFmpeg 4.0&lt;/a&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;a href=&quot;https://dl.google.com/android/repository/android-ndk-r15c-linux-x86_64.zip&quot;&gt;Android-ndk-r15c&lt;/a&gt;&lt;/p&gt;
-
-&lt;p&gt;笔者选用的编译环境是&lt;code class=&quot;highlighter-rouge&quot;&gt;ArchLinux&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;Windows&lt;/code&gt;上的编译的话, 大体流程不变, 环境配置需要自己弄啦~&lt;/p&gt;
-
-&lt;p&gt;在开始之前, 需要先了解一下相关知识:&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;JNI和NDK&lt;/li&gt;
-    &lt;li&gt;CPU架构&lt;/li&gt;
-    &lt;li&gt;交叉编译&lt;/li&gt;
-    &lt;li&gt;FFmpeg简介&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;这里推荐&lt;a href=&quot;https://developer.android.google.cn/ndk/guides/&quot;&gt;官方文档&lt;/a&gt;, 对以上方面讲解比较详细; 下面简要介绍重点地方&lt;/p&gt;
-
-&lt;h3 id=&quot;11-基础知识&quot;&gt;1.1 基础知识&lt;/h3&gt;
-
-&lt;h4 id=&quot;111-jni和ndk&quot;&gt;1.1.1 JNI和NDK&lt;/h4&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;JNI&lt;/code&gt;就是&lt;code class=&quot;highlighter-rouge&quot;&gt;Java Native Interface&lt;/code&gt;, 即&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;层和&lt;code class=&quot;highlighter-rouge&quot;&gt;Native&lt;/code&gt;层通信的接口; 通过&lt;code class=&quot;highlighter-rouge&quot;&gt;JNI&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;可以实现和其他语言之间的互相调用(注意其他语言不仅仅只限于&lt;code class=&quot;highlighter-rouge&quot;&gt;C/C++&lt;/code&gt;, 虽然大多时候是&lt;code class=&quot;highlighter-rouge&quot;&gt;C/C++&lt;/code&gt;); &lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;是跨平台的, 但是&lt;code class=&quot;highlighter-rouge&quot;&gt;C/C++&lt;/code&gt;不是跨平台的, 所以&lt;code class=&quot;highlighter-rouge&quot;&gt;JNI&lt;/code&gt;也使得&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;需要考虑和特定平台相关的特性&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;NDK&lt;/code&gt;就是&lt;code class=&quot;highlighter-rouge&quot;&gt;Native Development Kit&lt;/code&gt;, 是&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;平台提供的一个工具集, 提供与本地代码之间的交互&lt;/p&gt;
-
-&lt;p&gt;详细可参见&lt;a href=&quot;https://blog.csdn.net/carson_ho/article/details/73250163&quot;&gt;博客&lt;/a&gt;&lt;/p&gt;
-
-&lt;h4 id=&quot;112-cpu架构&quot;&gt;1.1.2 CPU架构&lt;/h4&gt;
-
-&lt;p&gt;不同的手机使用不同的&lt;code class=&quot;highlighter-rouge&quot;&gt;CPU&lt;/code&gt;, 不同的&lt;code class=&quot;highlighter-rouge&quot;&gt;CPU&lt;/code&gt;有不同的指令集, 每种&lt;code class=&quot;highlighter-rouge&quot;&gt;CPU&lt;/code&gt;及其指令集有其自己的应用程序二进制接口(&lt;code class=&quot;highlighter-rouge&quot;&gt;Application Binary Interface&lt;/code&gt;即&lt;code class=&quot;highlighter-rouge&quot;&gt;ABI&lt;/code&gt;); &lt;code class=&quot;highlighter-rouge&quot;&gt;ABI&lt;/code&gt;定义了机器代码与系统运行时的交互方式; &lt;code class=&quot;highlighter-rouge&quot;&gt;ABI&lt;/code&gt;与指令集的对应关系如下表(摘自官方文档)&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/FFmpegCompile/ABI与指令集对应关系.png&quot; alt=&quot;ABI与指令集对应关系&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;常见的&lt;code class=&quot;highlighter-rouge&quot;&gt;CPU&lt;/code&gt;架构有&lt;code class=&quot;highlighter-rouge&quot;&gt;x86&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;x86-64&lt;/code&gt;以及&lt;code class=&quot;highlighter-rouge&quot;&gt;arm&lt;/code&gt;等(&lt;code class=&quot;highlighter-rouge&quot;&gt;x86-64&lt;/code&gt;也是基于&lt;code class=&quot;highlighter-rouge&quot;&gt;x86&lt;/code&gt;的), 其中, &lt;code class=&quot;highlighter-rouge&quot;&gt;x86&lt;/code&gt;主要是针对&lt;code class=&quot;highlighter-rouge&quot;&gt;PC&lt;/code&gt;端, &lt;code class=&quot;highlighter-rouge&quot;&gt;arm&lt;/code&gt;主要针对移动端; &lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;系统目前支持&lt;code class=&quot;highlighter-rouge&quot;&gt;ARMv5&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;ARMv7&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;ARMv8&lt;/code&gt;, ` x86&lt;code class=&quot;highlighter-rouge&quot;&gt;, &lt;/code&gt;x86_64&lt;code class=&quot;highlighter-rouge&quot;&gt;, &lt;/code&gt;MIPS&lt;code class=&quot;highlighter-rouge&quot;&gt;以及&lt;/code&gt;MIPS64&lt;code class=&quot;highlighter-rouge&quot;&gt;共七种&lt;/code&gt;CPU`架构&lt;/p&gt;
-
-&lt;p&gt;在&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;中应用安装时, &lt;code class=&quot;highlighter-rouge&quot;&gt;Package Manager Service&lt;/code&gt;会去扫描&lt;code class=&quot;highlighter-rouge&quot;&gt;APK&lt;/code&gt;, 只有该设备&lt;code class=&quot;highlighter-rouge&quot;&gt;CPU&lt;/code&gt;架构支持的&lt;code class=&quot;highlighter-rouge&quot;&gt;.so&lt;/code&gt;文件才会被安装, 另外还可以定义&lt;code class=&quot;highlighter-rouge&quot;&gt;.so&lt;/code&gt;文件的对应安装优先级&lt;/p&gt;
-
-&lt;h4 id=&quot;113-交叉编译&quot;&gt;1.1.3 交叉编译&lt;/h4&gt;
-
-&lt;p&gt;在某个平台上编译该平台上的可执行文件叫本地编译; 如果在一个平台上编译在其他平台上的可执行程序则叫交叉编译; 交叉编译是随着嵌入式系统的发展而发展的, 因为嵌入式系统的处理能力, 内存等均有限, 所以有时候需要在其他平台上编译好后导入嵌入式系统中, 此时就需要交叉编译&lt;/p&gt;
-
-&lt;p&gt;交叉编译最主要的是环境, 即交叉编译链; 对本文来说, 编译&lt;code class=&quot;highlighter-rouge&quot;&gt;FFmpeg&lt;/code&gt;需要准备&lt;code class=&quot;highlighter-rouge&quot;&gt;NDK&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;NDK&lt;/code&gt;中提供了交叉编译链; 即&lt;code class=&quot;highlighter-rouge&quot;&gt;android-ndk-r15c/toolchains/&lt;/code&gt;下提供的各种平台相关的编译工具链&lt;/p&gt;
-
-&lt;p&gt;本文使用的示例是在&lt;code class=&quot;highlighter-rouge&quot;&gt;x86&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;Linux&lt;/code&gt;下编译&lt;code class=&quot;highlighter-rouge&quot;&gt;arm-v7a&lt;/code&gt;架构的动态库&lt;/p&gt;
-
-&lt;h4 id=&quot;114-ffmpeg&quot;&gt;1.1.4 FFmpeg&lt;/h4&gt;
-
-&lt;p&gt;推荐&lt;a href=&quot;https://ffmpeg.org/ffmpeg-formats.html&quot;&gt;官方文档&lt;/a&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;a href=&quot;http://javapyer.iteye.com/blog/1989274&quot;&gt;基本用法&lt;/a&gt;&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h3 id=&quot;12-ffmpeg交叉编译&quot;&gt;1.2 FFmpeg交叉编译&lt;/h3&gt;
-
-&lt;p&gt;在开始之前需要先配置一下&lt;code class=&quot;highlighter-rouge&quot;&gt;NDK&lt;/code&gt;的环境变量, 在&lt;code class=&quot;highlighter-rouge&quot;&gt;/etc/profile&lt;/code&gt;文件中添加&lt;code class=&quot;highlighter-rouge&quot;&gt;PATH&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;FFmpeg&lt;/code&gt;编译生成的动态库默认格式为&lt;code class=&quot;highlighter-rouge&quot;&gt;xx.so.版本号&lt;/code&gt;, 但是&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;工程中只支持以&lt;code class=&quot;highlighter-rouge&quot;&gt;.so&lt;/code&gt;结尾的动态库, 所以需要修改&lt;code class=&quot;highlighter-rouge&quot;&gt;FFmpeg&lt;/code&gt;的配置文件, 修改其生成库文件名的格式; 编辑&lt;code class=&quot;highlighter-rouge&quot;&gt;FFmpeg&lt;/code&gt;目录下的&lt;code class=&quot;highlighter-rouge&quot;&gt;configure&lt;/code&gt;文件, 修改如下:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# 将configure文件中的：
-SLIBNAME_WITH_MAJOR='$(SLIBNAME).$(LIBMAJOR)'
-LIB_INSTALL_EXTRA_CMD='$$(RANLIB) &quot;$(LIBDIR)/$(LIBNAME)&quot;'
-SLIB_INSTALL_NAME='$(SLIBNAME_WITH_VERSION)'
-SLIB_INSTALL_LINKS='$(SLIBNAME_WITH_MAJOR) $(SLIBNAME)'
-
-#替换为：
-SLIBNAME_WITH_MAJOR='$(SLIBPREF)$(FULLNAME)-$(LIBMAJOR)$(SLIBSUF)'
-LIB_INSTALL_EXTRA_CMD='$$(RANLIB) &quot;$(LIBDIR)/$(LIBNAME)&quot;'
-SLIB_INSTALL_NAME='$(SLIBNAME_WITH_MAJOR)'
-SLIB_INSTALL_LINKS='$(SLIBNAME)'
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-
-&lt;p&gt;为了减小&lt;code class=&quot;highlighter-rouge&quot;&gt;APK&lt;/code&gt;大小, 我们只将需要的功能开启即可; 配置参数较多, 我们写一个脚本如下(名为&lt;code class=&quot;highlighter-rouge&quot;&gt;build-script.sh&lt;/code&gt;)&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;注: 下面的注释在运行脚本时需删除~&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;#!/bin/bash&lt;/span&gt;
-
-&lt;span class=&quot;nv&quot;&gt;NDK&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;/home/yuanping/Software/NDK/android-ndk-r15c  &lt;span class=&quot;c&quot;&gt;# NDK所在路径, 注意替换为你的&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;SYSROOT&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$NDK&lt;/span&gt;/platforms/android-19/arch-arm/
-&lt;span class=&quot;nv&quot;&gt;TOOLCHAIN&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$NDK&lt;/span&gt;/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64 &lt;span class=&quot;c&quot;&gt;# 交叉编译链, 这里使用的是arm, 如果需要编译其他平台的, 更换即可&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;function &lt;/span&gt;build_one
-&lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
-./configure &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
---prefix&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$PREFIX&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
---enable-shared &lt;span class=&quot;se&quot;&gt;\ &lt;/span&gt; &lt;span class=&quot;c&quot;&gt;# 生成动态库&lt;/span&gt;
---disable-static &lt;span class=&quot;se&quot;&gt;\ &lt;/span&gt;&lt;span class=&quot;c&quot;&gt;# 禁止生成静态库&lt;/span&gt;
---disable-doc &lt;span class=&quot;se&quot;&gt;\ &lt;/span&gt; &lt;span class=&quot;c&quot;&gt;# 关闭不需要的功能, 下同&lt;/span&gt;
---disable-ffplay &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
---disable-ffprobe &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
---disable-doc &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
---disable-symver &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
---disable-ffmpeg &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
---enable-small &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
---cross-prefix&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$TOOLCHAIN&lt;/span&gt;/bin/arm-linux-androideabi- &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
---target-os&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;linux &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
---arch&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;arm &lt;span class=&quot;se&quot;&gt;\ &lt;/span&gt;
---enable-cross-compile &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
---sysroot&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$SYSROOT&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
---extra-cflags&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;-Os -fpic &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$ADDI_CFLAGS&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
---extra-ldflags&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$ADDI_LDFLAGS&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;$ADDITIONAL_CONFIGURE_FLAG&lt;/span&gt;
-make clean all
-make -j3
-make install
-&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;CPU&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;armv7-a &lt;span class=&quot;c&quot;&gt;# CPU架构&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;PREFIX&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;pwd&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt;/android/&lt;span class=&quot;nv&quot;&gt;$CPU&lt;/span&gt; &lt;span class=&quot;c&quot;&gt;# 生成动态库所在路径&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;ADDI_CFLAGS&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;-marm&quot;&lt;/span&gt;
-build_one
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-
-&lt;p&gt;之后运行该脚本即可, 注意添加可执行权限(&lt;code class=&quot;highlighter-rouge&quot;&gt;sudo chmod a+x build-script.sh&lt;/code&gt;)&lt;/p&gt;
-
-&lt;p&gt;等待一会应该就好啦, 然后在&lt;code class=&quot;highlighter-rouge&quot;&gt;FFmpeg&lt;/code&gt;目录下有一个&lt;code class=&quot;highlighter-rouge&quot;&gt;android&lt;/code&gt;目录, 生成的动态库就在其中啦~; 笔者生成的如下:&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/FFmpegCompile/armv7-a.png&quot; alt=&quot;Armv7-a&quot; /&gt;&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;二-动态库接入android工程&quot;&gt;二. 动态库接入Android工程&lt;/h2&gt;
-
-&lt;p&gt;在开始接入之前, 需要先配置&lt;code class=&quot;highlighter-rouge&quot;&gt;Android Studio&lt;/code&gt;的环境; 主要是在&lt;code class=&quot;highlighter-rouge&quot;&gt;SDK Manager&lt;/code&gt;中下载&lt;code class=&quot;highlighter-rouge&quot;&gt;CMake&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;LLDB&lt;/code&gt;; 这里可以不用下载&lt;code class=&quot;highlighter-rouge&quot;&gt;NDK&lt;/code&gt;, 最好使用与编译版本一致的&lt;code class=&quot;highlighter-rouge&quot;&gt;NDK&lt;/code&gt;, 以免出现兼容性问题&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/FFmpegCompile/SDKManager.png&quot; alt=&quot;SDKManager&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;配置&lt;code class=&quot;highlighter-rouge&quot;&gt;NDK&lt;/code&gt;路径, 如下:&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/FFmpegCompile/NDKPath.png&quot; alt=&quot;NDK路径&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;项目接入&lt;code class=&quot;highlighter-rouge&quot;&gt;JNI&lt;/code&gt;有两种方法, 一种是通过&lt;code class=&quot;highlighter-rouge&quot;&gt;cmake&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;CMakeLists.txt&lt;/code&gt;配置文件来指定; 另一种是通过&lt;code class=&quot;highlighter-rouge&quot;&gt;ndk-build&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;Android.mk&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;Application.mk&lt;/code&gt;配置文件来指定; 官方推荐使用第一种; 关于第二种接入方式, 可以参见&lt;a href=&quot;https://developer.android.google.cn/ndk/guides/android_mk&quot;&gt;官方文档&lt;/a&gt;配置&lt;/p&gt;
-
-&lt;p&gt;这里主要讲解第一种方式, 参见&lt;a href=&quot;https://developer.android.com/studio/projects/configure-cmake&quot;&gt;官方文档&lt;/a&gt;&lt;/p&gt;
-
-&lt;p&gt;如果是创建的新项目的话, 可以直接在创建项目的时候选择&lt;code class=&quot;highlighter-rouge&quot;&gt;include C++  surpport&lt;/code&gt;, 如下图; 如果项目已经创建了, 也不要紧, 下面讲解的就是这种情况&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/FFmpegCompile/JNI新项目.png&quot; alt=&quot;JNI新项目&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;我们先来看一下完整的目录结构如下:&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/FFmpegCompile/JNI目录结构.png&quot; alt=&quot;目录结构&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;在&lt;code class=&quot;highlighter-rouge&quot;&gt;main&lt;/code&gt;目录下创建一个&lt;code class=&quot;highlighter-rouge&quot;&gt;jni&lt;/code&gt;目录(其他目录名也可以, 但是要注意后文的更改), 在&lt;code class=&quot;highlighter-rouge&quot;&gt;jni&lt;/code&gt;下创建一个&lt;code class=&quot;highlighter-rouge&quot;&gt;ffmpeg&lt;/code&gt;目录, 将上面编译好的&lt;code class=&quot;highlighter-rouge&quot;&gt;android/armv7-a/lib&lt;/code&gt;目录下的&lt;code class=&quot;highlighter-rouge&quot;&gt;.so&lt;/code&gt;文件拷贝到&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;工程的&lt;code class=&quot;highlighter-rouge&quot;&gt;ffmpeg/armeabi-v7a&lt;/code&gt;下(新建&lt;code class=&quot;highlighter-rouge&quot;&gt;armeabi-v7a&lt;/code&gt;目录, 注意目录名一定要是&lt;code class=&quot;highlighter-rouge&quot;&gt;armeabi-v7a&lt;/code&gt;, 和&lt;code class=&quot;highlighter-rouge&quot;&gt;CPU&lt;/code&gt;架构对应), 需要注意的是生成的动态链接库中有一些不带版本号的是指向另一个待版本号的软链接, 如下举例的两个&lt;code class=&quot;highlighter-rouge&quot;&gt;so&lt;/code&gt;文件, 其中&lt;code class=&quot;highlighter-rouge&quot;&gt;libavcodec.so&lt;/code&gt;文件是软链接, 指向&lt;code class=&quot;highlighter-rouge&quot;&gt;libavcodec-58.so&lt;/code&gt;, 所以拷贝时不需要拷贝这些软链接咯&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/FFmpegCompile/动态链接库.png&quot; alt=&quot;动态链接库&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;再将&lt;code class=&quot;highlighter-rouge&quot;&gt;android/armv7-a&lt;/code&gt;目录下的&lt;code class=&quot;highlighter-rouge&quot;&gt;include&lt;/code&gt;文件夹拷贝到&lt;code class=&quot;highlighter-rouge&quot;&gt;ffmpeg&lt;/code&gt;下; 创建好后目录结构如下:&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/FFmpegCompile/创建jni目录.png&quot; alt=&quot;创建jni目录&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;在&lt;code class=&quot;highlighter-rouge&quot;&gt;app&lt;/code&gt;目录下创建&lt;code class=&quot;highlighter-rouge&quot;&gt;CMakeLists.txt&lt;/code&gt;(一定要是这个名字咯), 如下:&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/FFmpegCompile/创建CMakeLists.png&quot; alt=&quot;创建CMakeLists&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;内容如下:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;cmake_minimum_required(VERSION 3.4.1) # cmake最低版本
-
-add_library( # Sets the name of the library.
-             wlffmpeg
-
-             # Sets the library as a shared library.
-             SHARED
-
-             # Provides a relative path to your source file(s).
-             src/main/jni/ffmpeg/player.c )
-
-add_library( avcodec-58  # 库名字
-             SHARED
-             IMPORTED)
-set_target_properties( avcodec-58
-                       PROPERTIES IMPORTED_LOCATION
-                       ${CMAKE_SOURCE_DIR}/src/main/jni/ffmpeg/armeabi-v7a/libavcodec-58.so) 
-
-add_library( avdevice-58
-             SHARED
-             IMPORTED)
-set_target_properties( avdevice-58
-                       PROPERTIES IMPORTED_LOCATION
-                       ${CMAKE_SOURCE_DIR}/src/main/jni/ffmpeg/armeabi-v7a/libavdevice-58.so)
-
-add_library( avfilter-7
-             SHARED
-             IMPORTED)
-set_target_properties( avfilter-7
-                       PROPERTIES IMPORTED_LOCATION
-                       ${CMAKE_SOURCE_DIR}/src/main/jni/ffmpeg/armeabi-v7a/libavfilter-7.so)
-
-add_library( avformat-58
-             SHARED
-             IMPORTED)
-set_target_properties( avformat-58
-                       PROPERTIES IMPORTED_LOCATION
-                       ${CMAKE_SOURCE_DIR}/src/main/jni/ffmpeg/armeabi-v7a/libavformat-58.so)
-
-add_library( avutil-56
-             SHARED
-             IMPORTED)
-set_target_properties( avutil-56
-                       PROPERTIES IMPORTED_LOCATION
-                       ${CMAKE_SOURCE_DIR}/src/main/jni/ffmpeg/armeabi-v7a/libavutil-56.so)
-
-add_library( swresample-3
-             SHARED
-             IMPORTED)
-set_target_properties( swresample-3
-                       PROPERTIES IMPORTED_LOCATION
-                       ${CMAKE_SOURCE_DIR}/src/main/jni/ffmpeg/armeabi-v7a/libswresample-3.so)
-
-add_library( swscale-5
-             SHARED
-             IMPORTED)
-set_target_properties( swscale-5
-                       PROPERTIES IMPORTED_LOCATION
-                       ${CMAKE_SOURCE_DIR}/src/main/jni/ffmpeg/armeabi-v7a/libswscale-5.so)
-
-
-find_library( # Sets the name of the path variable.
-              log-lib  # Android内置的log模块, 用于将JNI层的log打到AS控制台
-
-              # Specifies the name of the NDK library that
-              # you want CMake to locate.
-              log )
-
-include_directories(src/main/jni/ffmpeg/include)
-
-target_link_libraries( # Specifies the target library.  # 链接
-
-                       wlffmpeg  
-                       avcodec-58
-                       avdevice-58
-                       avfilter-7
-                       avformat-58
-                       avutil-56
-                       swresample-3
-                       swscale-5
-
-                       # Links the target library to the log library
-                       # included in the NDK.
-                       ${log-lib} )
-
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-
-&lt;p&gt;关于&lt;code class=&quot;highlighter-rouge&quot;&gt;CMake&lt;/code&gt;配置可以参见&lt;a href=&quot;https://developer.android.com/studio/projects/configure-cmake&quot;&gt;文档&lt;/a&gt;&lt;/p&gt;
-
-&lt;p&gt;在模块级别的&lt;code class=&quot;highlighter-rouge&quot;&gt;build.gradle&lt;/code&gt;下配置:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;android {
-    ...
-    defaultConfig {
-        ...
-        externalNativeBuild {
-            cmake {
-                cppFlags &quot;&quot; 
-            }
-            ndk {
-                abiFilters &quot;armeabi-v7a&quot; # 指定CPU架构
-            }
-        }
-        sourceSets {
-            main {
-                jniLibs.srcDirs = ['src/main/jni/ffmpeg']  # 指定jni路径
-            }
-        }
-    }
-    externalNativeBuild {
-        cmake {
-            path 'CMakeLists.txt' # 指定cmake的配置文件路径
-        }
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-
-&lt;p&gt;创建&lt;code class=&quot;highlighter-rouge&quot;&gt;FFmpeg.java&lt;/code&gt;类, 使用静态代码块加载动态链接库, 定义&lt;code class=&quot;highlighter-rouge&quot;&gt;native&lt;/code&gt;方法&lt;code class=&quot;highlighter-rouge&quot;&gt;playMyMedia()&lt;/code&gt;, 如下:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class FFmpeg {
-    static {
-        System.loadLibrary(&quot;avutil-56&quot;);
-        System.loadLibrary(&quot;swresample-3&quot;);
-        System.loadLibrary(&quot;avcodec-58&quot;);
-        System.loadLibrary(&quot;avformat-58&quot;);
-        System.loadLibrary(&quot;swscale-5&quot;);
-        System.loadLibrary(&quot;avfilter-7&quot;);
-        System.loadLibrary(&quot;avdevice-58&quot;);
-        System.loadLibrary(&quot;wlffmpeg&quot;); // 注意不要忘了加载这个库
-    }
-
-    public native void playMyMedia(String url);
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-
-&lt;p&gt;在&lt;code class=&quot;highlighter-rouge&quot;&gt;playMyMedia()&lt;/code&gt;上快捷键&lt;code class=&quot;highlighter-rouge&quot;&gt;Alt + Enter&lt;/code&gt;选择&lt;code class=&quot;highlighter-rouge&quot;&gt;create function xxx&lt;/code&gt;, 可以自动创建对应的&lt;code class=&quot;highlighter-rouge&quot;&gt;.c&lt;/code&gt;文件, 当然该&lt;code class=&quot;highlighter-rouge&quot;&gt;.c&lt;/code&gt;文件也可以自命名, 此处命名为&lt;code class=&quot;highlighter-rouge&quot;&gt;player.c&lt;/code&gt;; &lt;code class=&quot;highlighter-rouge&quot;&gt;player.c&lt;/code&gt;的完整代码如下: 该代码摘自&lt;a href=&quot;https://blog.csdn.net/ywl5320/article/details/75136986&quot;&gt;博客&lt;/a&gt;&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;#include &amp;lt;jni.h&amp;gt;
-#include &quot;libavformat/avformat.h&quot;
-#include &amp;lt;android/log.h&amp;gt;
-#define LOGI(FORMAT,...) __android_log_print(ANDROID_LOG_INFO,&quot;HusterYP&quot;,FORMAT,##__VA_ARGS__);  // 输出到AS的log中
-#define LOGE(FORMAT,...) __android_log_print(ANDROID_LOG_ERROR,&quot;HusterYP&quot;,FORMAT,##__VA_ARGS__);
-
-JNIEXPORT void JNICALL
-Java_com_gif_ping_jnidemo_FFmpeg_playMyMedia(JNIEnv *env, jobject instance, jstring url_) {
-    const char *url = (*env)-&amp;gt;GetStringUTFChars(env, url_, 0);
-    LOGI(&quot;url:%s&quot;, url);
-    av_register_all();
-    AVCodec *c_temp = av_codec_next(NULL);
-    while (c_temp != NULL)
-    {
-        switch (c_temp-&amp;gt;type)
-        {
-            case AVMEDIA_TYPE_VIDEO:
-                LOGI(&quot;[Video]:%s&quot;, c_temp-&amp;gt;name);
-                break;
-            case AVMEDIA_TYPE_AUDIO:
-                LOGI(&quot;[Audio]:%s&quot;, c_temp-&amp;gt;name);
-                break;
-            default:
-                LOGI(&quot;[Other]:%s&quot;, c_temp-&amp;gt;name);
-                break;
-        }
-        c_temp = c_temp-&amp;gt;next;
-    }
-    (*env)-&amp;gt;ReleaseStringUTFChars(env, url_, url);
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-
-&lt;p&gt;然后在&lt;code class=&quot;highlighter-rouge&quot;&gt;MainActivity&lt;/code&gt;中使用, 也比较简单; 注意添加网络权限, 在&lt;code class=&quot;highlighter-rouge&quot;&gt;log&lt;/code&gt;中就可以看到输出的视频信息啦~&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class MainActivity extends AppCompatActivity {
-
-    FFmpeg mFFmpeg;
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        init();
-    }
-
-    private void init() {
-        mFFmpeg = new FFmpeg();
-        mFFmpeg.playMyMedia(&quot;http://video.xxx&quot;); // 随便找一个视频url啦~
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-
-&lt;p&gt;到这里, 项目应该就能跑起来啦~&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;工程参见&lt;a href=&quot;https://github.com/HusterYP/JNIDemo&quot;&gt;JNIDemo&lt;/a&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;FFmpeg&lt;/code&gt;编译参见: https://github.com/HusterYP/FFmpeg&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;三-参考链接&quot;&gt;三. 参考链接&lt;/h2&gt;
-
-&lt;p&gt;&lt;a href=&quot;https://medium.com/@karthikcodes1999/cross-compiling-ffmpeg-4-0-for-android-b988326f16f2&quot;&gt;Cross Compiling FFmpeg 4.0 for Android&lt;/a&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;a href=&quot;https://blog.csdn.net/yhaolpz/article/details/76408829&quot;&gt;Android 集成 FFmpeg (一) 基础知识及简单调用&lt;/a&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;a href=&quot;https://blog.csdn.net/ywl5320/article/details/75136986&quot;&gt;Android Studio通过cmake创建FFmpeg项目&lt;/a&gt;&lt;/p&gt;
-</description>
-        <pubDate>Sat, 17 Nov 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/11/17/FFmpeg%E4%BA%A4%E5%8F%89%E7%BC%96%E8%AF%91%E4%B8%8E%E6%8E%A5%E5%85%A5Android%E5%B7%A5%E7%A8%8B/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/11/17/FFmpeg%E4%BA%A4%E5%8F%89%E7%BC%96%E8%AF%91%E4%B8%8E%E6%8E%A5%E5%85%A5Android%E5%B7%A5%E7%A8%8B/</guid>
-        
-        <category>Android</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>进程与线程</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;操作系统之进程与线程总结&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;一-进程&quot;&gt;一. 进程&lt;/h2&gt;
-
-&lt;p&gt;定义: 一个运行中的程序&lt;/p&gt;
-
-&lt;p&gt;进程和程序的区别: 一个进程是某种类型的活动, 它有程序, 输入, 输出以及状态, 如果一个程序运行了两遍, 则算作两个进程&lt;/p&gt;
-
-&lt;p&gt;进程地址空间见下图:&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/CS/进程地址空间.png&quot; alt=&quot;进程地址空间&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;内核模式和用户模式的实现: 通常是用某个控制寄存器中的一个模式位实现的&lt;/p&gt;
-
-&lt;p&gt;进程有三种状态: 运行态, 就绪态, 阻塞态; 其相互之间的切换见下&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/CS/进程状态切换.png&quot; alt=&quot;进程状态切换&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;子进程的回收: 当一个进程由于某种原因终止时, 内核并不是立即把它从系统中清除, 相反, 进程被保持在已终止的状态, 知道被它的父进程回收, 一个终止但还未被回收的进程称为僵死进程, 即使僵死进程没有运行, 他们仍然消耗系统的内存资源; 如果一个父进程终止了, 内核会安排&lt;code class=&quot;highlighter-rouge&quot;&gt;init&lt;/code&gt;进程成为它的孤儿进程的养父&lt;/p&gt;
-
-&lt;h3 id=&quot;11-进程创建fork&quot;&gt;1.1 进程创建–fork()&lt;/h3&gt;
-
-&lt;p&gt;通过&lt;code class=&quot;highlighter-rouge&quot;&gt;fork&lt;/code&gt;可以创建进程, 新创建的子进程与父进程几乎但不是完全相同的, 子进程得到与父进程用户级虚拟地址空间相同(但是独立)的副本, 包括代码和数据段, 堆, 共享库以及用户栈, 子进程还获得与父进程任何打开文件描述符相同的副本, 这就意味着当父进程调用&lt;code class=&quot;highlighter-rouge&quot;&gt;fork&lt;/code&gt;时, 子进程可以读写父进程中打开的任何文件; 其最大的区别就是具有不同的&lt;code class=&quot;highlighter-rouge&quot;&gt;UID&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;通常子进程会执行&lt;code class=&quot;highlighter-rouge&quot;&gt;execve&lt;/code&gt;或一个相同的系统调用以修改其内存映像并运行一个新的程序&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;fork&lt;/code&gt;函数调用一次但是返回两次, 一次是在父进程中, 另一次是在新创建的子进程中, 参见一下代码&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;int main() 
-{
-    pid_t pid;
-    int x = 1;
-    pid = Fork();
-    if (pid == 0) // 子进程
-    {
-        printf(&quot;Child: x = %d\n&quot;, ++x); 
-        exit(0);
-    }
-    printf(&quot;Parent: x = %d\n&quot;, --x); // 父进程
-    exit(0);
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-
-&lt;p&gt;输出(注意由于并发不定性, 所以输出顺序不定):&lt;/p&gt;
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Parent: x = 0
-Child: x = 2
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-
-&lt;p&gt;注意理解上述程序:&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;调用一次, 返回两次&lt;/li&gt;
-    &lt;li&gt;并发执行&lt;/li&gt;
-    &lt;li&gt;相同但是独立的地址空间: 写时复制; 子进程共享父进程的所有内存, 但这块内存通过写时复制共享, 这意味着一旦两者之一想要修改部分内存, 则这块内存首先被明确的复制, 以确保修改发生在私有内存区域&lt;/li&gt;
-    &lt;li&gt;共享文件: 当运行这个程序时, 我们注意到父进程和子进程都把他们的输出显示到屏幕上, 原因是子进程继承了父进程所有的打开文件, 当父进程调用&lt;code class=&quot;highlighter-rouge&quot;&gt;fork&lt;/code&gt;时, &lt;code class=&quot;highlighter-rouge&quot;&gt;stdout&lt;/code&gt;文件是打开的, 并指向屏幕, 子进程继承了这个文件, 因此它的输出也是指向屏幕的(&lt;strong&gt;注意理解此处&lt;/strong&gt;)&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;h3 id=&quot;12-进程间通信&quot;&gt;1.2 进程间通信&lt;/h3&gt;
-
-&lt;h4 id=&quot;121-如何保证临界区互斥&quot;&gt;1.2.1 如何保证临界区互斥&lt;/h4&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;屏蔽中断: 在单处理器系统中, 最简单的方法是使每个进程在刚刚进入临界区后立即屏蔽所有中断, 并在要离开之前再打开中断&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;锁变量&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;严格的轮换法: 自旋锁&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Peterson&lt;/code&gt;解法&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;TSL&lt;/code&gt;指令: 测试并加锁; 读字和写字操作保证是不可分割的, 即该指令结束之前其他处理器均不允许访问该内存字; 执行&lt;code class=&quot;highlighter-rouge&quot;&gt;TSL&lt;/code&gt;指令的&lt;code class=&quot;highlighter-rouge&quot;&gt;CPU&lt;/code&gt;锁住内存总线, 以禁止其他&lt;code class=&quot;highlighter-rouge&quot;&gt;CPU&lt;/code&gt;在本指令结束之前访问内存(原子操作的更底层解释)&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h4 id=&quot;122-生产者消费者问题&quot;&gt;1.2.2 生产者消费者问题&lt;/h4&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;信号量: 用一个整型变量来累计唤醒次数&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;#define N 100 // 缓冲区的槽数目
-typedef int semaphore; // 信号量是一种特殊类型的整型数据
-semaphore mutex = 1; // 控制对临界区的访问
-semaphore empty = N; // 计数缓冲区的空槽数目
-semaphore full = 0; // 计数缓冲区的满槽数目
-
-void producer(void)
-{   
-    int item;
-
-    while(true)
-    {   
-        item = produce_item();
-        down(&amp;amp;empty); // 将空槽数目减一; 注意理解, 若交换这里两个down操作的顺序, 可能会造成死锁
-        down(&amp;amp;mutex); // 进入临界区
-        insert_item(item);
-        up(&amp;amp;mutex); // 离开临界区
-        up(&amp;amp;full); // 将满槽数目加一
-    }
-}
-
-void consumer(void)
-{
-    int item;
-
-    while(true)
-    {
-        down(&amp;amp;full);
-        down(&amp;amp;mutex);
-        item = remove_item();
-        up(&amp;amp;mutex);
-        up(&amp;amp;empty);
-        comsume_item(item);
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;互斥量: 没有计数能力, 可以处于两态之一: 解锁和加锁&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;管程: 一个管程是一个由过程, 变量以及数据等组成的一个集合, 它们组成一个特殊的模块或软件包, 进程可以在任何需要的时候调用管程中的过程, 但是不能在管程之外声明的过程中直接访问管程内的数据结构&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/CS/管程.png&quot; alt=&quot;管程&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;进入管程的互斥由编译器负责, 但通常的做法是用一个互斥量或二元信号量&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;避免锁: 读-复制-更新&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h3 id=&quot;13-调度&quot;&gt;1.3 调度&lt;/h3&gt;
-
-&lt;p&gt;进程切换做的工作: 首先用户态切换到内核态, 然后保存当前进程的状态, 包括在进程表中存储器值; 在许多系统中, 内存映像(如: 页表内内存访问位)也必须保存, 接着, 通过运行调度程序选择一个新进程, 之后, 将该新进程的内存映像装进&lt;code class=&quot;highlighter-rouge&quot;&gt;MMU&lt;/code&gt;, 最后新进程开始运行; 除此之外, 进程切换还要使整个内存高速缓存失效, 强迫缓存从内存中动态重新装入两次(进入内核一次, 离开内核一次)&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/CS/上下文切换.png&quot; alt=&quot;上下文切换&quot; /&gt;&lt;/p&gt;
-
-&lt;h4 id=&quot;131-调度时机&quot;&gt;1.3.1 调度时机&lt;/h4&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;什么时候调度&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;创建一个新进程之后, 决定是运行子进程还是父进程&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;在一个进程退出时&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;当一个进程阻塞在&lt;code class=&quot;highlighter-rouge&quot;&gt;I/O&lt;/code&gt;和信号量上或由于其他原因阻塞时&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;I/O&lt;/code&gt;中断时&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h4 id=&quot;132-调度策略&quot;&gt;1.3.2 调度策略&lt;/h4&gt;
-
-&lt;p&gt;有三种环境:&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;批处理&lt;/li&gt;
-    &lt;li&gt;交互式&lt;/li&gt;
-    &lt;li&gt;实时&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;批处理&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;先来先服务&lt;/li&gt;
-    &lt;li&gt;最短作业优先&lt;/li&gt;
-    &lt;li&gt;最短剩余时间优先&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;交互式&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;轮转调度: 时间分片; 维护一个进程队列, 用完时间片后, 排到队列末尾&lt;/li&gt;
-    &lt;li&gt;优先级调度&lt;/li&gt;
-    &lt;li&gt;多级队列&lt;/li&gt;
-    &lt;li&gt;最短进程优先&lt;/li&gt;
-    &lt;li&gt;保证调度&lt;/li&gt;
-    &lt;li&gt;彩票调度&lt;/li&gt;
-    &lt;li&gt;公平分享调度&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;h4 id=&quot;133-读者-写者问题&quot;&gt;1.3.3 读者-写者问题&lt;/h4&gt;
-
-&lt;p&gt;实现目标是: 可以多个读者&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;以数据库为例&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;typedef int semaphore;
-semaphore mutex = 1; 
-semaphore db = 1; // 控制对数据库的访问
-int rc = 0; // 正在读或者即将读的进程数目
-
-void reader(void)
-{
-    while(true)
-    {
-        down(&amp;amp;mutex); // 获得对rc的互斥访问权
-        rc = rc + 1; // 多了一个读者
-        if (rc == 1) // 如果是第一个读者
-            down(&amp;amp;db);
-        up(&amp;amp;mutex);
-        read_data_base(); // 访问数据
-        down(&amp;amp;mutex);
-        rc = rc - 1; // 减少了一个读者
-        if (rc == 0) // 如果是最后一个读者
-            up(&amp;amp;db); 
-        up(&amp;amp;mutex);
-        use_data_read(); // 非临界区
-    }
-}
-
-void writer(void) 
-{   
-    while(true)
-    {
-        think_up_data(); // 非临界区
-        down(&amp;amp;db); // 获取互斥访问
-        write_data_basae(); // 更新数据
-        up(&amp;amp;db); // 释放互斥访问
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;二-线程&quot;&gt;二. 线程&lt;/h2&gt;
-
-&lt;p&gt;为什么要使用线程:&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;并行实体拥有共享同一个地址空间和所有可用数据的能力, 这是多进程无法表达的&lt;/li&gt;
-    &lt;li&gt;线程比进程更轻量级, 它们比进程更容易创建, 也更容易撤销&lt;/li&gt;
-    &lt;li&gt;若多个线程都是&lt;code class=&quot;highlighter-rouge&quot;&gt;CPU&lt;/code&gt;密集型的, 那么并不能获得性能上的增强(考虑调度消耗时间), 但是如果存在大量的计算和大量的&lt;code class=&quot;highlighter-rouge&quot;&gt;I/O&lt;/code&gt;处理, 拥有多个线程允许这些活动彼此重叠进行, 从而会加快应用程序执行的速度&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;在线程中有一个程序计数器, 用来记录接着要执行哪一条指令, 线程拥有寄存器, 用来保存线程当前的工作变量, 线程还拥有一个堆栈, 其中每一帧保存了一个已调用的但是还没有从中返回的过程&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/CS/线程与进程.png&quot; alt=&quot;线程与进程&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;进程用于把资源集中到一起, 而线程则是在&lt;code class=&quot;highlighter-rouge&quot;&gt;CPU&lt;/code&gt;上被调度执行的实体(资源管理的单位是进程)&lt;/p&gt;
-
-</description>
-        <pubDate>Thu, 15 Nov 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/11/15/%E8%BF%9B%E7%A8%8B%E4%B8%8E%E7%BA%BF%E7%A8%8B/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/11/15/%E8%BF%9B%E7%A8%8B%E4%B8%8E%E7%BA%BF%E7%A8%8B/</guid>
-        
-        <category>操作系统</category>
         
         
       </item>

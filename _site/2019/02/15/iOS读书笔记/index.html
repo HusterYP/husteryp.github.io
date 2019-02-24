@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Hello-World">
+    <meta name="keyword"  content="">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>iOS读书笔记 - 袁平 | HusterYP-Blog</title>
+
+    <link rel="canonical" href="http://localhost:4000/2019/02/15/iOS%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    <!-- Pygments Github CSS -->
+    <link rel="stylesheet" href="/css/syntax.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="http://cdn.staticfile.org/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">袁平</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/about/">About</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/tags/">Tags</a>
+                    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Image to hack wechat -->
+<!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="/img/tag-bg.jpg" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/img/tag-bg.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/#iOS" title="iOS">iOS</a>
+                        
+                    </div>
+                    <h1>iOS读书笔记</h1>
+                    
+                    
+                    <h2 class="subheading">iOS读书笔记</h2>
+                    
+                    <span class="meta">Posted by 袁平 on February 15, 2019</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+				<h1 id="前言">前言</h1>
+
+<p>iOS 各类书籍读书笔记</p>
+
+<p>摘要各本书中重难点</p>
+
+<hr />
+
+<h1 id="正文">正文</h1>
+
+<hr />
+
+<h2 id="objective-c-编程之道ios-设计模式">Objective-C 编程之道：iOS 设计模式</h2>
+
+<ol>
+  <li>
+    <p>中介者模式是至用一个对象来封装一组对象之间的交互逻辑，中介者通过避免对象间显示的相互引用来增进不同对象间的松耦合</p>
+  </li>
+  <li>
+    <p>备忘录模式允许对象按其想要的任何（或者任意复杂的）方式将自己的壮状态保存为一个对象，根据此模式这个对象被称为备忘录对象，然后某个其他对象，比如看管人对象，将备忘录对象保管在某处，通常是文件系统或内存中；看管人对象不知道有关备忘录对象的任何细节的格式，一段时间之后，接收到请求时，看管人对象将备忘录对象传回给原来的对象，让他根据在备忘录对象中保存的信息恢复其状态</p>
+  </li>
+  <li>
+    <p>代理模式的一个特点是同归虚拟代理，在接到请求时实现重型资源的懒加载</p>
+  </li>
+  <li>
+    <p>软件设计的黄金法则：变动需要抽象</p>
+  </li>
+  <li>
+    <p>桥接模式的目的是把抽象层次结构从其实现中分离出来，使其能够独立变更；抽象层定义了供客户端使用的上层抽象接口；可以<a href="https://www.jianshu.com/p/e986af029490">参见博客</a></p>
+  </li>
+  <li>
+    <p>外观模式为子系统中一组不同的接口提供统一的接口呢，外观模式定义了上层接口，通过降低复杂度和隐藏子系统间的通信及依存关系，让子系统更易于使用（其实就是对一系列复杂操作再次进行封装，隐藏调用或者实现细节）</p>
+  </li>
+  <li>
+    <p>中介者模式用于定义一个集中的场所，对象间的交互可以在一个中介者对象中处理；其他对象不必彼此交互，因此减少了它们之间的依存关系</p>
+  </li>
+  <li>
+    <p>观察者模式：iOS 中观察者模式可以通过通知和键值观察(KVO)来实现</p>
+  </li>
+  <li>
+    <p>迭代器模式：迭代器（Iterator）提供了一种顺序访问聚合对象(集合)中元素的方法，而无需暴露结构的底层表示和细节</p>
+  </li>
+  <li>
+    <p>装饰模式：即动态的为一个对象添加额外的指责，是继承的替代方案，属于结构型模式（继承是编译时静态绑定，装饰模式是可以在运行是动态绑定，即定义一个接口，然后动态的注入不同的实现类）</p>
+  </li>
+  <li>
+    <p>责任链模式：即如果一个对象不知道如何处理一个请求，则将该请求传递给另一个对象，这样继续传递下去</p>
+  </li>
+  <li>
+    <p>策略模式：提取公共接口，不同实现</p>
+  </li>
+  <li>
+    <p>命令模式：将请求封装为一个对象，从而可用不同的请求对客户进行参数化，对请求排队或者记录请求日志，以及支持可撤销的操作</p>
+  </li>
+  <li>
+    <p>享元模式：实现享元模式需要两个关键组件，通常是可共享的享元对象和保存他们的池</p>
+  </li>
+  <li>
+    <p>代理模式：代理是一种替代或占位，它控制对另一些对象的访问，而这些对象可能是远程对象，创建的开销较大的对象，或者是对安全性有要求的对象（NSProxy）</p>
+  </li>
+</ol>
+
+<hr />
+
+<h2 id="uicollectionview解析">UICollectionView解析</h2>
+
+<ol>
+  <li>UICollectionViewCell 的层级结构见下图；UICollectionViewCell 有三个子 View ，下图中黑色矩形是 CollectioView Cell 自身，绿色矩形是 contentView，我们应该在contentView上面添加子 View，中间的两层 selectedBackgroundView 和 backgroundView 是可选的，并且可以在任何时候进行设置（当 backgroundView 被设置的时候，将会永远显示；selectedBackgroundView 在 Cell 被选中的时候设置，在 Cell 取消选中的时候移除，并且还可以为其设置动画）</li>
+</ol>
+
+<p><img src="/img/post/iOS_Read_Note/UICollectionViewCell_Hierarchy.png" alt="" /></p>
+
+<hr />
+
+<h2 id="ios-drawing-practical-uikit-solution">iOS Drawing: Practical UIKit Solution</h2>
+
+<ol>
+  <li>Context：包含了绘图的上下文环境；主要使用的有两种：
+    <blockquote>
+      <ol>
+        <li>Bitmap Context：使用像素数据来绘制</li>
+        <li>PDF Contexta：矢量数据，以矢量的形式来绘制</li>
+        <li>Core Image Context：帮助进行图像处理，如数字图像处理和计算机视觉等，通过GPU加速</li>
+      </ol>
+    </blockquote>
+  </li>
+  <li>
+    <p>iOS绘图程序主要基于UIKit和QuartzCore框架(QuertzCore框架通常被称作Quartz或者Quartz 2D)，它由新的Objective-C界面（UIKit提供）和老旧一些的C语言方法和核心基础类（QuartzCore）组成</p>
+  </li>
+  <li>在绘制图像的时候，有一个很重要的概念是上下文（Context），其实类似于一个大的状态机，每次改变都会改变其当前状态，可以通过 CGContextSaveGState 来暂存当前状态，之后通过 CGContextRestoreCState 来恢复状态；可以改变 Context 的属性如下图：</li>
+</ol>
+
+<p><img src="/img/post/iOS_Read_Note/Context_State.png" alt="" /></p>
+
+<ol>
+  <li>需要注意的是 UIKit 中坐标系原点为屏幕坐上点，在Quartz中，原点位于左下点，如下图；</li>
+</ol>
+
+<p><img src="/img/post/iOS_Read_Note/坐标系.png" alt="" /></p>
+
+<ol>
+  <li>
+    <p>Quartz 和 UIKit 绘图方法都是线程安全的</p>
+  </li>
+  <li>
+    <p>以CG开头Ref结尾的类型是指，指向对象的指针</p>
+  </li>
+  <li>
+    <p>坐标系转换，即把一个点从视图坐标系转换到它的父视图的坐标系中：CGPoint convertedPoint = [fahterView convertPoint:samplePoint fromView:childView]; 如果要反向转换，可以使用：转换回来，使用convertRect：toView：；前提是这些视图必须在同一个 UIWindow 中</p>
+  </li>
+  <li>
+    <p>CGAffineTransform 可以用于进行旋转，缩放，位移变换（其实也是一个变换矩阵，如下图）；一般都不使用 CGAffineTransformMake 方法来构建，通常使用 CGAffineTransformMakeScale（），CGAffineTransformMakeRotate（）或是CGAffineTransformMakeTranslation（）来分别构造缩放，旋转，位移矩阵；可以通过 UIKit 的 NSStringFromCGAffineTransform 方法打印处转换后的矩阵值；</p>
+  </li>
+</ol>
+
+<p><img src="/img/post/iOS_Read_Note/CGAffineTransform.png" alt="" /></p>
+
+<ol>
+  <li>CGPoint，CGRect，CGSize，CGAffineTransform等几何元素并不是对象，如果要存储或者更加直观的打印这些几何元素，OC 也提供了对应的方法，如：
+    <blockquote>
+      <ol>
+        <li>转换为 strings</li>
+      </ol>
+    </blockquote>
+  </li>
+</ol>
+
+<p><img src="/img/post/iOS_Read_Note/To_Strings.png" alt="" /></p>
+
+<blockquote>
+  <ol>
+    <li>转换为字典</li>
+  </ol>
+</blockquote>
+
+<p><img src="/img/post/iOS_Read_Note/To_Dictionary.png" alt="" /></p>
+
+<blockquote>
+  <ol>
+    <li>转换为值类型</li>
+  </ol>
+</blockquote>
+
+<p><img src="/img/post/iOS_Read_Note/To_Value.png" alt="" /></p>
+
+<ol>
+  <li>几何测试方法</li>
+</ol>
+
+<p><img src="/img/post/iOS_Read_Note/Graph_Test.png" alt="" /></p>
+
+
+
+                <hr>
+
+                
+
+
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/2019/02/14/Jira%E6%8F%92%E4%BB%B6/" data-toggle="tooltip" data-placement="top" title="Jira插件开发总结">&larr; Previous Post</a>
+                    </li>
+                    
+                    
+                    <li class="next">
+                        <a href="/2019/02/16/%E5%B8%B8%E7%94%A8%E7%AE%97%E6%B3%95%E6%80%9D%E6%83%B3/" data-toggle="tooltip" data-placement="top" title="常用算法思想">Next Post &rarr;</a>
+                    </li>
+                    
+                </ul>
+
+
+                
+
+                
+                <!-- disqus 评论框 start -->
+                <div class="comment">
+                    <div id="disqus_thread" class="disqus-thread"></div>
+                </div>
+                <!-- disqus 评论框 end -->
+                
+
+            </div>
+
+    <!-- Sidebar Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+        				
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#Algorithm" title="Algorithm" rel="5">
+                                    Algorithm
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#Draft" title="Draft" rel="4">
+                                    Draft
+                                </a>
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#Java" title="Java" rel="14">
+                                    Java
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#Android" title="Android" rel="10">
+                                    Android
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#Hust" title="Hust" rel="2">
+                                    Hust
+                                </a>
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#操作系统" title="操作系统" rel="2">
+                                    操作系统
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#View" title="View" rel="2">
+                                    View
+                                </a>
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#Note" title="Note" rel="2">
+                                    Note
+                                </a>
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#iOS" title="iOS" rel="2">
+                                    iOS
+                                </a>
+                            
+        				
+        			</div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+                <hr>
+                <h5>FRIENDS</h5>
+                <ul class="list-inline">
+                    
+                        <li><a href="https://tech.meituan.com/archives">美团点评</a></li>
+                    
+                        <li><a href="https://eriri.ink/">天宇</a></li>
+                    
+                </ul>
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+
+<!-- disqus 公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = "HusterYP";
+    var disqus_identifier = "/2019/02/15/iOS读书笔记";
+    var disqus_url = "http://localhost:4000/2019/02/15/iOS%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/";
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<!-- disqus 公共JS代码 end -->
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("http://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                    
+                    
+
+                    <!-- add Weibo, Zhihu by Hux, add target = "_blank" to <a> by Hux -->
+                    
+                    
+
+
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/HusterYP">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; 袁平 2019
+                    <br>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js "></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/js/bootstrap.min.js "></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js "></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("http://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+
+
+<!-- Baidu Tongji -->
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>
