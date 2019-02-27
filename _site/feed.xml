@@ -5,9 +5,137 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Tue, 26 Feb 2019 20:27:37 +0800</pubDate>
-    <lastBuildDate>Tue, 26 Feb 2019 20:27:37 +0800</lastBuildDate>
+    <pubDate>Wed, 27 Feb 2019 20:13:14 +0800</pubDate>
+    <lastBuildDate>Wed, 27 Feb 2019 20:13:14 +0800</lastBuildDate>
     <generator>Jekyll v3.8.5</generator>
+    
+      <item>
+        <title>iOS疑难点</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;iOS疑难点总结，部分摘自参考链接&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;selfvar还是_var&quot;&gt;self.var还是_var?&lt;/h2&gt;
+
+&lt;p&gt;在iOS中常见到如下写法：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;@interface&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Demo&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;@property&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;nonatomic&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;strong&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;NSString&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;@end&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;@implementation&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Demo&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;test&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;_name&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;@&quot;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;//    self.name = @&quot;&quot;;
+&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;@end&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;在上述写法中，&lt;code class=&quot;highlighter-rouge&quot;&gt;self.name&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;_name&lt;/code&gt;有什么区别呢?&lt;/p&gt;
+
+&lt;p&gt;在解释其区别之前，需要先了解一下OC中的属性和实例变量，实例变量具有私有性，一般仅在类内部使用，为了方便给外界读写这个实例变量，就有了属性（@property）&lt;/p&gt;
+
+&lt;p&gt;在iOS第一版中，需要同时声明属性和底层实例变量，那时，属性是oc语言的一个新的机制，并且要求必须声明与之对应的实例变量；如下：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;// MyViewController.h
+&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;@interface&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;MyViewController&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;UIViewController&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;UIButton&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;myButton&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// 实例变量
+&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;@property&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;nonatomic&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;retain&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;UIButton&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;myButton&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// 属性
+&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;@end&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;之后，苹果将默认编译器从GCC转换为LLVM(low level virtual machine)，从此不再需要为属性声明实例变量了。如果LLVM发现一个没有匹配实例变量的属性，它将自动创建一个以下划线开头的实例变量（即&lt;code class=&quot;highlighter-rouge&quot;&gt;var&lt;/code&gt;属性及与其对应的&lt;code class=&quot;highlighter-rouge&quot;&gt;_var&lt;/code&gt;实例变量），如下：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;// MyViewController.h
+&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;@interface&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;MyViewController&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;UIViewController&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;@property&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;nonatomic&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;retain&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;UIButton&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;myButton&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// 将自动创建一个_myButton实例变量与之对应
+&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;@end&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;在MyViewController.m中可以直接使用&lt;code class=&quot;highlighter-rouge&quot;&gt;_myButton&lt;/code&gt;实例变量，也可以通过self.myButton来访问，二者的区别也是下面要讲解的；&lt;/p&gt;
+
+&lt;p&gt;再来看下面一个例子：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;// MyViewController.h
+&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;@interface&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;MyViewController&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;UIViewController&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;NSString&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// 实例变量
+&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;@end&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;在MyViewController.m文件中，如果通过self.name访问的话，编译器会报错，Xcode会提示使用-&amp;gt;，即使用self-&amp;gt;name，这是因为OC中点表达式表示调用方法，而这里的name是一个实例变量，没有与其对应的name方法&lt;/p&gt;
+
+&lt;p&gt;另外，还有一个与@property合用的@synthesize，通过@synthesize还可以指定与属性对应的实例变量名，如下：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;// MyViewController.h
+&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;@interface&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;MyViewController&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;UIViewController&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;@property&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;nonatomic&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;retain&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;UIButton&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;myButton&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;@end&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// MyViewController.m
+&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;@implementation&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;MyViewController&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;@synthesize&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;myButton&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;otherButton&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;@end&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;此时，与属性myButton对应的实例变量名为otherButton了，默认的&lt;code class=&quot;highlighter-rouge&quot;&gt;_myButton&lt;/code&gt;就不能使用了；还需要注意的一点是，如果只是声明了&lt;code class=&quot;highlighter-rouge&quot;&gt;@synthesize myButton;&lt;/code&gt;，那么此时默认与myButton对应的实例变量名为myButton，&lt;code class=&quot;highlighter-rouge&quot;&gt;_myButton&lt;/code&gt;也不能用了&lt;/p&gt;
+
+&lt;p&gt;到这里我们应该知道了使用&lt;code class=&quot;highlighter-rouge&quot;&gt;self.var&lt;/code&gt;与&lt;code class=&quot;highlighter-rouge&quot;&gt;_var&lt;/code&gt;的区别，即self.var实际上是调用了属性方法，即getter和setter方法，而&lt;code class=&quot;highlighter-rouge&quot;&gt;_var&lt;/code&gt;是直接调用的实例变量，不会走getter和setter方法；因此，这里需要注意的是，当我们要重写getter方法时，在getter方法中必须使用&lt;code class=&quot;highlighter-rouge&quot;&gt;_var&lt;/code&gt;实例变量，否则会造成getter方法的递归调用；同理，重写setter方法时，在setter方法中也只能使用&lt;code class=&quot;highlighter-rouge&quot;&gt;_var&lt;/code&gt;实例变量，否则也会造成settter方法的递归调用；另外，直接访问实例变量的话，就不会调用其setter方法，这样就绕过了为相关属性所定义的内存管理语义。例如：在ARC下直接访问一个语义为copy的属性，那么并不会copy该属性，而仅仅是保留新值并释放旧值&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;参考链接：&lt;/strong&gt;&lt;/p&gt;
+&lt;ol&gt;
+  &lt;li&gt;https://www.jianshu.com/p/48056965ddce&lt;/li&gt;
+  &lt;li&gt;http://www.cnblogs.com/crazypebble/archive/2013/11/23/3439261.html&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;property与synthesize&quot;&gt;@property与@synthesize&lt;/h2&gt;
+
+&lt;p&gt;我们知道@property可用于在头文件中声明getter和settter方法，@synthesize方法可用于.m文件中实现getter和setter方法；但是实际情况是，如果我们只是在头文件中使用了@property，而没有在.m文件中使用@synthesize，编译器实际上还是会为我们生成getter和setter方法；这是因为从Xcode 4.4 开始，@synthesize属性是默认声明了的&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;参考链接：&lt;/strong&gt;&lt;/p&gt;
+&lt;ol&gt;
+  &lt;li&gt;https://stackoverflow.com/questions/7496463/objective-c-property-declaration-without-implementation-synthesize&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;扩展extension与分类category&quot;&gt;扩展(extension)与分类(category)&lt;/h2&gt;
+
+&lt;p&gt;&lt;strong&gt;参考链接：&lt;/strong&gt;&lt;/p&gt;
+&lt;ol&gt;
+  &lt;li&gt;https://www.jianshu.com/p/9e827a1708c6&lt;/li&gt;
+  &lt;li&gt;https://blog.csdn.net/hherima/article/details/44242469&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;宏定义中的dowhile0使用&quot;&gt;宏定义中的do{}while(0)使用&lt;/h2&gt;
+
+&lt;p&gt;&lt;strong&gt;参考链接：&lt;/strong&gt;&lt;/p&gt;
+&lt;ol&gt;
+  &lt;li&gt;https://blog.csdn.net/luoweifu/article/details/38563161&lt;/li&gt;
+&lt;/ol&gt;
+</description>
+        <pubDate>Wed, 27 Feb 2019 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2019/02/27/iOS%E7%96%91%E9%9A%BE%E7%82%B9/</link>
+        <guid isPermaLink="true">http://localhost:4000/2019/02/27/iOS%E7%96%91%E9%9A%BE%E7%82%B9/</guid>
+        
+        <category>iOS</category>
+        
+        
+      </item>
     
       <item>
         <title>iOS数据存储</title>
@@ -975,7 +1103,7 @@ CMD+S		模拟器截屏(所截图片都在桌面上)
         <link>http://localhost:4000/2019/01/23/Objective-C%E5%85%A5%E9%97%A8%E8%A6%81%E7%82%B9/</link>
         <guid isPermaLink="true">http://localhost:4000/2019/01/23/Objective-C%E5%85%A5%E9%97%A8%E8%A6%81%E7%82%B9/</guid>
         
-        <category>Objective-C</category>
+        <category>iOS</category>
         
         
       </item>
@@ -1352,60 +1480,6 @@ class MyAdapter(val context: Context) : BaseAdapter() {
         <guid isPermaLink="true">http://localhost:4000/2018/12/08/ListView/</guid>
         
         <category>Draft</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>红黑树</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;p&gt;红黑树&lt;code class=&quot;highlighter-rouge&quot;&gt;Java&lt;/code&gt;实现&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;一-概述&quot;&gt;一. 概述&lt;/h2&gt;
-
-&lt;p&gt;红黑树是一颗平衡二叉树, 是为了避免二叉查找树在极端情况下形成单链表而表现出线性级别的时间复杂度; 红黑树的前身是&lt;code class=&quot;highlighter-rouge&quot;&gt;2-3&lt;/code&gt;查找树, 为了便于理解红黑树的各种旋转操作, 需要先了解一下&lt;code class=&quot;highlighter-rouge&quot;&gt;2-3&lt;/code&gt;查找树&lt;/p&gt;
-
-&lt;p&gt;平衡二叉树始终要保证的是所有空链接(指向一棵空树的链接)到根节点的距离相等&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;二-2-3查找树&quot;&gt;二. 2-3查找树&lt;/h2&gt;
-
-&lt;h3 id=&quot;21-基本概念&quot;&gt;2.1 基本概念&lt;/h3&gt;
-
-&lt;p&gt;为了保证树的平衡性, &lt;code class=&quot;highlighter-rouge&quot;&gt;2-3&lt;/code&gt;查找树允许树中的一个节点保存多个键; 如下图&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/RedBlackTree/2-3树.png&quot; alt=&quot;2-3查找树&quot; /&gt;&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;2-结点: 含有一个键(及其对应的值)和两条链接, 左链接指向的2-3树中的键都小于该结点, 右链接指向的2-3树中的键都大于该结点
-3-结点: 含有两个键(及其对应的值)和三条链接, 左链接指向的2-3树中的键都小于该结点, 右链接指向的2-3树中的键都大于该结点, 中链接指向的2-3树中的键介于该结点之间&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;一棵完美平衡的&lt;code class=&quot;highlighter-rouge&quot;&gt;2-3&lt;/code&gt;查找树中的所有空链接到根结点的距离都是相同的&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h3 id=&quot;22-2-3树的插入&quot;&gt;2.2 2-3树的插入&lt;/h3&gt;
-
-&lt;h4 id=&quot;221-向2-结点中插入新键&quot;&gt;2.2.1 向2-结点中插入新键&lt;/h4&gt;
-
-&lt;p&gt;这种情况比较简单, 直接将2-结点替换为3-结点即可&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/RedBlackTree/2-结点插入新键.png&quot; alt=&quot;2-结点插入新键&quot; /&gt;&lt;/p&gt;
-</description>
-        <pubDate>Thu, 06 Dec 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/12/06/%E7%BA%A2%E9%BB%91%E6%A0%91/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/12/06/%E7%BA%A2%E9%BB%91%E6%A0%91/</guid>
-        
-        <category>Algorithm</category>
         
         
       </item>
