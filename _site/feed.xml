@@ -5,9 +5,76 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Sun, 24 Feb 2019 15:55:07 +0800</pubDate>
-    <lastBuildDate>Sun, 24 Feb 2019 15:55:07 +0800</lastBuildDate>
+    <pubDate>Tue, 26 Feb 2019 20:27:37 +0800</pubDate>
+    <lastBuildDate>Tue, 26 Feb 2019 20:27:37 +0800</lastBuildDate>
     <generator>Jekyll v3.8.5</generator>
+    
+      <item>
+        <title>iOS数据存储</title>
+        <description>&lt;p&gt;沙盒
+Plist
+Preference偏好设置
+NSKeyedArchiver归档 / NSKeyedUnarchiver解档
+SQLite3的使用
+FMDB
+Core Data
+Realm: https://realm.io/cn/docs/swift/latest/&lt;/p&gt;
+
+&lt;p&gt;沙盒：&lt;/p&gt;
+
+&lt;p&gt;文件系统：
+APFS是macOS, iOS, watchOS, 和tvOS的默认文件系统；从iOS 10.3及其之后，APFS就替代HFS+作为默认的文件系统&lt;/p&gt;
+
+&lt;p&gt;iOS App的沙盒目录如下
+&lt;img src=&quot;/img/post/iOS_Storage/iOS_App_SandBox.png&quot; alt=&quot;&quot; /&gt;
+应用程序通常不能在自己的沙盒之外进行文件操作，但是可以通过通过系统接口来获取信息，如通过系统接口获取联系人信息和音乐等&lt;/p&gt;
+
+&lt;p&gt;常用沙盒文件夹：&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;目录&lt;/th&gt;
+      &lt;th&gt;详情&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;AppName.app&lt;/td&gt;
+      &lt;td&gt;App Bundle，该目录包括了app及其所有资源文件；用户拥有只读权限（无写权限），该目录在app安装时被签名，如果强行写入该目录会破坏该签名，使得应用无法启动；该文件目录下内容不会被iTunes或iCloud备份&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Documents&lt;/td&gt;
+      &lt;td&gt;用于存储用户生成的文件，该目录下的文件可以共享给其他用户；该文件目录下内容会被iTunes和iCloud备份&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Documens/Inbox&lt;/td&gt;
+      &lt;td&gt;用来保存由外部应用请求当前应用程序打开的文件；应用程序可以读取和删除该目录下文件，但是无法创建新文件和写入已经存在的文件；该目录下内容会被iTunes和iCloud备份&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Library&lt;/td&gt;
+      &lt;td&gt;用于存储非用户数据的文件，可以将不想暴露给用户的数据存储在该目录下；该目录下有一个Caches子目录，用于缓存，以及一个Application Supportm目录，用于存储应用生成的一些文件，如配置文件等；该目录下内容（除了Caches下内容外）会被iTunes和iCloud备份&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;temp&lt;/td&gt;
+      &lt;td&gt;用于存储临时文件，当应用程序没有运行时，该目录下内容可能会被系统清空；该目录下内容不会被iTunes或iCloud备份&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;&lt;strong&gt;备注：Bundle&lt;/strong&gt;：bundle是将可执行程序代码和相关资源文件（如图片，声音等）组合在一起的一个文件目录；在iOS和OS X中，应用程序，frameworks，插件和其他形式的软件都是bundle（应用程序是第三方开发者能够在iOS上创建的唯一bundle）；使用bundle可以使安装和定位应用程序更加方便，同时方便做国际化(bundle目录结构如下图)；每个应用程序都有一个main bundle，可以通过NSBundle来获取&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/iOS_Storage/bundle.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+</description>
+        <pubDate>Tue, 26 Feb 2019 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2019/02/26/iOS%E6%95%B0%E6%8D%AE%E5%AD%98%E5%82%A8/</link>
+        <guid isPermaLink="true">http://localhost:4000/2019/02/26/iOS%E6%95%B0%E6%8D%AE%E5%AD%98%E5%82%A8/</guid>
+        
+        <category>iOS</category>
+        
+        
+      </item>
     
       <item>
         <title>iOS多线程与网络</title>
@@ -1339,55 +1406,6 @@ class MyAdapter(val context: Context) : BaseAdapter() {
         <guid isPermaLink="true">http://localhost:4000/2018/12/06/%E7%BA%A2%E9%BB%91%E6%A0%91/</guid>
         
         <category>Algorithm</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>AwesomeAndroid</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;记录一些有趣的&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;知识, 内容不限~&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;子线程更新ui&quot;&gt;子线程更新UI&lt;/h2&gt;
-
-&lt;p&gt;考虑如下代码:&lt;/p&gt;
-
-&lt;p&gt;注: &lt;code class=&quot;highlighter-rouge&quot;&gt;MainActivity&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;Layout&lt;/code&gt;布局只有一个&lt;code class=&quot;highlighter-rouge&quot;&gt;id&lt;/code&gt;为&lt;code class=&quot;highlighter-rouge&quot;&gt;main_text&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;TextView&lt;/code&gt;&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class MainActivity : AppCompatActivity() {
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-        initView()
-    }
-
-    private fun initView() {
-//        Thread { main_text.text = &quot;World&quot; }.start() // 更新UI成功
-        Thread {
-            sleep(200)
-            main_text.text = &quot;World&quot; // 更新UI失败(崩溃0)
-        }.start()
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-
-&lt;p&gt;如上代码中, 在第二个子线程中跟新&lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;的时候失败了, 报错: &lt;code class=&quot;highlighter-rouge&quot;&gt;Only the original thread that created a view hierarchy can touch its views&lt;/code&gt;; 即常见的不能在子线程中更新&lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;; 但是在第一个子线程中跟新&lt;code class=&quot;highlighter-rouge&quot;&gt;UI&lt;/code&gt;成功了, 原因是: 线程的检查是在&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewRootImp&lt;/code&gt;中的&lt;code class=&quot;highlighter-rouge&quot;&gt;checkThread()&lt;/code&gt;中, 但是在&lt;code class=&quot;highlighter-rouge&quot;&gt;onCreate()&lt;/code&gt;中, 此时&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewRootImp&lt;/code&gt;还没有创建, 所以此时无法&lt;code class=&quot;highlighter-rouge&quot;&gt;checkThread()&lt;/code&gt;, 实际上, &lt;code class=&quot;highlighter-rouge&quot;&gt;ViewRootImp&lt;/code&gt;的创建是在&lt;code class=&quot;highlighter-rouge&quot;&gt;onResume()&lt;/code&gt;方法回调之后, 在&lt;code class=&quot;highlighter-rouge&quot;&gt;WindowManagerGlobal&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;addView&lt;/code&gt;中创建的; 所以如果这里的&lt;code class=&quot;highlighter-rouge&quot;&gt;initView&lt;/code&gt;即使是在&lt;code class=&quot;highlighter-rouge&quot;&gt;onResume()&lt;/code&gt;中调用也是同样的现象&lt;/p&gt;
-</description>
-        <pubDate>Sat, 24 Nov 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/11/24/AwesomeAndroid/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/11/24/AwesomeAndroid/</guid>
-        
-        <category>Note</category>
         
         
       </item>

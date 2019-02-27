@@ -10,9 +10,9 @@
     <meta name="keyword"  content="">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>ListView[一] - 袁平 | HusterYP-Blog</title>
+    <title>iOS数据存储 - 袁平 | HusterYP-Blog</title>
 
-    <link rel="canonical" href="http://localhost:4000/2018/12/12/ListView-%E4%B8%80/">
+    <link rel="canonical" href="http://localhost:4000/2019/02/26/iOS%E6%95%B0%E6%8D%AE%E5%AD%98%E5%82%A8/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/css/bootstrap.min.css">
@@ -140,15 +140,15 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        <a class="tag" href="/tags/#iOS" title="iOS">iOS</a>
                         
                     </div>
-                    <h1>ListView[一]</h1>
+                    <h1>iOS数据存储</h1>
                     
                     
-                    <h2 class="subheading">ListView基本使用</h2>
+                    <h2 class="subheading">iOS数据存储相关</h2>
                     
-                    <span class="meta">Posted by 袁平 on December 12, 2018</span>
+                    <span class="meta">Posted by 袁平 on February 26, 2019</span>
                 </div>
             </div>
         </div>
@@ -166,183 +166,61 @@
                 col-md-10 col-md-offset-1
                 post-container">
 
-				<h1 id="前言">前言</h1>
+				<p>沙盒
+Plist
+Preference偏好设置
+NSKeyedArchiver归档 / NSKeyedUnarchiver解档
+SQLite3的使用
+FMDB
+Core Data
+Realm: https://realm.io/cn/docs/swift/latest/</p>
 
-<p>本文将从<code class="highlighter-rouge">ListView</code>的基本使用入手, 介绍常见的<code class="highlighter-rouge">ListView</code>性能优化问题</p>
+<p>沙盒：</p>
 
-<p><code class="highlighter-rouge">ListView</code>采用适配器模式, 关于<code class="highlighter-rouge">ListView</code>的优化主要体现在<code class="highlighter-rouge">Adapter</code>上; 本文也主要从<code class="highlighter-rouge">Adapter</code>入手, 分析常见的优化问题</p>
+<p>文件系统：
+APFS是macOS, iOS, watchOS, 和tvOS的默认文件系统；从iOS 10.3及其之后，APFS就替代HFS+作为默认的文件系统</p>
 
-<p>文章代码基于<code class="highlighter-rouge">kotlin</code></p>
+<p>iOS App的沙盒目录如下
+<img src="/img/post/iOS_Storage/iOS_App_SandBox.png" alt="" />
+应用程序通常不能在自己的沙盒之外进行文件操作，但是可以通过通过系统接口来获取信息，如通过系统接口获取联系人信息和音乐等</p>
 
-<hr />
+<p>常用沙盒文件夹：</p>
 
-<h1 id="正文">正文</h1>
+<table>
+  <thead>
+    <tr>
+      <th>目录</th>
+      <th>详情</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>AppName.app</td>
+      <td>App Bundle，该目录包括了app及其所有资源文件；用户拥有只读权限（无写权限），该目录在app安装时被签名，如果强行写入该目录会破坏该签名，使得应用无法启动；该文件目录下内容不会被iTunes或iCloud备份</td>
+    </tr>
+    <tr>
+      <td>Documents</td>
+      <td>用于存储用户生成的文件，该目录下的文件可以共享给其他用户；该文件目录下内容会被iTunes和iCloud备份</td>
+    </tr>
+    <tr>
+      <td>Documens/Inbox</td>
+      <td>用来保存由外部应用请求当前应用程序打开的文件；应用程序可以读取和删除该目录下文件，但是无法创建新文件和写入已经存在的文件；该目录下内容会被iTunes和iCloud备份</td>
+    </tr>
+    <tr>
+      <td>Library</td>
+      <td>用于存储非用户数据的文件，可以将不想暴露给用户的数据存储在该目录下；该目录下有一个Caches子目录，用于缓存，以及一个Application Supportm目录，用于存储应用生成的一些文件，如配置文件等；该目录下内容（除了Caches下内容外）会被iTunes和iCloud备份</td>
+    </tr>
+    <tr>
+      <td>temp</td>
+      <td>用于存储临时文件，当应用程序没有运行时，该目录下内容可能会被系统清空；该目录下内容不会被iTunes或iCloud备份</td>
+    </tr>
+  </tbody>
+</table>
 
-<hr />
+<p><strong>备注：Bundle</strong>：bundle是将可执行程序代码和相关资源文件（如图片，声音等）组合在一起的一个文件目录；在iOS和OS X中，应用程序，frameworks，插件和其他形式的软件都是bundle（应用程序是第三方开发者能够在iOS上创建的唯一bundle）；使用bundle可以使安装和定位应用程序更加方便，同时方便做国际化(bundle目录结构如下图)；每个应用程序都有一个main bundle，可以通过NSBundle来获取</p>
 
-<h2 id="一-最差版本">一. 最差版本</h2>
+<p><img src="/img/post/iOS_Storage/bundle.png" alt="" /></p>
 
-<p><code class="highlighter-rouge">ListView</code>的性能问题主要是其通常用于展示大量数据造成的; 我们手指上下滑动的时候伴随着<code class="highlighter-rouge">Adapter.getView()</code>方法的不断调用, <code class="highlighter-rouge">getView()</code>的主要作用是去解析<code class="highlighter-rouge">XML</code>生成<code class="highlighter-rouge">View</code>视图, 但是这一过程是一个耗时操作, 如果每次滑动都去<code class="highlighter-rouge">inflate</code>的话, 势必会造成界面的卡顿, 如下即是这种情况: 每次都去<code class="highlighter-rouge">inflate</code>一个<code class="highlighter-rouge">Item</code>, 然后再<code class="highlighter-rouge">findViewById()</code>再进行设置</p>
-
-<div class="highlighter-rouge"><pre class="highlight"><code>// 最差版本
-class MyAdapter(val context: Context) : BaseAdapter() {
-
-    var data = ArrayList&lt;String&gt;()
-    private val mInflater by lazy {
-        context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
-    }
-
-    override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
-        val view = mInflater.inflate(R.layout.item_main, parent, false)
-        view.setOnClickListener{
-            Toast.makeText(context,data[position],Toast.LENGTH_SHORT).show()
-        }
-        view.findViewById&lt;TextView&gt;(R.id.item_text).text = data[position]
-        return view
-    }
-
-    // 其他方法按照常规写, 故此省略
-    ...
-}
-</code></pre></div>
-
-<hr />
-
-<h2 id="二-优化一">二. 优化一</h2>
-
-<p>为了避免每次滑动的时候都要<code class="highlighter-rouge">inflate</code>, <code class="highlighter-rouge">Google</code>官方提供了<code class="highlighter-rouge">ListView</code>的缓存机制, 即将滑动出屏幕外面的<code class="highlighter-rouge">Item</code>缓存下来, 因为通常情况下<code class="highlighter-rouge">ListView</code>要展示的数据类型都是相同的, 所以可以复用同样的<code class="highlighter-rouge">Item</code>界面, 只是展示数据不同; 我们注意到<code class="highlighter-rouge">getView()</code>的参数中有一个<code class="highlighter-rouge">convertView</code>, 这个便是被缓存下来的<code class="highlighter-rouge">View</code>, 所以我们第一次优化可以如下: 主要就是判断<code class="highlighter-rouge">convertView</code>是否为空, 如果为空, 说明没有缓存的<code class="highlighter-rouge">Item</code>, 此时就需要去<code class="highlighter-rouge">inflate</code>, 否则, 直接更改展示数据即可</p>
-
-<div class="highlighter-rouge"><pre class="highlight"><code>class MyAdapter(val context: Context) : BaseAdapter() {
-
-    var data = ArrayList&lt;String&gt;()
-    private val mInflater by lazy {
-        context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
-    }
-
-    override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
-        if (convertView == null) {
-            val view = mInflater.inflate(R.layout.item_main, parent, false)
-            view.findViewById&lt;TextView&gt;(R.id.item_text).text = data[position]
-            return view
-        }
-        convertView.apply {
-            findViewById&lt;TextView&gt;(R.id.item_text).text = data[position]
-        }
-        return convertView
-    }
-
-    // 其他方法按照常规写, 故此省略
-    ...
-}
-</code></pre></div>
-
-<hr />
-
-<h2 id="三-优化二">三. 优化二</h2>
-
-<p>到这里, 其实最耗时的部分已经被优化了, 那么我们是否还能够进行优化呢? 我们注意到每次调用<code class="highlighter-rouge">getView</code>的时候, 虽然避免了每次都去<code class="highlighter-rouge">inflate</code>, 但是我们仍然每次都调用了<code class="highlighter-rouge">findViewById()</code>, 那么这部分我们是否也可以避免掉呢, 当然是可以的, 此时我们的<code class="highlighter-rouge">ViewHolder</code>就派上用场啦~</p>
-
-<p>这里我们使用了一个内部类, 将每次<code class="highlighter-rouge">findViewById</code>找到的<code class="highlighter-rouge">View</code>保存下来, 因为我们前面说过了, <code class="highlighter-rouge">ListView</code>展示的时候, 通常数据类型都是相同的, 即界面相同, 只是每个<code class="highlighter-rouge">Item</code>展示的数据不同而已, 因此也就没有必要每次都去执行一遍<code class="highlighter-rouge">findViewById()</code>, 这也是<code class="highlighter-rouge">ViewHolder</code>所做的主要的优化</p>
-
-<p>另外, 还需要提一下的是这里保存<code class="highlighter-rouge">ViewHolder</code>用的是<code class="highlighter-rouge">View</code>的<code class="highlighter-rouge">tag</code>, 其实我们还可以用这个<code class="highlighter-rouge">tag</code>保存许多我们需要的值, 而不用局限与<code class="highlighter-rouge">ViewHolder</code></p>
-
-<div class="highlighter-rouge"><pre class="highlight"><code>class MyAdapter(val context: Context) : BaseAdapter() {
-
-    var data = ArrayList&lt;String&gt;()
-    private val mInflater by lazy {
-        context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
-    }
-
-    override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
-        var holder: MyViewHolder
-        if (convertView == null) {
-            val view = mInflater.inflate(R.layout.item_main, parent, false)
-            holder = MyViewHolder(view)
-            holder.textView.text = data[position]
-            view.tag = holder
-            return view
-        }
-        holder = convertView.tag as MyViewHolder
-        holder.textView.text = data[position]
-        return convertView
-    }
-    
-    // 其他方法按照常规写, 故此省略
-    ...
-
-    class MyViewHolder(val view: View){
-        val textView: TextView by lazy {
-            view.findViewById&lt;TextView&gt;(R.id.item_text)
-        }
-    }
-}
-</code></pre></div>
-
-<hr />
-
-<h2 id="四-优化三">四. 优化三</h2>
-
-<p>将异步操作放在子线程中执行; 其实这个也不算<code class="highlighter-rouge">ListView</code>自身特殊的优化, 而是由<code class="highlighter-rouge">Android</code>自身特性所决定的</p>
-
-<p>如下; 当加载大图时, 使用异步的<code class="highlighter-rouge">AsyncTask</code>去网络下载好后再展示到界面</p>
-
-<div class="highlighter-rouge"><pre class="highlight"><code>class MyAdapter(private val context: Context) : BaseAdapter() {
-
-    private val mInflater by lazy {
-        context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
-    }
-
-    override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
-        val view: View = convertView ?: mInflater.inflate(R.layout.item_main, parent, false)
-        val holder: ViewHolder = view.tag as ViewHolder? ?: ViewHolder(view)
-        ImageLoader(holder).execute(ImageUrl.url[position])
-        return view
-    }
-
-    // 其他方法按照常规写, 故此省略
-    ...
-
-    class ImageLoader(private var holder: ViewHolder) : AsyncTask&lt;String, Void, Bitmap&gt;() {
-
-        private val cache: LruCache&lt;String, Bitmap&gt; by lazy {
-            val maxMemory = Runtime.getRuntime().maxMemory()
-            val cacheSize = maxMemory / 8
-            object: LruCache&lt;String, Bitmap&gt;(cacheSize.toInt()) {
-                override fun sizeOf(key: String?, value: Bitmap?): Int {
-                    return value?.allocationByteCount ?: 0
-                }
-            }
-        }
-
-        override fun doInBackground(vararg params: String?): Bitmap? {
-            val urlStr = params[0]
-            var bitmap = cache.get(urlStr)
-            if (bitmap != null)
-                return bitmap
-            val url = URL(urlStr)
-            var connection: HttpURLConnection? = null
-            try {
-                connection = url.openConnection() as HttpURLConnection
-                connection.connectTimeout = 5000
-                connection.readTimeout = 5000
-                bitmap = BitmapFactory.decodeStream(connection.inputStream)
-                cache.put(urlStr, bitmap)
-            } catch (e: Exception) {
-                Log.d("@HusterYP","error", e)
-            } finally {
-                connection?.disconnect()
-            }
-            return bitmap
-        }
-
-        override fun onPostExecute(result: Bitmap?) {
-            holder.imageView.setImageBitmap(result)
-        }
-    }
-}
-</code></pre></div>
-
-<p>上述代码其实还有问题; 只是解决了异步加载, 但是由于<code class="highlighter-rouge">View</code>视图的缓存复用, 当滑动的时候会出现<code class="highlighter-rouge">Item</code>展示图片不断改变的现象; 关于此问题的解决可以参见<a href="https://blog.csdn.net/guolin_blog/article/details/45586553">博客</a> (<strong>注:</strong> 上述代码图片<code class="highlighter-rouge">URL</code>也来自该博客)</p>
 
 
                 <hr>
@@ -353,13 +231,9 @@ class MyAdapter(val context: Context) : BaseAdapter() {
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/2018/12/08/ListView/" data-toggle="tooltip" data-placement="top" title="ListView">&larr; Previous Post</a>
+                        <a href="/2019/02/24/iOS%E5%A4%9A%E7%BA%BF%E7%A8%8B/" data-toggle="tooltip" data-placement="top" title="iOS多线程与网络">&larr; Previous Post</a>
                     </li>
                     
-                    
-                    <li class="next">
-                        <a href="/2019/01/01/%E5%A4%A7%E4%B8%89%E4%B8%8A%E6%80%BB%E7%BB%93/" data-toggle="tooltip" data-placement="top" title="大三上总结">Next Post &rarr;</a>
-                    </li>
                     
                 </ul>
 
@@ -488,8 +362,8 @@ class MyAdapter(val context: Context) : BaseAdapter() {
 <script type="text/javascript">
     /* * * CONFIGURATION VARIABLES * * */
     var disqus_shortname = "HusterYP";
-    var disqus_identifier = "/2018/12/12/ListView[一]";
-    var disqus_url = "http://localhost:4000/2018/12/12/ListView-%E4%B8%80/";
+    var disqus_identifier = "/2019/02/26/iOS数据存储";
+    var disqus_url = "http://localhost:4000/2019/02/26/iOS%E6%95%B0%E6%8D%AE%E5%AD%98%E5%82%A8/";
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
