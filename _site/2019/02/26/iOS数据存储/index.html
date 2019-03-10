@@ -166,21 +166,27 @@
                 col-md-10 col-md-offset-1
                 post-container">
 
-				<p>沙盒
-Plist
-Preference偏好设置
-NSKeyedArchiver归档 / NSKeyedUnarchiver解档
-SQLite3的使用
-FMDB
-Core Data
-Realm: https://realm.io/cn/docs/swift/latest/</p>
+				<blockquote>
+  <ol>
+    <li>沙盒</li>
+    <li>Plist</li>
+    <li>Preference偏好设置</li>
+    <li>NSKeyedArchiver归档 / NSKeyedUnarchiver解档</li>
+    <li>SQLite3的使用</li>
+    <li>FMDB</li>
+    <li>Core Data</li>
+    <li>Realm: https://realm.io/cn/docs/swift/latest/</li>
+  </ol>
+</blockquote>
 
-<p>沙盒：</p>
+<hr />
+
+<h2 id="一-沙盒">一. 沙盒</h2>
 
 <p>文件系统：
-APFS是macOS, iOS, watchOS, 和tvOS的默认文件系统；从iOS 10.3及其之后，APFS就替代HFS+作为默认的文件系统</p>
+<code class="highlighter-rouge">APFS</code>是<code class="highlighter-rouge">macOS</code>, <code class="highlighter-rouge">iOS</code>, <code class="highlighter-rouge">watchOS</code>, 和<code class="highlighter-rouge">tvOS</code>的默认文件系统；从<code class="highlighter-rouge">iOS 10.3</code>及其之后，<code class="highlighter-rouge">APFS</code>就替代<code class="highlighter-rouge">HFS+</code>作为默认的文件系统</p>
 
-<p>iOS App的沙盒目录如下
+<p><code class="highlighter-rouge">iOS App</code>的沙盒目录如下
 <img src="/img/post/iOS_Storage/iOS_App_SandBox.png" alt="" />
 应用程序通常不能在自己的沙盒之外进行文件操作，但是可以通过通过系统接口来获取信息，如通过系统接口获取联系人信息和音乐等</p>
 
@@ -217,10 +223,67 @@ APFS是macOS, iOS, watchOS, 和tvOS的默认文件系统；从iOS 10.3及其之�
   </tbody>
 </table>
 
-<p><strong>备注：Bundle</strong>：bundle是将可执行程序代码和相关资源文件（如图片，声音等）组合在一起的一个文件目录；在iOS和OS X中，应用程序，frameworks，插件和其他形式的软件都是bundle（应用程序是第三方开发者能够在iOS上创建的唯一bundle）；使用bundle可以使安装和定位应用程序更加方便，同时方便做国际化(bundle目录结构如下图)；每个应用程序都有一个main bundle，可以通过NSBundle来获取</p>
+<p><strong>备注</strong> :
+<strong>Bundle</strong> ：<code class="highlighter-rouge">bundle</code>是将可执行程序代码和相关资源文件（如图片，声音等）组合在一起的一个文件目录；在<code class="highlighter-rouge">iOS</code>和<code class="highlighter-rouge">OS X</code>中，应用程序，<code class="highlighter-rouge">frameworks</code>，插件和其他形式的软件都是<code class="highlighter-rouge">bundle</code>（应用程序是第三方开发者能够在<code class="highlighter-rouge">iOS</code>上创建的唯一<code class="highlighter-rouge">bundle</code>）；使用<code class="highlighter-rouge">bundle</code>可以使安装和定位应用程序更加方便，同时方便做国际化(<code class="highlighter-rouge">bundle</code>目录结构如下图)；每个应用程序都有一个<code class="highlighter-rouge">main bundle</code>，可以通过<code class="highlighter-rouge">NSBundle</code>来获取</p>
 
 <p><img src="/img/post/iOS_Storage/bundle.png" alt="" /></p>
 
+<p>获取各目录路径：<a href="https://www.jianshu.com/p/dd3f120eb249">摘自博客</a></p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>// 获取沙盒主目录路径
+NSString *homeDir = NSHomeDirectory();
+// 获取Documents目录路径
+NSString *docDir = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
+// 获取Library的目录路径
+NSString *libDir = [NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES) lastObject];
+// 获取Caches目录路径
+NSString *cachesDir = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) firstObject];
+// 获取tmp目录路径
+NSString *tmpDir =  NSTemporaryDirectory();
+</code></pre></div>
+
+<hr />
+
+<h2 id="core-data">Core Data</h2>
+
+<hr />
+
+<h2 id="fmdb">FMDB</h2>
+
+<hr />
+
+<h2 id="realm">Realm</h2>
+
+<hr />
+
+<h2 id="其他">其他</h2>
+
+<hr />
+
+<h3 id="plist">Plist</h3>
+
+<p>只能存储<code class="highlighter-rouge">OC</code>常用数据类型(<code class="highlighter-rouge">NSString</code>、<code class="highlighter-rouge">NSDictionary</code>、<code class="highlighter-rouge">NSArray</code>、<code class="highlighter-rouge">NSData</code>、<code class="highlighter-rouge">NSNumber</code>等类型)而不能直接存储自定义模型对象；如果想存储自定义模型对象只能将自定义模型对象转换为字典存储（实现<code class="highlighter-rouge">writeToFile</code>方法）</p>
+
+<h3 id="preference">Preference</h3>
+
+<p>每个应用都有一个<code class="highlighter-rouge">NSUserDefaults</code>实例，可用于快速存储键值对，如：用户名，密码，开关状态等</p>
+
+<h3 id="nskeyedarchiver归档--nskeyedunarchiver解档">NSKeyedArchiver归档 / NSKeyedUnarchiver解档</h3>
+
+<p>归档和解档会在写入、读出数据之前进行序列化、反序列化，数据的安全性相对高一些；但是归档不能存储大批量数据（相比较<code class="highlighter-rouge">Sqlite</code>而言），存储数据到文件是将所有的数据一下子存储到文件中，从文件中读取数据也是一下子读取所有的数据；归档的类需要实现<code class="highlighter-rouge">NSCoding</code>协议</p>
+
+<hr />
+
+<h2 id="参考链接">参考链接</h2>
+
+<ol>
+  <li>
+    <p>https://www.jianshu.com/p/e88880be794f</p>
+  </li>
+  <li>
+    <p>https://www.jianshu.com/p/14fd706b632d</p>
+  </li>
+</ol>
 
 
                 <hr>

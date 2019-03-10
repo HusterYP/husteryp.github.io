@@ -203,30 +203,38 @@
 <p>在iOS第一版中，需要同时声明属性和底层实例变量，那时，属性是oc语言的一个新的机制，并且要求必须声明与之对应的实例变量；如下：</p>
 
 <div class="highlighter-rouge"><pre class="highlight"><code><span class="c1">// MyViewController.h
-</span><span class="k">@interface</span> <span class="nc">MyViewController</span> <span class="p">:</span> <span class="nc">UIViewController</span>
+</span>
+<span class="k">@interface</span> <span class="nc">MyViewController</span> <span class="p">:</span> <span class="nc">UIViewController</span>
 <span class="p">{</span>
     <span class="n">UIButton</span> <span class="o">*</span><span class="n">myButton</span><span class="p">;</span> <span class="c1">// 实例变量
 </span><span class="p">}</span>
+
 <span class="k">@property</span> <span class="p">(</span><span class="n">nonatomic</span><span class="p">,</span> <span class="n">retain</span><span class="p">)</span> <span class="n">UIButton</span> <span class="o">*</span><span class="n">myButton</span><span class="p">;</span> <span class="c1">// 属性
-</span><span class="k">@end</span>
+</span>
+<span class="k">@end</span>
 </code></pre></div>
 
 <p>之后，苹果将默认编译器从GCC转换为LLVM(low level virtual machine)，从此不再需要为属性声明实例变量了。如果LLVM发现一个没有匹配实例变量的属性，它将自动创建一个以下划线开头的实例变量（即<code class="highlighter-rouge">var</code>属性及与其对应的<code class="highlighter-rouge">_var</code>实例变量），如下：</p>
 
 <div class="highlighter-rouge"><pre class="highlight"><code><span class="c1">// MyViewController.h
-</span><span class="k">@interface</span> <span class="nc">MyViewController</span> <span class="p">:</span> <span class="nc">UIViewController</span>
+</span>
+<span class="k">@interface</span> <span class="nc">MyViewController</span> <span class="p">:</span> <span class="nc">UIViewController</span>
+
 <span class="k">@property</span> <span class="p">(</span><span class="n">nonatomic</span><span class="p">,</span> <span class="n">retain</span><span class="p">)</span> <span class="n">UIButton</span> <span class="o">*</span><span class="n">myButton</span><span class="p">;</span> <span class="c1">// 将自动创建一个_myButton实例变量与之对应
-</span><span class="k">@end</span>
+</span>
+<span class="k">@end</span>
 </code></pre></div>
 <p>在MyViewController.m中可以直接使用<code class="highlighter-rouge">_myButton</code>实例变量，也可以通过self.myButton来访问，二者的区别也是下面要讲解的；</p>
 
 <p>再来看下面一个例子：</p>
 
 <div class="highlighter-rouge"><pre class="highlight"><code><span class="c1">// MyViewController.h
-</span><span class="k">@interface</span> <span class="nc">MyViewController</span> <span class="p">:</span> <span class="nc">UIViewController</span>
+</span>
+<span class="k">@interface</span> <span class="nc">MyViewController</span> <span class="p">:</span> <span class="nc">UIViewController</span>
 <span class="p">{</span>
     <span class="n">NSString</span> <span class="o">*</span><span class="n">name</span><span class="p">;</span> <span class="c1">// 实例变量
 </span><span class="p">}</span>
+
 <span class="k">@end</span>
 </code></pre></div>
 <p>在MyViewController.m文件中，如果通过self.name访问的话，编译器会报错，Xcode会提示使用-&gt;，即使用self-&gt;name，这是因为OC中点表达式表示调用方法，而这里的name是一个实例变量，没有与其对应的name方法</p>
@@ -234,13 +242,19 @@
 <p>另外，还有一个与@property合用的@synthesize，通过@synthesize还可以指定与属性对应的实例变量名，如下：</p>
 
 <div class="highlighter-rouge"><pre class="highlight"><code><span class="c1">// MyViewController.h
-</span><span class="k">@interface</span> <span class="nc">MyViewController</span> <span class="p">:</span> <span class="nc">UIViewController</span>
+</span>
+<span class="k">@interface</span> <span class="nc">MyViewController</span> <span class="p">:</span> <span class="nc">UIViewController</span>
+
 <span class="k">@property</span> <span class="p">(</span><span class="n">nonatomic</span><span class="p">,</span> <span class="n">retain</span><span class="p">)</span> <span class="n">UIButton</span> <span class="o">*</span> <span class="n">myButton</span><span class="p">;</span>
+
 <span class="k">@end</span>
 
 <span class="c1">// MyViewController.m
-</span><span class="k">@implementation</span> <span class="nc">MyViewController</span>
+</span>
+<span class="k">@implementation</span> <span class="nc">MyViewController</span>
+
 <span class="k">@synthesize</span> <span class="n">myButton</span> <span class="o">=</span> <span class="n">otherButton</span><span class="p">;</span>
+
 <span class="k">@end</span>
 </code></pre></div>
 <p>此时，与属性myButton对应的实例变量名为otherButton了，默认的<code class="highlighter-rouge">_myButton</code>就不能使用了；还需要注意的一点是，如果只是声明了<code class="highlighter-rouge">@synthesize myButton;</code>，那么此时默认与myButton对应的实例变量名为myButton，<code class="highlighter-rouge">_myButton</code>也不能用了</p>
@@ -280,7 +294,7 @@
 
 <p><strong>参考链接：</strong></p>
 <ol>
-  <li>https://blog.csdn.net/luoweifu/article/details/38563161</li>
+  <li>https://blog.csdn.net/luoweifu/article/details/38563162</li>
 </ol>
 
 
