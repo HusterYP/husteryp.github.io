@@ -140,7 +140,7 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/tags/#iOS" title="iOS">iOS</a>
+                        <a class="tag" href="/tags/#Draft" title="Draft">Draft</a>
                         
                     </div>
                     <h1>iOS数据存储</h1>
@@ -214,7 +214,7 @@
     </tr>
     <tr>
       <td>Library</td>
-      <td>用于存储非用户数据的文件，可以将不想暴露给用户的数据存储在该目录下；该目录下有一个Caches子目录，用于缓存，以及一个Application Supportm目录，用于存储应用生成的一些文件，如配置文件等；该目录下内容（除了Caches下内容外）会被iTunes和iCloud备份</td>
+      <td>用于存储非用户数据的文件，可以将不想暴露给用户的数据存储在该目录下；该目录下有一个Caches子目录，用于缓存，以及一个Application Support目录，用于存储应用生成的一些文件，如配置文件等；该目录下内容（除了Caches下内容外）会被iTunes和iCloud备份</td>
     </tr>
     <tr>
       <td>temp</td>
@@ -244,11 +244,27 @@ NSString *tmpDir =  NSTemporaryDirectory();
 
 <hr />
 
-<h2 id="core-data">Core Data</h2>
+<h2 id="二-core-data">二. Core Data</h2>
+
+<p><code class="highlighter-rouge">Core Data</code>是一个官方提供的本地数据操作的框架；<code class="highlighter-rouge">Core Data</code>不是一个数据库，而是应用程序对象关系图的管理器（对象关系图就是数据对象之间的相互关系）；<code class="highlighter-rouge">Core Data</code>还提供许多其他特性，如：输入验证，数据模型版本控制和数据对象更改追踪</p>
+
+<p><code class="highlighter-rouge">Core Data</code>底层就是使用<code class="highlighter-rouge">SQLite</code>实现</p>
+
+<p>对象关系映射的存储关系，可以将<code class="highlighter-rouge">OC</code>对象存储到数据库中，也可以将数据库中的数据转化为<code class="highlighter-rouge">OC</code>对象（系统完成，<code class="highlighter-rouge">Core Data</code>封装了数据库的操作过程，以及数据到对象的转换过程）</p>
+
+<p>数据存储和撤销恢复操作</p>
+
+<p>存储数据模型如下图；其中<code class="highlighter-rouge">Model</code>（<code class="highlighter-rouge">NSManagedObjectModel</code>实例）代表了<code class="highlighter-rouge">.xcdatamodeld</code>文件</p>
+
+<p><img src="/img/post/iOS_Storage/CoreData.png" alt="" /></p>
+
+<p><code class="highlighter-rouge">Core Data</code>只能操作存在与内存中的数据，否则，需要先将数据加载到内存中才能作用（可能会导致性能问题）;<code class="highlighter-rouge">Core Data</code>还提供了对多线程的支持</p>
+
+<p>参考：https://github.com/DeveloperErenLiu/CoreDataPDF</p>
 
 <hr />
 
-<h2 id="fmdb">FMDB</h2>
+<h2 id="fmdbsqliteswift">FMDB/Sqlite.swift</h2>
 
 <hr />
 
@@ -341,7 +357,7 @@ NSString *tmpDir =  NSTemporaryDirectory();
                             
         				
                             
-                				<a href="/tags/#Draft" title="Draft" rel="4">
+                				<a href="/tags/#Draft" title="Draft" rel="5">
                                     Draft
                                 </a>
                             
@@ -393,7 +409,7 @@ NSString *tmpDir =  NSTemporaryDirectory();
                             
         				
                             
-                				<a href="/tags/#iOS" title="iOS" rel="5">
+                				<a href="/tags/#iOS" title="iOS" rel="4">
                                     iOS
                                 </a>
                             

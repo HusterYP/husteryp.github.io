@@ -359,6 +359,44 @@
   <li>
     <p>便利构造器：类中比较次要的、辅助型的构造器（在<code class="highlighter-rouge">init</code>关键字之前放置<code class="highlighter-rouge">convenience</code>关键字）。你可以定义便利构造器来调用同一个类中的指定构造器，并为其参数提供默认值。你也可以定义便利构造器来创建一个特殊用途或特定输入值的实例（应当只在必要的时候为类提供便利构造器）</p>
   </li>
+  <li>
+    <p>在类的定义中，每个类最多只能有一个析构器，而且析构器不带任何参数</p>
+  </li>
+  <li><code class="highlighter-rouge">Swift</code>通过引用计数来实现内存管理，引用计数仅仅应用于类的实例。结构体和枚举类型是值类型，不是引用类型，也不是通过引用的方式存储和传递；Swift 提供了两种办法用来解决你在使用类的属性时所遇到的循环强引用问题：弱引用（weak reference）和无主引用（unowned reference）（弱引用和无主引用允许循环引用中的一个实例引用而另外一个实例不保持强引用。这样实例能够互相引用而不产生循环强引用）
+    <blockquote>
+      <ol>
+        <li>弱引用（<code class="highlighter-rouge">weak</code>）：当其他的实例有更短的生命周期时，使用弱引用；当实例被销毁后置为<code class="highlighter-rouge">nil</code></li>
+        <li>无主引用（<code class="highlighter-rouge">unowned</code>）：当其他实例有相同的或者更长生命周期时，使用无主引用；当实例被销毁后不会被置<code class="highlighter-rouge">nil</code>（无主引用通常都被期望拥有值，使用无主引用，你必须确保引用始终指向一个未销毁的实例，如果你试图在实例被销毁后，访问该实例的无主引用，会触发运行时错误）</li>
+        <li>隐式解析可选属性</li>
+      </ol>
+    </blockquote>
+  </li>
+  <li>闭包也是引用类型，当闭包和类混用时需要注意不要引起引用循环，可以使用如下功能解决：</li>
+</ol>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>lazy var someClosure: (Int, String) -&gt; String = {
+    [unowned self, weak delegate = self.delegate!] (index: Int, stringToProcess: String) -&gt; String in
+    // 这里是闭包的函数体
+}
+
+lazy var someClosure: Void -&gt; String = {
+    [unowned self, weak delegate = self.delegate!] in
+    // 这里是闭包的函数体
+}
+</code></pre></div>
+
+<hr />
+
+<h2 id="autolayout文档">AutoLayout文档</h2>
+
+<blockquote>
+  <ol>
+    <li>https://developer.apple.com/library/archive/documentation/UserExperience/Conceptual/AutolayoutPG/AnatomyofaConstraint.html</li>
+  </ol>
+</blockquote>
+
+<ol>
+  <li><code class="highlighter-rouge">AutoLayout</code>实际上是解一个线性方程组；可以设置每一个约束的优先级</li>
 </ol>
 
 
@@ -417,7 +455,7 @@
                             
         				
                             
-                				<a href="/tags/#Draft" title="Draft" rel="4">
+                				<a href="/tags/#Draft" title="Draft" rel="5">
                                     Draft
                                 </a>
                             
@@ -469,7 +507,7 @@
                             
         				
                             
-                				<a href="/tags/#iOS" title="iOS" rel="5">
+                				<a href="/tags/#iOS" title="iOS" rel="4">
                                     iOS
                                 </a>
                             
