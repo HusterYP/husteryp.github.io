@@ -5,9 +5,91 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Sat, 16 Mar 2019 16:38:42 +0800</pubDate>
-    <lastBuildDate>Sat, 16 Mar 2019 16:38:42 +0800</lastBuildDate>
+    <pubDate>Sun, 24 Mar 2019 23:41:43 +0800</pubDate>
+    <lastBuildDate>Sun, 24 Mar 2019 23:41:43 +0800</lastBuildDate>
     <generator>Jekyll v3.8.5</generator>
+    
+      <item>
+        <title>AutoLayout总结</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoLayout&lt;/code&gt;总结&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;一-布局方式与背景&quot;&gt;一. 布局方式与背景&lt;/h2&gt;
+
+&lt;p&gt;在开始介绍&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoLayout&lt;/code&gt;之前，需要先介绍一下&lt;code class=&quot;highlighter-rouge&quot;&gt;iOS&lt;/code&gt;中的布局方式；iOS&lt;code class=&quot;highlighter-rouge&quot;&gt;中主流的界面布局方式主要有手写代码布局，&lt;/code&gt;xib&lt;code class=&quot;highlighter-rouge&quot;&gt;布局，&lt;/code&gt;storyboard&lt;code class=&quot;highlighter-rouge&quot;&gt;布局；笔者更喜欢的还是手写代码的方式，一个可能与笔者之前&lt;/code&gt;Android&lt;code class=&quot;highlighter-rouge&quot;&gt;经验相关（因为&lt;/code&gt;Android&lt;code class=&quot;highlighter-rouge&quot;&gt;中多是使用手写&lt;/code&gt;xml`的方式布局，另一个是，对于多人合作而言，手写代码其实更方便（减少冲突）；当然，对于单人的独立项目，其实没有什么优劣可言，选择一种自己更为熟悉与快捷的方式都是因人而异。&lt;/p&gt;
+
+&lt;p&gt;关于&lt;code class=&quot;highlighter-rouge&quot;&gt;xib&lt;/code&gt;布局和&lt;code class=&quot;highlighter-rouge&quot;&gt;storyboard&lt;/code&gt;布局方式的区别，其实二者都是使用&lt;code class=&quot;highlighter-rouge&quot;&gt;IB&lt;/code&gt;来进行可视化空间的拖拽与约束，唯一的区别是二者的侧重点不同；一般来说，单个的&lt;code class=&quot;highlighter-rouge&quot;&gt;xib&lt;/code&gt;文件对应一个&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewController&lt;/code&gt;，对于一些自定义&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;，通常也会使用单个&lt;code class=&quot;highlighter-rouge&quot;&gt;xib&lt;/code&gt;并从&lt;code class=&quot;highlighter-rouge&quot;&gt;main bundle&lt;/code&gt;进行加载的方式来载入；而&lt;code class=&quot;highlighter-rouge&quot;&gt;storyboard&lt;/code&gt;只能使用&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewController&lt;/code&gt;而不能用于单独的&lt;code class=&quot;highlighter-rouge&quot;&gt;UIView&lt;/code&gt;（&lt;code class=&quot;highlighter-rouge&quot;&gt;UIView&lt;/code&gt;只能基于&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewController&lt;/code&gt;使用，而&lt;code class=&quot;highlighter-rouge&quot;&gt;xib&lt;/code&gt;同时支持两者）&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;xib&lt;/code&gt;实际上是一个&lt;code class=&quot;highlighter-rouge&quot;&gt;xml&lt;/code&gt;文件，通过编译之后就得到&lt;code class=&quot;highlighter-rouge&quot;&gt;nib&lt;/code&gt;文件&lt;/p&gt;
+
+&lt;p&gt;在上面介绍的三种方式中，都可以使用&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoLayout&lt;/code&gt;的方式来进行布局；&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoLayout&lt;/code&gt;的出现，是为了解决不同尺寸屏幕的适配问题；&lt;code class=&quot;highlighter-rouge&quot;&gt;iPhone 5&lt;/code&gt;之前，屏幕都是&lt;code class=&quot;highlighter-rouge&quot;&gt;3.5&lt;/code&gt;寸的（&lt;code class=&quot;highlighter-rouge&quot;&gt;640 x 960&lt;/code&gt;分辨率），这之前，屏幕尺寸相同，不存在适配问题，所有&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;坐标只需要计算好即可，但是&lt;code class=&quot;highlighter-rouge&quot;&gt;2012&lt;/code&gt;年，苹果发布了&lt;code class=&quot;highlighter-rouge&quot;&gt;4.0&lt;/code&gt;寸（&lt;code class=&quot;highlighter-rouge&quot;&gt;640 x 1136&lt;/code&gt;分辨率）的&lt;code class=&quot;highlighter-rouge&quot;&gt;iPhone 5&lt;/code&gt;，这样在&lt;code class=&quot;highlighter-rouge&quot;&gt;iOS&lt;/code&gt;平台上就出现了不同尺寸的移动设备，使得原有的&lt;code class=&quot;highlighter-rouge&quot;&gt;frame&lt;/code&gt;布局方式无法进行很好的屏幕适配，所以为了解决这一问题，就出现了&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoLayout&lt;/code&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;二-原理与使用&quot;&gt;二. 原理与使用&lt;/h2&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoLayout&lt;/code&gt;其实类似于&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;中的&lt;code class=&quot;highlighter-rouge&quot;&gt;RelativeLayout&lt;/code&gt;，采用&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;之间的相对位置来进行布局；我们知道，要确定一个&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的位置，需要知道&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;x，y，width，height&lt;/code&gt;，即&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的起始坐标点，宽度和高度信息；&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoLayout&lt;/code&gt;其实是通过解&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;之间建立的线性方程组（&lt;code class=&quot;highlighter-rouge&quot;&gt;y = ax + b&lt;/code&gt;）来确定其信息的（如下图），当然，如果出现约束不完整的情况或者约束冲突的情况，就会出现解的不定性，表现出来即是&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;位置未达到预期&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/AutoLayout/AutoLayout_1.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;可约束的属性参见&lt;a href=&quot;https://developer.apple.com/documentation/uikit/nslayoutattribute&quot;&gt;NSLayoutAttribute&lt;/a&gt;枚举&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoLayout&lt;/code&gt;实际上是基于&lt;code class=&quot;highlighter-rouge&quot;&gt;Cassowary&lt;/code&gt;算法的，&lt;code class=&quot;highlighter-rouge&quot;&gt;Cassowary&lt;/code&gt;是&lt;code class=&quot;highlighter-rouge&quot;&gt;Alan Borning, Kim Marriott, Peter Stuckey&lt;/code&gt;等人在&lt;code class=&quot;highlighter-rouge&quot;&gt;1997&lt;/code&gt;年提出的一个解决布局问题的算法，&lt;code class=&quot;highlighter-rouge&quot;&gt;Cassowary&lt;/code&gt;算法能够有效解决线性等式系统和线性不等式系统，这也是&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoLayout&lt;/code&gt;的性能保障&lt;/p&gt;
+
+&lt;p&gt;当使用&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoLayout&lt;/code&gt;的时候，&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的默认初始值会被弃用，如下代码，此时&lt;code class=&quot;highlighter-rouge&quot;&gt;UILable&lt;/code&gt;的初始化宽高会失效；这里还需要注意一个&lt;code class=&quot;highlighter-rouge&quot;&gt;translatesAutoresizingMaskIntoConstraints&lt;/code&gt;属性，从名字我们可以看出，该属性是控制是否把&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoresizingMask&lt;/code&gt;变成约束（&lt;code class=&quot;highlighter-rouge&quot;&gt;autoresizing mask&lt;/code&gt;其实就是完全指定视图的尺寸和位置，即是否需要将其转换为线性方程组）；当使用&lt;code class=&quot;highlighter-rouge&quot;&gt;IB（Interface Builder）&lt;/code&gt;布局的时候，即&lt;code class=&quot;highlighter-rouge&quot;&gt;xib，storyboard&lt;/code&gt;方式，如果勾选了&lt;code class=&quot;highlighter-rouge&quot;&gt;Use Autolayout&lt;/code&gt;选项（默认勾选），那么&lt;code class=&quot;highlighter-rouge&quot;&gt;IB&lt;/code&gt;生成的控件的&lt;code class=&quot;highlighter-rouge&quot;&gt;translatesAutoresizingMaskIntoConstraints&lt;/code&gt;属性都会被默认设置&lt;code class=&quot;highlighter-rouge&quot;&gt;false&lt;/code&gt;；当使用手写代码布局时，&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;translatesAutoresizingMaskIntoConstraints&lt;/code&gt;属性默认为&lt;code class=&quot;highlighter-rouge&quot;&gt;true&lt;/code&gt;，但是&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoresizingMask&lt;/code&gt;属性默认被设置为&lt;code class=&quot;highlighter-rouge&quot;&gt;.None&lt;/code&gt;，也就是说如果我们不去动&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoresizingMask&lt;/code&gt;属性，那么&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoresizingMask&lt;/code&gt;就不会对约束产生影响，所以，这个属性，一般也不需要手动设置（当然，为了保险，也可以手动将&lt;code class=&quot;highlighter-rouge&quot;&gt;translatesAutoresizingMaskIntoConstraints&lt;/code&gt;属性置为&lt;code class=&quot;highlighter-rouge&quot;&gt;false&lt;/code&gt;）&lt;/p&gt;
+
+&lt;p&gt;当&lt;code class=&quot;highlighter-rouge&quot;&gt;translatesAutoresizingMaskIntoConstraints&lt;/code&gt;属性为&lt;code class=&quot;highlighter-rouge&quot;&gt;true&lt;/code&gt;时，&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoresizingMask&lt;/code&gt;将会转换为约束，一起参与到&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoLayout&lt;/code&gt;的约束计算中，即会对&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoLayout&lt;/code&gt;产生影响&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;let label = UILabel(frame: CGRect(x: 100, y: 100, width: 100, height: 200))
+label.backgroundColor = #colorLiteral(red: 1, green: 0.5763723254, blue: 0, alpha: 1)
+view.addSubview(label)
+label.translatesAutoresizingMaskIntoConstraints = false
+label.snp.makeConstraints { (make) in
+            make.width.equalTo(10)
+            make.leading.equalToSuperview().offset(40)
+            make.top.equalToSuperview().offset(40)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;布局关系不仅限于等于，还可以是大于等于或者小于等于，这种不等关系在处理&lt;code class=&quot;highlighter-rouge&quot;&gt;UILabel&lt;/code&gt;，&lt;code class=&quot;highlighter-rouge&quot;&gt;UIImageView&lt;/code&gt;等具有自身内容尺寸（&lt;code class=&quot;highlighter-rouge&quot;&gt;Intrinsic Content Size&lt;/code&gt;）的控件时非常有用；比如：&lt;code class=&quot;highlighter-rouge&quot;&gt;UILabel&lt;/code&gt;的长度会随文字长度而变化，那么我们可以对&lt;code class=&quot;highlighter-rouge&quot;&gt;UILabel&lt;/code&gt;控件添加两个约束，即&lt;code class=&quot;highlighter-rouge&quot;&gt;宽度大于等于50&lt;/code&gt;与&lt;code class=&quot;highlighter-rouge&quot;&gt;宽度小于等于200&lt;/code&gt;，这样，当文字很少时，宽度也至少为&lt;code class=&quot;highlighter-rouge&quot;&gt;50&lt;/code&gt;，当文字很多时，宽度也不会超过&lt;code class=&quot;highlighter-rouge&quot;&gt;200&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;某些用来展现内容的用户控件，例如&lt;code class=&quot;highlighter-rouge&quot;&gt;UILabel&lt;/code&gt;、&lt;code class=&quot;highlighter-rouge&quot;&gt;UIButton&lt;/code&gt;、&lt;code class=&quot;highlighter-rouge&quot;&gt;UIImageView&lt;/code&gt;等，它们具有自身内容尺寸（&lt;code class=&quot;highlighter-rouge&quot;&gt;Intrinsic Content Size&lt;/code&gt;），此类用户控件会根据自身内容尺寸添加布局约束；也就是说，如果开发者没有显式给出其宽度或者高度约束，则其自身内容约束将会起作用&lt;/p&gt;
+
+&lt;p&gt;具有&lt;code class=&quot;highlighter-rouge&quot;&gt;Intrinsic Content Size&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;参见下图（摘自官网）；具有&lt;code class=&quot;highlighter-rouge&quot;&gt;Intrinsic Content Size&lt;/code&gt;属性的&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;都重写了&lt;code class=&quot;highlighter-rouge&quot;&gt;UIView&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;-(CGSize)intrinsicContentSize:&lt;/code&gt;方法，并且在需要改变这个值的时候调用&lt;code class=&quot;highlighter-rouge&quot;&gt;invalidateIntrinsicContentSize&lt;/code&gt;方法即可，通知系统这个值改变了；同样，当我们自定义&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的时候，如果想要拥有&lt;code class=&quot;highlighter-rouge&quot;&gt;Intrinsic Content Size&lt;/code&gt;属性，就可以重写该方法&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/AutoLayout/AutoLayout_2.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoLayout&lt;/code&gt;中还有两个比较重要的概念，&lt;code class=&quot;highlighter-rouge&quot;&gt;Content Hugging&lt;/code&gt;与&lt;code class=&quot;highlighter-rouge&quot;&gt;Content Compression Resistance&lt;/code&gt;约束；在讲解这两个属性之前，需要先了解一下&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoLayout&lt;/code&gt;中的优先级属性；所谓的优先级，我个人的理解其实是一种减少冲突与弱化约束的作用，即为各约束设置优先级，当出现冲突时&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoLayout&lt;/code&gt;优先满足高优先级的约束；关于优先级的使用，可以参见文末参考链接&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Content Hugging&lt;/code&gt;约束：不想变大约束；即如果组件的此属性优先级比另一个组件此属性优先级高的话，那么这个组件就保持不变，另一个可以在需要拉伸的时候拉伸；可以简单理解为&lt;code class=&quot;highlighter-rouge&quot;&gt;Content Hugging&lt;/code&gt;越大，&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;越难变大；默认值为&lt;code class=&quot;highlighter-rouge&quot;&gt;250&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Content Compression Resistance&lt;/code&gt;约束：不想变小约束；如果组件的此属性优先级比另一个组件此属性优先级高的话，那么这个组件就保持不变，另一个可以在需要压缩的时候压缩；可以简单理解为&lt;code class=&quot;highlighter-rouge&quot;&gt;Content Compression Resistance&lt;/code&gt;越大，&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;越难变小；默认值为&lt;code class=&quot;highlighter-rouge&quot;&gt;750&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;关于&lt;code class=&quot;highlighter-rouge&quot;&gt;Content Hugging&lt;/code&gt;与&lt;code class=&quot;highlighter-rouge&quot;&gt;Content Compression Resistance&lt;/code&gt;的应用，可以参见&lt;a href=&quot;https://www.jianshu.com/p/f6bc007b30e5&quot;&gt;博客&lt;/a&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;参考&quot;&gt;参考&lt;/h2&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;https://www.jianshu.com/p/f6bc007b30e5&lt;/li&gt;
+  &lt;li&gt;https://blog.csdn.net/hard_man/article/details/50888377&lt;/li&gt;
+&lt;/ol&gt;
+
+</description>
+        <pubDate>Sat, 23 Mar 2019 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2019/03/23/AutoLayout%E6%80%BB%E7%BB%93/</link>
+        <guid isPermaLink="true">http://localhost:4000/2019/03/23/AutoLayout%E6%80%BB%E7%BB%93/</guid>
+        
+        <category>iOS</category>
+        
+        
+      </item>
     
       <item>
         <title>iOS疑难点</title>
@@ -25,21 +107,21 @@
 
 &lt;p&gt;在iOS中常见到如下写法：&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;@interface&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Demo&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;@interface Demo ()
 
-&lt;span class=&quot;k&quot;&gt;@property&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;nonatomic&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;strong&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;NSString&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+@property(nonatomic, strong) NSString *name;
 
-&lt;span class=&quot;k&quot;&gt;@end&lt;/span&gt;
+@end
 
-&lt;span class=&quot;k&quot;&gt;@implementation&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Demo&lt;/span&gt;
+@implementation Demo
 
-&lt;span class=&quot;k&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;test&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;_name&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;@&quot;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;c1&quot;&gt;//    self.name = @&quot;&quot;;
-&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+- (void)test {
+    _name = @&quot;&quot;;
+//    self.name = @&quot;&quot;;
+}
 
-&lt;span class=&quot;k&quot;&gt;@end&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+@end
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;p&gt;在上述写法中，&lt;code class=&quot;highlighter-rouge&quot;&gt;self.name&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;_name&lt;/code&gt;有什么区别呢?&lt;/p&gt;
 
@@ -47,61 +129,61 @@
 
 &lt;p&gt;在iOS第一版中，需要同时声明属性和底层实例变量，那时，属性是oc语言的一个新的机制，并且要求必须声明与之对应的实例变量；如下：&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;// MyViewController.h
-&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;@interface&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;MyViewController&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;UIViewController&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;UIButton&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;myButton&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// 实例变量
-&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;// MyViewController.h
 
-&lt;span class=&quot;k&quot;&gt;@property&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;nonatomic&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;retain&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;UIButton&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;myButton&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// 属性
-&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;@end&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+@interface MyViewController : UIViewController
+{
+    UIButton *myButton; // 实例变量
+}
+
+@property (nonatomic, retain) UIButton *myButton; // 属性
+
+@end
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;p&gt;之后，苹果将默认编译器从GCC转换为LLVM(low level virtual machine)，从此不再需要为属性声明实例变量了。如果LLVM发现一个没有匹配实例变量的属性，它将自动创建一个以下划线开头的实例变量（即&lt;code class=&quot;highlighter-rouge&quot;&gt;var&lt;/code&gt;属性及与其对应的&lt;code class=&quot;highlighter-rouge&quot;&gt;_var&lt;/code&gt;实例变量），如下：&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;// MyViewController.h
-&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;@interface&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;MyViewController&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;UIViewController&lt;/span&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;// MyViewController.h
 
-&lt;span class=&quot;k&quot;&gt;@property&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;nonatomic&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;retain&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;UIButton&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;myButton&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// 将自动创建一个_myButton实例变量与之对应
-&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;@end&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+@interface MyViewController : UIViewController
+
+@property (nonatomic, retain) UIButton *myButton; // 将自动创建一个_myButton实例变量与之对应
+
+@end
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 &lt;p&gt;在MyViewController.m中可以直接使用&lt;code class=&quot;highlighter-rouge&quot;&gt;_myButton&lt;/code&gt;实例变量，也可以通过self.myButton来访问，二者的区别也是下面要讲解的；&lt;/p&gt;
 
 &lt;p&gt;再来看下面一个例子：&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;// MyViewController.h
-&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;@interface&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;MyViewController&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;UIViewController&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;NSString&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// 实例变量
-&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;// MyViewController.h
 
-&lt;span class=&quot;k&quot;&gt;@end&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+@interface MyViewController : UIViewController
+{
+    NSString *name; // 实例变量
+}
+
+@end
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 &lt;p&gt;在MyViewController.m文件中，如果通过self.name访问的话，编译器会报错，Xcode会提示使用-&amp;gt;，即使用self-&amp;gt;name，这是因为OC中点表达式表示调用方法，而这里的name是一个实例变量，没有与其对应的name方法&lt;/p&gt;
 
 &lt;p&gt;另外，还有一个与@property合用的@synthesize，通过@synthesize还可以指定与属性对应的实例变量名，如下：&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;// MyViewController.h
-&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;@interface&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;MyViewController&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;UIViewController&lt;/span&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;// MyViewController.h
 
-&lt;span class=&quot;k&quot;&gt;@property&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;nonatomic&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;retain&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;UIButton&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;myButton&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+@interface MyViewController : UIViewController
 
-&lt;span class=&quot;k&quot;&gt;@end&lt;/span&gt;
+@property (nonatomic, retain) UIButton * myButton;
 
-&lt;span class=&quot;c1&quot;&gt;// MyViewController.m
-&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;@implementation&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;MyViewController&lt;/span&gt;
+@end
 
-&lt;span class=&quot;k&quot;&gt;@synthesize&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;myButton&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;otherButton&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+// MyViewController.m
 
-&lt;span class=&quot;k&quot;&gt;@end&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+@implementation MyViewController
+
+@synthesize myButton = otherButton;
+
+@end
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 &lt;p&gt;此时，与属性myButton对应的实例变量名为otherButton了，默认的&lt;code class=&quot;highlighter-rouge&quot;&gt;_myButton&lt;/code&gt;就不能使用了；还需要注意的一点是，如果只是声明了&lt;code class=&quot;highlighter-rouge&quot;&gt;@synthesize myButton;&lt;/code&gt;，那么此时默认与myButton对应的实例变量名为myButton，&lt;code class=&quot;highlighter-rouge&quot;&gt;_myButton&lt;/code&gt;也不能用了&lt;/p&gt;
 
 &lt;p&gt;到这里我们应该知道了使用&lt;code class=&quot;highlighter-rouge&quot;&gt;self.var&lt;/code&gt;与&lt;code class=&quot;highlighter-rouge&quot;&gt;_var&lt;/code&gt;的区别，即self.var实际上是调用了属性方法，即getter和setter方法，而&lt;code class=&quot;highlighter-rouge&quot;&gt;_var&lt;/code&gt;是直接调用的实例变量，不会走getter和setter方法；因此，这里需要注意的是，当我们要重写getter方法时，在getter方法中必须使用&lt;code class=&quot;highlighter-rouge&quot;&gt;_var&lt;/code&gt;实例变量，否则会造成getter方法的递归调用；同理，重写setter方法时，在setter方法中也只能使用&lt;code class=&quot;highlighter-rouge&quot;&gt;_var&lt;/code&gt;实例变量，否则也会造成settter方法的递归调用；另外，直接访问实例变量的话，就不会调用其setter方法，这样就绕过了为相关属性所定义的内存管理语义。例如：在ARC下直接访问一个语义为copy的属性，那么并不会copy该属性，而仅仅是保留新值并释放旧值&lt;/p&gt;
@@ -225,7 +307,7 @@
 
 &lt;p&gt;获取各目录路径：&lt;a href=&quot;https://www.jianshu.com/p/dd3f120eb249&quot;&gt;摘自博客&lt;/a&gt;&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;// 获取沙盒主目录路径
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;// 获取沙盒主目录路径
 NSString *homeDir = NSHomeDirectory();
 // 获取Documents目录路径
 NSString *docDir = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
@@ -235,7 +317,7 @@ NSString *libDir = [NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUs
 NSString *cachesDir = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) firstObject];
 // 获取tmp目录路径
 NSString *tmpDir =  NSTemporaryDirectory();
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;hr /&gt;
 
@@ -345,7 +427,7 @@ NSString *tmpDir =  NSTemporaryDirectory();
   &lt;/ol&gt;
 &lt;/blockquote&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;	dispatch_async(queue, ^{
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;	dispatch_async(queue, ^{
             // reading
         });
         dispatch_async(queue, ^{
@@ -360,7 +442,7 @@ NSString *tmpDir =  NSTemporaryDirectory();
         dispatch_async(queue, ^{
             // reading
         });
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;h4 id=&quot;222-队列&quot;&gt;2.2.2 队列&lt;/h4&gt;
 
@@ -384,7 +466,7 @@ NSString *tmpDir =  NSTemporaryDirectory();
   &lt;/ol&gt;
 &lt;/blockquote&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;// 自己创建队列：第一个参数是标识符，用于 DEBUG 的时候标识唯一的队列；
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;// 自己创建队列：第一个参数是标识符，用于 DEBUG 的时候标识唯一的队列；
 // 第二个参数用来表示创建的队列是串行的还是并行的，传入 DISPATCH_QUEUE_SERIAL 或 NULL 表示创建串行队列。传入 DISPATCH_QUEUE_CONCURRENT 表示创建并行队列
 
   //串行队列
@@ -392,17 +474,17 @@ NSString *tmpDir =  NSTemporaryDirectory();
   dispatch_queue_t queue = dispatch_queue_create(&quot;tk.bourne.testQueue&quot;, DISPATCH_QUEUE_SERIAL);
   //并行队列
   dispatch_queue_t queue = dispatch_queue_create(&quot;tk.bourne.testQueue&quot;, DISPATCH_QUEUE_CONCURRENT);
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  // 全局并行队列：
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  // 全局并行队列：
   dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;h4 id=&quot;223-队列组dispatch-group&quot;&gt;2.2.3 队列组(Dispatch Group)&lt;/h4&gt;
 
 &lt;p&gt;可用于实现当并行执行block时，监听所有block执行结束&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;	dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;	dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
         dispatch_group_t group = dispatch_group_create();
         dispatch_group_async(group, queue, ^{
             NSLog(@&quot;Block 1&quot;);
@@ -416,13 +498,13 @@ NSString *tmpDir =  NSTemporaryDirectory();
         dispatch_group_notify(group, dispatch_get_main_queue(), ^{
             NSLog(@&quot;Done&quot;);
         });
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;blockquote&gt;
   &lt;p&gt;应用举例：分别执行两个耗时的操作，等两个异步操作都执行完之后，回到主线程执行操作；如果想要高效实现上述需求，可用队列组；如下&lt;/p&gt;
 &lt;/blockquote&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;dispatch_group_t group =  dispatch_group_create();
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;dispatch_group_t group =  dispatch_group_create();
 dispatch_group_async(group, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
     // 执行1个耗时的异步操作
 });
@@ -432,7 +514,7 @@ dispatch_group_async(group, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DE
 dispatch_group_notify(group, dispatch_get_main_queue(), ^{
     // 等前面的异步操作都执行完毕后，回到主线程...
 });
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;h4 id=&quot;224-其他&quot;&gt;2.2.4 其他&lt;/h4&gt;
 
@@ -440,20 +522,20 @@ dispatch_group_notify(group, dispatch_get_main_queue(), ^{
   &lt;li&gt;延迟执行：通过&lt;code class=&quot;highlighter-rouge&quot;&gt;dispatch_walltime&lt;/code&gt;生成绝对时间&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;dispatch_time_t time = dispatch_time(DISPATCH_TIME_NOW, 3ull * NSEC_PER_SEC); // ull表示：unsigned long long 
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;dispatch_time_t time = dispatch_time(DISPATCH_TIME_NOW, 3ull * NSEC_PER_SEC); // ull表示：unsigned long long 
         dispatch_after(time, dispatch_get_main_queue(), ^{
             
 });
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;ul&gt;
   &lt;li&gt;dipatch_apply：相当于dipatch_sync和dispatch group的关联API，该函数将指定的block追加到指定的queue中，并等待全部处理执行结束；其也会阻塞直到执行完毕，可用其替代for循环
-    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
 dispatch_apply(10, queue, ^(size_t index) { // index表示当前索引，自动增加
   NSLog(@&quot;%zu&quot;, index);
 });
 NSLog(@&quot;Done&quot;); // 最后执行
-&lt;/code&gt;&lt;/pre&gt;    &lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
   &lt;/li&gt;
   &lt;li&gt;
     &lt;p&gt;dispatch_suspend / dispatch_resume：用于挂起和恢复queue&lt;/p&gt;
@@ -523,7 +605,7 @@ NSLog(@&quot;Done&quot;); // 最后执行
 
 &lt;p&gt;两种为NSURLConnection设置代理方式的区别：&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    //第一种设置方式：
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    //第一种设置方式：
     //通过该方法设置代理，会自动的发送请求
     // [[NSURLConnection alloc]initWithRequest:request delegate:self];
 
@@ -533,7 +615,7 @@ NSLog(@&quot;Done&quot;); // 最后执行
     //手动通过代码的方式来发送请求
     //注意该方法内部会自动的把connect添加到当前线程的RunLoop中在默认模式下执行
     [connect start];
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;hr /&gt;
 
@@ -927,7 +1009,7 @@ NSLog(@&quot;Done&quot;); // 最后执行
   &lt;li&gt;闭包也是引用类型，当闭包和类混用时需要注意不要引起引用循环，可以使用如下功能解决：&lt;/li&gt;
 &lt;/ol&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;lazy var someClosure: (Int, String) -&amp;gt; String = {
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;lazy var someClosure: (Int, String) -&amp;gt; String = {
     [unowned self, weak delegate = self.delegate!] (index: Int, stringToProcess: String) -&amp;gt; String in
     // 这里是闭包的函数体
 }
@@ -936,7 +1018,11 @@ lazy var someClosure: Void -&amp;gt; String = {
     [unowned self, weak delegate = self.delegate!] in
     // 这里是闭包的函数体
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Swift&lt;/code&gt;会自动调用父类的初始化方法（在子类初始化方法的末尾（而不是开始））&lt;/li&gt;
+&lt;/ol&gt;
 
 &lt;hr /&gt;
 
@@ -1009,7 +1095,7 @@ lazy var someClosure: Void -&amp;gt; String = {
 
 &lt;p&gt;前面也说了，不同版本的Jira SDK的可用API差异较大，这里举一个根据传入参数查询Issue列表的示例：&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;	final ApplicationUser applicationUser = queryCreationContext.getApplicationUser();
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;	final ApplicationUser applicationUser = queryCreationContext.getApplicationUser();
         final List&amp;lt;String&amp;gt; args = operand.getArgs();
         final List&amp;lt;QueryLiteral&amp;gt; queryLiterals = new LinkedList&amp;lt;&amp;gt;();
         JqlQueryParser parser = ComponentAccessor.getComponent(JqlQueryParser.class);
@@ -1024,7 +1110,7 @@ lazy var someClosure: Void -&amp;gt; String = {
         } catch (Exception e) {
             log.error(&quot;Error search: &quot;, e);
 	 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;hr /&gt;
 
@@ -1122,30 +1208,30 @@ lazy var someClosure: Void -&amp;gt; String = {
 
 &lt;p&gt;Category可以实现在不继承类的基础上实现对类的扩展；这里使用Category实现多继承举例如下：Child已经继承了Father，想要再对Child扩展方法，可以使用Category扩展&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;// 文件：Child.h
-&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;@interface&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Child&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Father&lt;/span&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;// 文件：Child.h
+@interface Child : Father
 
-&lt;span class=&quot;k&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;showChild&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+- (void)showChild;
 
-&lt;span class=&quot;k&quot;&gt;@end&lt;/span&gt;
+@end
 
-&lt;span class=&quot;c1&quot;&gt;// 文件：Child+Hello.h
-&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;@interface&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Child&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;Hello&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+// 文件：Child+Hello.h
+@interface Child(Hello)
 
-&lt;span class=&quot;k&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;hello&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+- (void)hello;
 
-&lt;span class=&quot;k&quot;&gt;@end&lt;/span&gt;
+@end
 
-&lt;span class=&quot;c1&quot;&gt;// 文件：Child+Hello.m
-&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;@implementation&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Child&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;Hello&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+// 文件：Child+Hello.m
+@implementation Child(Hello)
 
-&lt;span class=&quot;k&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;hello&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+- (void)hello {
     
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+}
 
-&lt;span class=&quot;k&quot;&gt;@end&lt;/span&gt;
+@end
 
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;h3 id=&quot;13-多态&quot;&gt;1.3 多态&lt;/h3&gt;
 
@@ -1153,12 +1239,12 @@ lazy var someClosure: Void -&amp;gt; String = {
 
 &lt;p&gt;这里还需要注意的是，重新认识OC中的方法签名，OC的语法比较冗余，举例如下：&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;// 函数原型如下，方法签名为：addNumber1:andNumber2:
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;// 函数原型如下，方法签名为：addNumber1:andNumber2:
 - (NSInteger)addNumber1:(NSInteger)number1 andNumber2:(NSInteger)number2;
 
 // 函数原型如下，方法签名为：add::
 - (NSInteger)add:(NSInteger)number1 :(NSInteger)number2;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;hr /&gt;
 
@@ -1219,7 +1305,7 @@ lazy var someClosure: Void -&amp;gt; String = {
 
 &lt;p&gt;Xcode常用快捷键：&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;cmd + shift + o      快速打开文件
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;cmd + shift + o      快速打开文件
 cmd + 1              切换成 Project Navigator (cmd + 2~7 也可以做相应切换，不过不常用）
 cmd + ctrl + 上     在 .h 和 .m 文件之间切换
 cmd + enter          切换成 standard editor
@@ -1241,14 +1327,14 @@ cmd + 单击           查看该方法的实现
 opt + 单击           查看该方法的文档
 cmd + t              新建一个 tab 栏
 cmd + shift + [      在 tab 栏之间切换
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;p&gt;模拟器常用快捷键：&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;SHIFT+CMD+H	回到桌面
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;SHIFT+CMD+H	回到桌面
 CMD+Q		退出模拟器
 CMD+S		模拟器截屏(所截图片都在桌面上)
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;hr /&gt;
 
@@ -1361,7 +1447,7 @@ CMD+S		模拟器截屏(所截图片都在桌面上)
 
 &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ListView&lt;/code&gt;的性能问题主要是其通常用于展示大量数据造成的; 我们手指上下滑动的时候伴随着&lt;code class=&quot;highlighter-rouge&quot;&gt;Adapter.getView()&lt;/code&gt;方法的不断调用, &lt;code class=&quot;highlighter-rouge&quot;&gt;getView()&lt;/code&gt;的主要作用是去解析&lt;code class=&quot;highlighter-rouge&quot;&gt;XML&lt;/code&gt;生成&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;视图, 但是这一过程是一个耗时操作, 如果每次滑动都去&lt;code class=&quot;highlighter-rouge&quot;&gt;inflate&lt;/code&gt;的话, 势必会造成界面的卡顿, 如下即是这种情况: 每次都去&lt;code class=&quot;highlighter-rouge&quot;&gt;inflate&lt;/code&gt;一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Item&lt;/code&gt;, 然后再&lt;code class=&quot;highlighter-rouge&quot;&gt;findViewById()&lt;/code&gt;再进行设置&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;// 最差版本
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;// 最差版本
 class MyAdapter(val context: Context) : BaseAdapter() {
 
     var data = ArrayList&amp;lt;String&amp;gt;()
@@ -1381,7 +1467,7 @@ class MyAdapter(val context: Context) : BaseAdapter() {
     // 其他方法按照常规写, 故此省略
     ...
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;hr /&gt;
 
@@ -1389,7 +1475,7 @@ class MyAdapter(val context: Context) : BaseAdapter() {
 
 &lt;p&gt;为了避免每次滑动的时候都要&lt;code class=&quot;highlighter-rouge&quot;&gt;inflate&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;Google&lt;/code&gt;官方提供了&lt;code class=&quot;highlighter-rouge&quot;&gt;ListView&lt;/code&gt;的缓存机制, 即将滑动出屏幕外面的&lt;code class=&quot;highlighter-rouge&quot;&gt;Item&lt;/code&gt;缓存下来, 因为通常情况下&lt;code class=&quot;highlighter-rouge&quot;&gt;ListView&lt;/code&gt;要展示的数据类型都是相同的, 所以可以复用同样的&lt;code class=&quot;highlighter-rouge&quot;&gt;Item&lt;/code&gt;界面, 只是展示数据不同; 我们注意到&lt;code class=&quot;highlighter-rouge&quot;&gt;getView()&lt;/code&gt;的参数中有一个&lt;code class=&quot;highlighter-rouge&quot;&gt;convertView&lt;/code&gt;, 这个便是被缓存下来的&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;, 所以我们第一次优化可以如下: 主要就是判断&lt;code class=&quot;highlighter-rouge&quot;&gt;convertView&lt;/code&gt;是否为空, 如果为空, 说明没有缓存的&lt;code class=&quot;highlighter-rouge&quot;&gt;Item&lt;/code&gt;, 此时就需要去&lt;code class=&quot;highlighter-rouge&quot;&gt;inflate&lt;/code&gt;, 否则, 直接更改展示数据即可&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class MyAdapter(val context: Context) : BaseAdapter() {
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class MyAdapter(val context: Context) : BaseAdapter() {
 
     var data = ArrayList&amp;lt;String&amp;gt;()
     private val mInflater by lazy {
@@ -1411,7 +1497,7 @@ class MyAdapter(val context: Context) : BaseAdapter() {
     // 其他方法按照常规写, 故此省略
     ...
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;hr /&gt;
 
@@ -1423,7 +1509,7 @@ class MyAdapter(val context: Context) : BaseAdapter() {
 
 &lt;p&gt;另外, 还需要提一下的是这里保存&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewHolder&lt;/code&gt;用的是&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;tag&lt;/code&gt;, 其实我们还可以用这个&lt;code class=&quot;highlighter-rouge&quot;&gt;tag&lt;/code&gt;保存许多我们需要的值, 而不用局限与&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewHolder&lt;/code&gt;&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class MyAdapter(val context: Context) : BaseAdapter() {
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class MyAdapter(val context: Context) : BaseAdapter() {
 
     var data = ArrayList&amp;lt;String&amp;gt;()
     private val mInflater by lazy {
@@ -1453,7 +1539,7 @@ class MyAdapter(val context: Context) : BaseAdapter() {
         }
     }
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;hr /&gt;
 
@@ -1463,7 +1549,7 @@ class MyAdapter(val context: Context) : BaseAdapter() {
 
 &lt;p&gt;如下; 当加载大图时, 使用异步的&lt;code class=&quot;highlighter-rouge&quot;&gt;AsyncTask&lt;/code&gt;去网络下载好后再展示到界面&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class MyAdapter(private val context: Context) : BaseAdapter() {
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class MyAdapter(private val context: Context) : BaseAdapter() {
 
     private val mInflater by lazy {
         context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
@@ -1517,7 +1603,7 @@ class MyAdapter(val context: Context) : BaseAdapter() {
         }
     }
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;p&gt;上述代码其实还有问题; 只是解决了异步加载, 但是由于&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;视图的缓存复用, 当滑动的时候会出现&lt;code class=&quot;highlighter-rouge&quot;&gt;Item&lt;/code&gt;展示图片不断改变的现象; 关于此问题的解决可以参见&lt;a href=&quot;https://blog.csdn.net/guolin_blog/article/details/45586553&quot;&gt;博客&lt;/a&gt; (&lt;strong&gt;注:&lt;/strong&gt; 上述代码图片&lt;code class=&quot;highlighter-rouge&quot;&gt;URL&lt;/code&gt;也来自该博客)&lt;/p&gt;
 </description>
@@ -1526,142 +1612,6 @@ class MyAdapter(val context: Context) : BaseAdapter() {
         <guid isPermaLink="true">http://localhost:4000/2018/12/12/ListView-%E4%B8%80/</guid>
         
         <category>Android</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>ListView</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;p&gt;ListView笔记&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;p&gt;问题: 展示大量数据, 处理内存开销和性能&lt;/p&gt;
-
-&lt;p&gt;复用: 重新填写内容而已&lt;/p&gt;
-
-&lt;p&gt;stable ID&lt;/p&gt;
-
-&lt;p&gt;ListView相关内容:&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/ListView/ListView相关.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;getView():&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;错误的使用方式: 如下; 每次都会创建一个新的View视图(会去解析XML, 这是非常耗时的); 特别是当用户滑动的时候, 这种写法将产生大量的View视图&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/ListView/ListView_Slow_Way.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;正确的使用方式: 如下; 复用convertView; 但是下面这种写法也存在待优化的地方, 因为它每次都需要去findViewById(), 这点其实还可以改进&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/ListView/ListView_Right_Way.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;最快的方式: 如下; 使用ViewHolder, 节省findViewById的时间; 还可以通过setTag()和getTag()来存储更多的数据&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/ListView/ListView_Fast_Way.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;数据集更新的方式:&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;notifyDataSetChanged()&lt;/li&gt;
-    &lt;li&gt;notifiyDataSetInvalidated(): 表示数据集无效了&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;getViewType()和getViewTypeCount()&lt;/p&gt;
-
-&lt;p&gt;可以通过设置Item的属性, enable或者disable, enable时Item可以被点击和选择, disable时不可被点击和选择; disable属性可以用于比如单纯的展示header展示等&lt;/p&gt;
-
-&lt;p&gt;HeaderView和FooterView:&lt;/p&gt;
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;listView.addHeaderView()&lt;/li&gt;
-    &lt;li&gt;listView.addFooterView()&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;List Selector: 高亮选中Item&lt;/p&gt;
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;可以在xml中指定属性&lt;code class=&quot;highlighter-rouge&quot;&gt;android:drawSelectorOnTop = &quot;true&quot;&lt;/code&gt;&lt;/li&gt;
-    &lt;li&gt;创建一个XML的selector选择器&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;自定义ListView的背景的时候会出现问题貌似; 好像会出现在滑动的时候出现全是黑色的情况; 解决办法:&lt;/p&gt;
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;xml中指定: &lt;code class=&quot;highlighter-rouge&quot;&gt;android:cacheColorHint = &quot;#00000000&quot;&lt;/code&gt;或者&lt;code class=&quot;highlighter-rouge&quot;&gt;android:cacheColorHint = &quot;@color/myBackgroundColor&quot;&lt;/code&gt;&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;在ScrollView中嵌套ListView&lt;/p&gt;
-
-&lt;p&gt;ListView中的Filter是什么?&lt;/p&gt;
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;场景: 当我们要展示的条目很多时, 我们可以设置选项让用户选择查看哪些分类的选项, 而不是全部展示&lt;/li&gt;
-    &lt;li&gt;将Adapter实现&lt;code class=&quot;highlighter-rouge&quot;&gt;Filterable&lt;/code&gt;接口即可(当Adapter继承的是BaseAdapter时, SimpleAdapter默认实现了&lt;code class=&quot;highlighter-rouge&quot;&gt;Filterable&lt;/code&gt;)&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;对ListView设置Item的点击监听:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;listView.setOnItemClickListener(new OnItemClickListener() {
-    @Override
-    public void onItemClick(AdapterView&amp;lt;?&amp;gt; parent, View view,
-        int position, long id) {
-        Toast.makeText(getApplicationContext(),
-            &quot;Click ListItem Number &quot; + position, Toast.LENGTH_LONG)
-            .show();
-    }
-});
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-
-&lt;p&gt;获取LayoutInflator可以使用&lt;code class=&quot;highlighter-rouge&quot;&gt;context.getSystemService(Context.LAYOUT_INFLATER_SERVICE)&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;还可以设置ListView没有数据时的占位View, 指定id为&lt;code class=&quot;highlighter-rouge&quot;&gt;@android:id/empty&lt;/code&gt;的View即可&lt;/p&gt;
-
-&lt;h2 id=&quot;scrollview嵌套listview&quot;&gt;ScrollView嵌套ListView&lt;/h2&gt;
-
-&lt;p&gt;问题: 只能显示一个Item(ListView不能全部展示)&lt;/p&gt;
-
-&lt;h2 id=&quot;listview的item是scrollview&quot;&gt;ListView的Item是ScrollView&lt;/h2&gt;
-
-&lt;p&gt;ListView性能优化官方文档: https://developer.android.com/training/improving-layouts/smooth-scrolling
-性能优化官方推荐博客: https://android-developers.googleblog.com/2009/01/why-is-my-list-black-android.html&lt;/p&gt;
-
-&lt;p&gt;ListView和大多数Android组件一样有透明背景, 也就意味这你可以看到Window的背景色; 但是当使用自定义ListView背景或者改变Window背景的话, 会出现问题;&lt;/p&gt;
-
-&lt;p&gt;当ListView滑动时会依照不同的滑动方向来填充ListView; 比如从上往下填充或者从下往上填充;&lt;/p&gt;
-
-&lt;p&gt;优化: 除了Demo中写的几个常见的优化外; ListView的性能优化其实就是使getView()方法更快而已&lt;/p&gt;
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;异步加载: 对于耗时资源在getView中去异步加载; 但是有一个问题是当快速滑动时, 此时需要去处理滑动时不加载的情况&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;ListView  height设置wrap_content 导致getView()重复调用问题&lt;/p&gt;
-</description>
-        <pubDate>Sat, 08 Dec 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/12/08/ListView/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/12/08/ListView/</guid>
-        
-        <category>Draft</category>
         
         
       </item>

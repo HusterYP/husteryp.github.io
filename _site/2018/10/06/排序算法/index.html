@@ -188,7 +188,7 @@
 
 <h3 id="12-主要代码">1.2 主要代码</h3>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>public static void sort(int[] noSort) {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static void sort(int[] noSort) {
         if (noSort == null || noSort.length &lt;= 0) // 边界条件
             return;
         int N = noSort.length;
@@ -201,7 +201,7 @@
             Utils.exch(noSort, i, min);
         }
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <h3 id="13-特点">1.3 特点</h3>
 
@@ -230,7 +230,7 @@
 
 <h3 id="22-主要代码">2.2 主要代码</h3>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>public static void sort(int[] noSort) {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static void sort(int[] noSort) {
         if (noSort == null || noSort.length &lt;= 0)
             return;
         int N = noSort.length;
@@ -242,7 +242,7 @@
             }
         }
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <h3 id="23-特点">2.3 特点</h3>
 
@@ -287,14 +287,14 @@
 
 <p><code class="highlighter-rouge">h</code>的选择, <code class="highlighter-rouge">1/2*(3^k-1)</code>, 从<code class="highlighter-rouge">N/3</code>递减至<code class="highlighter-rouge">1</code>, 如下代码</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>int h = 1;
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>int h = 1;
 while(h &lt; N/3)
     h = h * 3 + 1;
-</code></pre></div>
+</code></pre></div></div>
 
 <h3 id="32-基本代码">3.2 基本代码</h3>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>public static void sort(int[] noSort) {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static void sort(int[] noSort) {
         if (noSort == null || noSort.length &lt;= 0)
             return;
         int N = noSort.length;
@@ -309,7 +309,7 @@ while(h &lt; N/3)
             h = h / 3;
         }
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <h3 id="33-特点">3.3 特点</h3>
 
@@ -338,7 +338,7 @@ while(h &lt; N/3)
 
 <h3 id="42-主要代码">4.2 主要代码</h3>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>public static void sort(int[] noSort) {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static void sort(int[] noSort) {
         if (noSort == null || noSort.length &lt;= 0)
             return;
         int N = noSort.length;
@@ -349,7 +349,7 @@ while(h &lt; N/3)
             }
         }
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <h3 id="43-特点">4.3 特点</h3>
 
@@ -368,7 +368,7 @@ while(h &lt; N/3)
   </li>
 </ol>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>public static void sort(int[] noSort) {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static void sort(int[] noSort) {
         if (noSort == null || noSort.length &lt;= 0)
             return;
         int N = noSort.length;
@@ -383,7 +383,7 @@ while(h &lt; N/3)
             }
         }
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <hr />
 
@@ -396,7 +396,7 @@ while(h &lt; N/3)
 <h3 id="52-主要代码">5.2 主要代码</h3>
 
 <p><strong>自顶向下的归并排序:</strong></p>
-<div class="highlighter-rouge"><pre class="highlight"><code>public class MergeSort {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class MergeSort {
     private static int[] aux; // 辅助数组
 
     public static void sort(int[] noSort) {
@@ -434,10 +434,10 @@ while(h &lt; N/3)
         }
     }
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <p><strong>自底向下的归并排序:</strong></p>
-<div class="highlighter-rouge"><pre class="highlight"><code>public static void sortBU(int[] noSort) {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static void sortBU(int[] noSort) {
         int N = noSort.length;
         aux = new int[N];
         for (int sz = 1; sz &lt; N; sz = sz + sz) {
@@ -445,7 +445,7 @@ while(h &lt; N/3)
                 merge(noSort, low, low + sz - 1, Math.min(low + sz + sz - 1, N - 1));
         }
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <h3 id="53-特点">5.3 特点</h3>
 
@@ -488,7 +488,7 @@ while(h &lt; N/3)
 
 <h3 id="62-主要代码">6.2 主要代码</h3>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>public class QuickSort {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class QuickSort {
 
     public static void sort(int[] noSort) {
         if (noSort == null || noSort.length &lt;= 0)
@@ -523,7 +523,7 @@ while(h &lt; N/3)
         return j;
     }
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <h3 id="63-特点">6.3 特点</h3>
 
@@ -565,7 +565,7 @@ while(h &lt; N/3)
 </blockquote>
 
 <p><strong>三向切分改进代码如下:</strong> 三向切分的最坏情况是所有元素都不同; 在包含大量重复元素时, 其能将对数级别的时间降低到线性级别</p>
-<div class="highlighter-rouge"><pre class="highlight"><code>public static void sort3Way(int[] noSort, int low, int high) {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static void sort3Way(int[] noSort, int low, int high) {
         if (high &lt;= low)
             return;
         int lt = low;
@@ -583,7 +583,7 @@ while(h &lt; N/3)
         sort3Way(noSort, low, lt - 1);
         sort3Way(noSort, gt + 1, high);
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <hr />
 
@@ -597,7 +597,7 @@ while(h &lt; N/3)
 
 <p><strong>注</strong>: 摘自<a href="https://zh.wikipedia.org/wiki/%E5%A0%86%E6%8E%92%E5%BA%8F#Java">Wiki</a></p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>public class HeapSort {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class HeapSort {
 
     public static void sort(int[] arr) {
         /*
@@ -644,7 +644,7 @@ while(h &lt; N/3)
         }
     }
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <h3 id="73-特点">7.3 特点</h3>
 
@@ -864,7 +864,7 @@ while(h &lt; N/3)
                             
         				
                             
-                				<a href="/tags/#iOS" title="iOS" rel="4">
+                				<a href="/tags/#iOS" title="iOS" rel="5">
                                     iOS
                                 </a>
                             

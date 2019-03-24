@@ -204,7 +204,7 @@
   </ol>
 </blockquote>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>	dispatch_async(queue, ^{
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>	dispatch_async(queue, ^{
             // reading
         });
         dispatch_async(queue, ^{
@@ -219,7 +219,7 @@
         dispatch_async(queue, ^{
             // reading
         });
-</code></pre></div>
+</code></pre></div></div>
 
 <h4 id="222-队列">2.2.2 队列</h4>
 
@@ -243,7 +243,7 @@
   </ol>
 </blockquote>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>// 自己创建队列：第一个参数是标识符，用于 DEBUG 的时候标识唯一的队列；
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// 自己创建队列：第一个参数是标识符，用于 DEBUG 的时候标识唯一的队列；
 // 第二个参数用来表示创建的队列是串行的还是并行的，传入 DISPATCH_QUEUE_SERIAL 或 NULL 表示创建串行队列。传入 DISPATCH_QUEUE_CONCURRENT 表示创建并行队列
 
   //串行队列
@@ -251,17 +251,17 @@
   dispatch_queue_t queue = dispatch_queue_create("tk.bourne.testQueue", DISPATCH_QUEUE_SERIAL);
   //并行队列
   dispatch_queue_t queue = dispatch_queue_create("tk.bourne.testQueue", DISPATCH_QUEUE_CONCURRENT);
-</code></pre></div>
+</code></pre></div></div>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>  // 全局并行队列：
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  // 全局并行队列：
   dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
-</code></pre></div>
+</code></pre></div></div>
 
 <h4 id="223-队列组dispatch-group">2.2.3 队列组(Dispatch Group)</h4>
 
 <p>可用于实现当并行执行block时，监听所有block执行结束</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>	dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>	dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
         dispatch_group_t group = dispatch_group_create();
         dispatch_group_async(group, queue, ^{
             NSLog(@"Block 1");
@@ -275,13 +275,13 @@
         dispatch_group_notify(group, dispatch_get_main_queue(), ^{
             NSLog(@"Done");
         });
-</code></pre></div>
+</code></pre></div></div>
 
 <blockquote>
   <p>应用举例：分别执行两个耗时的操作，等两个异步操作都执行完之后，回到主线程执行操作；如果想要高效实现上述需求，可用队列组；如下</p>
 </blockquote>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>dispatch_group_t group =  dispatch_group_create();
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>dispatch_group_t group =  dispatch_group_create();
 dispatch_group_async(group, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
     // 执行1个耗时的异步操作
 });
@@ -291,7 +291,7 @@ dispatch_group_async(group, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DE
 dispatch_group_notify(group, dispatch_get_main_queue(), ^{
     // 等前面的异步操作都执行完毕后，回到主线程...
 });
-</code></pre></div>
+</code></pre></div></div>
 
 <h4 id="224-其他">2.2.4 其他</h4>
 
@@ -299,20 +299,20 @@ dispatch_group_notify(group, dispatch_get_main_queue(), ^{
   <li>延迟执行：通过<code class="highlighter-rouge">dispatch_walltime</code>生成绝对时间</li>
 </ul>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>dispatch_time_t time = dispatch_time(DISPATCH_TIME_NOW, 3ull * NSEC_PER_SEC); // ull表示：unsigned long long 
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>dispatch_time_t time = dispatch_time(DISPATCH_TIME_NOW, 3ull * NSEC_PER_SEC); // ull表示：unsigned long long 
         dispatch_after(time, dispatch_get_main_queue(), ^{
             
 });
-</code></pre></div>
+</code></pre></div></div>
 
 <ul>
   <li>dipatch_apply：相当于dipatch_sync和dispatch group的关联API，该函数将指定的block追加到指定的queue中，并等待全部处理执行结束；其也会阻塞直到执行完毕，可用其替代for循环
-    <div class="highlighter-rouge"><pre class="highlight"><code>dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
 dispatch_apply(10, queue, ^(size_t index) { // index表示当前索引，自动增加
   NSLog(@"%zu", index);
 });
 NSLog(@"Done"); // 最后执行
-</code></pre>    </div>
+</code></pre></div>    </div>
   </li>
   <li>
     <p>dispatch_suspend / dispatch_resume：用于挂起和恢复queue</p>
@@ -382,7 +382,7 @@ NSLog(@"Done"); // 最后执行
 
 <p>两种为NSURLConnection设置代理方式的区别：</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>    //第一种设置方式：
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    //第一种设置方式：
     //通过该方法设置代理，会自动的发送请求
     // [[NSURLConnection alloc]initWithRequest:request delegate:self];
 
@@ -392,7 +392,7 @@ NSLog(@"Done"); // 最后执行
     //手动通过代码的方式来发送请求
     //注意该方法内部会自动的把connect添加到当前线程的RunLoop中在默认模式下执行
     [connect start];
-</code></pre></div>
+</code></pre></div></div>
 
 <hr />
 
@@ -553,7 +553,7 @@ NSLog(@"Done"); // 最后执行
                             
         				
                             
-                				<a href="/tags/#iOS" title="iOS" rel="4">
+                				<a href="/tags/#iOS" title="iOS" rel="5">
                                     iOS
                                 </a>
                             

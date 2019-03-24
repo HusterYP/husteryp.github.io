@@ -236,7 +236,7 @@
 
 <p>异常示例代码:</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>public class JavaVMStackSOF {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class JavaVMStackSOF {
 
     private int stackLength = 1;
 
@@ -255,7 +255,7 @@
         }
     }
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <ol>
   <li><strong>OutOfMemoryError</strong>: 虚拟机栈动态扩展时无法申请到足够内存</li>
@@ -263,7 +263,7 @@
 
 <p>异常示例代码:</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>public class JavaVMStackOOM {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class JavaVMStackOOM {
 
     private void dontStop() {
         while (true) {
@@ -286,7 +286,7 @@
         oom.stackLeakByThread();
     }
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <p><strong>注</strong>: 由于操作系统分配给每个进程的内存空间是有限制的, 所以如果是由于建立过多的线程导致内存溢出, 在不能减少线程数或者更换<code class="highlighter-rouge">64</code>位虚拟机的情况下, 可以选择通过减少最大堆和减少栈容量来换取更多的线程</p>
 
@@ -323,7 +323,7 @@
 
 <p>异常示例:</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>public class JavaVMHeapOOM {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class JavaVMHeapOOM {
 
     static class HeapOOM {
     }
@@ -335,7 +335,7 @@
         }
     }
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <h3 id="25-方法区">2.5 方法区</h3>
 
@@ -368,7 +368,7 @@
 
 <p>异常示例:</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>public class RuntimeConstantPoolOOM {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class RuntimeConstantPoolOOM {
     public static void main(String[] args) {
         List&lt;String&gt; list = new ArrayList&lt;&gt;();
         int i = 0;
@@ -377,7 +377,7 @@
         }
     }
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <h3 id="26-直接内存">2.6 直接内存</h3>
 
@@ -540,7 +540,7 @@
                             
         				
                             
-                				<a href="/tags/#iOS" title="iOS" rel="4">
+                				<a href="/tags/#iOS" title="iOS" rel="5">
                                     iOS
                                 </a>
                             

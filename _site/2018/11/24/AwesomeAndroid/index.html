@@ -184,7 +184,7 @@
 
 <p>注: <code class="highlighter-rouge">MainActivity</code>的<code class="highlighter-rouge">Layout</code>布局只有一个<code class="highlighter-rouge">id</code>为<code class="highlighter-rouge">main_text</code>的<code class="highlighter-rouge">TextView</code></p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>class MainActivity : AppCompatActivity() {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -200,7 +200,7 @@
         }.start()
     }
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <p>如上代码中, 在第二个子线程中跟新<code class="highlighter-rouge">UI</code>的时候失败了, 报错: <code class="highlighter-rouge">Only the original thread that created a view hierarchy can touch its views</code>; 即常见的不能在子线程中更新<code class="highlighter-rouge">UI</code>; 但是在第一个子线程中跟新<code class="highlighter-rouge">UI</code>成功了, 原因是: 线程的检查是在<code class="highlighter-rouge">ViewRootImp</code>中的<code class="highlighter-rouge">checkThread()</code>中, 但是在<code class="highlighter-rouge">onCreate()</code>中, 此时<code class="highlighter-rouge">ViewRootImp</code>还没有创建, 所以此时无法<code class="highlighter-rouge">checkThread()</code>, 实际上, <code class="highlighter-rouge">ViewRootImp</code>的创建是在<code class="highlighter-rouge">onResume()</code>方法回调之后, 在<code class="highlighter-rouge">WindowManagerGlobal</code>的<code class="highlighter-rouge">addView</code>中创建的; 所以如果这里的<code class="highlighter-rouge">initView</code>即使是在<code class="highlighter-rouge">onResume()</code>中调用也是同样的现象</p>
 
@@ -312,7 +312,7 @@
                             
         				
                             
-                				<a href="/tags/#iOS" title="iOS" rel="4">
+                				<a href="/tags/#iOS" title="iOS" rel="5">
                                     iOS
                                 </a>
                             

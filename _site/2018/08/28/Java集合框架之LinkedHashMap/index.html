@@ -218,39 +218,39 @@
 
 <p><code class="highlighter-rouge">LinkedHashMap</code>改写了<code class="highlighter-rouge">HashMap</code>的节点, 如下; 在其中增加了<code class="highlighter-rouge">before</code>和<code class="highlighter-rouge">after</code>域用于帮助组织双向链表</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>    static class Entry&lt;K,V&gt; extends HashMap.Node&lt;K,V&gt; {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    static class Entry&lt;K,V&gt; extends HashMap.Node&lt;K,V&gt; {
         Entry&lt;K,V&gt; before, after;
         Entry(int hash, K key, V value, Node&lt;K,V&gt; next) {
             super(hash, key, value, next);
         }
     }
-</code></pre></div>
+</code></pre></div></div>
 
 <p>对于<code class="highlighter-rouge">accessOrder</code>值的指定只能在创建<code class="highlighter-rouge">LinkedHashMap</code>的时候, 也就是说<code class="highlighter-rouge">LinkedHashMap</code>并没有提供明确的<code class="highlighter-rouge">set()</code>方法来改变该值(一旦在构造函数中指定, 就无法改变); <code class="highlighter-rouge">LinkedHashMap</code>提供了如下构造函数可以用于指定<code class="highlighter-rouge">accessOrder</code>的值, 其余构造函数中, <code class="highlighter-rouge">accessOrder</code>都默认为<code class="highlighter-rouge">false</code>, 即默认以<code class="highlighter-rouge">insertion-order</code>的顺序组织双向链表</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>    public LinkedHashMap(int initialCapacity,
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    public LinkedHashMap(int initialCapacity,
                          float loadFactor,
                          boolean accessOrder) {
         super(initialCapacity, loadFactor);
         this.accessOrder = accessOrder;
     }
-</code></pre></div>
+</code></pre></div></div>
 
 <p><code class="highlighter-rouge">LinkedHashMap</code>重写了<code class="highlighter-rouge">HashMap</code>的<code class="highlighter-rouge">newNode()</code>函数, <code class="highlighter-rouge">newNode()</code>在进行元素插入的时候会被<code class="highlighter-rouge">HashMap.putVal()</code>调用, <code class="highlighter-rouge">LinkedHashMap</code>用自己的<code class="highlighter-rouge">Entry</code>节点替换<code class="highlighter-rouge">HashMap</code><code class="highlighter-rouge">Node</code>节点的同时, 进行双向链表的构建, 使得程序改动最小</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>    Node&lt;K,V&gt; newNode(int hash, K key, V value, Node&lt;K,V&gt; e) {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    Node&lt;K,V&gt; newNode(int hash, K key, V value, Node&lt;K,V&gt; e) {
         LinkedHashMap.Entry&lt;K,V&gt; p =
             new LinkedHashMap.Entry&lt;K,V&gt;(hash, key, value, e);
         linkNodeLast(p); // 将节点插入到双向链表的末尾
         return p;
     }
-</code></pre></div>
+</code></pre></div></div>
 
 <p>至于<code class="highlighter-rouge">linkNodeLast()</code>函数, 即将节点插入到双向链表的末尾, 该方法比较简单, 这里就不再贴源码啦 !</p>
 
 <p>那么当我们指定了<code class="highlighter-rouge">accessOrder</code>为<code class="highlighter-rouge">true</code>的时候, 即以元素访问顺序来组织双向链表的时候, 其实就只是在获取元素的时候, 将被访问的元素移动到链表末尾; 如下; 那么链表表头的元素就是最近没有被访问的元素, 这也是我们实现<code class="highlighter-rouge">LRU</code>算法的依据(稍后会细讲)</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>    public V get(Object key) {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    public V get(Object key) {
         Node&lt;K,V&gt; e;
         if ((e = getNode(hash(key), key)) == null)
             return null;
@@ -258,13 +258,13 @@
             afterNodeAccess(e); // 将元素移动到链表末尾
         return e.value;
     }
-</code></pre></div>
+</code></pre></div></div>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>    void afterNodeAccess(Node&lt;K,V&gt; e) { // move node to last
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    void afterNodeAccess(Node&lt;K,V&gt; e) { // move node to last
         // 省略具体细节
         ...
     }
-</code></pre></div>
+</code></pre></div></div>
 
 <p>到这里, 我们对<code class="highlighter-rouge">LinkedHashMap</code>遍历有序的原因有了较为详细的了解; 接下来要讲的是<code class="highlighter-rouge">LinkedHashMap</code>的一个应用, 即用于实现<code class="highlighter-rouge">LRU</code>算法的特性</p>
 
@@ -280,14 +280,14 @@
 
 <p>另外, 还需要我们自己去定义<code class="highlighter-rouge">LRU</code>的实现规则, 即自己定义什么时候应该移除最久没有使用的元素; 此时我们需要去重写<code class="highlighter-rouge">LinkedHashMap</code>的<code class="highlighter-rouge">removeEldestEntry()</code>函数, <code class="highlighter-rouge">removeEldestEntry()</code>是在我们插入一个元素完毕之后, 回调<code class="highlighter-rouge">afterNodeInsertion()</code>中调用的, 如下; 但是<code class="highlighter-rouge">removeEldestEntry()</code>默认返回<code class="highlighter-rouge">false</code>, 所以需要我们自己去定义规则</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>    void afterNodeInsertion(boolean evict) { // possibly remove eldest
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    void afterNodeInsertion(boolean evict) { // possibly remove eldest
         LinkedHashMap.Entry&lt;K,V&gt; first;
         if (evict &amp;&amp; (first = head) != null &amp;&amp; removeEldestEntry(first)) { // 插入元素之后, 判断是否需要移除最久没有访问的元素
             K key = first.key;
             removeNode(hash(key), key, null, false, true); // 移除链表首部的元素
         }
     }
-</code></pre></div>
+</code></pre></div></div>
 
 <p>至于自定义规则, 比如: 约定最多在内存中缓存多少个元素, 超过该阈值之后, <code class="highlighter-rouge">removeEldestEntry()</code>返回<code class="highlighter-rouge">true</code>, 即将旧元素移除; 或者, 规定缓存占用多少内存, 当达到该阈值之后, 即进行旧元素移除; 当然, 这些都是后话, 具体的<code class="highlighter-rouge">LRU</code>算法, 可以根据实际需求来定</p>
 
@@ -405,7 +405,7 @@
                             
         				
                             
-                				<a href="/tags/#iOS" title="iOS" rel="4">
+                				<a href="/tags/#iOS" title="iOS" rel="5">
                                     iOS
                                 </a>
                             

@@ -217,12 +217,12 @@
 
 <p><code class="highlighter-rouge">ArrayDeque</code>提供了三个构造函数, 这里只挑其中一个比较难的讲解; 如下, 该构造函数允许提供自定义初始容量, 但是并不是说, 我们传进去多少容量, 最初就会分配多少容量, 因为传进去的值还经过了<code class="highlighter-rouge">calculateSize()</code>函数的处理; <code class="highlighter-rouge">calculateSize()</code>函数的作用是, 找出不小于<code class="highlighter-rouge">numElements</code>的最小的<code class="highlighter-rouge">2</code>的整数次幂的整数, 因为上面已经说了, <code class="highlighter-rouge">ArrayDeque</code>的容量需要都是<code class="highlighter-rouge">2</code>的整数次幂; 这点和<code class="highlighter-rouge">HashMap</code>的扩容规则比较相像, 具体分析可以参见<a href="https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/">Java集合框架之HashMap</a>中对<code class="highlighter-rouge">HashMap</code>扩容规则一节的讲解; 另外, 值得一提的是, <code class="highlighter-rouge">calculateSize()</code>的时候还进行了边界值的判断, 一个是初始容量最小为<code class="highlighter-rouge">8</code>, 最大不得超过<code class="highlighter-rouge">2^30</code>, 如下代码;</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>    private void allocateElements(int numElements) {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    private void allocateElements(int numElements) {
         elements = new Object[calculateSize(numElements)];
     }
-</code></pre></div>
+</code></pre></div></div>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>    private static int calculateSize(int numElements) {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    private static int calculateSize(int numElements) {
         int initialCapacity = MIN_INITIAL_CAPACITY;  // 初始最小容量为8
         // Find the best power of two to hold elements.
         // Tests "&lt;=" because arrays aren't kept full.
@@ -240,7 +240,7 @@
         }
         return initialCapacity;
     }
-</code></pre></div>
+</code></pre></div></div>
 
 <h3 id="22-元素增删">2.2 元素增删</h3>
 
@@ -248,14 +248,14 @@
 
 <p>下面我们通过具体的元素添加来看, 如下, 为在队列头添加元素, 这里需要注意的一点是先添加元素, 再判断队列是否已满, 这是因为上面我们说了, <code class="highlighter-rouge">ArrayDeque</code>中<code class="highlighter-rouge">tail</code>指针指向的是队尾元素的下一个位置, 一定是空位置, 否则在上一次添加元素的时候就会引起扩容了</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>    public void addFirst(E e) {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    public void addFirst(E e) {
         if (e == null)
             throw new NullPointerException();
         elements[head = (head - 1) &amp; (elements.length - 1)] = e;
         if (head == tail)
             doubleCapacity();
     }
-</code></pre></div>
+</code></pre></div></div>
 
 <p>这里讲一下<code class="highlighter-rouge">head = (head - 1) &amp; (elements.length - 1)</code>的运算规则, 比如, 当我们的数组容量为<code class="highlighter-rouge">8</code>, 本次插入之前<code class="highlighter-rouge">head = 0</code>, <code class="highlighter-rouge">tail = 7</code>的时候, 执行该插入操作, 通过<code class="highlighter-rouge">head = (head - 1) &amp; (elements.length - 1)</code>元素, 即 <code class="highlighter-rouge">-1 &amp; 7</code>, 转换为二进制就是(<code class="highlighter-rouge">1111 &amp; 0111 = 0111</code>), 最终运算结果为<code class="highlighter-rouge">7</code>, 所以可以判断队列满了, 需要扩容 ~</p>
 
@@ -263,18 +263,18 @@
 
 <p>同理, 在队列尾插入元素也是一样的, 如下; 就不再分析啦~</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>    public void addLast(E e) {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    public void addLast(E e) {
         if (e == null)
             throw new NullPointerException();
         elements[tail] = e;
         if ( (tail = (tail + 1) &amp; (elements.length - 1)) == head)
             doubleCapacity();
     }
-</code></pre></div>
+</code></pre></div></div>
 
 <p>对于删除元素来说, 这里举一个例子, 如下; 主要看<code class="highlighter-rouge">head</code>指针的变化规则, 即<code class="highlighter-rouge">head = (h + 1) &amp; (elements.length - 1);</code>, 其实就是和插入元素相反的过程而已</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>    public E pollFirst() {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    public E pollFirst() {
         int h = head;
         E result = (E) elements[h];
         // Element is null if deque empty
@@ -284,7 +284,7 @@
         head = (h + 1) &amp; (elements.length - 1);
         return result;
     }
-</code></pre></div>
+</code></pre></div></div>
 
 <hr />
 
@@ -295,7 +295,7 @@
 
 <p>那么根据上面的分析, 什么时候会发生扩容呢, 其实就是当队列满的时候; 扩容的规则又是怎样的呢, 从<code class="highlighter-rouge">doubleCapacity()</code>的函数名我们猜测, 就是将数组容量加倍而已; 如下, 思路也比较简单, 就是创建一个扩容的新数组进行旧元素的复制罢了, 比较简单, 不再赘述</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>    private void doubleCapacity() {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    private void doubleCapacity() {
         assert head == tail;
         int p = head;
         int n = elements.length;
@@ -310,7 +310,7 @@
         head = 0;
         tail = n;
     }
-</code></pre></div>
+</code></pre></div></div>
 
 <h2 id="四-总结">四. 总结</h2>
 
@@ -426,7 +426,7 @@
                             
         				
                             
-                				<a href="/tags/#iOS" title="iOS" rel="4">
+                				<a href="/tags/#iOS" title="iOS" rel="5">
                                     iOS
                                 </a>
                             

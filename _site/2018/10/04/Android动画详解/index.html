@@ -235,7 +235,7 @@
 
 <p><strong>注</strong>: 位置为<code class="highlighter-rouge">res/anim/filename.xml</code></p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code><span class="cp">&lt;?xml version="1.0" encoding="utf-8"?&gt;</span>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">&lt;?xml version="1.0" encoding="utf-8"?&gt;</span>
 <span class="nt">&lt;set</span> <span class="na">xmlns:android=</span><span class="s">"http://schemas.android.com/apk/res/android"</span>
     <span class="na">android:interpolator=</span><span class="s">"@[package:]anim/interpolator_resource"</span>
     <span class="na">android:shareInterpolator=</span><span class="s">"[true | false]"</span>
@@ -266,7 +266,7 @@
         ...
     <span class="nt">&lt;/set&gt;</span>
 <span class="nt">&lt;/set&gt;</span>
-</code></pre></div>
+</code></pre></div></div>
 
 <p><strong>解释</strong>:</p>
 
@@ -290,16 +290,16 @@
 
 <p>在代码中使用<code class="highlighter-rouge">View</code>动画:</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>Button button = findViewById(R.id.button);
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Button button = findViewById(R.id.button);
 Animatoin animation = AnimationUtils.loadAnimation(this, R.anim.animation_item);
 button.startAnimation(animation);
-</code></pre></div>
+</code></pre></div></div>
 
 <h3 id="22-自定义view动画">2.2 自定义View动画</h3>
 
 <p><code class="highlighter-rouge">TranslateAnimation</code>, <code class="highlighter-rouge">ScaleAnimation</code>, <code class="highlighter-rouge">RotateAnimation</code>, 和<code class="highlighter-rouge">AlphaAnimation</code>都继承自<code class="highlighter-rouge">Animation</code>; 如果要自定义<code class="highlighter-rouge">View</code>动画的话, 也需要继承<code class="highlighter-rouge">Animation</code>, 并重写<code class="highlighter-rouge">Animation.initialize()</code>和<code class="highlighter-rouge">Animation.applyTransformation()</code>方法; <code class="highlighter-rouge">initialize()</code>顾名思义就是进行一些初始化工作, 比如设置属性的初始值等, <code class="highlighter-rouge">applyTransformation()</code>就是根据时间的流失量来计算出当前时间片段所对应的属性值, 并设置到对应的作用对象(对于<code class="highlighter-rouge">View</code>动画来说该对象就是<code class="highlighter-rouge">View</code>); 这里的设置往往是通过<code class="highlighter-rouge">Matrix</code>来作用的, 如下以<code class="highlighter-rouge">TranslateAnimation.applyTransformation()</code>为例</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>@Override
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>@Override
 protected void applyTransformation(float interpolatedTime, Transformation t) {
         float dx = mFromXDelta;
         float dy = mFromYDelta;
@@ -311,7 +311,7 @@ protected void applyTransformation(float interpolatedTime, Transformation t) {
         }
         t.getMatrix().setTranslate(dx, dy);  // 通过Matrix作用到对象
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <p>上述代码其实也可以当做自定义<code class="highlighter-rouge">View</code>动画的模板代码, 自定义<code class="highlighter-rouge">View</code>动画时, 可以使用<code class="highlighter-rouge">Camera</code>来配合计算改变量; 关于<code class="highlighter-rouge">Camera</code>和<code class="highlighter-rouge">Matrix</code>的使用, 可以参见<a href="https://hencoder.com/ui-1-4/">博客</a></p>
 
@@ -323,7 +323,7 @@ protected void applyTransformation(float interpolatedTime, Transformation t) {
 
 <p><strong>注</strong>: 位置为<code class="highlighter-rouge">/res/drawable/filename.xml</code></p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code><span class="cp">&lt;?xml version="1.0" encoding="utf-8"?&gt;</span>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">&lt;?xml version="1.0" encoding="utf-8"?&gt;</span>
 <span class="nt">&lt;animation-list</span> <span class="na">xmlns:android=</span><span class="s">"http://schemas.android.com/apk/res/android"</span>
     <span class="na">android:oneshot=</span><span class="s">"false"</span><span class="nt">&gt;</span>
     <span class="nt">&lt;item</span> <span class="na">android:drawable=</span><span class="s">"@drawable/item"</span> <span class="na">android:duration=</span><span class="s">"100"</span><span class="nt">/&gt;</span>
@@ -331,7 +331,7 @@ protected void applyTransformation(float interpolatedTime, Transformation t) {
     <span class="nt">&lt;item</span> <span class="na">android:drawable=</span><span class="s">"@drawable/item"</span> <span class="na">android:duration=</span><span class="s">"100"</span><span class="nt">/&gt;</span>
     <span class="nt">&lt;item</span> <span class="na">android:drawable=</span><span class="s">"@drawable/item"</span> <span class="na">android:duration=</span><span class="s">"100"</span><span class="nt">/&gt;</span>
 <span class="nt">&lt;/animation-list&gt;</span>
-</code></pre></div>
+</code></pre></div></div>
 
 <p>使用帧动画时, 当图片较多或者较大时可能引起<code class="highlighter-rouge">OOM</code></p>
 
@@ -347,12 +347,12 @@ protected void applyTransformation(float interpolatedTime, Transformation t) {
 
 <p><strong>注</strong>: 位置为<code class="highlighter-rouge">/res/anim/anim_layout.xml</code></p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code><span class="cp">&lt;?xml version="1.0" encoding="utf-8"?&gt;</span>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">&lt;?xml version="1.0" encoding="utf-8"?&gt;</span>
 <span class="nt">&lt;layoutAnimation</span> <span class="na">xmlns:android=</span><span class="s">"http://schemas.android.com/apk/res/android"</span>
     <span class="na">android:delay=</span><span class="s">"0.5"</span>
     <span class="na">android:animationOrder=</span><span class="s">"[normal | reverse | random]"</span>
     <span class="na">android:animation=</span><span class="s">"@anim/anim_item"</span><span class="nt">/&gt;</span>
-</code></pre></div>
+</code></pre></div></div>
 
 <p><strong>解释</strong>:</p>
 
@@ -369,13 +369,13 @@ protected void applyTransformation(float interpolatedTime, Transformation t) {
 
 <p>代码实现, 格式如下: 即通过<code class="highlighter-rouge">LayoutAnimationController</code>实现</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>ListView listView = findViewById(R.id.list);
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ListView listView = findViewById(R.id.list);
 Animation animation = AnimationUtils.loadAnimation(this, R.anim.anim_item);
 LayoutAnimationController controller = new LayoutAnimationController(animation);
 controller.setDelay(0.5f);
 controller.setOrder(LayoutAnimationController.ORDER_NORMAL);
 listView.setLayoutAnimation(controller);
-</code></pre></div>
+</code></pre></div></div>
 
 <h3 id="32-activity的切换效果">3.2 Activity的切换效果</h3>
 
@@ -383,21 +383,21 @@ listView.setLayoutAnimation(controller);
   <li>当启动一个<code class="highlighter-rouge">Activity</code>的时候, 可以按照如下方式为其添加自定义的切换效果:</li>
 </ol>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>Intent intent = new Intent(this, AnimActivity.class);
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Intent intent = new Intent(this, AnimActivity.class);
 startActivity(intent);
 overridePendingTransition(R.anim.enter_anim, R.anim.exit_anim);
-</code></pre></div>
+</code></pre></div></div>
 
 <ol>
   <li>当<code class="highlighter-rouge">Activity</code>退出时, 可以如下添加切换效果:</li>
 </ol>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>    @Override
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    @Override
     public void finish() {
         super.finish();
         overridePendingTransition(R.anim.enter_anim, R.anim.exit_anim);
     }
-</code></pre></div>
+</code></pre></div></div>
 
 <p>可以看出, 都是使用<code class="highlighter-rouge">overridePendingTransition()</code>来指定切换动画, 同时需要注意的是这个方法必须在<code class="highlighter-rouge">startActivity(intent)</code>或者<code class="highlighter-rouge">finish()</code>之后被调用才能生效</p>
 
@@ -425,9 +425,9 @@ overridePendingTransition(R.anim.enter_anim, R.anim.exit_anim);
 
 <p>也是针对<code class="highlighter-rouge">View</code>的特定属性, 同时还要求该属性提供了对应的<code class="highlighter-rouge">set</code>和<code class="highlighter-rouge">get</code>方法, 基本使用如下; 因为<code class="highlighter-rouge">ObjectAnimator</code>是通过属性的<code class="highlighter-rouge">set</code>方法来不断改变属性值的, 所以<code class="highlighter-rouge">set</code>方法是一定需要的, 至于<code class="highlighter-rouge">get</code>方法只是用于获取动画开始的初始值的, 如果明确指定了初始值的话, 也可以提供<code class="highlighter-rouge">get</code>方法(如果没有提供<code class="highlighter-rouge">get</code>方法, 同时又没有指定初始值的话, 将<code class="highlighter-rouge">Crash</code>; 如果没有<code class="highlighter-rouge">set</code>方法, 不会<code class="highlighter-rouge">Crash</code>, 只是没有效果而已)</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>ObjectAnimator animator = ObjectAnimator.ofFloat(view, "alpha", 0, 65);
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ObjectAnimator animator = ObjectAnimator.ofFloat(view, "alpha", 0, 65);
 animator.start();
-</code></pre></div>
+</code></pre></div></div>
 
 <p>如果一个属性没有<code class="highlighter-rouge">set</code>方法的话, 解决方法有以下三种:</p>
 
@@ -509,8 +509,8 @@ animator.start();
 
 <p>估值器基本使用如下:</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>ObjectAnimator anim = ObjectAnimator.ofObject(view, "alpha", new FloatEvaluator(), 0, 1);
-</code></pre></div>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ObjectAnimator anim = ObjectAnimator.ofObject(view, "alpha", new FloatEvaluator(), 0, 1);
+</code></pre></div></div>
 
 <h3 id="44-监听器">4.4 监听器</h3>
 
@@ -712,7 +712,7 @@ animator.start();
                             
         				
                             
-                				<a href="/tags/#iOS" title="iOS" rel="4">
+                				<a href="/tags/#iOS" title="iOS" rel="5">
                                     iOS
                                 </a>
                             

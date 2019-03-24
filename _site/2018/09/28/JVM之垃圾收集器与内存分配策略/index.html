@@ -196,7 +196,7 @@
 
 <p>主流<code class="highlighter-rouge">Java</code>虚拟机中没有使用引用计数来管理内存的</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>public class ReferenceCountingGC {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class ReferenceCountingGC {
 
     public Object instance = null;
     private final int _1MB = 1024 * 1024;
@@ -214,7 +214,7 @@
         System.gc();
     }
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <h3 id="12-可达性分析算法">1.2 可达性分析算法</h3>
 
@@ -244,7 +244,7 @@
 <p>使用可达性分析算法时, 至少需要经过两次标记过程才能宣告一个对象真正死亡: 如果对象在进行可达性分析后发现没有与<code class="highlighter-rouge">GC Root</code>相连接的引用链, 那它会被第一次标记并且进行一次筛选, 筛选的条件是此对象是否有必要执行<code class="highlighter-rouge">finalize()</code>方法, 当对象没有覆盖<code class="highlighter-rouge">finalize()</code>方法时, 或者<code class="highlighter-rouge">finalize()</code>方法已经被虚拟机调用过, 虚拟机将这两种情况都视为没有必要执行(也就是说<code class="highlighter-rouge">finalize()</code>方法最多执行一次, 这点需要注意~);
 如果这个对象被判定为有必要执行<code class="highlighter-rouge">finalize()</code>方法, 那么这个对象将会放置在一个叫做<code class="highlighter-rouge">F-Queue</code>的队列中, 并在稍后由一个由虚拟机自动建立, 低优先级的<code class="highlighter-rouge">Finalizer</code>线程去执行它, 但并不承诺会等待<code class="highlighter-rouge">finalize()</code>方法运行结束(这里也需要注意, 这是为了防止<code class="highlighter-rouge">finalize()</code>中出现耗时操作甚至死循环); 在<code class="highlighter-rouge">finalize()</code>中对象可以使自己再次加入引用链中, 逃脱<code class="highlighter-rouge">GC</code>; <strong>但是不建议使用该方法来逃脱GC</strong></p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>public class FinalizeEscapeGC {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class FinalizeEscapeGC {
     public static FinalizeEscapeGC finalizeEscapeGC = null;
 
     int count = 0;
@@ -285,14 +285,14 @@
         }
     }
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <p>上述程序运行结果为: 可以看出, <code class="highlighter-rouge">finalize()</code>确实被调用了, 而且只被调用了一次</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>finalize method executed
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>finalize method executed
 Yes, I am alive :)
 No, I am dead :(
-</code></pre></div>
+</code></pre></div></div>
 
 <h3 id="13-再谈引用">1.3 再谈引用</h3>
 
@@ -568,7 +568,7 @@ No, I am dead :(
                             
         				
                             
-                				<a href="/tags/#iOS" title="iOS" rel="4">
+                				<a href="/tags/#iOS" title="iOS" rel="5">
                                     iOS
                                 </a>
                             

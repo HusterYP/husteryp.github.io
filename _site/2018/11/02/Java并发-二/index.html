@@ -217,7 +217,7 @@
 
 <p>考虑下列程序, 运行<code class="highlighter-rouge">1</code>秒之后结束, 而不是运行<code class="highlighter-rouge">6</code>秒; 同时还会抛出异常</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>public class OutOfTime {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class OutOfTime {
     public static void main(String[] args) throws InterruptedException {
         Timer timer = new Timer();
         timer.schedule(new ThrowTask(), 1);
@@ -234,7 +234,7 @@
         }
     }
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <ol>
   <li>携带结果的任务<code class="highlighter-rouge">Callable</code>与<code class="highlighter-rouge">Future</code>:</li>
@@ -249,12 +249,12 @@
 
 <p>二者区别参见其提供方法:</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>public interface Callable&lt;V&gt; {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public interface Callable&lt;V&gt; {
     V call() throws Exception;
 }
-</code></pre></div>
+</code></pre></div></div>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>public interface Future&lt;V&gt; {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public interface Future&lt;V&gt; {
     boolean cancel(boolean mayInterruptIfRunning);
     boolean isCancelled();
     boolean isDone();
@@ -262,7 +262,7 @@
     V get(long timeout, TimeUnit unit)
         throws InterruptedException, ExecutionException, TimeoutException;
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <hr />
 
@@ -418,7 +418,7 @@
                             
         				
                             
-                				<a href="/tags/#iOS" title="iOS" rel="4">
+                				<a href="/tags/#iOS" title="iOS" rel="5">
                                     iOS
                                 </a>
                             

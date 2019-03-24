@@ -256,12 +256,12 @@
   <li><strong>Files</strong>: 使得读写文件和操作文件及文件夹变得简单; 旧的<code class="highlighter-rouge">File</code>类中有一个方法可以用来获取一个目录下的所有文件构成的数组, 但是当目录中包含大量文件时, 这个方法的性能非常低, <code class="highlighter-rouge">Files</code>类设计了一个方法可以产生<code class="highlighter-rouge">Iterable</code>对象, 如下示例代码:</li>
 </ol>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>DirectoryStream&lt;Path&gt; entries = Files.newDirectoryStream(Paths.get("/"));
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>DirectoryStream&lt;Path&gt; entries = Files.newDirectoryStream(Paths.get("/"));
 Iterator&lt;Path&gt; iterator = entries.iterator();
 for (Path path : entries) {
     System.out.println(path);
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <ol>
   <li><strong>Paths</strong>: <code class="highlighter-rouge">Paths</code>可以用来构造<code class="highlighter-rouge">Path</code>对象: <code class="highlighter-rouge">Paths.get(args)</code>, 可以接收一个或多个字符串, 并将它们用默认文件系统分隔符连接起来</li>
@@ -429,7 +429,7 @@ for (Path path : entries) {
                             
         				
                             
-                				<a href="/tags/#iOS" title="iOS" rel="4">
+                				<a href="/tags/#iOS" title="iOS" rel="5">
                                     iOS
                                 </a>
                             

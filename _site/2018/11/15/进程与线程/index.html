@@ -204,7 +204,7 @@
 
 <p><code class="highlighter-rouge">fork</code>函数调用一次但是返回两次, 一次是在父进程中, 另一次是在新创建的子进程中, 参见一下代码</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>int main() 
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>int main() 
 {
     pid_t pid;
     int x = 1;
@@ -217,12 +217,12 @@
     printf("Parent: x = %d\n", --x); // 父进程
     exit(0);
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <p>输出(注意由于并发不定性, 所以输出顺序不定):</p>
-<div class="highlighter-rouge"><pre class="highlight"><code>Parent: x = 0
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Parent: x = 0
 Child: x = 2
-</code></pre></div>
+</code></pre></div></div>
 
 <p>注意理解上述程序:</p>
 
@@ -263,7 +263,7 @@ Child: x = 2
   <li>信号量: 用一个整型变量来累计唤醒次数</li>
 </ol>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>#define N 100 // 缓冲区的槽数目
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#define N 100 // 缓冲区的槽数目
 typedef int semaphore; // 信号量是一种特殊类型的整型数据
 semaphore mutex = 1; // 控制对临界区的访问
 semaphore empty = N; // 计数缓冲区的空槽数目
@@ -298,7 +298,7 @@ void consumer(void)
         comsume_item(item);
     }
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <ol>
   <li>
@@ -392,7 +392,7 @@ void consumer(void)
   <p>以数据库为例</p>
 </blockquote>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>typedef int semaphore;
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>typedef int semaphore;
 semaphore mutex = 1; 
 semaphore db = 1; // 控制对数据库的访问
 int rc = 0; // 正在读或者即将读的进程数目
@@ -426,7 +426,7 @@ void writer(void)
         up(&amp;db); // 释放互斥访问
     }
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <hr />
 
@@ -557,7 +557,7 @@ void writer(void)
                             
         				
                             
-                				<a href="/tags/#iOS" title="iOS" rel="4">
+                				<a href="/tags/#iOS" title="iOS" rel="5">
                                     iOS
                                 </a>
                             

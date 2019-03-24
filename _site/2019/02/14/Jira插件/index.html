@@ -212,7 +212,7 @@
 
 <p>前面也说了，不同版本的Jira SDK的可用API差异较大，这里举一个根据传入参数查询Issue列表的示例：</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>	final ApplicationUser applicationUser = queryCreationContext.getApplicationUser();
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>	final ApplicationUser applicationUser = queryCreationContext.getApplicationUser();
         final List&lt;String&gt; args = operand.getArgs();
         final List&lt;QueryLiteral&gt; queryLiterals = new LinkedList&lt;&gt;();
         JqlQueryParser parser = ComponentAccessor.getComponent(JqlQueryParser.class);
@@ -227,7 +227,7 @@
         } catch (Exception e) {
             log.error("Error search: ", e);
 	 }
-</code></pre></div>
+</code></pre></div></div>
 
 <hr />
 
@@ -349,7 +349,7 @@
                             
         				
                             
-                				<a href="/tags/#iOS" title="iOS" rel="4">
+                				<a href="/tags/#iOS" title="iOS" rel="5">
                                     iOS
                                 </a>
                             

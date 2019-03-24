@@ -201,7 +201,7 @@
 
 <p>考虑下列程序</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>class ThisEscape {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class ThisEscape {
     public ThisEscape(EventSource source) {
         source.registerListener(new EventListener() { // this逸出
             public void onEvent(Event e) { 
@@ -210,11 +210,11 @@
         });
     }
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <p>使用静态工厂方法来防止<code class="highlighter-rouge">this</code>引用在构造过程中逸出</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>class SafeListener {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class SafeListener {
     private final EventListener listener;
 
     private SafeListener() {
@@ -231,7 +231,7 @@
         return listener;
     }
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <ol>
   <li>一个正确构造的对象可以通过以下方式来安全的发布:
@@ -248,8 +248,8 @@
 
 <p>要安全的发布一个静态构造的对象, 最简单和安全的方式是使用静态的初始化器: 静态初始化器由<code class="highlighter-rouge">JVM</code>在类的初始化阶段执行, 由于在<code class="highlighter-rouge">JVM</code>内部存在着同步机制, 因此通过这种方式初始化的任何对象都可以被安全的发布</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>public static Holder holder = new Holder();
-</code></pre></div>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static Holder holder = new Holder();
+</code></pre></div></div>
 
 <hr />
 
@@ -265,7 +265,7 @@
   </li>
 </ol>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>class Widget {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class Widget {
     public synchronized void doSomething() {
         System.out.println("Widget");
     }
@@ -278,7 +278,7 @@ class LoggingWidget extends Widget {
         super.doSomething();
     }
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <ol>
   <li>关键字<code class="highlighter-rouge">synchronized</code>不能被继承:
@@ -291,7 +291,7 @@ class LoggingWidget extends Widget {
   </li>
 </ol>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>public class Widget {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class Widget {
     public synchronized void doSomething() {
         System.out.println(Thread.currentThread() + " Widget");
     }
@@ -304,7 +304,7 @@ class LoggingWidget extends Widget {
         super.doSomething(); // 但是父类的doSomething()仍可同步
     }
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <hr />
 
@@ -349,7 +349,7 @@ class LoggingWidget extends Widget {
 
 <p>用法参见下列程序:</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>public class LatchTest {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class LatchTest {
     public long timeTasks(int nThreads, final Runnable task) throws InterruptedException {
         final CountDownLatch startGate = new CountDownLatch(1);
         final CountDownLatch endGate = new CountDownLatch(nThreads);
@@ -373,7 +373,7 @@ class LoggingWidget extends Widget {
         return end - start;
     }
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <h4 id="422-futuretask">4.2.2 FutureTask</h4>
 
@@ -383,7 +383,7 @@ class LoggingWidget extends Widget {
 
 <p>基本使用参见如下代码:</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>public class FutureTest {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class FutureTest {
     private final FutureTask&lt;String&gt; futureTask = new FutureTask&lt;String&gt;(new Callable&lt;String&gt;() {
         @Override
         public String call() throws Exception {
@@ -402,7 +402,7 @@ class LoggingWidget extends Widget {
         return futureTask.get(); // 阻塞直到结束或者异常
     }
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <h3 id="43-信号量-semaphore">4.3 信号量-Semaphore</h3>
 
@@ -412,7 +412,7 @@ class LoggingWidget extends Widget {
 
 <p>使用信号量实现有界阻塞容器:</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>public class BoundedHashSet&lt;T&gt; {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class BoundedHashSet&lt;T&gt; {
     private final Set&lt;T&gt; set;
     private final Semaphore sem;
 
@@ -440,7 +440,7 @@ class LoggingWidget extends Widget {
         return wasRemoved;
     }
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <h3 id="44-栅栏-barrier">4.4 栅栏-Barrier</h3>
 
@@ -566,7 +566,7 @@ Deque: ArrayDeque, LinkedBlockingDeque</p>
                             
         				
                             
-                				<a href="/tags/#iOS" title="iOS" rel="4">
+                				<a href="/tags/#iOS" title="iOS" rel="5">
                                     iOS
                                 </a>
                             

@@ -10,9 +10,9 @@
     <meta name="keyword"  content="">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>Java集合框架之Set - 袁平 | HusterYP-Blog</title>
+    <title>AutoLayout总结 - 袁平 | HusterYP-Blog</title>
 
-    <link rel="canonical" href="http://localhost:4000/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BSet/">
+    <link rel="canonical" href="http://localhost:4000/2019/03/23/AutoLayout%E6%80%BB%E7%BB%93/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/css/bootstrap.min.css">
@@ -140,15 +140,15 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/tags/#Java" title="Java">Java</a>
+                        <a class="tag" href="/tags/#iOS" title="iOS">iOS</a>
                         
                     </div>
-                    <h1>Java集合框架之Set</h1>
+                    <h1>AutoLayout总结</h1>
                     
                     
-                    <h2 class="subheading">讲解Set实现类</h2>
+                    <h2 class="subheading">iOS布局基础</h2>
                     
-                    <span class="meta">Posted by 袁平 on August 27, 2018</span>
+                    <span class="meta">Posted by 袁平 on March 23, 2019</span>
                 </div>
             </div>
         </div>
@@ -168,34 +168,7 @@
 
 				<h1 id="前言">前言</h1>
 
-<blockquote>
-  <p><a href="https://husteryp.github.io/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/">前面</a>我们对Java集合框架有了一个基本的认识, 这里我们从几大接口入手, 逐步讲解其实现类; 下面要讲解的是<code class="highlighter-rouge">Set</code>的实现类, 即常用的<code class="highlighter-rouge">HashSet</code>, <code class="highlighter-rouge">TreeSet</code>和<code class="highlighter-rouge">LinkedHashSet</code></p>
-</blockquote>
-
-<p>文章源码基于<code class="highlighter-rouge">JDK8</code></p>
-
-<p><strong><code class="highlighter-rouge">Java</code>集合框架系列博客</strong>:</p>
-
-<ol>
-  <li>
-    <p><a href="https://husteryp.github.io/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/">Java集合框架概述</a></p>
-  </li>
-  <li>
-    <p><a href="https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BList/">Java集合框架之List</a></p>
-  </li>
-  <li>
-    <p><a href="https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/">Java集合框架之HashMap</a></p>
-  </li>
-  <li>
-    <p><a href="https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BSet/">Java集合框架之Set</a></p>
-  </li>
-  <li>
-    <p><a href="https://husteryp.github.io/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/">Java集合框架之LinkedHashMap</a></p>
-  </li>
-  <li>
-    <p><a href="https://husteryp.github.io/2018/09/06/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BQueue/">Java集合框架之Queue</a></p>
-  </li>
-</ol>
+<p><code class="highlighter-rouge">AutoLayout</code>总结</p>
 
 <hr />
 
@@ -203,82 +176,64 @@
 
 <hr />
 
-<h2 id="一-概述">一. 概述</h2>
+<h2 id="一-布局方式与背景">一. 布局方式与背景</h2>
 
-<p>需要注意的是, 本文要讲的<code class="highlighter-rouge">Set</code>的几个实现类内部都是基于<code class="highlighter-rouge">Map</code>实现的, 比如: <code class="highlighter-rouge">HashSet</code>基于<code class="highlighter-rouge">HashMap</code>, <code class="highlighter-rouge">TreeSet</code>基于<code class="highlighter-rouge">TreeMap</code>, <code class="highlighter-rouge">LinkedHashSet</code>基于<code class="highlighter-rouge">LinkedHashMap</code>, <code class="highlighter-rouge">Set</code>的<code class="highlighter-rouge">value</code>实际上就是<code class="highlighter-rouge">Map</code>中的<code class="highlighter-rouge">key</code>, 依赖于<code class="highlighter-rouge">Map</code>键值的唯一性实现<code class="highlighter-rouge">Set</code>中元素的不可重复; 所以在学习<code class="highlighter-rouge">Set</code>部分的时候, 只需要了解对应<code class="highlighter-rouge">Map</code>的特点和实现就可以了; 因此, 本文也不会详细讲解各<code class="highlighter-rouge">Set</code>实现类的代码细节, 而只是对每个实现类的特点进行一个总结</p>
+<p>在开始介绍<code class="highlighter-rouge">AutoLayout</code>之前，需要先介绍一下<code class="highlighter-rouge">iOS</code>中的布局方式；iOS<code class="highlighter-rouge">中主流的界面布局方式主要有手写代码布局，</code>xib<code class="highlighter-rouge">布局，</code>storyboard<code class="highlighter-rouge">布局；笔者更喜欢的还是手写代码的方式，一个可能与笔者之前</code>Android<code class="highlighter-rouge">经验相关（因为</code>Android<code class="highlighter-rouge">中多是使用手写</code>xml`的方式布局，另一个是，对于多人合作而言，手写代码其实更方便（减少冲突）；当然，对于单人的独立项目，其实没有什么优劣可言，选择一种自己更为熟悉与快捷的方式都是因人而异。</p>
 
-<hr />
+<p>关于<code class="highlighter-rouge">xib</code>布局和<code class="highlighter-rouge">storyboard</code>布局方式的区别，其实二者都是使用<code class="highlighter-rouge">IB</code>来进行可视化空间的拖拽与约束，唯一的区别是二者的侧重点不同；一般来说，单个的<code class="highlighter-rouge">xib</code>文件对应一个<code class="highlighter-rouge">ViewController</code>，对于一些自定义<code class="highlighter-rouge">View</code>，通常也会使用单个<code class="highlighter-rouge">xib</code>并从<code class="highlighter-rouge">main bundle</code>进行加载的方式来载入；而<code class="highlighter-rouge">storyboard</code>只能使用<code class="highlighter-rouge">ViewController</code>而不能用于单独的<code class="highlighter-rouge">UIView</code>（<code class="highlighter-rouge">UIView</code>只能基于<code class="highlighter-rouge">ViewController</code>使用，而<code class="highlighter-rouge">xib</code>同时支持两者）</p>
 
-<h2 id="二-hashset">二. HashSet</h2>
+<p><code class="highlighter-rouge">xib</code>实际上是一个<code class="highlighter-rouge">xml</code>文件，通过编译之后就得到<code class="highlighter-rouge">nib</code>文件</p>
 
-<p><code class="highlighter-rouge">HashSet</code>内部是基于<code class="highlighter-rouge">HashMap</code>实现的, 所以在讲解<code class="highlighter-rouge">HashSet</code>之前, 需要先看一下<code class="highlighter-rouge">HashMap</code>的实现, 可以参照<a href="https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/">Java集合框架之HashMap</a>, 该篇文章中详细介绍了<code class="highlighter-rouge">HashMap</code>的实现原理和特点, 推荐对<code class="highlighter-rouge">HashMap</code>有了一个大致的了解之后再开始往下读 ~</p>
-
-<p>总体而言, <code class="highlighter-rouge">HashSet</code>的代码比较简单, 其实现<code class="highlighter-rouge">Set</code>元素不重复性其实是利用<code class="highlighter-rouge">HashMap</code>键值的唯一性; 当我们存放一个<code class="highlighter-rouge">Value</code>的时候, 其实是将该<code class="highlighter-rouge">Value</code>当做<code class="highlighter-rouge">HashMap</code>中的键值的,  而实现的各种常规操作, 比如: <code class="highlighter-rouge">add()</code>, <code class="highlighter-rouge">remove()</code>, <code class="highlighter-rouge">contains()</code>等, 其实都是间接调用了<code class="highlighter-rouge">HashMap</code>中的相应操作</p>
-
-<p>所以, 这里不会去细讲<code class="highlighter-rouge">HashSet</code>代码, 了解<code class="highlighter-rouge">HashMap</code>之后, 其实是很简单的</p>
-
-<p>这里只是贴一下<code class="highlighter-rouge">HashSet</code>的特点:</p>
-
-<ol>
-  <li>
-    <p>没有重复元素, 允许<code class="highlighter-rouge">null</code></p>
-  </li>
-  <li>
-    <p>不保证<code class="highlighter-rouge">Set</code>的遍历顺序, 不保证元素的存储数据(具体原因可以见上面博客对<code class="highlighter-rouge">HashMap</code>的分析)</p>
-  </li>
-  <li>
-    <p>对<code class="highlighter-rouge">add()</code>, <code class="highlighter-rouge">remove()</code>, <code class="highlighter-rouge">contains()</code>, <code class="highlighter-rouge">size()</code>方法提供常量时间</p>
-  </li>
-  <li>
-    <p>非同步, 可以使用<code class="highlighter-rouge">Collections.synchronizedSet(new HashSet(...));</code></p>
-  </li>
-  <li>
-    <p><code class="highlighter-rouge">Iterator</code>遍历的时候, 多线程抛出异常<code class="highlighter-rouge">ConcurrentModificationException</code>(遍历过程中修改数据, 但是可以使用<code class="highlighter-rouge">Iterator</code>自己提供的<code class="highlighter-rouge">remove()</code>方法, 该方法不会造成异常)(原因参见<a href="https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BList/">Java集合框架之List</a>中分析)</p>
-  </li>
-</ol>
+<p>在上面介绍的三种方式中，都可以使用<code class="highlighter-rouge">AutoLayout</code>的方式来进行布局；<code class="highlighter-rouge">AutoLayout</code>的出现，是为了解决不同尺寸屏幕的适配问题；<code class="highlighter-rouge">iPhone 5</code>之前，屏幕都是<code class="highlighter-rouge">3.5</code>寸的（<code class="highlighter-rouge">640 x 960</code>分辨率），这之前，屏幕尺寸相同，不存在适配问题，所有<code class="highlighter-rouge">View</code>坐标只需要计算好即可，但是<code class="highlighter-rouge">2012</code>年，苹果发布了<code class="highlighter-rouge">4.0</code>寸（<code class="highlighter-rouge">640 x 1136</code>分辨率）的<code class="highlighter-rouge">iPhone 5</code>，这样在<code class="highlighter-rouge">iOS</code>平台上就出现了不同尺寸的移动设备，使得原有的<code class="highlighter-rouge">frame</code>布局方式无法进行很好的屏幕适配，所以为了解决这一问题，就出现了<code class="highlighter-rouge">AutoLayout</code></p>
 
 <hr />
 
-<h2 id="三-treeset">三. TreeSet</h2>
+<h2 id="二-原理与使用">二. 原理与使用</h2>
 
-<p>简要总结特点如下:</p>
+<p><code class="highlighter-rouge">AutoLayout</code>其实类似于<code class="highlighter-rouge">Android</code>中的<code class="highlighter-rouge">RelativeLayout</code>，采用<code class="highlighter-rouge">View</code>之间的相对位置来进行布局；我们知道，要确定一个<code class="highlighter-rouge">View</code>的位置，需要知道<code class="highlighter-rouge">View</code>的<code class="highlighter-rouge">x，y，width，height</code>，即<code class="highlighter-rouge">View</code>的起始坐标点，宽度和高度信息；<code class="highlighter-rouge">AutoLayout</code>其实是通过解<code class="highlighter-rouge">View</code>之间建立的线性方程组（<code class="highlighter-rouge">y = ax + b</code>）来确定其信息的（如下图），当然，如果出现约束不完整的情况或者约束冲突的情况，就会出现解的不定性，表现出来即是<code class="highlighter-rouge">View</code>位置未达到预期</p>
+
+<p><img src="/img/post/AutoLayout/AutoLayout_1.png" alt="" /></p>
+
+<p>可约束的属性参见<a href="https://developer.apple.com/documentation/uikit/nslayoutattribute">NSLayoutAttribute</a>枚举</p>
+
+<p><code class="highlighter-rouge">AutoLayout</code>实际上是基于<code class="highlighter-rouge">Cassowary</code>算法的，<code class="highlighter-rouge">Cassowary</code>是<code class="highlighter-rouge">Alan Borning, Kim Marriott, Peter Stuckey</code>等人在<code class="highlighter-rouge">1997</code>年提出的一个解决布局问题的算法，<code class="highlighter-rouge">Cassowary</code>算法能够有效解决线性等式系统和线性不等式系统，这也是<code class="highlighter-rouge">AutoLayout</code>的性能保障</p>
+
+<p>当使用<code class="highlighter-rouge">AutoLayout</code>的时候，<code class="highlighter-rouge">View</code>的默认初始值会被弃用，如下代码，此时<code class="highlighter-rouge">UILable</code>的初始化宽高会失效；这里还需要注意一个<code class="highlighter-rouge">translatesAutoresizingMaskIntoConstraints</code>属性，从名字我们可以看出，该属性是控制是否把<code class="highlighter-rouge">AutoresizingMask</code>变成约束（<code class="highlighter-rouge">autoresizing mask</code>其实就是完全指定视图的尺寸和位置，即是否需要将其转换为线性方程组）；当使用<code class="highlighter-rouge">IB（Interface Builder）</code>布局的时候，即<code class="highlighter-rouge">xib，storyboard</code>方式，如果勾选了<code class="highlighter-rouge">Use Autolayout</code>选项（默认勾选），那么<code class="highlighter-rouge">IB</code>生成的控件的<code class="highlighter-rouge">translatesAutoresizingMaskIntoConstraints</code>属性都会被默认设置<code class="highlighter-rouge">false</code>；当使用手写代码布局时，<code class="highlighter-rouge">View</code>的<code class="highlighter-rouge">translatesAutoresizingMaskIntoConstraints</code>属性默认为<code class="highlighter-rouge">true</code>，但是<code class="highlighter-rouge">View</code>的<code class="highlighter-rouge">AutoresizingMask</code>属性默认被设置为<code class="highlighter-rouge">.None</code>，也就是说如果我们不去动<code class="highlighter-rouge">View</code>的<code class="highlighter-rouge">AutoresizingMask</code>属性，那么<code class="highlighter-rouge">AutoresizingMask</code>就不会对约束产生影响，所以，这个属性，一般也不需要手动设置（当然，为了保险，也可以手动将<code class="highlighter-rouge">translatesAutoresizingMaskIntoConstraints</code>属性置为<code class="highlighter-rouge">false</code>）</p>
+
+<p>当<code class="highlighter-rouge">translatesAutoresizingMaskIntoConstraints</code>属性为<code class="highlighter-rouge">true</code>时，<code class="highlighter-rouge">View</code>的<code class="highlighter-rouge">AutoresizingMask</code>将会转换为约束，一起参与到<code class="highlighter-rouge">AutoLayout</code>的约束计算中，即会对<code class="highlighter-rouge">AutoLayout</code>产生影响</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>let label = UILabel(frame: CGRect(x: 100, y: 100, width: 100, height: 200))
+label.backgroundColor = #colorLiteral(red: 1, green: 0.5763723254, blue: 0, alpha: 1)
+view.addSubview(label)
+label.translatesAutoresizingMaskIntoConstraints = false
+label.snp.makeConstraints { (make) in
+            make.width.equalTo(10)
+            make.leading.equalToSuperview().offset(40)
+            make.top.equalToSuperview().offset(40)
+}
+</code></pre></div></div>
+
+<p>布局关系不仅限于等于，还可以是大于等于或者小于等于，这种不等关系在处理<code class="highlighter-rouge">UILabel</code>，<code class="highlighter-rouge">UIImageView</code>等具有自身内容尺寸（<code class="highlighter-rouge">Intrinsic Content Size</code>）的控件时非常有用；比如：<code class="highlighter-rouge">UILabel</code>的长度会随文字长度而变化，那么我们可以对<code class="highlighter-rouge">UILabel</code>控件添加两个约束，即<code class="highlighter-rouge">宽度大于等于50</code>与<code class="highlighter-rouge">宽度小于等于200</code>，这样，当文字很少时，宽度也至少为<code class="highlighter-rouge">50</code>，当文字很多时，宽度也不会超过<code class="highlighter-rouge">200</code></p>
+
+<p>某些用来展现内容的用户控件，例如<code class="highlighter-rouge">UILabel</code>、<code class="highlighter-rouge">UIButton</code>、<code class="highlighter-rouge">UIImageView</code>等，它们具有自身内容尺寸（<code class="highlighter-rouge">Intrinsic Content Size</code>），此类用户控件会根据自身内容尺寸添加布局约束；也就是说，如果开发者没有显式给出其宽度或者高度约束，则其自身内容约束将会起作用</p>
+
+<p>具有<code class="highlighter-rouge">Intrinsic Content Size</code>的<code class="highlighter-rouge">View</code>参见下图（摘自官网）；具有<code class="highlighter-rouge">Intrinsic Content Size</code>属性的<code class="highlighter-rouge">View</code>都重写了<code class="highlighter-rouge">UIView</code>的<code class="highlighter-rouge">-(CGSize)intrinsicContentSize:</code>方法，并且在需要改变这个值的时候调用<code class="highlighter-rouge">invalidateIntrinsicContentSize</code>方法即可，通知系统这个值改变了；同样，当我们自定义<code class="highlighter-rouge">View</code>的时候，如果想要拥有<code class="highlighter-rouge">Intrinsic Content Size</code>属性，就可以重写该方法</p>
+
+<p><img src="/img/post/AutoLayout/AutoLayout_2.png" alt="" /></p>
+
+<p><code class="highlighter-rouge">AutoLayout</code>中还有两个比较重要的概念，<code class="highlighter-rouge">Content Hugging</code>与<code class="highlighter-rouge">Content Compression Resistance</code>约束；在讲解这两个属性之前，需要先了解一下<code class="highlighter-rouge">AutoLayout</code>中的优先级属性；所谓的优先级，我个人的理解其实是一种减少冲突与弱化约束的作用，即为各约束设置优先级，当出现冲突时<code class="highlighter-rouge">AutoLayout</code>优先满足高优先级的约束；关于优先级的使用，可以参见文末参考链接</p>
+
+<p><code class="highlighter-rouge">Content Hugging</code>约束：不想变大约束；即如果组件的此属性优先级比另一个组件此属性优先级高的话，那么这个组件就保持不变，另一个可以在需要拉伸的时候拉伸；可以简单理解为<code class="highlighter-rouge">Content Hugging</code>越大，<code class="highlighter-rouge">View</code>越难变大；默认值为<code class="highlighter-rouge">250</code></p>
+
+<p><code class="highlighter-rouge">Content Compression Resistance</code>约束：不想变小约束；如果组件的此属性优先级比另一个组件此属性优先级高的话，那么这个组件就保持不变，另一个可以在需要压缩的时候压缩；可以简单理解为<code class="highlighter-rouge">Content Compression Resistance</code>越大，<code class="highlighter-rouge">View</code>越难变小；默认值为<code class="highlighter-rouge">750</code></p>
+
+<p>关于<code class="highlighter-rouge">Content Hugging</code>与<code class="highlighter-rouge">Content Compression Resistance</code>的应用，可以参见<a href="https://www.jianshu.com/p/f6bc007b30e5">博客</a></p>
+
+<h2 id="参考">参考</h2>
 
 <ol>
-  <li>
-    <p>基于<code class="highlighter-rouge">TreeMap</code>实现</p>
-  </li>
-  <li>
-    <p><code class="highlighter-rouge">TreeSet</code>是一个有序的集合类, 默认为自然顺序, 也可根据提供的<code class="highlighter-rouge">Comparator</code>排序</p>
-  </li>
-  <li>
-    <p><code class="highlighter-rouge">add()</code>, <code class="highlighter-rouge">remove()</code>和<code class="highlighter-rouge">contains()</code>需要<code class="highlighter-rouge">logN</code>时间(是因为<code class="highlighter-rouge">TreeMap</code>是基于红黑树实现的)</p>
-  </li>
-  <li>
-    <p>非同步, 可以使用<code class="highlighter-rouge">Collections.synchronizedSortedSet(new TreeSet(...));</code></p>
-  </li>
-  <li>
-    <p><code class="highlighter-rouge">Iterator</code>抛异常: <code class="highlighter-rouge">ConcurrentModificationException</code></p>
-  </li>
-</ol>
-
-<hr />
-
-<h2 id="四-linkedhashset">四. LinkedHashSet</h2>
-
-<p><code class="highlighter-rouge">LinkedHashSet</code>基于<code class="highlighter-rouge">LinkedHashMap</code>, 建议参照<code class="highlighter-rouge">LinkedHashMap</code>的源码分析: <a href="https://husteryp.github.io/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/">Java集合框架之LinkedHashMap</a></p>
-
-<p>总结特点如下:</p>
-
-<ol>
-  <li>
-    <p>访问有序(<code class="highlighter-rouge">LinkedHashMap</code>特点), 按照元素插入顺序访问(注意, 虽然<code class="highlighter-rouge">LinkedHashSet</code>基于<code class="highlighter-rouge">LinkedHashMap</code>实现, 而前面的文章分析了<code class="highlighter-rouge">LinkedHashMap</code>有两种访问顺序, 但是<code class="highlighter-rouge">LinkedHashSet</code>在构造<code class="highlighter-rouge">LinkedHashMap</code>的时候使用的默认访问顺序, 即插入顺序(<code class="highlighter-rouge">accessOrder = false</code>), 所以<code class="highlighter-rouge">LinkedHashSet</code>的访问顺序只有一种, 即元素的插入顺序, 而且需要注意的是, 重复插入元素时是不会改变访问顺序的)</p>
-  </li>
-  <li>
-    <p>非同步: 可以使用<code class="highlighter-rouge">Collections.synchronizedSet(new LinkedHashSet(...));</code></p>
-  </li>
-  <li>
-    <p>对<code class="highlighter-rouge">add()</code>, <code class="highlighter-rouge">contains()</code>和<code class="highlighter-rouge">remove()</code>提供常量时间(具体可以参见<a href="https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/">Java集合框架之HashMap</a>中对<code class="highlighter-rouge">HashMap</code>的分析)</p>
-  </li>
+  <li>https://www.jianshu.com/p/f6bc007b30e5</li>
+  <li>https://blog.csdn.net/hard_man/article/details/50888377</li>
 </ol>
 
 
@@ -291,13 +246,9 @@
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BList/" data-toggle="tooltip" data-placement="top" title="Java集合框架之List">&larr; Previous Post</a>
+                        <a href="/2019/02/27/iOS%E7%96%91%E9%9A%BE%E7%82%B9/" data-toggle="tooltip" data-placement="top" title="iOS疑难点">&larr; Previous Post</a>
                     </li>
                     
-                    
-                    <li class="next">
-                        <a href="/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/" data-toggle="tooltip" data-placement="top" title="Java集合框架之LinkedHashMap">Next Post &rarr;</a>
-                    </li>
                     
                 </ul>
 
@@ -424,8 +375,8 @@
 <script type="text/javascript">
     /* * * CONFIGURATION VARIABLES * * */
     var disqus_shortname = "HusterYP";
-    var disqus_identifier = "/2018/08/27/Java集合框架之Set";
-    var disqus_url = "http://localhost:4000/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BSet/";
+    var disqus_identifier = "/2019/03/23/AutoLayout总结";
+    var disqus_url = "http://localhost:4000/2019/03/23/AutoLayout%E6%80%BB%E7%BB%93/";
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;

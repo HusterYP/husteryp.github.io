@@ -374,7 +374,7 @@
   <li>闭包也是引用类型，当闭包和类混用时需要注意不要引起引用循环，可以使用如下功能解决：</li>
 </ol>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>lazy var someClosure: (Int, String) -&gt; String = {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>lazy var someClosure: (Int, String) -&gt; String = {
     [unowned self, weak delegate = self.delegate!] (index: Int, stringToProcess: String) -&gt; String in
     // 这里是闭包的函数体
 }
@@ -383,7 +383,11 @@ lazy var someClosure: Void -&gt; String = {
     [unowned self, weak delegate = self.delegate!] in
     // 这里是闭包的函数体
 }
-</code></pre></div>
+</code></pre></div></div>
+
+<ol>
+  <li><code class="highlighter-rouge">Swift</code>会自动调用父类的初始化方法（在子类初始化方法的末尾（而不是开始））</li>
+</ol>
 
 <hr />
 
@@ -507,7 +511,7 @@ lazy var someClosure: Void -&gt; String = {
                             
         				
                             
-                				<a href="/tags/#iOS" title="iOS" rel="4">
+                				<a href="/tags/#iOS" title="iOS" rel="5">
                                     iOS
                                 </a>
                             

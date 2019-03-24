@@ -204,8 +204,8 @@
   <li>继续之前，我们先看一下<code class="highlighter-rouge">MBR</code>的信息，这里以<code class="highlighter-rouge">CentOS6.4</code>为例（后文不再声明），使用命令<code class="highlighter-rouge">dd if=/dev/sda of=mbr bs=512 count=1</code>，将第一个扇区的<code class="highlighter-rouge">512</code>字节内容转存到<code class="highlighter-rouge">mbr</code>文件中，其中<code class="highlighter-rouge">bs</code>表示大小；然后可以通过<code class="highlighter-rouge">file mbr</code>来查看分区信息等，输出如下；其中<code class="highlighter-rouge">partition x</code>表示第<code class="highlighter-rouge">x</code>个分区的信息，上面说了，使用<code class="highlighter-rouge">MBR</code>时最多只能有四个分区，而且这四个分区中最多只能有一个活动分区，也就是下面被标记为<code class="highlighter-rouge">active</code>的<code class="highlighter-rouge">partition 1</code></li>
 </ol>
 
-<div class="highlighter-rouge"><pre class="highlight"><code> x86 boot sector; partition 1: ID=0x83, active, starthead 32, startsector 2048, 19451904 sectors; partition 2: ID=0x5, starthead 254, startsector 19455998, 2093058 sectors, code offset 0x63
-</code></pre></div>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> x86 boot sector; partition 1: ID=0x83, active, starthead 32, startsector 2048, 19451904 sectors; partition 2: ID=0x5, starthead 254, startsector 19455998, 2093058 sectors, code offset 0x63
+</code></pre></div></div>
 
 <ol>
   <li><strong>Grub–Stage1</strong>：<code class="highlighter-rouge">MBR</code>中的前<code class="highlighter-rouge">446</code>字节存储着引导加载程序，即<code class="highlighter-rouge">Boot Loader</code>，这里以<code class="highlighter-rouge">Grub</code>为例；<code class="highlighter-rouge">Grub</code>有两个阶段（实际上应该是三个阶段，后面会解释），实际上这<code class="highlighter-rouge">446</code>字节中存储的只是<code class="highlighter-rouge">Grub</code>的第一阶段，因为<code class="highlighter-rouge">446</code>字节的空间实在有限，做不了太多事情；<code class="highlighter-rouge">Grub</code>第一阶段的作用主要是加载第二阶段</li>
@@ -373,7 +373,7 @@
                             
         				
                             
-                				<a href="/tags/#iOS" title="iOS" rel="4">
+                				<a href="/tags/#iOS" title="iOS" rel="5">
                                     iOS
                                 </a>
                             

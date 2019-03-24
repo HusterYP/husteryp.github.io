@@ -261,7 +261,7 @@
   <li>BMP文件头: 14个字节</li>
 </ol>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>typedef struct tagBITMAPFILEHEADER
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>typedef struct tagBITMAPFILEHEADER
 {
     WORD bfType; // BM: BMP文件标识(前两个字节), 一个字节是B, 一个字节是M
     DWORD bfSize; // 文件大小
@@ -269,13 +269,13 @@
     WORD bfReserved2; // 0
     DWORD bfOffBits; // 位图数据的起始位置
 } BITMAPFILEHEDADER; 
-</code></pre></div>
+</code></pre></div></div>
 
 <ol>
   <li>BMP信息头结构: 40个字节</li>
 </ol>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>typedef struct tagBITMAPINFOHEADER
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>typedef struct tagBITMAPINFOHEADER
 {
     DWORD biSize; // 本结构的大小: 40个字节
     LONG biWidth; // 位图宽度, 像素为单位
@@ -289,31 +289,31 @@
     DWORD biCIrUsed; // 颜色数: 如果是标准颜色, 如16, 24, 256等位颜色, 则是0; 如果是自己定义, 则需要将颜色数写在这
     DWORD biCIrImportant; // 重要的颜色数
 } BITMAPINFOHEADER;
-</code></pre></div>
+</code></pre></div></div>
 
 <ol>
   <li>颜色表:</li>
 </ol>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>typedef struct tagRGBQUAD 
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>typedef struct tagRGBQUAD 
 {
     BYTE rgbBlue; // 蓝色
     BYTE rgbGreen; // 绿色
     BYTE rgbRed; // 红色
     BYTE rgbReserved; // 保留字节; 0
 } RGBQUAD;
-</code></pre></div>
+</code></pre></div></div>
 
 <ol>
   <li>位图信息 – BITMAPINFO结构: 图像显示时作为参数传入函数</li>
 </ol>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>struct tagBITMAPINFO
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>struct tagBITMAPINFO
 {
     BITMAPINFOHEADER bmiHeader;
     RGBQUAD bmiColors[1]; // 颜色表(上的第一项)
 } BITMAPINFO;
-</code></pre></div>
+</code></pre></div></div>
 
 <hr />
 
@@ -431,7 +431,7 @@
                             
         				
                             
-                				<a href="/tags/#iOS" title="iOS" rel="4">
+                				<a href="/tags/#iOS" title="iOS" rel="5">
                                     iOS
                                 </a>
                             

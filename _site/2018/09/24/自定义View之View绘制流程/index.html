@@ -190,7 +190,7 @@
 
 <p>可以看出, 与<code class="highlighter-rouge">View</code>三大流程直接相关的是从<code class="highlighter-rouge">performTraversals()</code>开始的; 大致流程如下</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>private void performTraversals() {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private void performTraversals() {
     ...
     int childWidthMeasureSpec = getRootMeasureSpec(mWidth, lp.width);
     int childHeightMeasureSpec = getRootMeasureSpec(mHeight, lp.height);
@@ -201,7 +201,7 @@
     performDraw();
     ...
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <hr />
 
@@ -213,7 +213,7 @@
 
 <p><code class="highlighter-rouge">MeasureSpec</code>是一个<code class="highlighter-rouge">32</code>位<code class="highlighter-rouge">int</code>类型的值, 是<code class="highlighter-rouge">SpecMode</code>和<code class="highlighter-rouge">SpecSize</code>的位组合; 高<code class="highlighter-rouge">2</code>位表示<code class="highlighter-rouge">SpecMode</code>, 低<code class="highlighter-rouge">30</code>位表示<code class="highlighter-rouge">SpecSize</code>, 这样设计其实是为了节约空间; 关于二者如何组合, 可以参见以下代码; 可以看出, 其实就是通过<code class="highlighter-rouge">MODE_MASK</code>掩码以及位操作实现将两个<code class="highlighter-rouge">int</code>类型整合为一个<code class="highlighter-rouge">32</code>位<code class="highlighter-rouge">int</code>类型的<code class="highlighter-rouge">MeasureSpec</code>; 当然, 要分别提取这两个值的话, 也可以很简单的用位操作实现, 代码比较简单, 就不贴啦~</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>        public static int makeMeasureSpec(@IntRange(from = 0, to = (1 &lt;&lt; MeasureSpec.MODE_SHIFT) - 1) int size,
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>        public static int makeMeasureSpec(@IntRange(from = 0, to = (1 &lt;&lt; MeasureSpec.MODE_SHIFT) - 1) int size,
                                           @MeasureSpecMode int mode) {
             if (sUseBrokenMakeMeasureSpec) {
                 return size + mode;
@@ -221,7 +221,7 @@
                 return (size &amp; ~MODE_MASK) | (mode &amp; MODE_MASK); // MODE_MASK  = 0x3 &lt;&lt; 30; 
             }
         }
-</code></pre></div>
+</code></pre></div></div>
 
 <p><code class="highlighter-rouge">SpecMode</code>即测量模式, 一共有三类:</p>
 
@@ -302,7 +302,7 @@
   </li>
 </ol>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>private static int getRootMeasureSpec(int windowSize, int rootDimension) {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private static int getRootMeasureSpec(int windowSize, int rootDimension) {
         int measureSpec;
         switch (rootDimension) {
 
@@ -321,12 +321,12 @@
         }
         return measureSpec;
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <p>构建好<code class="highlighter-rouge">DecorView</code>的<code class="highlighter-rouge">MeasureSpec</code>之后, 就直接传入了<code class="highlighter-rouge">performMeasure()</code>中, <code class="highlighter-rouge">performMeasure()</code>的代码如下; 可以看出, 接下来就是将<code class="highlighter-rouge">MeasureSpec</code>传递给<code class="highlighter-rouge">mView</code>进行测量, 而这里的<code class="highlighter-rouge">mView</code>其实就是<code class="highlighter-rouge">DecorView</code>, 而<code class="highlighter-rouge">measure()</code>方法是<code class="highlighter-rouge">final</code>的, 不可重写, 所以应该追溯到<code class="highlighter-rouge">View</code>(继承链为: <code class="highlighter-rouge">DecorView</code> –&gt; <code class="highlighter-rouge">FrameLayout</code> –&gt; <code class="highlighter-rouge">ViewGroup</code> –&gt; <code class="highlighter-rouge">View</code>)的<code class="highlighter-rouge">measure()</code>方法, 在<code class="highlighter-rouge">View</code>的<code class="highlighter-rouge">measure()</code>方法中, 则是去调用了<code class="highlighter-rouge">onMeausre()</code>, <code class="highlighter-rouge">onMeasure()</code>不是<code class="highlighter-rouge">final</code>的,
 所以我们应该去分析的是<code class="highlighter-rouge">DecorView</code>的<code class="highlighter-rouge">onMeasure()</code></p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>private void performMeasure(int childWidthMeasureSpec, int childHeightMeasureSpec) {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private void performMeasure(int childWidthMeasureSpec, int childHeightMeasureSpec) {
         if (mView == null) {
             return;
         }
@@ -337,11 +337,11 @@
             Trace.traceEnd(Trace.TRACE_TAG_VIEW);
         }
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <p><code class="highlighter-rouge">DecorView</code>的在<code class="highlighter-rouge">onMeasure()</code>中将<code class="highlighter-rouge">MeasureSpec</code>进行处理和判断之后, 调用了<code class="highlighter-rouge">super.onMeasure()</code>, 即<code class="highlighter-rouge">FrameLayout</code>的<code class="highlighter-rouge">onMeasure()</code>; 如下, 可以看出, <code class="highlighter-rouge">FrameLayout</code>的<code class="highlighter-rouge">onMeasure()</code>方法中处理了<code class="highlighter-rouge">Margin</code>(<code class="highlighter-rouge">measureChildWithMargins()</code>)和<code class="highlighter-rouge">Padding</code>(<code class="highlighter-rouge">getPaddingXXX</code>), 而在<code class="highlighter-rouge">measureChildWithMargins()</code>中会去调用<code class="highlighter-rouge">child.measure()</code>, 将<code class="highlighter-rouge">MeasureSpec</code>往下传递(即递归测量), 这样就将测量工作传递到了子<code class="highlighter-rouge">View</code>中</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>// DecorView.onMeasure()
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// DecorView.onMeasure()
 protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
     ...
     super.onMeasure(widthMeasureSpec, heightMeasureSpec);
@@ -383,7 +383,7 @@ protected void measureChildWithMargins(View child,
             ....
             child.measure(childWidthMeasureSpec, childHeightMeasureSpec);
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <p>子<code class="highlighter-rouge">View</code>中的<code class="highlighter-rouge">measure</code>过程分为<code class="highlighter-rouge">ViewGroup</code>和<code class="highlighter-rouge">View</code>的测量过程</p>
 
@@ -393,7 +393,7 @@ protected void measureChildWithMargins(View child,
 
 <p>代码如下; 测量逻辑比较简单, 也是遍历所有的子<code class="highlighter-rouge">View</code>, 然后将<code class="highlighter-rouge">MeasureSpec</code>往下传递, 实现递归测量, 不做细讲啦~</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>protected void measureChildren(int widthMeasureSpec, int heightMeasureSpec) {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>protected void measureChildren(int widthMeasureSpec, int heightMeasureSpec) {
         final int size = mChildrenCount;
         final View[] children = mChildren;
         for (int i = 0; i &lt; size; ++i) {
@@ -417,11 +417,11 @@ protected void measureChild(View child, int parentWidthMeasureSpec,
 
         child.measure(childWidthMeasureSpec, childHeightMeasureSpec); // 递归调用, 又回到了这里
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <p>需要注意的一点是子<code class="highlighter-rouge">View</code>的<code class="highlighter-rouge">MeasureSpec</code>的构建, 这里以<code class="highlighter-rouge">getChildMeasureSpec()</code>为例, 如下; 其构造规则除了考虑了<code class="highlighter-rouge">Padding</code>以外, 和上面<code class="highlighter-rouge">MeasureSpec</code>的构造规则表是相同的, 可以结合代码注释再次理解该表</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>public static int getChildMeasureSpec(int spec, int padding, int childDimension) {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static int getChildMeasureSpec(int spec, int padding, int childDimension) {
         int specMode = MeasureSpec.getMode(spec);
         int specSize = MeasureSpec.getSize(spec);
 
@@ -479,14 +479,14 @@ protected void measureChild(View child, int parentWidthMeasureSpec,
         //noinspection ResourceType
         return MeasureSpec.makeMeasureSpec(resultSize, resultMode);
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <h3 id="24-view的measure过程">2.4 View的measure过程</h3>
 
 <p>这里的<code class="highlighter-rouge">View</code>不包括 <code class="highlighter-rouge">ViewGroup</code>啦~, 只是一个单纯的<code class="highlighter-rouge">View</code>控件而已; 其默认测量规则如下; 这里以<code class="highlighter-rouge">getSuggestedMinimumWidth()</code>为例, 这里的<code class="highlighter-rouge">mMinWidth</code>指的是<code class="highlighter-rouge">android:minWidth</code>属性, 默认为<code class="highlighter-rouge">0</code>, 如果设置了背景, 则返回背景宽度和指定<code class="highlighter-rouge">mMinWidth</code>中的最大值; 至于<code class="highlighter-rouge">getDefaultSize()</code>则是返回默认尺寸, 我们只需关心<code class="highlighter-rouge">AT_MOST</code>和<code class="highlighter-rouge">EXACTLY</code>两种情况即可(因为<code class="highlighter-rouge">UNSPECIFIED</code>一般用于系统, 不常用), 可以看出, <code class="highlighter-rouge">View</code>对于这两种情况默认都是返回的<code class="highlighter-rouge">specSize</code>, 即传入的尺寸,
 我们上面说了<code class="highlighter-rouge">AT_MOST</code>对应<code class="highlighter-rouge">wrap_content</code>模式, <code class="highlighter-rouge">EXACTLY</code>对应<code class="highlighter-rouge">match_parent</code>和指定数值情况, 而<code class="highlighter-rouge">getDefaultSize()</code>将这两种情况都默认返回了<code class="highlighter-rouge">specSize</code>, 即父<code class="highlighter-rouge">View</code>可用空间, 很明显, 这对于<code class="highlighter-rouge">wrap_content</code>是不支持的(因为此时的<code class="highlighter-rouge">wrap_content</code>就相当于<code class="highlighter-rouge">match_parent</code>), 所以在自定义<code class="highlighter-rouge">View</code>的时候, 需要自己根据逻辑实现<code class="highlighter-rouge">wrap_content</code>的情况, 具体实现可以参见<code class="highlighter-rouge">TextView</code>和<code class="highlighter-rouge">ImageView</code>等对<code class="highlighter-rouge">wrap_content</code>的支持</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         setMeasuredDimension(getDefaultSize(getSuggestedMinimumWidth(), widthMeasureSpec),
                 getDefaultSize(getSuggestedMinimumHeight(), heightMeasureSpec));
 }
@@ -512,7 +512,7 @@ public static int getDefaultSize(int size, int measureSpec) {
         }
         return result;
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <p>当然, 最终我们确定<code class="highlighter-rouge">View</code>的尺寸之后, 还需要通过<code class="highlighter-rouge">setMeasuredDimension()</code>正真设置和作用到<code class="highlighter-rouge">View</code>上; 需要注意的是, 此时只是<code class="highlighter-rouge">View</code>的测量宽高, 可能不是实际宽高, 实际宽高在<code class="highlighter-rouge">layout</code>过程中才能确定, 出现测量宽高和实际宽高不相等的原因 主要是在<code class="highlighter-rouge">layout</code>过程中改变了<code class="highlighter-rouge">View</code>实际布局的位置尺寸等造成的, 但是一般情况下二者都是相等的</p>
 
@@ -542,7 +542,7 @@ public static int getDefaultSize(int size, int measureSpec) {
 <p>对于<code class="highlighter-rouge">ViewGroup</code>而言, 其<code class="highlighter-rouge">layout()</code>方法如下; 可以看出其调用了<code class="highlighter-rouge">View.layout()</code>, 在<code class="highlighter-rouge">View.layout()</code>中, 可以看出调用了<code class="highlighter-rouge">View.onLayout()</code>, 而<code class="highlighter-rouge">View.onLayout()</code>在<code class="highlighter-rouge">View</code>中是一个空实现, 同时还需要注意一点就是<code class="highlighter-rouge">ViewGroup</code>的<code class="highlighter-rouge">layout()</code>方法是由<code class="highlighter-rouge">final</code>修饰的, 这也就意味着自定义<code class="highlighter-rouge">ViewGroup</code>的时候, 不能重写<code class="highlighter-rouge">layout()</code>方法, 另外, <code class="highlighter-rouge">ViewGroup</code>的<code class="highlighter-rouge">onLayout()</code>是一个抽象方法, 也就是说我们必须自己去是实现; 其实这也很好理解, 因为对于自定义<code class="highlighter-rouge">ViewGroup</code>来说, 我们需要实现自己的布局,
 这里实现逻辑其实就是写在<code class="highlighter-rouge">onLayout()</code>中即可</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>// ViewGroup.layout()
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// ViewGroup.layout()
 public final void layout(int l, int t, int r, int b) {
     ...
     super.layout(l, t, r, b);
@@ -557,19 +557,19 @@ public void layout(int l, int t, int r, int b) {
     onLayout(changed, l, t, r, b);
     ...
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <p>另外, 还需要注意一点的是, <code class="highlighter-rouge">View</code>的<code class="highlighter-rouge">layout()</code>方法中还调用了一个<code class="highlighter-rouge">setFrame()</code>, 该方法的作用其实是设置<code class="highlighter-rouge">View</code>的<code class="highlighter-rouge">mLeft</code>, <code class="highlighter-rouge">mRight</code>, <code class="highlighter-rouge">mTop</code>, <code class="highlighter-rouge">mBottom</code>的值; 这里反应的其实是上文说过的一句话, 即<code class="highlighter-rouge">measure</code>过程中确定测量宽高, 实际宽高需要在<code class="highlighter-rouge">layout</code>过程中确定; 这里就是记录<code class="highlighter-rouge">View</code>的实际宽高; 至于<code class="highlighter-rouge">View</code>的测量宽高可以通过<code class="highlighter-rouge">getMeasuredWidth()</code>和<code class="highlighter-rouge">getMeasuredHeight()</code>来获取, 这在<code class="highlighter-rouge">measure</code>过程之后即可得到; 实际宽高可以通过<code class="highlighter-rouge">getWidth()</code>和<code class="highlighter-rouge">getHeight()</code>来得到,
 这在<code class="highlighter-rouge">layout</code>过程之后可以获取; 至于二者的区别, 这里以<code class="highlighter-rouge">getMeasuredWidth()</code>和<code class="highlighter-rouge">getWidth()</code>为例, 如下; 可以看出<code class="highlighter-rouge">getMeasuredWidth()</code>获取的其实就是<code class="highlighter-rouge">MeasureSpec</code>中的<code class="highlighter-rouge">SpecSize</code>, 而<code class="highlighter-rouge">getWidth()</code>获取的则是实际宽高(因为是<code class="highlighter-rouge">View</code>的右边界减去左边界); 上面已经说过了测量宽高和实际宽高的区别, 这里就不再赘述啦~</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>public final int getMeasuredWidth() {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public final int getMeasuredWidth() {
     return mMeasuredWidth &amp; MEASURED_SIZE_MASK;
 }
 
 public final int getWidth() {
     return mRight - mLeft;
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <p><code class="highlighter-rouge">layout</code>过程比较简单, 也是一个递归调用的过程, 至于自定义<code class="highlighter-rouge">View</code>时主要是在自定义<code class="highlighter-rouge">ViewGroup</code>需要涉及到<code class="highlighter-rouge">layout</code>过程的设计, 需要考虑的还是要<code class="highlighter-rouge">padding</code>和<code class="highlighter-rouge">margin</code>的影响啦~</p>
 
@@ -600,7 +600,7 @@ public final int getWidth() {
 
 <p><strong>注</strong>: 第<code class="highlighter-rouge">2</code>步和第<code class="highlighter-rouge">5</code>步一般会跳过</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>// View.draw()
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// View.draw()
 public void draw(Canvas canvas) {
         ...
         /*
@@ -626,11 +626,11 @@ public void draw(Canvas canvas) {
          onDrawForeground(canvas);
          ...
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <p>我们知道, 绘制内容这一步是调用的<code class="highlighter-rouge">onDraw()</code>, 即我们自己自定义<code class="highlighter-rouge">View</code>时需要实现的内容; 另外, 这里需要注意的一点是绘制子<code class="highlighter-rouge">View</code>时, 通过<code class="highlighter-rouge">dispatchDraw()</code>去传递绘制绘制过程, 该方法在<code class="highlighter-rouge">View</code>中是一个空实现, 一般用于<code class="highlighter-rouge">ViewGroup</code>时; 在<code class="highlighter-rouge">ViewGroup</code>中其实现如下; 其实就是遍历所有的子<code class="highlighter-rouge">View</code>, 然后依次调用子<code class="highlighter-rouge">View</code>的<code class="highlighter-rouge">draw()</code>方法绘制出子<code class="highlighter-rouge">View</code>即可</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>protected void dispatchDraw(Canvas canvas) {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>protected void dispatchDraw(Canvas canvas) {
     ...
     for (int i = 0; i &lt; childrenCount; i++) {
         ...
@@ -638,7 +638,7 @@ public void draw(Canvas canvas) {
         ...
     }
 }
-</code></pre></div>
+</code></pre></div></div>
 
 <hr />
 
@@ -754,7 +754,7 @@ public void draw(Canvas canvas) {
                             
         				
                             
-                				<a href="/tags/#iOS" title="iOS" rel="4">
+                				<a href="/tags/#iOS" title="iOS" rel="5">
                                     iOS
                                 </a>
                             
