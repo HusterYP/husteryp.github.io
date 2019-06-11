@@ -76,7 +76,25 @@ label.snp.makeConstraints { (make) in
 关于`Content Hugging`与`Content Compression Resistance`的应用，可以参见[博客](https://www.jianshu.com/p/f6bc007b30e5)
 
 
-## 参考
+------------
+
+## 三. 性能分析
+
+1. https://time.geekbang.org/column/article/85332
+
+2. https://www.jianshu.com/p/0b964dc17c04
+
+3. https://xiaozhuanlan.com/topic/5378941206
+
+4. https://draveness.me/layout-performance
+
+5. https://juejin.im/post/5bd5a546f265da0af033cee6#heading-3
+
+
+----------------
+
+
+## 四. 参考
 
 1. https://www.jianshu.com/p/f6bc007b30e5
 2. https://blog.csdn.net/hard_man/article/details/50888377
