@@ -5,9 +5,100 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Wed, 12 Jun 2019 00:20:28 +0800</pubDate>
-    <lastBuildDate>Wed, 12 Jun 2019 00:20:28 +0800</lastBuildDate>
+    <pubDate>Wed, 07 Aug 2019 13:15:58 +0800</pubDate>
+    <lastBuildDate>Wed, 07 Aug 2019 13:15:58 +0800</lastBuildDate>
     <generator>Jekyll v3.8.5</generator>
+    
+      <item>
+        <title>WebView与JS交互的几种方式[Swift版]</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;总结&lt;code class=&quot;highlighter-rouge&quot;&gt;iOS&lt;/code&gt;中&lt;code class=&quot;highlighter-rouge&quot;&gt;JS&lt;/code&gt;与&lt;code class=&quot;highlighter-rouge&quot;&gt;Native&lt;/code&gt;交互的几种方式：&lt;/p&gt;
+&lt;ol&gt;
+  &lt;li&gt;拦截&lt;code class=&quot;highlighter-rouge&quot;&gt;Url&lt;/code&gt;：适用于&lt;code class=&quot;highlighter-rouge&quot;&gt;UIWebView&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;WKWebView&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;JavaScriptCore&lt;/code&gt;：只适用于&lt;code class=&quot;highlighter-rouge&quot;&gt;UIWebView&lt;/code&gt;（&lt;code class=&quot;highlighter-rouge&quot;&gt;iOS7+&lt;/code&gt;）&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;WKScriptMessageHandler&lt;/code&gt;：只适用于&lt;code class=&quot;highlighter-rouge&quot;&gt;WKWebView&lt;/code&gt;（&lt;code class=&quot;highlighter-rouge&quot;&gt;iOS8+&lt;/code&gt;）&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;WebViewJavascriptBridge&lt;/code&gt;：适用于&lt;code class=&quot;highlighter-rouge&quot;&gt;UIWebView&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;WKWebView&lt;/code&gt;（属于第三方框架）&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;小程序本质上也就是运行在&lt;code class=&quot;highlighter-rouge&quot;&gt;WebView&lt;/code&gt;中的&lt;code class=&quot;highlighter-rouge&quot;&gt;H5&lt;/code&gt;页面，通过&lt;code class=&quot;highlighter-rouge&quot;&gt;JS&lt;/code&gt;与&lt;code class=&quot;highlighter-rouge&quot;&gt;Native&lt;/code&gt;之间的相互通信，实现逻辑层与渲染层的分离，提供比普通&lt;code class=&quot;highlighter-rouge&quot;&gt;H5&lt;/code&gt;更好的体验&lt;/p&gt;
+
+&lt;p&gt;文中代码详见：https://github.com/HusterYP/iOS_JS_To_Native&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;一-拦截url&quot;&gt;一. 拦截Url&lt;/h2&gt;
+&lt;blockquote&gt;
+  &lt;p&gt;适用于&lt;code class=&quot;highlighter-rouge&quot;&gt;UIWebView&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;WKWebView&lt;/code&gt;，以&lt;code class=&quot;highlighter-rouge&quot;&gt;WKWebView&lt;/code&gt;为例&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;JS&lt;/code&gt;与&lt;code class=&quot;highlighter-rouge&quot;&gt;Native&lt;/code&gt;约定好协议，&lt;code class=&quot;highlighter-rouge&quot;&gt;Native&lt;/code&gt;实现相应的代理方法拦截请求，如果是约定好的协议，则进行&lt;code class=&quot;highlighter-rouge&quot;&gt;Native&lt;/code&gt;的响应；这种方式比较简单，但是当
+需要传递参数增多时，会出现协议过长的问题&lt;/p&gt;
+
+&lt;p&gt;在&lt;code class=&quot;highlighter-rouge&quot;&gt;WKWebView&lt;/code&gt;中，&lt;code class=&quot;highlighter-rouge&quot;&gt;H5&lt;/code&gt;发出请求会经过代理&lt;code class=&quot;highlighter-rouge&quot;&gt;WKNavigationDelegate&lt;/code&gt;进行拦截，可通过在代理方法&lt;code class=&quot;highlighter-rouge&quot;&gt;webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler;&lt;/code&gt;中处理；如果检测到是实现约定好的&lt;code class=&quot;highlighter-rouge&quot;&gt;scheme&lt;/code&gt;，则进行&lt;code class=&quot;highlighter-rouge&quot;&gt;Native&lt;/code&gt;拦截处理，而不进行响应&lt;/p&gt;
+
+&lt;p&gt;若约定以&lt;code class=&quot;highlighter-rouge&quot;&gt;wxlocal://&lt;/code&gt;开头的&lt;code class=&quot;highlighter-rouge&quot;&gt;url&lt;/code&gt;为协议&lt;/p&gt;
+
+&lt;h3 id=&quot;11-js发送消息给native&quot;&gt;1.1 JS发送消息给Native&lt;/h3&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;JS&lt;/code&gt;代码如下：&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;function sendMsg() {
+   var content=document.getElementById(&quot;content&quot;).value            
+   location.href=&quot;wxlocal://base.com?content=&quot;+content // 重点在这里
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Native&lt;/code&gt;需要实现&lt;code class=&quot;highlighter-rouge&quot;&gt;WKWebView&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;WKNavigationDelegate&lt;/code&gt;代理，进行&lt;code class=&quot;highlighter-rouge&quot;&gt;url&lt;/code&gt;拦截：&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;webView.navigationDelegate = self
+extension BlockUrlController: WKNavigationDelegate {
+    // 拦截请求
+    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -&amp;gt; Void) {
+        let url = navigationAction.request.url?.absoluteString
+        guard let urlStr = url else { return }
+        // 如果不是以约定好的协议，则交给WebView处理
+        if !urlStr.hasPrefix(&quot;wxlocal://&quot;) {
+            decisionHandler(.allow)
+        } else {
+            // 如果是约定好的协议，则进行参数解析，交给Native响应，取消WebView的响应
+            decisionHandler(.cancel)
+            AlertUtil.shared.alert(title: &quot;JS To Native&quot;, msg: urlStr)
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;12-native发送消息给js&quot;&gt;1.2 Native发送消息给JS&lt;/h3&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Native&lt;/code&gt;发送给&lt;code class=&quot;highlighter-rouge&quot;&gt;JS&lt;/code&gt;则使用&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;参考&quot;&gt;参考&lt;/h2&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;https://blog.csdn.net/dolacmeng/article/details/79623708&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;难点是处理各种回调&lt;/p&gt;
+
+&lt;p&gt;其中 WebViewJavascriptBridge &amp;amp;&amp;amp; WKWebViewJavascriptBridge 作为接口层主要负责提供方便的接口，隐藏实现细节，其实现细节都是通过实现层 WebViewJavascriptBridgeBase 去做的，而 WebViewJavascriptBridge_JS 作为 JS 层其实存储了一段 JS 代码，在需要的时候注入到当前 WebView 组件中，最终实现 Native 与 JS 的交互&lt;/p&gt;
+
+&lt;p&gt;WebViewJavascriptBridge 的实现原理上是利用假 Request 方法实现的，所以需要监听 WebView 组件的代理方法获取加载之前的 Request.URL 并做处理&lt;/p&gt;
+
+&lt;p&gt;假 Request 的发起有两种方式，-1:location.href -2:iframe。通过 location.href 有个问题，就是如果 JS 多次调用原生的方法也就是 location.href 的值多次变化，Native 端只能接受到最后一次请求，前面的请求会被忽略掉，所以这里 WebViewJavascriptBridge 选择使用 iframe，后面不再解释。&lt;/p&gt;
+</description>
+        <pubDate>Wed, 12 Jun 2019 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2019/06/12/WebView%E4%B8%8EJS%E4%BA%A4%E4%BA%92%E7%9A%84%E5%87%A0%E7%A7%8D%E6%96%B9%E5%BC%8F-Swift%E7%89%88/</link>
+        <guid isPermaLink="true">http://localhost:4000/2019/06/12/WebView%E4%B8%8EJS%E4%BA%A4%E4%BA%92%E7%9A%84%E5%87%A0%E7%A7%8D%E6%96%B9%E5%BC%8F-Swift%E7%89%88/</guid>
+        
+        <category>iOS</category>
+        
+        
+      </item>
     
       <item>
         <title>iOS核心动画高级技巧Tips</title>
@@ -1509,57 +1600,6 @@ CMD+S		模拟器截屏(所截图片都在桌面上)
         <guid isPermaLink="true">http://localhost:4000/2019/01/23/Objective-C%E5%85%A5%E9%97%A8%E8%A6%81%E7%82%B9/</guid>
         
         <category>iOS</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>大三上总结</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;p&gt;大三上总结&lt;/p&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;h2 id=&quot;技术&quot;&gt;技术&lt;/h2&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;看书：
-    &lt;blockquote&gt;
-      &lt;ol&gt;
-        &lt;li&gt;«深入理解计算机系统»&lt;/li&gt;
-        &lt;li&gt;«现代操作系统»&lt;/li&gt;
-        &lt;li&gt;«Java并发编程实战»&lt;/li&gt;
-        &lt;li&gt;«深入理解Java虚拟机»回滚&lt;/li&gt;
-      &lt;/ol&gt;
-    &lt;/blockquote&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;博客，总结：https://husteryp.github.io/&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;iOS：Swift，OC&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h2 id=&quot;思考&quot;&gt;思考&lt;/h2&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;思想转变
-    &lt;blockquote&gt;
-      &lt;ol&gt;
-        &lt;li&gt;技术方向 –&amp;gt; 生活&lt;/li&gt;
-        &lt;li&gt;年轻真好~&lt;/li&gt;
-      &lt;/ol&gt;
-    &lt;/blockquote&gt;
-  &lt;/li&gt;
-  &lt;li&gt;外院：如何去弥补这个非班科的差距；决定方向后可以去实习&lt;/li&gt;
-&lt;/ol&gt;
-
-</description>
-        <pubDate>Tue, 01 Jan 2019 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2019/01/01/%E5%A4%A7%E4%B8%89%E4%B8%8A%E6%80%BB%E7%BB%93/</link>
-        <guid isPermaLink="true">http://localhost:4000/2019/01/01/%E5%A4%A7%E4%B8%89%E4%B8%8A%E6%80%BB%E7%BB%93/</guid>
-        
-        <category>Hust</category>
         
         
       </item>

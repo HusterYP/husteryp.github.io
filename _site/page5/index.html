@@ -154,6 +154,42 @@
             ">
     			
 <div class="post-preview">
+    <a href="/2018/08/31/%E5%9B%BE%E7%89%87%E4%B8%89%E7%BA%A7%E7%BC%93%E5%AD%98%E4%B9%8BLruCache%E5%92%8CDiskLurCache/">
+        <h2 class="post-title">
+            图片三级缓存之内存缓存和磁盘缓存
+        </h2>
+        
+        <h3 class="post-subtitle">
+            内存缓存用LruCache, 磁盘缓存用DiskLruCache
+        </h3>
+        
+        <div class="post-content-preview">
+            前言
+
+
+  本文主要分析Android中图片三级缓存中的前两级缓存, 即内存缓存(LruCache)和磁盘缓存(DiskLruCache), 分析其源码实现
+
+
+
+
+正文
+
+
+
+一. LruCache
+
+LruCache常用作内存缓存, 也就是第一级缓存
+
+LruCache内部使用了一个LinkedHashMap实例, 所以在继续往下看之前, 建议先了解一下LinkedHashMap的特性...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by 袁平 on August 31, 2018
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
     <a href="/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/">
         <h2 class="post-title">
             Java集合框架之LinkedHashMap
@@ -508,38 +544,6 @@ Collections that do not support modification operations (such as add, remove a..
 </div>
 <hr>
 
-<div class="post-preview">
-    <a href="/2018/08/20/AndroidStudio%E4%BB%A3%E7%90%86%E8%AE%BE%E7%BD%AE%E8%B8%A9%E5%9D%91/">
-        <h2 class="post-title">
-            AndroidStudio代理设置
-        </h2>
-        
-        <h3 class="post-subtitle">
-            Android Studio踩坑
-        </h3>
-        
-        <div class="post-content-preview">
-            前言
-
-  近日, Android Studio新建项目一直Gradle失败, 网上各种搜, 说是设置代理, 然而代理设置之后不能使用, 搞了一天, 差点就滚去重装AS了, 不过终于还是搞清楚问题出在哪里了, 以此记录
-
-
-正文
-
-一. 问题描述
-
-  新建项目失败
-  完好的项目第二次打开之后, Gradle失败
-  使用Help-&gt;Check for Updates 提示联网失败
-...
-        </div>
-    </a>
-    <p class="post-meta">
-        Posted by 袁平 on August 20, 2018
-    </p>
-</div>
-<hr>
-
 
 <!-- Pager -->
 
@@ -636,7 +640,7 @@ Collections that do not support modification operations (such as add, remove a..
                             
                         
                             
-                                <a href="/tags/#iOS" title="iOS" rel="6">
+                                <a href="/tags/#iOS" title="iOS" rel="7">
                                     iOS
                                 </a>
                             
