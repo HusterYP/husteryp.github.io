@@ -5,100 +5,9 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Wed, 07 Aug 2019 13:15:58 +0800</pubDate>
-    <lastBuildDate>Wed, 07 Aug 2019 13:15:58 +0800</lastBuildDate>
+    <pubDate>Sun, 13 Oct 2019 22:11:40 +0800</pubDate>
+    <lastBuildDate>Sun, 13 Oct 2019 22:11:40 +0800</lastBuildDate>
     <generator>Jekyll v3.8.5</generator>
-    
-      <item>
-        <title>WebView与JS交互的几种方式[Swift版]</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;p&gt;总结&lt;code class=&quot;highlighter-rouge&quot;&gt;iOS&lt;/code&gt;中&lt;code class=&quot;highlighter-rouge&quot;&gt;JS&lt;/code&gt;与&lt;code class=&quot;highlighter-rouge&quot;&gt;Native&lt;/code&gt;交互的几种方式：&lt;/p&gt;
-&lt;ol&gt;
-  &lt;li&gt;拦截&lt;code class=&quot;highlighter-rouge&quot;&gt;Url&lt;/code&gt;：适用于&lt;code class=&quot;highlighter-rouge&quot;&gt;UIWebView&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;WKWebView&lt;/code&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;JavaScriptCore&lt;/code&gt;：只适用于&lt;code class=&quot;highlighter-rouge&quot;&gt;UIWebView&lt;/code&gt;（&lt;code class=&quot;highlighter-rouge&quot;&gt;iOS7+&lt;/code&gt;）&lt;/li&gt;
-  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;WKScriptMessageHandler&lt;/code&gt;：只适用于&lt;code class=&quot;highlighter-rouge&quot;&gt;WKWebView&lt;/code&gt;（&lt;code class=&quot;highlighter-rouge&quot;&gt;iOS8+&lt;/code&gt;）&lt;/li&gt;
-  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;WebViewJavascriptBridge&lt;/code&gt;：适用于&lt;code class=&quot;highlighter-rouge&quot;&gt;UIWebView&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;WKWebView&lt;/code&gt;（属于第三方框架）&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;小程序本质上也就是运行在&lt;code class=&quot;highlighter-rouge&quot;&gt;WebView&lt;/code&gt;中的&lt;code class=&quot;highlighter-rouge&quot;&gt;H5&lt;/code&gt;页面，通过&lt;code class=&quot;highlighter-rouge&quot;&gt;JS&lt;/code&gt;与&lt;code class=&quot;highlighter-rouge&quot;&gt;Native&lt;/code&gt;之间的相互通信，实现逻辑层与渲染层的分离，提供比普通&lt;code class=&quot;highlighter-rouge&quot;&gt;H5&lt;/code&gt;更好的体验&lt;/p&gt;
-
-&lt;p&gt;文中代码详见：https://github.com/HusterYP/iOS_JS_To_Native&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;一-拦截url&quot;&gt;一. 拦截Url&lt;/h2&gt;
-&lt;blockquote&gt;
-  &lt;p&gt;适用于&lt;code class=&quot;highlighter-rouge&quot;&gt;UIWebView&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;WKWebView&lt;/code&gt;，以&lt;code class=&quot;highlighter-rouge&quot;&gt;WKWebView&lt;/code&gt;为例&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;JS&lt;/code&gt;与&lt;code class=&quot;highlighter-rouge&quot;&gt;Native&lt;/code&gt;约定好协议，&lt;code class=&quot;highlighter-rouge&quot;&gt;Native&lt;/code&gt;实现相应的代理方法拦截请求，如果是约定好的协议，则进行&lt;code class=&quot;highlighter-rouge&quot;&gt;Native&lt;/code&gt;的响应；这种方式比较简单，但是当
-需要传递参数增多时，会出现协议过长的问题&lt;/p&gt;
-
-&lt;p&gt;在&lt;code class=&quot;highlighter-rouge&quot;&gt;WKWebView&lt;/code&gt;中，&lt;code class=&quot;highlighter-rouge&quot;&gt;H5&lt;/code&gt;发出请求会经过代理&lt;code class=&quot;highlighter-rouge&quot;&gt;WKNavigationDelegate&lt;/code&gt;进行拦截，可通过在代理方法&lt;code class=&quot;highlighter-rouge&quot;&gt;webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler;&lt;/code&gt;中处理；如果检测到是实现约定好的&lt;code class=&quot;highlighter-rouge&quot;&gt;scheme&lt;/code&gt;，则进行&lt;code class=&quot;highlighter-rouge&quot;&gt;Native&lt;/code&gt;拦截处理，而不进行响应&lt;/p&gt;
-
-&lt;p&gt;若约定以&lt;code class=&quot;highlighter-rouge&quot;&gt;wxlocal://&lt;/code&gt;开头的&lt;code class=&quot;highlighter-rouge&quot;&gt;url&lt;/code&gt;为协议&lt;/p&gt;
-
-&lt;h3 id=&quot;11-js发送消息给native&quot;&gt;1.1 JS发送消息给Native&lt;/h3&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;JS&lt;/code&gt;代码如下：&lt;/p&gt;
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;function sendMsg() {
-   var content=document.getElementById(&quot;content&quot;).value            
-   location.href=&quot;wxlocal://base.com?content=&quot;+content // 重点在这里
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Native&lt;/code&gt;需要实现&lt;code class=&quot;highlighter-rouge&quot;&gt;WKWebView&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;WKNavigationDelegate&lt;/code&gt;代理，进行&lt;code class=&quot;highlighter-rouge&quot;&gt;url&lt;/code&gt;拦截：&lt;/p&gt;
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;webView.navigationDelegate = self
-extension BlockUrlController: WKNavigationDelegate {
-    // 拦截请求
-    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -&amp;gt; Void) {
-        let url = navigationAction.request.url?.absoluteString
-        guard let urlStr = url else { return }
-        // 如果不是以约定好的协议，则交给WebView处理
-        if !urlStr.hasPrefix(&quot;wxlocal://&quot;) {
-            decisionHandler(.allow)
-        } else {
-            // 如果是约定好的协议，则进行参数解析，交给Native响应，取消WebView的响应
-            decisionHandler(.cancel)
-            AlertUtil.shared.alert(title: &quot;JS To Native&quot;, msg: urlStr)
-        }
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h3 id=&quot;12-native发送消息给js&quot;&gt;1.2 Native发送消息给JS&lt;/h3&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Native&lt;/code&gt;发送给&lt;code class=&quot;highlighter-rouge&quot;&gt;JS&lt;/code&gt;则使用&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;参考&quot;&gt;参考&lt;/h2&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;https://blog.csdn.net/dolacmeng/article/details/79623708&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;难点是处理各种回调&lt;/p&gt;
-
-&lt;p&gt;其中 WebViewJavascriptBridge &amp;amp;&amp;amp; WKWebViewJavascriptBridge 作为接口层主要负责提供方便的接口，隐藏实现细节，其实现细节都是通过实现层 WebViewJavascriptBridgeBase 去做的，而 WebViewJavascriptBridge_JS 作为 JS 层其实存储了一段 JS 代码，在需要的时候注入到当前 WebView 组件中，最终实现 Native 与 JS 的交互&lt;/p&gt;
-
-&lt;p&gt;WebViewJavascriptBridge 的实现原理上是利用假 Request 方法实现的，所以需要监听 WebView 组件的代理方法获取加载之前的 Request.URL 并做处理&lt;/p&gt;
-
-&lt;p&gt;假 Request 的发起有两种方式，-1:location.href -2:iframe。通过 location.href 有个问题，就是如果 JS 多次调用原生的方法也就是 location.href 的值多次变化，Native 端只能接受到最后一次请求，前面的请求会被忽略掉，所以这里 WebViewJavascriptBridge 选择使用 iframe，后面不再解释。&lt;/p&gt;
-</description>
-        <pubDate>Wed, 12 Jun 2019 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2019/06/12/WebView%E4%B8%8EJS%E4%BA%A4%E4%BA%92%E7%9A%84%E5%87%A0%E7%A7%8D%E6%96%B9%E5%BC%8F-Swift%E7%89%88/</link>
-        <guid isPermaLink="true">http://localhost:4000/2019/06/12/WebView%E4%B8%8EJS%E4%BA%A4%E4%BA%92%E7%9A%84%E5%87%A0%E7%A7%8D%E6%96%B9%E5%BC%8F-Swift%E7%89%88/</guid>
-        
-        <category>iOS</category>
-        
-        
-      </item>
     
       <item>
         <title>iOS核心动画高级技巧Tips</title>
@@ -465,152 +374,6 @@ label.snp.makeConstraints { (make) in
         <guid isPermaLink="true">http://localhost:4000/2019/02/27/iOS%E7%96%91%E9%9A%BE%E7%82%B9/</guid>
         
         <category>iOS</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>iOS数据存储</title>
-        <description>&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;沙盒&lt;/li&gt;
-    &lt;li&gt;Plist&lt;/li&gt;
-    &lt;li&gt;Preference偏好设置&lt;/li&gt;
-    &lt;li&gt;NSKeyedArchiver归档 / NSKeyedUnarchiver解档&lt;/li&gt;
-    &lt;li&gt;SQLite3的使用&lt;/li&gt;
-    &lt;li&gt;FMDB&lt;/li&gt;
-    &lt;li&gt;Core Data&lt;/li&gt;
-    &lt;li&gt;Realm: https://realm.io/cn/docs/swift/latest/&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;一-沙盒&quot;&gt;一. 沙盒&lt;/h2&gt;
-
-&lt;p&gt;文件系统：
-&lt;code class=&quot;highlighter-rouge&quot;&gt;APFS&lt;/code&gt;是&lt;code class=&quot;highlighter-rouge&quot;&gt;macOS&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;iOS&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;watchOS&lt;/code&gt;, 和&lt;code class=&quot;highlighter-rouge&quot;&gt;tvOS&lt;/code&gt;的默认文件系统；从&lt;code class=&quot;highlighter-rouge&quot;&gt;iOS 10.3&lt;/code&gt;及其之后，&lt;code class=&quot;highlighter-rouge&quot;&gt;APFS&lt;/code&gt;就替代&lt;code class=&quot;highlighter-rouge&quot;&gt;HFS+&lt;/code&gt;作为默认的文件系统&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;iOS App&lt;/code&gt;的沙盒目录如下
-&lt;img src=&quot;/img/post/iOS_Storage/iOS_App_SandBox.png&quot; alt=&quot;&quot; /&gt;
-应用程序通常不能在自己的沙盒之外进行文件操作，但是可以通过通过系统接口来获取信息，如通过系统接口获取联系人信息和音乐等&lt;/p&gt;
-
-&lt;p&gt;常用沙盒文件夹：&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;目录&lt;/th&gt;
-      &lt;th&gt;详情&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;AppName.app&lt;/td&gt;
-      &lt;td&gt;App Bundle，该目录包括了app及其所有资源文件；用户拥有只读权限（无写权限），该目录在app安装时被签名，如果强行写入该目录会破坏该签名，使得应用无法启动；该文件目录下内容不会被iTunes或iCloud备份&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;Documents&lt;/td&gt;
-      &lt;td&gt;用于存储用户生成的文件，该目录下的文件可以共享给其他用户；该文件目录下内容会被iTunes和iCloud备份&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;Documens/Inbox&lt;/td&gt;
-      &lt;td&gt;用来保存由外部应用请求当前应用程序打开的文件；应用程序可以读取和删除该目录下文件，但是无法创建新文件和写入已经存在的文件；该目录下内容会被iTunes和iCloud备份&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;Library&lt;/td&gt;
-      &lt;td&gt;用于存储非用户数据的文件，可以将不想暴露给用户的数据存储在该目录下；该目录下有一个Caches子目录，用于缓存，以及一个Application Support目录，用于存储应用生成的一些文件，如配置文件等；该目录下内容（除了Caches下内容外）会被iTunes和iCloud备份&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;temp&lt;/td&gt;
-      &lt;td&gt;用于存储临时文件，当应用程序没有运行时，该目录下内容可能会被系统清空；该目录下内容不会被iTunes或iCloud备份&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;&lt;strong&gt;备注&lt;/strong&gt; :
-&lt;strong&gt;Bundle&lt;/strong&gt; ：&lt;code class=&quot;highlighter-rouge&quot;&gt;bundle&lt;/code&gt;是将可执行程序代码和相关资源文件（如图片，声音等）组合在一起的一个文件目录；在&lt;code class=&quot;highlighter-rouge&quot;&gt;iOS&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;OS X&lt;/code&gt;中，应用程序，&lt;code class=&quot;highlighter-rouge&quot;&gt;frameworks&lt;/code&gt;，插件和其他形式的软件都是&lt;code class=&quot;highlighter-rouge&quot;&gt;bundle&lt;/code&gt;（应用程序是第三方开发者能够在&lt;code class=&quot;highlighter-rouge&quot;&gt;iOS&lt;/code&gt;上创建的唯一&lt;code class=&quot;highlighter-rouge&quot;&gt;bundle&lt;/code&gt;）；使用&lt;code class=&quot;highlighter-rouge&quot;&gt;bundle&lt;/code&gt;可以使安装和定位应用程序更加方便，同时方便做国际化(&lt;code class=&quot;highlighter-rouge&quot;&gt;bundle&lt;/code&gt;目录结构如下图)；每个应用程序都有一个&lt;code class=&quot;highlighter-rouge&quot;&gt;main bundle&lt;/code&gt;，可以通过&lt;code class=&quot;highlighter-rouge&quot;&gt;NSBundle&lt;/code&gt;来获取&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/iOS_Storage/bundle.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;获取各目录路径：&lt;a href=&quot;https://www.jianshu.com/p/dd3f120eb249&quot;&gt;摘自博客&lt;/a&gt;&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;// 获取沙盒主目录路径
-NSString *homeDir = NSHomeDirectory();
-// 获取Documents目录路径
-NSString *docDir = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
-// 获取Library的目录路径
-NSString *libDir = [NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES) lastObject];
-// 获取Caches目录路径
-NSString *cachesDir = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) firstObject];
-// 获取tmp目录路径
-NSString *tmpDir =  NSTemporaryDirectory();
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;二-core-data&quot;&gt;二. Core Data&lt;/h2&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Core Data&lt;/code&gt;是一个官方提供的本地数据操作的框架；&lt;code class=&quot;highlighter-rouge&quot;&gt;Core Data&lt;/code&gt;不是一个数据库，而是应用程序对象关系图的管理器（对象关系图就是数据对象之间的相互关系）；&lt;code class=&quot;highlighter-rouge&quot;&gt;Core Data&lt;/code&gt;还提供许多其他特性，如：输入验证，数据模型版本控制和数据对象更改追踪&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Core Data&lt;/code&gt;底层就是使用&lt;code class=&quot;highlighter-rouge&quot;&gt;SQLite&lt;/code&gt;实现&lt;/p&gt;
-
-&lt;p&gt;对象关系映射的存储关系，可以将&lt;code class=&quot;highlighter-rouge&quot;&gt;OC&lt;/code&gt;对象存储到数据库中，也可以将数据库中的数据转化为&lt;code class=&quot;highlighter-rouge&quot;&gt;OC&lt;/code&gt;对象（系统完成，&lt;code class=&quot;highlighter-rouge&quot;&gt;Core Data&lt;/code&gt;封装了数据库的操作过程，以及数据到对象的转换过程）&lt;/p&gt;
-
-&lt;p&gt;数据存储和撤销恢复操作&lt;/p&gt;
-
-&lt;p&gt;存储数据模型如下图；其中&lt;code class=&quot;highlighter-rouge&quot;&gt;Model&lt;/code&gt;（&lt;code class=&quot;highlighter-rouge&quot;&gt;NSManagedObjectModel&lt;/code&gt;实例）代表了&lt;code class=&quot;highlighter-rouge&quot;&gt;.xcdatamodeld&lt;/code&gt;文件&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/iOS_Storage/CoreData.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Core Data&lt;/code&gt;只能操作存在与内存中的数据，否则，需要先将数据加载到内存中才能作用（可能会导致性能问题）;&lt;code class=&quot;highlighter-rouge&quot;&gt;Core Data&lt;/code&gt;还提供了对多线程的支持&lt;/p&gt;
-
-&lt;p&gt;参考：https://github.com/DeveloperErenLiu/CoreDataPDF&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;fmdbsqliteswift&quot;&gt;FMDB/Sqlite.swift&lt;/h2&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;realm&quot;&gt;Realm&lt;/h2&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;其他&quot;&gt;其他&lt;/h2&gt;
-
-&lt;hr /&gt;
-
-&lt;h3 id=&quot;plist&quot;&gt;Plist&lt;/h3&gt;
-
-&lt;p&gt;只能存储&lt;code class=&quot;highlighter-rouge&quot;&gt;OC&lt;/code&gt;常用数据类型(&lt;code class=&quot;highlighter-rouge&quot;&gt;NSString&lt;/code&gt;、&lt;code class=&quot;highlighter-rouge&quot;&gt;NSDictionary&lt;/code&gt;、&lt;code class=&quot;highlighter-rouge&quot;&gt;NSArray&lt;/code&gt;、&lt;code class=&quot;highlighter-rouge&quot;&gt;NSData&lt;/code&gt;、&lt;code class=&quot;highlighter-rouge&quot;&gt;NSNumber&lt;/code&gt;等类型)而不能直接存储自定义模型对象；如果想存储自定义模型对象只能将自定义模型对象转换为字典存储（实现&lt;code class=&quot;highlighter-rouge&quot;&gt;writeToFile&lt;/code&gt;方法）&lt;/p&gt;
-
-&lt;h3 id=&quot;preference&quot;&gt;Preference&lt;/h3&gt;
-
-&lt;p&gt;每个应用都有一个&lt;code class=&quot;highlighter-rouge&quot;&gt;NSUserDefaults&lt;/code&gt;实例，可用于快速存储键值对，如：用户名，密码，开关状态等&lt;/p&gt;
-
-&lt;h3 id=&quot;nskeyedarchiver归档--nskeyedunarchiver解档&quot;&gt;NSKeyedArchiver归档 / NSKeyedUnarchiver解档&lt;/h3&gt;
-
-&lt;p&gt;归档和解档会在写入、读出数据之前进行序列化、反序列化，数据的安全性相对高一些；但是归档不能存储大批量数据（相比较&lt;code class=&quot;highlighter-rouge&quot;&gt;Sqlite&lt;/code&gt;而言），存储数据到文件是将所有的数据一下子存储到文件中，从文件中读取数据也是一下子读取所有的数据；归档的类需要实现&lt;code class=&quot;highlighter-rouge&quot;&gt;NSCoding&lt;/code&gt;协议&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;参考链接&quot;&gt;参考链接&lt;/h2&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;https://www.jianshu.com/p/e88880be794f&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;https://www.jianshu.com/p/14fd706b632d&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-</description>
-        <pubDate>Tue, 26 Feb 2019 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2019/02/26/iOS%E6%95%B0%E6%8D%AE%E5%AD%98%E5%82%A8/</link>
-        <guid isPermaLink="true">http://localhost:4000/2019/02/26/iOS%E6%95%B0%E6%8D%AE%E5%AD%98%E5%82%A8/</guid>
-        
-        <category>Draft</category>
         
         
       </item>
@@ -1600,6 +1363,246 @@ CMD+S		模拟器截屏(所截图片都在桌面上)
         <guid isPermaLink="true">http://localhost:4000/2019/01/23/Objective-C%E5%85%A5%E9%97%A8%E8%A6%81%E7%82%B9/</guid>
         
         <category>iOS</category>
+        
+        
+      </item>
+    
+      <item>
+        <title>大三上总结</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;大三上总结&lt;/p&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;h2 id=&quot;技术&quot;&gt;技术&lt;/h2&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;看书：
+    &lt;blockquote&gt;
+      &lt;ol&gt;
+        &lt;li&gt;«深入理解计算机系统»&lt;/li&gt;
+        &lt;li&gt;«现代操作系统»&lt;/li&gt;
+        &lt;li&gt;«Java并发编程实战»&lt;/li&gt;
+        &lt;li&gt;«深入理解Java虚拟机»回滚&lt;/li&gt;
+      &lt;/ol&gt;
+    &lt;/blockquote&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;博客，总结：https://husteryp.github.io/&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;iOS：Swift，OC&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h2 id=&quot;思考&quot;&gt;思考&lt;/h2&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;思想转变
+    &lt;blockquote&gt;
+      &lt;ol&gt;
+        &lt;li&gt;技术方向 –&amp;gt; 生活&lt;/li&gt;
+        &lt;li&gt;年轻真好~&lt;/li&gt;
+      &lt;/ol&gt;
+    &lt;/blockquote&gt;
+  &lt;/li&gt;
+  &lt;li&gt;外院：如何去弥补这个非班科的差距；决定方向后可以去实习&lt;/li&gt;
+&lt;/ol&gt;
+
+</description>
+        <pubDate>Tue, 01 Jan 2019 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2019/01/01/%E5%A4%A7%E4%B8%89%E4%B8%8A%E6%80%BB%E7%BB%93/</link>
+        <guid isPermaLink="true">http://localhost:4000/2019/01/01/%E5%A4%A7%E4%B8%89%E4%B8%8A%E6%80%BB%E7%BB%93/</guid>
+        
+        <category>Hust</category>
+        
+        
+      </item>
+    
+      <item>
+        <title>ListView[一]</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;p&gt;本文将从&lt;code class=&quot;highlighter-rouge&quot;&gt;ListView&lt;/code&gt;的基本使用入手, 介绍常见的&lt;code class=&quot;highlighter-rouge&quot;&gt;ListView&lt;/code&gt;性能优化问题&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ListView&lt;/code&gt;采用适配器模式, 关于&lt;code class=&quot;highlighter-rouge&quot;&gt;ListView&lt;/code&gt;的优化主要体现在&lt;code class=&quot;highlighter-rouge&quot;&gt;Adapter&lt;/code&gt;上; 本文也主要从&lt;code class=&quot;highlighter-rouge&quot;&gt;Adapter&lt;/code&gt;入手, 分析常见的优化问题&lt;/p&gt;
+
+&lt;p&gt;文章代码基于&lt;code class=&quot;highlighter-rouge&quot;&gt;kotlin&lt;/code&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;一-最差版本&quot;&gt;一. 最差版本&lt;/h2&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ListView&lt;/code&gt;的性能问题主要是其通常用于展示大量数据造成的; 我们手指上下滑动的时候伴随着&lt;code class=&quot;highlighter-rouge&quot;&gt;Adapter.getView()&lt;/code&gt;方法的不断调用, &lt;code class=&quot;highlighter-rouge&quot;&gt;getView()&lt;/code&gt;的主要作用是去解析&lt;code class=&quot;highlighter-rouge&quot;&gt;XML&lt;/code&gt;生成&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;视图, 但是这一过程是一个耗时操作, 如果每次滑动都去&lt;code class=&quot;highlighter-rouge&quot;&gt;inflate&lt;/code&gt;的话, 势必会造成界面的卡顿, 如下即是这种情况: 每次都去&lt;code class=&quot;highlighter-rouge&quot;&gt;inflate&lt;/code&gt;一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Item&lt;/code&gt;, 然后再&lt;code class=&quot;highlighter-rouge&quot;&gt;findViewById()&lt;/code&gt;再进行设置&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;// 最差版本
+class MyAdapter(val context: Context) : BaseAdapter() {
+
+    var data = ArrayList&amp;lt;String&amp;gt;()
+    private val mInflater by lazy {
+        context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
+    }
+
+    override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
+        val view = mInflater.inflate(R.layout.item_main, parent, false)
+        view.setOnClickListener{
+            Toast.makeText(context,data[position],Toast.LENGTH_SHORT).show()
+        }
+        view.findViewById&amp;lt;TextView&amp;gt;(R.id.item_text).text = data[position]
+        return view
+    }
+
+    // 其他方法按照常规写, 故此省略
+    ...
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;二-优化一&quot;&gt;二. 优化一&lt;/h2&gt;
+
+&lt;p&gt;为了避免每次滑动的时候都要&lt;code class=&quot;highlighter-rouge&quot;&gt;inflate&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;Google&lt;/code&gt;官方提供了&lt;code class=&quot;highlighter-rouge&quot;&gt;ListView&lt;/code&gt;的缓存机制, 即将滑动出屏幕外面的&lt;code class=&quot;highlighter-rouge&quot;&gt;Item&lt;/code&gt;缓存下来, 因为通常情况下&lt;code class=&quot;highlighter-rouge&quot;&gt;ListView&lt;/code&gt;要展示的数据类型都是相同的, 所以可以复用同样的&lt;code class=&quot;highlighter-rouge&quot;&gt;Item&lt;/code&gt;界面, 只是展示数据不同; 我们注意到&lt;code class=&quot;highlighter-rouge&quot;&gt;getView()&lt;/code&gt;的参数中有一个&lt;code class=&quot;highlighter-rouge&quot;&gt;convertView&lt;/code&gt;, 这个便是被缓存下来的&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;, 所以我们第一次优化可以如下: 主要就是判断&lt;code class=&quot;highlighter-rouge&quot;&gt;convertView&lt;/code&gt;是否为空, 如果为空, 说明没有缓存的&lt;code class=&quot;highlighter-rouge&quot;&gt;Item&lt;/code&gt;, 此时就需要去&lt;code class=&quot;highlighter-rouge&quot;&gt;inflate&lt;/code&gt;, 否则, 直接更改展示数据即可&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class MyAdapter(val context: Context) : BaseAdapter() {
+
+    var data = ArrayList&amp;lt;String&amp;gt;()
+    private val mInflater by lazy {
+        context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
+    }
+
+    override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
+        if (convertView == null) {
+            val view = mInflater.inflate(R.layout.item_main, parent, false)
+            view.findViewById&amp;lt;TextView&amp;gt;(R.id.item_text).text = data[position]
+            return view
+        }
+        convertView.apply {
+            findViewById&amp;lt;TextView&amp;gt;(R.id.item_text).text = data[position]
+        }
+        return convertView
+    }
+
+    // 其他方法按照常规写, 故此省略
+    ...
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;三-优化二&quot;&gt;三. 优化二&lt;/h2&gt;
+
+&lt;p&gt;到这里, 其实最耗时的部分已经被优化了, 那么我们是否还能够进行优化呢? 我们注意到每次调用&lt;code class=&quot;highlighter-rouge&quot;&gt;getView&lt;/code&gt;的时候, 虽然避免了每次都去&lt;code class=&quot;highlighter-rouge&quot;&gt;inflate&lt;/code&gt;, 但是我们仍然每次都调用了&lt;code class=&quot;highlighter-rouge&quot;&gt;findViewById()&lt;/code&gt;, 那么这部分我们是否也可以避免掉呢, 当然是可以的, 此时我们的&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewHolder&lt;/code&gt;就派上用场啦~&lt;/p&gt;
+
+&lt;p&gt;这里我们使用了一个内部类, 将每次&lt;code class=&quot;highlighter-rouge&quot;&gt;findViewById&lt;/code&gt;找到的&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;保存下来, 因为我们前面说过了, &lt;code class=&quot;highlighter-rouge&quot;&gt;ListView&lt;/code&gt;展示的时候, 通常数据类型都是相同的, 即界面相同, 只是每个&lt;code class=&quot;highlighter-rouge&quot;&gt;Item&lt;/code&gt;展示的数据不同而已, 因此也就没有必要每次都去执行一遍&lt;code class=&quot;highlighter-rouge&quot;&gt;findViewById()&lt;/code&gt;, 这也是&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewHolder&lt;/code&gt;所做的主要的优化&lt;/p&gt;
+
+&lt;p&gt;另外, 还需要提一下的是这里保存&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewHolder&lt;/code&gt;用的是&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;tag&lt;/code&gt;, 其实我们还可以用这个&lt;code class=&quot;highlighter-rouge&quot;&gt;tag&lt;/code&gt;保存许多我们需要的值, 而不用局限与&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewHolder&lt;/code&gt;&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class MyAdapter(val context: Context) : BaseAdapter() {
+
+    var data = ArrayList&amp;lt;String&amp;gt;()
+    private val mInflater by lazy {
+        context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
+    }
+
+    override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
+        var holder: MyViewHolder
+        if (convertView == null) {
+            val view = mInflater.inflate(R.layout.item_main, parent, false)
+            holder = MyViewHolder(view)
+            holder.textView.text = data[position]
+            view.tag = holder
+            return view
+        }
+        holder = convertView.tag as MyViewHolder
+        holder.textView.text = data[position]
+        return convertView
+    }
+    
+    // 其他方法按照常规写, 故此省略
+    ...
+
+    class MyViewHolder(val view: View){
+        val textView: TextView by lazy {
+            view.findViewById&amp;lt;TextView&amp;gt;(R.id.item_text)
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;四-优化三&quot;&gt;四. 优化三&lt;/h2&gt;
+
+&lt;p&gt;将异步操作放在子线程中执行; 其实这个也不算&lt;code class=&quot;highlighter-rouge&quot;&gt;ListView&lt;/code&gt;自身特殊的优化, 而是由&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;自身特性所决定的&lt;/p&gt;
+
+&lt;p&gt;如下; 当加载大图时, 使用异步的&lt;code class=&quot;highlighter-rouge&quot;&gt;AsyncTask&lt;/code&gt;去网络下载好后再展示到界面&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class MyAdapter(private val context: Context) : BaseAdapter() {
+
+    private val mInflater by lazy {
+        context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
+    }
+
+    override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
+        val view: View = convertView ?: mInflater.inflate(R.layout.item_main, parent, false)
+        val holder: ViewHolder = view.tag as ViewHolder? ?: ViewHolder(view)
+        ImageLoader(holder).execute(ImageUrl.url[position])
+        return view
+    }
+
+    // 其他方法按照常规写, 故此省略
+    ...
+
+    class ImageLoader(private var holder: ViewHolder) : AsyncTask&amp;lt;String, Void, Bitmap&amp;gt;() {
+
+        private val cache: LruCache&amp;lt;String, Bitmap&amp;gt; by lazy {
+            val maxMemory = Runtime.getRuntime().maxMemory()
+            val cacheSize = maxMemory / 8
+            object: LruCache&amp;lt;String, Bitmap&amp;gt;(cacheSize.toInt()) {
+                override fun sizeOf(key: String?, value: Bitmap?): Int {
+                    return value?.allocationByteCount ?: 0
+                }
+            }
+        }
+
+        override fun doInBackground(vararg params: String?): Bitmap? {
+            val urlStr = params[0]
+            var bitmap = cache.get(urlStr)
+            if (bitmap != null)
+                return bitmap
+            val url = URL(urlStr)
+            var connection: HttpURLConnection? = null
+            try {
+                connection = url.openConnection() as HttpURLConnection
+                connection.connectTimeout = 5000
+                connection.readTimeout = 5000
+                bitmap = BitmapFactory.decodeStream(connection.inputStream)
+                cache.put(urlStr, bitmap)
+            } catch (e: Exception) {
+                Log.d(&quot;@HusterYP&quot;,&quot;error&quot;, e)
+            } finally {
+                connection?.disconnect()
+            }
+            return bitmap
+        }
+
+        override fun onPostExecute(result: Bitmap?) {
+            holder.imageView.setImageBitmap(result)
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;上述代码其实还有问题; 只是解决了异步加载, 但是由于&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;视图的缓存复用, 当滑动的时候会出现&lt;code class=&quot;highlighter-rouge&quot;&gt;Item&lt;/code&gt;展示图片不断改变的现象; 关于此问题的解决可以参见&lt;a href=&quot;https://blog.csdn.net/guolin_blog/article/details/45586553&quot;&gt;博客&lt;/a&gt; (&lt;strong&gt;注:&lt;/strong&gt; 上述代码图片&lt;code class=&quot;highlighter-rouge&quot;&gt;URL&lt;/code&gt;也来自该博客)&lt;/p&gt;
+</description>
+        <pubDate>Wed, 12 Dec 2018 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2018/12/12/ListView-%E4%B8%80/</link>
+        <guid isPermaLink="true">http://localhost:4000/2018/12/12/ListView-%E4%B8%80/</guid>
+        
+        <category>Android</category>
         
         
       </item>

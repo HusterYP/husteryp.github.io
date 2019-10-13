@@ -154,121 +154,6 @@
             ">
     			
 <div class="post-preview">
-    <a href="/2018/10/31/Java%E5%B9%B6%E5%8F%91%E4%B8%80/">
-        <h2 class="post-title">
-            Java并发[一]
-        </h2>
-        
-        <h3 class="post-subtitle">
-            Java并发编程实战第一部分总结
-        </h3>
-        
-        <div class="post-content-preview">
-            前言
-
-
-  Java并发编程实战第一部分总结
-
-
-
-
-正文
-
-
-
-一. 基本概念
-
-
-  
-    先检查后执行: 首先观察到某个条件为真(例如文件X不存在), 然后根据这个观察结果采用相应的动作(创建文件X), 但事实上, 在你观察到这个结果以及开始穿件文件之间, 观察结果可能变得无效(另一个线程创建了文件X), 从而导致各种问题(未预期异常, 数据被覆盖, 文件被破坏等)
-  
-  
-...
-        </div>
-    </a>
-    <p class="post-meta">
-        Posted by 袁平 on October 31, 2018
-    </p>
-</div>
-<hr>
-
-<div class="post-preview">
-    <a href="/2018/10/28/Compiler/">
-        <h2 class="post-title">
-            编译器笔记与实验记录
-        </h2>
-        
-        <h3 class="post-subtitle">
-            Compiler
-        </h3>
-        
-        <div class="post-content-preview">
-            序言
-
-
-  编译器,教程: http://mooc.study.163.com/learn/1000002001?tid=1000003000#/learn/content?type=detail&amp;id=1000023001&amp;cid=1000019000
-  配套网站: http://staff.ustc.edu.cn/~bjhua/courses/compiler/201...
-        </div>
-    </a>
-    <p class="post-meta">
-        Posted by 袁平 on October 28, 2018
-    </p>
-</div>
-<hr>
-
-<div class="post-preview">
-    <a href="/2018/10/22/%E6%95%B0%E5%AD%97%E5%9B%BE%E5%83%8F%E5%A4%84%E7%90%86/">
-        <h2 class="post-title">
-            数字图像处理
-        </h2>
-        
-        <h3 class="post-subtitle">
-            数字图像处理笔记
-        </h3>
-        
-        <div class="post-content-preview">
-            前言
-
-数字图像处理笔记
-
-
-
-正文
-
-
-
-
-  可以使用Utrapdit软件查看图片的ASIIC值(可以看任何文件的ASIIC值)
-
-
-一. 第一讲 数字图像处理概述
-
-
-  图形和图像的区别:
-
-
-
-  
-    图形: 一条指令; 比如一条直线的表示
-    图像: 大矩阵, 里面的数据是每一点的颜色值
-  
-
-
-
-  
-    宽高相乘就是图像的像素
-  
-  
-    图像空间分辨...
-        </div>
-    </a>
-    <p class="post-meta">
-        Posted by 袁平 on October 22, 2018
-    </p>
-</div>
-<hr>
-
-<div class="post-preview">
     <a href="/2018/10/13/OpenGL%E7%AC%94%E8%AE%B0/">
         <h2 class="post-title">
             OpenGL笔记
@@ -477,19 +362,23 @@ Class文件格式采用一种类似于C语言结构体的伪结构来存储数�
 <hr>
 
 <div class="post-preview">
-    <a href="/2018/09/27/%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B9%8B%E5%B8%B8%E7%94%A8%E5%B7%A5%E5%85%B7Draft/">
+    <a href="/2018/09/27/JVM%E4%B9%8B%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F%E4%B8%8E%E5%86%85%E5%AD%98%E6%BA%A2%E5%87%BA%E5%BC%82%E5%B8%B8/">
         <h2 class="post-title">
-            自定义View之常用工具
+            Java内存区域与内存溢出异常
         </h2>
         
         <h3 class="post-subtitle">
-            介绍自定义View中常用的工具类
+            深入理解Java虚拟机第二章总结
         </h3>
         
         <div class="post-content-preview">
             前言
 
-本文将要讲解的是在自定义View中常用的一些工具类
+本文是对«深入理解Java虚拟机»第二章以及其他博客的阅读总结
+
+重点是需要去理解各区域存储的是什么, 以此从底层理解对象的创建与引用等过程; 同时还需要明确的一点是各部分会产生的异常, 以及产生异常的原因
+
+注: 文中部分图片来自网络, 但是忘了出处, 侵删~
 
 
 
@@ -497,22 +386,115 @@ Class文件格式采用一种类似于C语言结构体的伪结构来存储数�
 
 
 
-一. Canvas
+一. 基本概念
 
-drawXXX: 绘制相关
+在开始讲解之前, 需要先明确关于JVM的一些基本概念
 
-clipXXX: 裁剪; 使用裁剪的时候, 通常需要配合save()和restore()一起使用, 否则之后所有的绘制都会被裁剪
-范围裁切有两个方法： clipRect() 和 clipPath()
-
-
-
-几何变换(平移, 旋转, 伸缩等):
-
-几何变换的使用大概...
+我们都知道, Java是一个跨...
         </div>
     </a>
     <p class="post-meta">
         Posted by 袁平 on September 27, 2018
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
+    <a href="/2018/09/25/Java%E4%B9%8BIO%E6%B5%81/">
+        <h2 class="post-title">
+            Java之IO流
+        </h2>
+        
+        <h3 class="post-subtitle">
+            IO流相关API总结
+        </h3>
+        
+        <div class="post-content-preview">
+            前言
+
+本文将讲解Java中一个比较重要的模块–I/O流
+
+以下内容是对Java核心技术卷II的总结, 权做个人笔记~
+
+
+
+正文
+
+
+
+一. 概述
+
+Java I/O流指的是java.io包和java.nio包提供的各种操作文件和输入输出等的API, 具体可以分为两大类: 一类是面向字节的, 一类是面向字符的; 面向字节的API是以InputStream和OutputStream类为基类,...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by 袁平 on September 25, 2018
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
+    <a href="/2018/09/24/%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B9%8BView%E7%BB%98%E5%88%B6%E6%B5%81%E7%A8%8B/">
+        <h2 class="post-title">
+            自定义View之View绘制流程
+        </h2>
+        
+        <h3 class="post-subtitle">
+            Android源码分析之View绘制流程
+        </h3>
+        
+        <div class="post-content-preview">
+            前言
+
+Android源码分析之View系列之绘制流程
+
+
+
+正文
+
+
+
+一. 概述
+
+View的绘制流程分为三大步: measure, layout, draw; measure即测量, 测量View的大小; layout即布局, 按照一定的规则排布View; draw即绘制, 绘制View的外形; 这三步是和我们自定义View息息相关的, 熟悉和掌握这三大流程, 我们才能随心所欲的定制V...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by 袁平 on September 24, 2018
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
+    <a href="/2018/09/20/%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B9%8BView%E4%BA%8B%E4%BB%B6%E5%88%86%E5%8F%91%E6%9C%BA%E5%88%B6/">
+        <h2 class="post-title">
+            自定义View之View事件分发机制
+        </h2>
+        
+        <h3 class="post-subtitle">
+            View事件分发源码讲解
+        </h3>
+        
+        <div class="post-content-preview">
+            前言
+
+Android源码分析之View系列之事件分发机制
+
+
+
+正文
+
+
+
+一. 概述
+
+View的触摸事件分发是View系列中的一个重难点, 主要需要掌握的是MotionEvent的传递规则和处理规则, 这是自定义View中冲突处理的理论来源~
+
+触摸事件分发的处理主要是对MotionEvent的处理, MotionEvent封装了用户的一系列行为, 如: ACTION_DOWN(手指刚...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by 袁平 on September 20, 2018
     </p>
 </div>
 <hr>
@@ -557,12 +539,6 @@ clipXXX: 裁剪; 使用裁剪的时候, 通常需要配合save()和restore()一�
                             
                                 <a href="/tags/#Algorithm" title="Algorithm" rel="5">
                                     Algorithm
-                                </a>
-                            
-                        
-                            
-                                <a href="/tags/#Draft" title="Draft" rel="5">
-                                    Draft
                                 </a>
                             
                         
@@ -613,7 +589,7 @@ clipXXX: 裁剪; 使用裁剪的时候, 通常需要配合save()和restore()一�
                             
                         
                             
-                                <a href="/tags/#iOS" title="iOS" rel="7">
+                                <a href="/tags/#iOS" title="iOS" rel="6">
                                     iOS
                                 </a>
                             
