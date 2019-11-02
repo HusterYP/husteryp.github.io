@@ -5,9 +5,187 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Sun, 13 Oct 2019 22:11:40 +0800</pubDate>
-    <lastBuildDate>Sun, 13 Oct 2019 22:11:40 +0800</lastBuildDate>
+    <pubDate>Sat, 02 Nov 2019 21:25:25 +0800</pubDate>
+    <lastBuildDate>Sat, 02 Nov 2019 21:25:25 +0800</lastBuildDate>
     <generator>Jekyll v3.8.5</generator>
+    
+      <item>
+        <title>虚拟内存</title>
+        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;虚拟内存算是操作系统中比较重要的一部分了，内容也很多，早在看操作系统相关书籍的时候就有想要总结这一部分，但是功力不够，总感觉串不起来；经过秋招这几个月对基础知识的回顾，感觉对虚拟内存这一部分有了自己的一个认识和体系，遂趁这个机会述以成文。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;一-背景&quot;&gt;一. 背景&lt;/h2&gt;
+
+&lt;p&gt;在计算机硬件体系结构中，总有这样一种规律：性能越好，价格越高；为了中和性价比，在计算机硬件体系中多采用逐级缓存的结构，通过软件算法实现访问性能与价格成本的平衡，这在计算机的存储体系中体现的尤为明显。&lt;/p&gt;
+
+&lt;h3 id=&quot;11-dram-vs-sram&quot;&gt;1.1 DRAM vs SRAM&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;DRAM&lt;/strong&gt;：动态随机访问存储器；价格低，访问速度较慢，耗电量较大，一般用于做主存。&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;SRAM&lt;/strong&gt;：静态随机访问存储器；价格高，访问速度快，耗电量低，一般用于做高速缓存。&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;12-存储器层次结构&quot;&gt;1.2 存储器层次结构&lt;/h3&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/VirtualMemory/存储器层次结构.jpg&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;如上图，存储器的层次结构实际上是一个金字塔形状，从上到下，表示价格越来越低，容量越来越大；从上到下依次是：寄存器，L1，L2，L3三级高速缓存，主存，磁盘缓存，网络缓存。存储器的层次结构实际上也是一个逐级缓存的结构，其中，虚拟内存主要作用于主存与磁盘缓存之间，负责主存与磁盘之间的页面交换。&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;二-虚拟内存的目的&quot;&gt;二. 虚拟内存的目的&lt;/h2&gt;
+
+&lt;p&gt;虚拟内存有三个目的：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;将主存视为磁盘的高速缓存，在主存中只保留活动区域，提高主存利用率&lt;/li&gt;
+  &lt;li&gt;为进程提供统一的地址空间，简化内存管理&lt;/li&gt;
+  &lt;li&gt;保护进程地址空间不被其他进程破坏&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;虚拟内存如何达到这三个目的，将在后文讲解。&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;三-虚拟内存的原理&quot;&gt;三. 虚拟内存的原理&lt;/h2&gt;
+
+&lt;h3 id=&quot;31-基本概念&quot;&gt;3.1 基本概念&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;页表：可以理解为位于主存中的一个大数组，由页表项组成&lt;/li&gt;
+  &lt;li&gt;页表项：页表的基本组成单元，页表项分为两个部分：标志位和地址位&lt;/li&gt;
+  &lt;li&gt;虚拟页：主存与磁之间的基本传送单元，磁盘地址空间被视为一个个的虚拟页&lt;/li&gt;
+  &lt;li&gt;物理页：缓存在主存中的实际单元&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;32-寻址的基本过程&quot;&gt;3.2 寻址的基本过程&lt;/h3&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;因为页表其实也是很占内存空间的，所以实际中会采用多级页表和动态创建页表的方式来减小页表大小，这里为了方便了解寻址的整体过程，就以单级页表为例；另外，页表项的高速缓存这里也没有考虑，高速缓存将在下一节介绍。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;主存中有一个页表，页表由页表项组成，将虚拟页映射到物理页；处理器（CPU）进行一次寻址的过程是：处理器生成一个虚拟地址，交给MMU（地址翻译器）进行地址翻译，MMU将虚拟地址转换为页表索引，然后去主存中查找对应的页表项，如果主存中缓存该虚拟页，则主存将虚拟页对应的页表项传送给MMU，之后MMU从页表项计算出物理地址送给主存，主存将物理地址对应的数据通过数据总线送给处理器；如果主存中没有缓存虚拟页对应的物理页，则触发一次缺页异常，由主存从磁盘换取所需虚拟页之后，再次执行导致缺页的指令。&lt;/p&gt;
+
+&lt;p&gt;如下图所示：摘自《深入理解计算机系统》&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/VirtualMemory/寻址的基本过程.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;33-页表缓存&quot;&gt;3.3 页表缓存&lt;/h3&gt;
+
+&lt;p&gt;上文中提过，相比于 L1，L2，L3 三级高速缓存，主存的访问速度还是很慢的（ DRAM 比 SRAM 要慢约十多倍，磁盘比 DRAM 要慢约十万多倍），所以如果每次进行寻址的时候，都按照上述过程，先去主存查找页表项，然后再去主存取对应的物理页，那么，即使每次页面都命中的情况下，每次寻址也需要两次的 DRAM 访问（主存访问），如果算上缺页异常与主存与磁盘的页面替换，耗费的时间将更多。&lt;/p&gt;
+
+&lt;p&gt;为了加速 MMU 地址翻译的过程，会将页表项缓存到 TLB（TLB 见后补充解释） 和 L1 级高速缓存中，因此上述 MMU 进行地址翻译的过程就变成了：MMU 根据虚拟地址从 TLB 中查找页表项，如果找到，则直接进行后续物理地址生成；如果 TLB 未命中，则 MMU 从 L1 级高速缓存中查找对应的页表项，如果命中，则将该页表项缓存在 TLB 中并进行下一步，否则，继续从主存中查找页表项。&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;&lt;strong&gt;TLB&lt;/strong&gt;：TLB 是一个在 MMU 中的高速缓存，用于缓存页表项；如果 TLB 命中，那么所有的地址翻译都是在芯片上的 MMU 中完成的，因此非常快。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;如下图所示：摘自《深入理解计算机系统》&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/VirtualMemory/地址翻译的基本过程.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;34-地址翻译的细节&quot;&gt;3.4 地址翻译的细节&lt;/h3&gt;
+
+&lt;h4 id=&quot;341-从-tlb-查找页表项&quot;&gt;3.4.1 从 TLB 查找页表项&lt;/h4&gt;
+
+&lt;p&gt;处理器生成的虚拟地址如下：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/VirtualMemory/虚拟地址用于TLB.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;TLB 中每一行都保存着一个由单个页表项组成的块，用于组选择和行匹配的索引和标记字段是从虚拟地址中的虚拟页号（VPN）中提取出来的，如果 TLB 有 &lt;code class=&quot;highlighter-rouge&quot;&gt;T = 2^t&lt;/code&gt;个组，那么 TLB 索引（TLBI）是由 VPN 的 t 个最低位组成的，而 TLB 标记（TLBT）是由 VPN 中剩余的位组成的。&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;更多关于 TLB 查找页表项的细节可参见： https://www.cnblogs.com/alantu2018/p/9000777.html&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h4 id=&quot;342-从主存中查找页表项&quot;&gt;3.4.2 从主存中查找页表项&lt;/h4&gt;
+
+&lt;p&gt;如下图：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/VirtualMemory/虚拟地址用于页表.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;虚拟地址由两部分组成：虚拟页号和虚拟页偏移量；虚拟页号可以简单的视为页表索引，如：根据VPN 0 选择页表项0，根据 VPN 1 选择页表项1，依次类推。&lt;/p&gt;
+
+&lt;h4 id=&quot;343-从页表项生成物理地址&quot;&gt;3.4.3 从页表项生成物理地址&lt;/h4&gt;
+
+&lt;p&gt;仍如上图：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/VirtualMemory/虚拟地址用于页表.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;可以看出，物理地址最终由两个部分组成：低位是虚拟地址的另一部分，即虚拟页偏移量，高位是页表项的另一部分（页表项还有一部分是标志位，上文介绍过）。&lt;/p&gt;
+
+&lt;p&gt;另外，根据上图，还可以看出&lt;strong&gt;MMU是如何根据页表项判断虚拟页是否在主存中有对应的物理页的&lt;/strong&gt;：上文中说过，页表项分为两部分，其中一部分是一个标志位（即途中的有效位），上图也说的很清楚了，如果有效位为 0 ，说明虚拟页对应的物理页还为被缓存在主存中（缺页），否则，说明命中。&lt;/p&gt;
+
+&lt;h3 id=&quot;35-页表优化&quot;&gt;3.5 页表优化&lt;/h3&gt;
+
+&lt;p&gt;上文提到过，页表占据的内存空间也是可观的；对于一个 32 位的地址空间，4KB 的页面和一个 4 字节的页表项，即使应用所引用的只是虚拟地址空间中很小的一部分，也总是需要一个 4MB 的页表常驻内存。为了优化页表占用的内存空间，实际中常采用多级页表。&lt;/p&gt;
+
+&lt;p&gt;多级页表的基本思路就是，增大单个页表项所能映射的虚拟页的大小，即进行粒度更大的映射（对于常驻内存的页表来说），如：之前一个页表项只能映射 4KB 的虚拟页，如果一个页表项能映射 4MB 的虚拟页的话，页表的大小也会相应的减小很多。&lt;/p&gt;
+
+&lt;p&gt;另外，多级页表还支持动态创建子级页表，即常驻内存的只有粒度最大的一级页表，二级页表等子级页表不需要常驻内存，在进行地址翻译时动态创建即可。&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;四-局部性原理与内存抖动&quot;&gt;四. 局部性原理与内存抖动&lt;/h2&gt;
+
+&lt;p&gt;MMU 进行地址翻译以及缺页时进行页面替换的算法在很大程度上都依赖于局部性原理。程序的局部性原理意思是，程序上次用到的数据和代码，在下次访问时很可能也会用到；因此将下次很可能会用到的数据缓存在访问速度更快的高速缓存中，将比较可观的提升程序性能。&lt;/p&gt;
+
+&lt;p&gt;比较常见的页面替换算法是：LRU 算法，即最近最少使用算法，以及其他更多页面置换算法可参见： https://www.cnblogs.com/dolphin0520/p/3749259.html&lt;/p&gt;
+
+&lt;p&gt;内存抖动的意思是，处理器进行数据访问时，不断产生缺页中断，不断进行页面置换，造成程序运行缓慢。出现内存抖动一般有两个原因：一个是页面置换算法的缺陷，差的页面置换算法通常会导致页面命中率的降低，造成频繁的缺页中断与页面置换；另一个也可能与我们自己写的程序有关。&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;五-虚拟内存与进程&quot;&gt;五. 虚拟内存与进程&lt;/h2&gt;
+
+&lt;p&gt;本文开始讲虚拟内存的目的时，提到了虚拟内存对于进程的两个目的：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;为进程提供统一的地址空间，简化内存管理：&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;操作系统为进程分配地址空间时，由于是通过虚拟内存进行虚拟页与物理页的映射，所以，对于进程而言，物理内存在地址空间上可以是不连续的（另外，这里还想提一点的是，这种不连续的映射，可以减少内存碎片与不同进程数据的共享，即通过虚拟内存将多个进程映射到同一虚拟页即可实现进程间数据共享）；同时，对于每一个进程而言，其地址空间都是由 0 开始往高地址增长（因为有 MMU 进行地址翻译）&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;保护进程地址空间不被其他进程破坏：&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;进程在通过虚拟内存进行数据访问时，虚拟内存可以添加一些权限校验，防止进程间数据相互访问。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;六-参考&quot;&gt;六. 参考&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;《深入理解计算机系统》&lt;/li&gt;
+&lt;/ul&gt;
+
+</description>
+        <pubDate>Sat, 02 Nov 2019 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2019/11/02/%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98/</link>
+        <guid isPermaLink="true">http://localhost:4000/2019/11/02/%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98/</guid>
+        
+        <category>操作系统</category>
+        
+        
+      </item>
     
       <item>
         <title>iOS核心动画高级技巧Tips</title>
@@ -1414,195 +1592,6 @@ CMD+S		模拟器截屏(所截图片都在桌面上)
         <guid isPermaLink="true">http://localhost:4000/2019/01/01/%E5%A4%A7%E4%B8%89%E4%B8%8A%E6%80%BB%E7%BB%93/</guid>
         
         <category>Hust</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>ListView[一]</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;p&gt;本文将从&lt;code class=&quot;highlighter-rouge&quot;&gt;ListView&lt;/code&gt;的基本使用入手, 介绍常见的&lt;code class=&quot;highlighter-rouge&quot;&gt;ListView&lt;/code&gt;性能优化问题&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ListView&lt;/code&gt;采用适配器模式, 关于&lt;code class=&quot;highlighter-rouge&quot;&gt;ListView&lt;/code&gt;的优化主要体现在&lt;code class=&quot;highlighter-rouge&quot;&gt;Adapter&lt;/code&gt;上; 本文也主要从&lt;code class=&quot;highlighter-rouge&quot;&gt;Adapter&lt;/code&gt;入手, 分析常见的优化问题&lt;/p&gt;
-
-&lt;p&gt;文章代码基于&lt;code class=&quot;highlighter-rouge&quot;&gt;kotlin&lt;/code&gt;&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;一-最差版本&quot;&gt;一. 最差版本&lt;/h2&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ListView&lt;/code&gt;的性能问题主要是其通常用于展示大量数据造成的; 我们手指上下滑动的时候伴随着&lt;code class=&quot;highlighter-rouge&quot;&gt;Adapter.getView()&lt;/code&gt;方法的不断调用, &lt;code class=&quot;highlighter-rouge&quot;&gt;getView()&lt;/code&gt;的主要作用是去解析&lt;code class=&quot;highlighter-rouge&quot;&gt;XML&lt;/code&gt;生成&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;视图, 但是这一过程是一个耗时操作, 如果每次滑动都去&lt;code class=&quot;highlighter-rouge&quot;&gt;inflate&lt;/code&gt;的话, 势必会造成界面的卡顿, 如下即是这种情况: 每次都去&lt;code class=&quot;highlighter-rouge&quot;&gt;inflate&lt;/code&gt;一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Item&lt;/code&gt;, 然后再&lt;code class=&quot;highlighter-rouge&quot;&gt;findViewById()&lt;/code&gt;再进行设置&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;// 最差版本
-class MyAdapter(val context: Context) : BaseAdapter() {
-
-    var data = ArrayList&amp;lt;String&amp;gt;()
-    private val mInflater by lazy {
-        context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
-    }
-
-    override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
-        val view = mInflater.inflate(R.layout.item_main, parent, false)
-        view.setOnClickListener{
-            Toast.makeText(context,data[position],Toast.LENGTH_SHORT).show()
-        }
-        view.findViewById&amp;lt;TextView&amp;gt;(R.id.item_text).text = data[position]
-        return view
-    }
-
-    // 其他方法按照常规写, 故此省略
-    ...
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;二-优化一&quot;&gt;二. 优化一&lt;/h2&gt;
-
-&lt;p&gt;为了避免每次滑动的时候都要&lt;code class=&quot;highlighter-rouge&quot;&gt;inflate&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;Google&lt;/code&gt;官方提供了&lt;code class=&quot;highlighter-rouge&quot;&gt;ListView&lt;/code&gt;的缓存机制, 即将滑动出屏幕外面的&lt;code class=&quot;highlighter-rouge&quot;&gt;Item&lt;/code&gt;缓存下来, 因为通常情况下&lt;code class=&quot;highlighter-rouge&quot;&gt;ListView&lt;/code&gt;要展示的数据类型都是相同的, 所以可以复用同样的&lt;code class=&quot;highlighter-rouge&quot;&gt;Item&lt;/code&gt;界面, 只是展示数据不同; 我们注意到&lt;code class=&quot;highlighter-rouge&quot;&gt;getView()&lt;/code&gt;的参数中有一个&lt;code class=&quot;highlighter-rouge&quot;&gt;convertView&lt;/code&gt;, 这个便是被缓存下来的&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;, 所以我们第一次优化可以如下: 主要就是判断&lt;code class=&quot;highlighter-rouge&quot;&gt;convertView&lt;/code&gt;是否为空, 如果为空, 说明没有缓存的&lt;code class=&quot;highlighter-rouge&quot;&gt;Item&lt;/code&gt;, 此时就需要去&lt;code class=&quot;highlighter-rouge&quot;&gt;inflate&lt;/code&gt;, 否则, 直接更改展示数据即可&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class MyAdapter(val context: Context) : BaseAdapter() {
-
-    var data = ArrayList&amp;lt;String&amp;gt;()
-    private val mInflater by lazy {
-        context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
-    }
-
-    override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
-        if (convertView == null) {
-            val view = mInflater.inflate(R.layout.item_main, parent, false)
-            view.findViewById&amp;lt;TextView&amp;gt;(R.id.item_text).text = data[position]
-            return view
-        }
-        convertView.apply {
-            findViewById&amp;lt;TextView&amp;gt;(R.id.item_text).text = data[position]
-        }
-        return convertView
-    }
-
-    // 其他方法按照常规写, 故此省略
-    ...
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;三-优化二&quot;&gt;三. 优化二&lt;/h2&gt;
-
-&lt;p&gt;到这里, 其实最耗时的部分已经被优化了, 那么我们是否还能够进行优化呢? 我们注意到每次调用&lt;code class=&quot;highlighter-rouge&quot;&gt;getView&lt;/code&gt;的时候, 虽然避免了每次都去&lt;code class=&quot;highlighter-rouge&quot;&gt;inflate&lt;/code&gt;, 但是我们仍然每次都调用了&lt;code class=&quot;highlighter-rouge&quot;&gt;findViewById()&lt;/code&gt;, 那么这部分我们是否也可以避免掉呢, 当然是可以的, 此时我们的&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewHolder&lt;/code&gt;就派上用场啦~&lt;/p&gt;
-
-&lt;p&gt;这里我们使用了一个内部类, 将每次&lt;code class=&quot;highlighter-rouge&quot;&gt;findViewById&lt;/code&gt;找到的&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;保存下来, 因为我们前面说过了, &lt;code class=&quot;highlighter-rouge&quot;&gt;ListView&lt;/code&gt;展示的时候, 通常数据类型都是相同的, 即界面相同, 只是每个&lt;code class=&quot;highlighter-rouge&quot;&gt;Item&lt;/code&gt;展示的数据不同而已, 因此也就没有必要每次都去执行一遍&lt;code class=&quot;highlighter-rouge&quot;&gt;findViewById()&lt;/code&gt;, 这也是&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewHolder&lt;/code&gt;所做的主要的优化&lt;/p&gt;
-
-&lt;p&gt;另外, 还需要提一下的是这里保存&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewHolder&lt;/code&gt;用的是&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;tag&lt;/code&gt;, 其实我们还可以用这个&lt;code class=&quot;highlighter-rouge&quot;&gt;tag&lt;/code&gt;保存许多我们需要的值, 而不用局限与&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewHolder&lt;/code&gt;&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class MyAdapter(val context: Context) : BaseAdapter() {
-
-    var data = ArrayList&amp;lt;String&amp;gt;()
-    private val mInflater by lazy {
-        context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
-    }
-
-    override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
-        var holder: MyViewHolder
-        if (convertView == null) {
-            val view = mInflater.inflate(R.layout.item_main, parent, false)
-            holder = MyViewHolder(view)
-            holder.textView.text = data[position]
-            view.tag = holder
-            return view
-        }
-        holder = convertView.tag as MyViewHolder
-        holder.textView.text = data[position]
-        return convertView
-    }
-    
-    // 其他方法按照常规写, 故此省略
-    ...
-
-    class MyViewHolder(val view: View){
-        val textView: TextView by lazy {
-            view.findViewById&amp;lt;TextView&amp;gt;(R.id.item_text)
-        }
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;四-优化三&quot;&gt;四. 优化三&lt;/h2&gt;
-
-&lt;p&gt;将异步操作放在子线程中执行; 其实这个也不算&lt;code class=&quot;highlighter-rouge&quot;&gt;ListView&lt;/code&gt;自身特殊的优化, 而是由&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;自身特性所决定的&lt;/p&gt;
-
-&lt;p&gt;如下; 当加载大图时, 使用异步的&lt;code class=&quot;highlighter-rouge&quot;&gt;AsyncTask&lt;/code&gt;去网络下载好后再展示到界面&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class MyAdapter(private val context: Context) : BaseAdapter() {
-
-    private val mInflater by lazy {
-        context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
-    }
-
-    override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
-        val view: View = convertView ?: mInflater.inflate(R.layout.item_main, parent, false)
-        val holder: ViewHolder = view.tag as ViewHolder? ?: ViewHolder(view)
-        ImageLoader(holder).execute(ImageUrl.url[position])
-        return view
-    }
-
-    // 其他方法按照常规写, 故此省略
-    ...
-
-    class ImageLoader(private var holder: ViewHolder) : AsyncTask&amp;lt;String, Void, Bitmap&amp;gt;() {
-
-        private val cache: LruCache&amp;lt;String, Bitmap&amp;gt; by lazy {
-            val maxMemory = Runtime.getRuntime().maxMemory()
-            val cacheSize = maxMemory / 8
-            object: LruCache&amp;lt;String, Bitmap&amp;gt;(cacheSize.toInt()) {
-                override fun sizeOf(key: String?, value: Bitmap?): Int {
-                    return value?.allocationByteCount ?: 0
-                }
-            }
-        }
-
-        override fun doInBackground(vararg params: String?): Bitmap? {
-            val urlStr = params[0]
-            var bitmap = cache.get(urlStr)
-            if (bitmap != null)
-                return bitmap
-            val url = URL(urlStr)
-            var connection: HttpURLConnection? = null
-            try {
-                connection = url.openConnection() as HttpURLConnection
-                connection.connectTimeout = 5000
-                connection.readTimeout = 5000
-                bitmap = BitmapFactory.decodeStream(connection.inputStream)
-                cache.put(urlStr, bitmap)
-            } catch (e: Exception) {
-                Log.d(&quot;@HusterYP&quot;,&quot;error&quot;, e)
-            } finally {
-                connection?.disconnect()
-            }
-            return bitmap
-        }
-
-        override fun onPostExecute(result: Bitmap?) {
-            holder.imageView.setImageBitmap(result)
-        }
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;上述代码其实还有问题; 只是解决了异步加载, 但是由于&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;视图的缓存复用, 当滑动的时候会出现&lt;code class=&quot;highlighter-rouge&quot;&gt;Item&lt;/code&gt;展示图片不断改变的现象; 关于此问题的解决可以参见&lt;a href=&quot;https://blog.csdn.net/guolin_blog/article/details/45586553&quot;&gt;博客&lt;/a&gt; (&lt;strong&gt;注:&lt;/strong&gt; 上述代码图片&lt;code class=&quot;highlighter-rouge&quot;&gt;URL&lt;/code&gt;也来自该博客)&lt;/p&gt;
-</description>
-        <pubDate>Wed, 12 Dec 2018 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2018/12/12/ListView-%E4%B8%80/</link>
-        <guid isPermaLink="true">http://localhost:4000/2018/12/12/ListView-%E4%B8%80/</guid>
-        
-        <category>Android</category>
         
         
       </item>

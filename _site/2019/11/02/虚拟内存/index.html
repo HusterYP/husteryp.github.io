@@ -10,9 +10,9 @@
     <meta name="keyword"  content="">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>Java并发[三] - 袁平 | HusterYP-Blog</title>
+    <title>虚拟内存 - 袁平 | HusterYP-Blog</title>
 
-    <link rel="canonical" href="http://localhost:4000/2018/11/09/Java%E5%B9%B6%E5%8F%91-%E4%B8%89/">
+    <link rel="canonical" href="http://localhost:4000/2019/11/02/%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/css/bootstrap.min.css">
@@ -140,15 +140,15 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/tags/#Java" title="Java">Java</a>
+                        <a class="tag" href="/tags/#操作系统" title="操作系统">操作系统</a>
                         
                     </div>
-                    <h1>Java并发[三]</h1>
+                    <h1>虚拟内存</h1>
                     
                     
-                    <h2 class="subheading">Java并发编程实战第三部分第四部分总结</h2>
+                    <h2 class="subheading">操作系统之虚拟内存</h2>
                     
-                    <span class="meta">Posted by 袁平 on November 9, 2018</span>
+                    <span class="meta">Posted by 袁平 on November 2, 2019</span>
                 </div>
             </div>
         </div>
@@ -169,7 +169,7 @@
 				<h1 id="前言">前言</h1>
 
 <blockquote>
-  <p>讲解锁等高级主题</p>
+  <p>虚拟内存算是操作系统中比较重要的一部分了，内容也很多，早在看操作系统相关书籍的时候就有想要总结这一部分，但是功力不够，总感觉串不起来；经过秋招这几个月对基础知识的回顾，感觉对虚拟内存这一部分有了自己的一个认识和体系，遂趁这个机会述以成文。</p>
 </blockquote>
 
 <hr />
@@ -178,63 +178,159 @@
 
 <hr />
 
-<h2 id="一-死锁及其避免">一. 死锁及其避免</h2>
+<h2 id="一-背景">一. 背景</h2>
 
-<ol>
-  <li>
-    <p>死锁出现的原因通常是出现锁环路造成的, 不管是显示的还是隐式的</p>
-  </li>
-  <li>
-    <p>通过定义获取锁的顺序来避免死锁: 通过<code class="highlighter-rouge">System.identityHashCode(object)</code>来返回一个锁对象的<code class="highlighter-rouge">Object.hashCode()</code>的返回值; 通过这个值来定义锁的顺序, 并在整个应用程序中都按照这个顺序来获取锁, 那么就不会形成锁环路了</p>
-  </li>
-</ol>
+<p>在计算机硬件体系结构中，总有这样一种规律：性能越好，价格越高；为了中和性价比，在计算机硬件体系中多采用逐级缓存的结构，通过软件算法实现访问性能与价格成本的平衡，这在计算机的存储体系中体现的尤为明显。</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>        Object fromAcct = new Object(); // 这里的锁对象也可以是其他
-        Object toAcct = new Object();
-        Object tieLock = new Object();
-        int fromHash = System.identityHashCode(fromAcct);
-        int toHash = System.identityHashCode(toAcct);
-        if (fromHash &lt; toHash) {
-            synchronized (fromAcct) {
-                synchronized (toAcct) {
-                    // doSomething
-                }
-            }
-        } else if (fromHash &gt; toHash) {
-            synchronized (toAcct) {
-                synchronized (fromAcct) {
-                    // doSomething
-                }
-            }
-        } else { // 这种情况主要是避免Hash冲突, 此时需要额外的锁
-            synchronized (tieLock) {
-                synchronized (fromAcct) {
-                    synchronized (toAcct) {
-                        // doSomething
-                    }
-                }
-            }
-        }
-</code></pre></div></div>
+<h3 id="11-dram-vs-sram">1.1 DRAM vs SRAM</h3>
 
-<ol>
+<ul>
   <li>
-    <p>使用开放调用(如果在调用某个方法时, 不需要持有锁, 那么这种调用就被成为开放调用)避免死锁: 这种情况下适用于持有不同锁的方法之间的相互调用(注意锁的级别是在方法上, 而不是代码块上)(相当于形成一个隐式的环); 将锁从方法上转移到需要同步的内部代码块上可以避免死锁</p>
+    <p><strong>DRAM</strong>：动态随机访问存储器；价格低，访问速度较慢，耗电量较大，一般用于做主存。</p>
   </li>
   <li>
-    <p><code class="highlighter-rouge">Lock.tryLock()</code>: 可以检测死锁和从死锁中恢复过来; 即指定一个超时时限, 在等待超过该时间后<code class="highlighter-rouge">tryLock()</code>会返回一个失败信息</p>
+    <p><strong>SRAM</strong>：静态随机访问存储器；价格高，访问速度快，耗电量低，一般用于做高速缓存。</p>
   </li>
-  <li>
-    <p>需要注意的几点:</p>
-  </li>
-</ol>
+</ul>
+
+<h3 id="12-存储器层次结构">1.2 存储器层次结构</h3>
+
+<p><img src="/img/post/VirtualMemory/存储器层次结构.jpg" alt="" /></p>
+
+<p>如上图，存储器的层次结构实际上是一个金字塔形状，从上到下，表示价格越来越低，容量越来越大；从上到下依次是：寄存器，L1，L2，L3三级高速缓存，主存，磁盘缓存，网络缓存。存储器的层次结构实际上也是一个逐级缓存的结构，其中，虚拟内存主要作用于主存与磁盘缓存之间，负责主存与磁盘之间的页面交换。</p>
+
+<hr />
+
+<h2 id="二-虚拟内存的目的">二. 虚拟内存的目的</h2>
+
+<p>虚拟内存有三个目的：</p>
+
+<ul>
+  <li>将主存视为磁盘的高速缓存，在主存中只保留活动区域，提高主存利用率</li>
+  <li>为进程提供统一的地址空间，简化内存管理</li>
+  <li>保护进程地址空间不被其他进程破坏</li>
+</ul>
+
+<p>虚拟内存如何达到这三个目的，将在后文讲解。</p>
+
+<hr />
+
+<h2 id="三-虚拟内存的原理">三. 虚拟内存的原理</h2>
+
+<h3 id="31-基本概念">3.1 基本概念</h3>
+
+<ul>
+  <li>页表：可以理解为位于主存中的一个大数组，由页表项组成</li>
+  <li>页表项：页表的基本组成单元，页表项分为两个部分：标志位和地址位</li>
+  <li>虚拟页：主存与磁之间的基本传送单元，磁盘地址空间被视为一个个的虚拟页</li>
+  <li>物理页：缓存在主存中的实际单元</li>
+</ul>
+
+<h3 id="32-寻址的基本过程">3.2 寻址的基本过程</h3>
 
 <blockquote>
-  <ol>
-    <li>对象分配操作的开销比同步的开销更低(实际上, 现在<code class="highlighter-rouge">Java</code>的分配操作已经比<code class="highlighter-rouge">C</code>语言的<code class="highlighter-rouge">malloc</code>调用更快</li>
-    <li><code class="highlighter-rouge">ConcurrentHashMap</code>的以前实现中(现在实现不同咯)采用分段锁, 使用了一个包含<code class="highlighter-rouge">16</code>个锁的数组, 每个锁保护散列桶的<code class="highlighter-rouge">1/16</code>, 这样就能够支持多达<code class="highlighter-rouge">16</code>个并发的写入器; <code class="highlighter-rouge">ConcurrentHashMap</code>中的<code class="highlighter-rouge">size</code>将对每个分段进行枚举并将每个分段中的元素数量相加, 而不是维护一个全局计数, 为了避免枚举每个计数, <code class="highlighter-rouge">ConcurrentHashMap</code>为每个分段都维护了一个独立的计数, 并通过每个分段的锁来维护这个值(这个地方有两点需要注意: 一个是<code class="highlighter-rouge">size</code>的计算是在每个<code class="highlighter-rouge">add</code>, <code class="highlighter-rouge">remove</code>操作都会改变一次, 这样虽然增加了<code class="highlighter-rouge">add</code>和<code class="highlighter-rouge">remove</code>的操作, 但是这会使得<code class="highlighter-rouge">size</code>的计算从<code class="highlighter-rouge">O(n)</code>变为<code class="highlighter-rouge">O(1)</code>; 另一个是为每个分段维护一个<code class="highlighter-rouge">size</code>, 而不是使用一个全局的共享<code class="highlighter-rouge">size</code>, 如果使用一个全局的共享<code class="highlighter-rouge">size</code>的话, ,实际上就破坏了分段锁的分段特性, 因为访问共享<code class="highlighter-rouge">size</code>的时候, 需要同步)</li>
-  </ol>
+  <p>因为页表其实也是很占内存空间的，所以实际中会采用多级页表和动态创建页表的方式来减小页表大小，这里为了方便了解寻址的整体过程，就以单级页表为例；另外，页表项的高速缓存这里也没有考虑，高速缓存将在下一节介绍。</p>
 </blockquote>
+
+<p>主存中有一个页表，页表由页表项组成，将虚拟页映射到物理页；处理器（CPU）进行一次寻址的过程是：处理器生成一个虚拟地址，交给MMU（地址翻译器）进行地址翻译，MMU将虚拟地址转换为页表索引，然后去主存中查找对应的页表项，如果主存中缓存该虚拟页，则主存将虚拟页对应的页表项传送给MMU，之后MMU从页表项计算出物理地址送给主存，主存将物理地址对应的数据通过数据总线送给处理器；如果主存中没有缓存虚拟页对应的物理页，则触发一次缺页异常，由主存从磁盘换取所需虚拟页之后，再次执行导致缺页的指令。</p>
+
+<p>如下图所示：摘自《深入理解计算机系统》</p>
+
+<p><img src="/img/post/VirtualMemory/寻址的基本过程.PNG" alt="" /></p>
+
+<h3 id="33-页表缓存">3.3 页表缓存</h3>
+
+<p>上文中提过，相比于 L1，L2，L3 三级高速缓存，主存的访问速度还是很慢的（ DRAM 比 SRAM 要慢约十多倍，磁盘比 DRAM 要慢约十万多倍），所以如果每次进行寻址的时候，都按照上述过程，先去主存查找页表项，然后再去主存取对应的物理页，那么，即使每次页面都命中的情况下，每次寻址也需要两次的 DRAM 访问（主存访问），如果算上缺页异常与主存与磁盘的页面替换，耗费的时间将更多。</p>
+
+<p>为了加速 MMU 地址翻译的过程，会将页表项缓存到 TLB（TLB 见后补充解释） 和 L1 级高速缓存中，因此上述 MMU 进行地址翻译的过程就变成了：MMU 根据虚拟地址从 TLB 中查找页表项，如果找到，则直接进行后续物理地址生成；如果 TLB 未命中，则 MMU 从 L1 级高速缓存中查找对应的页表项，如果命中，则将该页表项缓存在 TLB 中并进行下一步，否则，继续从主存中查找页表项。</p>
+
+<blockquote>
+  <p><strong>TLB</strong>：TLB 是一个在 MMU 中的高速缓存，用于缓存页表项；如果 TLB 命中，那么所有的地址翻译都是在芯片上的 MMU 中完成的，因此非常快。</p>
+</blockquote>
+
+<p>如下图所示：摘自《深入理解计算机系统》</p>
+
+<p><img src="/img/post/VirtualMemory/地址翻译的基本过程.PNG" alt="" /></p>
+
+<h3 id="34-地址翻译的细节">3.4 地址翻译的细节</h3>
+
+<h4 id="341-从-tlb-查找页表项">3.4.1 从 TLB 查找页表项</h4>
+
+<p>处理器生成的虚拟地址如下：</p>
+
+<p><img src="/img/post/VirtualMemory/虚拟地址用于TLB.PNG" alt="" /></p>
+
+<p>TLB 中每一行都保存着一个由单个页表项组成的块，用于组选择和行匹配的索引和标记字段是从虚拟地址中的虚拟页号（VPN）中提取出来的，如果 TLB 有 <code class="highlighter-rouge">T = 2^t</code>个组，那么 TLB 索引（TLBI）是由 VPN 的 t 个最低位组成的，而 TLB 标记（TLBT）是由 VPN 中剩余的位组成的。</p>
+
+<blockquote>
+  <p>更多关于 TLB 查找页表项的细节可参见： https://www.cnblogs.com/alantu2018/p/9000777.html</p>
+</blockquote>
+
+<h4 id="342-从主存中查找页表项">3.4.2 从主存中查找页表项</h4>
+
+<p>如下图：</p>
+
+<p><img src="/img/post/VirtualMemory/虚拟地址用于页表.PNG" alt="" /></p>
+
+<p>虚拟地址由两部分组成：虚拟页号和虚拟页偏移量；虚拟页号可以简单的视为页表索引，如：根据VPN 0 选择页表项0，根据 VPN 1 选择页表项1，依次类推。</p>
+
+<h4 id="343-从页表项生成物理地址">3.4.3 从页表项生成物理地址</h4>
+
+<p>仍如上图：</p>
+
+<p><img src="/img/post/VirtualMemory/虚拟地址用于页表.PNG" alt="" /></p>
+
+<p>可以看出，物理地址最终由两个部分组成：低位是虚拟地址的另一部分，即虚拟页偏移量，高位是页表项的另一部分（页表项还有一部分是标志位，上文介绍过）。</p>
+
+<p>另外，根据上图，还可以看出<strong>MMU是如何根据页表项判断虚拟页是否在主存中有对应的物理页的</strong>：上文中说过，页表项分为两部分，其中一部分是一个标志位（即途中的有效位），上图也说的很清楚了，如果有效位为 0 ，说明虚拟页对应的物理页还为被缓存在主存中（缺页），否则，说明命中。</p>
+
+<h3 id="35-页表优化">3.5 页表优化</h3>
+
+<p>上文提到过，页表占据的内存空间也是可观的；对于一个 32 位的地址空间，4KB 的页面和一个 4 字节的页表项，即使应用所引用的只是虚拟地址空间中很小的一部分，也总是需要一个 4MB 的页表常驻内存。为了优化页表占用的内存空间，实际中常采用多级页表。</p>
+
+<p>多级页表的基本思路就是，增大单个页表项所能映射的虚拟页的大小，即进行粒度更大的映射（对于常驻内存的页表来说），如：之前一个页表项只能映射 4KB 的虚拟页，如果一个页表项能映射 4MB 的虚拟页的话，页表的大小也会相应的减小很多。</p>
+
+<p>另外，多级页表还支持动态创建子级页表，即常驻内存的只有粒度最大的一级页表，二级页表等子级页表不需要常驻内存，在进行地址翻译时动态创建即可。</p>
+
+<hr />
+
+<h2 id="四-局部性原理与内存抖动">四. 局部性原理与内存抖动</h2>
+
+<p>MMU 进行地址翻译以及缺页时进行页面替换的算法在很大程度上都依赖于局部性原理。程序的局部性原理意思是，程序上次用到的数据和代码，在下次访问时很可能也会用到；因此将下次很可能会用到的数据缓存在访问速度更快的高速缓存中，将比较可观的提升程序性能。</p>
+
+<p>比较常见的页面替换算法是：LRU 算法，即最近最少使用算法，以及其他更多页面置换算法可参见： https://www.cnblogs.com/dolphin0520/p/3749259.html</p>
+
+<p>内存抖动的意思是，处理器进行数据访问时，不断产生缺页中断，不断进行页面置换，造成程序运行缓慢。出现内存抖动一般有两个原因：一个是页面置换算法的缺陷，差的页面置换算法通常会导致页面命中率的降低，造成频繁的缺页中断与页面置换；另一个也可能与我们自己写的程序有关。</p>
+
+<hr />
+
+<h2 id="五-虚拟内存与进程">五. 虚拟内存与进程</h2>
+
+<p>本文开始讲虚拟内存的目的时，提到了虚拟内存对于进程的两个目的：</p>
+
+<ul>
+  <li>为进程提供统一的地址空间，简化内存管理：</li>
+</ul>
+
+<blockquote>
+  <p>操作系统为进程分配地址空间时，由于是通过虚拟内存进行虚拟页与物理页的映射，所以，对于进程而言，物理内存在地址空间上可以是不连续的（另外，这里还想提一点的是，这种不连续的映射，可以减少内存碎片与不同进程数据的共享，即通过虚拟内存将多个进程映射到同一虚拟页即可实现进程间数据共享）；同时，对于每一个进程而言，其地址空间都是由 0 开始往高地址增长（因为有 MMU 进行地址翻译）</p>
+</blockquote>
+
+<ul>
+  <li>保护进程地址空间不被其他进程破坏：</li>
+</ul>
+
+<blockquote>
+  <p>进程在通过虚拟内存进行数据访问时，虚拟内存可以添加一些权限校验，防止进程间数据相互访问。</p>
+</blockquote>
+
+<hr />
+
+<h2 id="六-参考">六. 参考</h2>
+
+<ul>
+  <li>《深入理解计算机系统》</li>
+</ul>
 
 
 
@@ -246,13 +342,9 @@
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/2018/11/02/Java%E5%B9%B6%E5%8F%91-%E4%BA%8C/" data-toggle="tooltip" data-placement="top" title="Java并发[二]">&larr; Previous Post</a>
+                        <a href="/2019/04/29/iOS%E6%A0%B8%E5%BF%83%E5%8A%A8%E7%94%BB%E9%AB%98%E7%BA%A7%E6%8A%80%E5%B7%A7Tips/" data-toggle="tooltip" data-placement="top" title="iOS核心动画高级技巧Tips">&larr; Previous Post</a>
                     </li>
                     
-                    
-                    <li class="next">
-                        <a href="/2018/11/15/%E8%BF%9B%E7%A8%8B%E4%B8%8E%E7%BA%BF%E7%A8%8B/" data-toggle="tooltip" data-placement="top" title="进程与线程">Next Post &rarr;</a>
-                    </li>
                     
                 </ul>
 
@@ -373,8 +465,8 @@
 <script type="text/javascript">
     /* * * CONFIGURATION VARIABLES * * */
     var disqus_shortname = "HusterYP";
-    var disqus_identifier = "/2018/11/09/Java并发[三]";
-    var disqus_url = "http://localhost:4000/2018/11/09/Java%E5%B9%B6%E5%8F%91-%E4%B8%89/";
+    var disqus_identifier = "/2019/11/02/虚拟内存";
+    var disqus_url = "http://localhost:4000/2019/11/02/%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98/";
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
