@@ -5,9 +5,145 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Sat, 30 Aug 2025 21:46:24 +0800</pubDate>
-    <lastBuildDate>Sat, 30 Aug 2025 21:46:24 +0800</lastBuildDate>
+    <pubDate>Sat, 30 Aug 2025 21:51:05 +0800</pubDate>
+    <lastBuildDate>Sat, 30 Aug 2025 21:51:05 +0800</lastBuildDate>
     <generator>Jekyll v3.8.5</generator>
+    
+      <item>
+        <title>一文读懂字符与编码</title>
+        <description>&lt;h1 id=&quot;一字符character&quot;&gt;一、字符/Character&lt;/h1&gt;
+
+&lt;p&gt;对用户可见的“一个字符”，通常是我们在屏幕上看到的一个字母、数字、emoji 或组合字符。&lt;/p&gt;
+
+&lt;p&gt;比如：&lt;code class=&quot;highlighter-rouge&quot;&gt;a&lt;/code&gt;、&lt;code class=&quot;highlighter-rouge&quot;&gt;é&lt;/code&gt;、&lt;code class=&quot;highlighter-rouge&quot;&gt;👨‍👩‍👧‍👦&lt;/code&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;二字符编码标准字符集&quot;&gt;二、字符编码标准/字符集&lt;/h1&gt;
+
+&lt;p&gt;字符编码标准定义的是如何将字符映射到唯一编码，常见的字符编码标准比如&lt;code class=&quot;highlighter-rouge&quot;&gt;ASCII&lt;/code&gt;、&lt;code class=&quot;highlighter-rouge&quot;&gt;Unicode&lt;/code&gt;、&lt;code class=&quot;highlighter-rouge&quot;&gt;GBK&lt;/code&gt;等&lt;/p&gt;
+
+&lt;h2 id=&quot;21-ascii&quot;&gt;2.1 ASCII&lt;/h2&gt;
+
+&lt;p&gt;ASCII（7位）定义了 128 个字符的唯一编码，包括数字0到9、小写字母a到z、大写字母A到Z以及常用标点符号等。&lt;/p&gt;
+
+&lt;h2 id=&quot;22-unicode&quot;&gt;2.2 Unicode&lt;/h2&gt;
+
+&lt;p&gt;Unicode又叫万国码，目标是为所有字符定义唯一编码（Code Point）。为了解决ASCII/GBK不能定义全部字符的问题。&lt;/p&gt;
+
+&lt;p&gt;比如：&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;a&lt;/code&gt; -&amp;gt; &lt;code class=&quot;highlighter-rouge&quot;&gt;U+0061&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;👨&lt;/code&gt; -&amp;gt; &lt;code class=&quot;highlighter-rouge&quot;&gt;U+1F468&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;注意&lt;/strong&gt;：&lt;/p&gt;
+
+&lt;p&gt;Unicode只负责分配码位（Code Point），并不决定具体的存储形式。&lt;/p&gt;
+
+&lt;p&gt;Unicode的前 128 个码点与ASCII相同。&lt;/p&gt;
+
+&lt;h3 id=&quot;221-code-point&quot;&gt;2.2.1 Code Point&lt;/h3&gt;
+
+&lt;p&gt;Code Point也叫码位，Unicode中为每个字符分配的唯一编码。&lt;/p&gt;
+
+&lt;p&gt;一个字符可以对应一个或多个Code Point，比如：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;a&lt;/code&gt;：&lt;code class=&quot;highlighter-rouge&quot;&gt;U+0061&lt;/code&gt;，对应 1 个Code Point&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;👨‍👩‍👧‍👦&lt;/code&gt;：&lt;code class=&quot;highlighter-rouge&quot;&gt;U+1F468 (👨) + U+200D (ZWJ) + U+1F469 (👩) + U+200D (ZWJ) + U+1F467 (👧) + U+200D (ZWJ) + U+1F466 (👦)&lt;/code&gt;对应 7 个Code Point&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;é&lt;/code&gt;：&lt;code class=&quot;highlighter-rouge&quot;&gt;U+00E9&lt;/code&gt;或&lt;code class=&quot;highlighter-rouge&quot;&gt;U+0065 + U+0301&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;备注：&lt;/p&gt;
+
+  &lt;p&gt;在Unicode中，&lt;code class=&quot;highlighter-rouge&quot;&gt;é&lt;/code&gt;实际上有两种表示方式：&lt;/p&gt;
+
+  &lt;p&gt;&lt;strong&gt;单一字符表示法&lt;/strong&gt;：即直接使用&lt;code class=&quot;highlighter-rouge&quot;&gt;U+00E9&lt;/code&gt;这个单独的Unicode码位表示&lt;code class=&quot;highlighter-rouge&quot;&gt;é&lt;/code&gt;。&lt;/p&gt;
+
+  &lt;p&gt;&lt;strong&gt;组合字符表示法&lt;/strong&gt;：使用&lt;code class=&quot;highlighter-rouge&quot;&gt;U+0065&lt;/code&gt;（字母&lt;code class=&quot;highlighter-rouge&quot;&gt;e&lt;/code&gt;）和&lt;code class=&quot;highlighter-rouge&quot;&gt;U+0301&lt;/code&gt;（重音符号）两个Unicode码位来表示一个&lt;code class=&quot;highlighter-rouge&quot;&gt;é&lt;/code&gt;字符。&lt;/p&gt;
+
+  &lt;p&gt;&lt;strong&gt;为什么会有这两种表示法？&lt;/strong&gt;&lt;/p&gt;
+
+  &lt;p&gt;&lt;strong&gt;历史原因&lt;/strong&gt;：Unicode设计时考虑到了不同语言的需求，许多语言（如法语、西班牙语等）使用带有重音符号的字符，因此，Unicode同时支持这两种表示方式。&lt;/p&gt;
+
+  &lt;p&gt;&lt;strong&gt;兼容性&lt;/strong&gt;：一些旧的系统或字体可能只支持分解字符表示法，因此，Unicode也保留了这种组合字符的方式，以提高兼容性。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h3 id=&quot;222-code-unit&quot;&gt;2.2.2 Code Unit&lt;/h3&gt;
+
+&lt;p&gt;Code Unit也叫码元（代码单元），表示计算机中实际存储Unicode的基本单位，取决于编码方式。&lt;/p&gt;
+
+&lt;p&gt;比如：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;UTF-8&lt;/code&gt;： &lt;code class=&quot;highlighter-rouge&quot;&gt;Code Unit&lt;/code&gt;是 1 字节（8 Bit）；比如：&lt;code class=&quot;highlighter-rouge&quot;&gt;a&lt;/code&gt;在UTF-8编码下占 1 个字节，表示为&lt;code class=&quot;highlighter-rouge&quot;&gt;0x61&lt;/code&gt;。&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;UTF-16&lt;/code&gt;： &lt;code class=&quot;highlighter-rouge&quot;&gt;Code Unit&lt;/code&gt;是 2 字节（16 Bit）；比如：&lt;code class=&quot;highlighter-rouge&quot;&gt;a&lt;/code&gt;在UTF-16编码下占 2 个字节，表示为&lt;code class=&quot;highlighter-rouge&quot;&gt;0x0061&lt;/code&gt;。&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;UTF-32&lt;/code&gt;： &lt;code class=&quot;highlighter-rouge&quot;&gt;Code Unit&lt;/code&gt;是 4 字节（32 Bit）；比如：&lt;code class=&quot;highlighter-rouge&quot;&gt;a&lt;/code&gt;在UTF-32编码下占 4 个字节，表示为&lt;code class=&quot;highlighter-rouge&quot;&gt;0x00000061&lt;/code&gt;。&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1 id=&quot;三字符编码方式&quot;&gt;三、字符编码方式&lt;/h1&gt;
+
+&lt;p&gt;字符编码方式决定了字符如何存储、传输和解码；常见的编码方式有：UTF-8、UTF-16、UTF-32等&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;UTF-8&lt;/code&gt;：可变长度，用 1 到 4 个字节来存储 Unicode 字符；为了节省存储资源。&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;UTF-16&lt;/code&gt;：可变长度，用 2 或 4 个字节存储字符。&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;UTF-32&lt;/code&gt;：固定长度，每个字符始终使用 4 字节存储。&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;比如：&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;é&lt;/code&gt;的Code Point是：&lt;code class=&quot;highlighter-rouge&quot;&gt;U+0065 + U+0301&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;当以&lt;code class=&quot;highlighter-rouge&quot;&gt;UTF-32&lt;/code&gt;方式编码时，每个Code Point未超过4字节，所以表示为：0x00000065，0x00000301&lt;/p&gt;
+
+&lt;p&gt;当以&lt;code class=&quot;highlighter-rouge&quot;&gt;UTF-16&lt;/code&gt;方式编码时，每个Code Point未超过2字节，所以表示为：0x0065，0x0301&lt;/p&gt;
+
+&lt;p&gt;当以&lt;code class=&quot;highlighter-rouge&quot;&gt;UTF-8&lt;/code&gt;方式编码时，0x0301值超过了128，需要按&lt;code class=&quot;highlighter-rouge&quot;&gt;UTF-8&lt;/code&gt;格式拆分为0xCC，0x81，所以表示为：0x65，0xCC，0x81&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Q：&lt;code class=&quot;highlighter-rouge&quot;&gt;UTF-8&lt;/code&gt;编码为什么是按128做比较，按理说1字节（0xFF）表示的最大值是255？&lt;/p&gt;
+
+  &lt;p&gt;A：有两个原因：一是为了与&lt;code class=&quot;highlighter-rouge&quot;&gt;ASCII&lt;/code&gt;兼容，&lt;code class=&quot;highlighter-rouge&quot;&gt;ASCII&lt;/code&gt;只支持了128个字符编码，在&lt;code class=&quot;highlighter-rouge&quot;&gt;UTF-8&lt;/code&gt;编码中，前128位与&lt;code class=&quot;highlighter-rouge&quot;&gt;ASCII&lt;/code&gt;编码相同；二是&lt;code class=&quot;highlighter-rouge&quot;&gt;UTF-8&lt;/code&gt;编码中，会将第一个字节的高位部分用来标识这个字符的编码长度，具体为：&lt;/p&gt;
+
+  &lt;ul&gt;
+    &lt;li&gt;
+      &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;0xxxxxxx&lt;/code&gt;：表示 1 字节字符（&lt;code class=&quot;highlighter-rouge&quot;&gt;ASCII&lt;/code&gt; 范围）&lt;/p&gt;
+    &lt;/li&gt;
+    &lt;li&gt;
+      &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;110xxxxx&lt;/code&gt;：表示 2 字节字符&lt;/p&gt;
+    &lt;/li&gt;
+    &lt;li&gt;
+      &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;1110xxxx&lt;/code&gt;：表示 3 字节字符&lt;/p&gt;
+    &lt;/li&gt;
+    &lt;li&gt;
+      &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;11110xxx&lt;/code&gt;：表示 4 字节字符&lt;/p&gt;
+    &lt;/li&gt;
+  &lt;/ul&gt;
+
+  &lt;p&gt;&lt;img src=&quot;/img/post/Font/UTF-8编码规则.png&quot; alt=&quot;UTF-8编码规则&quot; /&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+</description>
+        <pubDate>Sat, 30 Aug 2025 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2025/08/30/%E4%B8%80%E6%96%87%E8%AF%BB%E6%87%82%E5%AD%97%E7%AC%A6%E4%B8%8E%E7%BC%96%E7%A0%81/</link>
+        <guid isPermaLink="true">http://localhost:4000/2025/08/30/%E4%B8%80%E6%96%87%E8%AF%BB%E6%87%82%E5%AD%97%E7%AC%A6%E4%B8%8E%E7%BC%96%E7%A0%81/</guid>
+        
+        <category>Font</category>
+        
+        
+      </item>
     
       <item>
         <title>虚拟内存</title>
@@ -1541,57 +1677,6 @@ CMD+S		模拟器截屏(所截图片都在桌面上)
         <guid isPermaLink="true">http://localhost:4000/2019/01/23/Objective-C%E5%85%A5%E9%97%A8%E8%A6%81%E7%82%B9/</guid>
         
         <category>iOS</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>大三上总结</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;p&gt;大三上总结&lt;/p&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;h2 id=&quot;技术&quot;&gt;技术&lt;/h2&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;看书：
-    &lt;blockquote&gt;
-      &lt;ol&gt;
-        &lt;li&gt;«深入理解计算机系统»&lt;/li&gt;
-        &lt;li&gt;«现代操作系统»&lt;/li&gt;
-        &lt;li&gt;«Java并发编程实战»&lt;/li&gt;
-        &lt;li&gt;«深入理解Java虚拟机»回滚&lt;/li&gt;
-      &lt;/ol&gt;
-    &lt;/blockquote&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;博客，总结：https://husteryp.github.io/&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;iOS：Swift，OC&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h2 id=&quot;思考&quot;&gt;思考&lt;/h2&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;思想转变
-    &lt;blockquote&gt;
-      &lt;ol&gt;
-        &lt;li&gt;技术方向 –&amp;gt; 生活&lt;/li&gt;
-        &lt;li&gt;年轻真好~&lt;/li&gt;
-      &lt;/ol&gt;
-    &lt;/blockquote&gt;
-  &lt;/li&gt;
-  &lt;li&gt;外院：如何去弥补这个非班科的差距；决定方向后可以去实习&lt;/li&gt;
-&lt;/ol&gt;
-
-</description>
-        <pubDate>Tue, 01 Jan 2019 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2019/01/01/%E5%A4%A7%E4%B8%89%E4%B8%8A%E6%80%BB%E7%BB%93/</link>
-        <guid isPermaLink="true">http://localhost:4000/2019/01/01/%E5%A4%A7%E4%B8%89%E4%B8%8A%E6%80%BB%E7%BB%93/</guid>
-        
-        <category>Hust</category>
         
         
       </item>
