@@ -10,9 +10,9 @@
     <meta name="keyword"  content="">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>Java内存区域与内存溢出异常 - 袁平 | HusterYP-Blog</title>
+    <title>一文读懂字符与编码 - 袁平 | HusterYP-Blog</title>
 
-    <link rel="canonical" href="http://localhost:4000/2018/09/27/JVM%E4%B9%8B%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F%E4%B8%8E%E5%86%85%E5%AD%98%E6%BA%A2%E5%87%BA%E5%BC%82%E5%B8%B8/">
+    <link rel="canonical" href="http://localhost:4000/2018/08/20/%E4%B8%80%E6%96%87%E8%AF%BB%E6%87%82%E5%AD%97%E7%AC%A6%E4%B8%8E%E7%BC%96%E7%A0%81/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/css/bootstrap.min.css">
@@ -140,15 +140,15 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/tags/#Java" title="Java">Java</a>
+                        <a class="tag" href="/tags/#Font" title="Font">Font</a>
                         
                     </div>
-                    <h1>Java内存区域与内存溢出异常</h1>
+                    <h1>一文读懂字符与编码</h1>
                     
                     
-                    <h2 class="subheading">深入理解Java虚拟机第二章总结</h2>
+                    <h2 class="subheading">介绍ASCII、Unicode、UTF编码等概念</h2>
                     
-                    <span class="meta">Posted by 袁平 on September 27, 2018</span>
+                    <span class="meta">Posted by 袁平 on August 20, 2018</span>
                 </div>
             </div>
         </div>
@@ -166,271 +166,130 @@
                 col-md-10 col-md-offset-1
                 post-container">
 
-				<h1 id="前言">前言</h1>
+				<h1 id="一字符character">一、字符/Character</h1>
 
-<p>本文是对«深入理解Java虚拟机»第二章以及其他博客的阅读总结</p>
+<p>对用户可见的“一个字符”，通常是我们在屏幕上看到的一个字母、数字、emoji 或组合字符。</p>
 
-<p>重点是需要去理解各区域存储的是什么, 以此从底层理解对象的创建与引用等过程; 同时还需要明确的一点是各部分会产生的异常, 以及产生异常的原因</p>
+<p>比如：<code class="highlighter-rouge">a</code>、<code class="highlighter-rouge">é</code>、<code class="highlighter-rouge">👨‍👩‍👧‍👦</code></p>
 
-<p><strong>注</strong>: 文中部分图片来自网络, 但是忘了出处, 侵删~</p>
+<h1 id="二字符编码标准字符集">二、字符编码标准/字符集</h1>
 
-<hr />
+<p>字符编码标准定义的是如何将字符映射到唯一编码，常见的字符编码标准比如<code class="highlighter-rouge">ASCII</code>、<code class="highlighter-rouge">Unicode</code>、<code class="highlighter-rouge">GBK</code>等</p>
 
-<h1 id="正文">正文</h1>
+<h2 id="21-ascii">2.1 ASCII</h2>
 
-<hr />
+<p>ASCII（7位）定义了 128 个字符的唯一编码，包括数字0到9、小写字母a到z、大写字母A到Z以及常用标点符号等。</p>
 
-<h2 id="一-基本概念">一. 基本概念</h2>
+<h2 id="22-unicode">2.2 Unicode</h2>
 
-<p>在开始讲解之前, 需要先明确关于<code class="highlighter-rouge">JVM</code>的一些基本概念</p>
+<p>Unicode又叫万国码，目标是为所有字符定义唯一编码（Code Point）。为了解决ASCII/GBK不能定义全部字符的问题。</p>
 
-<p>我们都知道, <code class="highlighter-rouge">Java</code>是一个跨平台的语言, <code class="highlighter-rouge">Java</code>跨平台的基本支撑其实就是<code class="highlighter-rouge">JVM</code>对操作系统底层细节的屏蔽, 相当于加了一个中间层(计算机中的任何问题都可以加一个中间层解决~), <code class="highlighter-rouge">Java</code>不再像<code class="highlighter-rouge">C/C++</code>等语言一样直接翻译为针对特殊平台的机器码, 而是翻译为字节码, 也即是我们的<code class="highlighter-rouge">class</code>文件, 下图大概可以比较简明的概括了~; 字节码就相当于<code class="highlighter-rouge">Java</code>世界中的汇编, 而<code class="highlighter-rouge">JVM</code>则不是跨平台的, 只是不同平台的<code class="highlighter-rouge">JVM</code>都能识别和运行标准格式的字节码文件而已</p>
+<p>比如：</p>
 
-<p><img src="/img/post/JVM/Java编译.png" alt="Java编译" /></p>
+<p><code class="highlighter-rouge">a</code> -&gt; <code class="highlighter-rouge">U+0061</code></p>
 
-<p>关于<code class="highlighter-rouge">JVM</code>运行<code class="highlighter-rouge">class</code>文件, 我觉得下图已经可以比较准确的表达了</p>
+<p><code class="highlighter-rouge">👨</code> -&gt; <code class="highlighter-rouge">U+1F468</code></p>
 
-<p><img src="/img/post/JVM/JVM.png" alt="JVM" /></p>
+<p><strong>注意</strong>：</p>
 
-<p>我们下面要讲的就是<code class="highlighter-rouge">Runtime Data Area</code>部分</p>
+<p>Unicode只负责分配码位（Code Point），并不决定具体的存储形式。</p>
 
-<hr />
+<p>Unicode的前 128 个码点与ASCII相同。</p>
 
-<h2 id="二-运行时数据区">二. 运行时数据区</h2>
+<h3 id="221-code-point">2.2.1 Code Point</h3>
 
-<p><code class="highlighter-rouge">JVM</code>会在执行<code class="highlighter-rouge">Java</code>程序的时候把它所管理的内存划分为若干个不同的数据区, 如下:</p>
+<p>Code Point也叫码位，Unicode中为每个字符分配的唯一编码。</p>
 
-<p><img src="/img/post/JVM/JVM内存区域.png" alt="JVM" /></p>
+<p>一个字符可以对应一个或多个Code Point，比如：</p>
 
-<h3 id="21-程序计数器">2.1 程序计数器</h3>
-
-<blockquote>
-  <p>线程私有</p>
-</blockquote>
-
-<h4 id="211-存储数据类型">2.1.1 存储数据类型</h4>
-
-<p>指向下一条需要执行的字节码指令; 如果线程正在执行一个<code class="highlighter-rouge">Java</code>方法, 该计数器记录的是正在执行的虚拟机字节码指令的地址; 如果正在执行<code class="highlighter-rouge">Native</code>方法, 该计数器值则为空(<code class="highlighter-rouge">Undefined</code>)</p>
-
-<h4 id="212-异常情况">2.1.2 异常情况</h4>
-
-<p>该区域是是唯一一个在<code class="highlighter-rouge">Java</code>虚拟机中没有规定任何<code class="highlighter-rouge">OutOfMemoryError</code>情况的区域</p>
-
-<h3 id="22-java虚拟机栈">2.2 Java虚拟机栈</h3>
+<ul>
+  <li><code class="highlighter-rouge">a</code>：<code class="highlighter-rouge">U+0061</code>，对应 1 个Code Point</li>
+  <li><code class="highlighter-rouge">👨‍👩‍👧‍👦</code>：<code class="highlighter-rouge">U+1F468 (👨) + U+200D (ZWJ) + U+1F469 (👩) + U+200D (ZWJ) + U+1F467 (👧) + U+200D (ZWJ) + U+1F466 (👦)</code>对应 7 个Code Point</li>
+  <li><code class="highlighter-rouge">é</code>：<code class="highlighter-rouge">U+00E9</code>或<code class="highlighter-rouge">U+0065 + U+0301</code></li>
+</ul>
 
 <blockquote>
-  <p>线程私有</p>
+  <p>备注：</p>
+
+  <p>在Unicode中，<code class="highlighter-rouge">é</code>实际上有两种表示方式：</p>
+
+  <p><strong>单一字符表示法</strong>：即直接使用<code class="highlighter-rouge">U+00E9</code>这个单独的Unicode码位表示<code class="highlighter-rouge">é</code>。</p>
+
+  <p><strong>组合字符表示法</strong>：使用<code class="highlighter-rouge">U+0065</code>（字母<code class="highlighter-rouge">e</code>）和<code class="highlighter-rouge">U+0301</code>（重音符号）两个Unicode码位来表示一个<code class="highlighter-rouge">é</code>字符。</p>
+
+  <p><strong>为什么会有这两种表示法？</strong></p>
+
+  <p><strong>历史原因</strong>：Unicode设计时考虑到了不同语言的需求，许多语言（如法语、西班牙语等）使用带有重音符号的字符，因此，Unicode同时支持这两种表示方式。</p>
+
+  <p><strong>兼容性</strong>：一些旧的系统或字体可能只支持分解字符表示法，因此，Unicode也保留了这种组合字符的方式，以提高兼容性。</p>
 </blockquote>
 
-<h4 id="221-存储数据类型">2.2.1 存储数据类型</h4>
+<h3 id="222-code-unit">2.2.2 Code Unit</h3>
 
-<p>描述<code class="highlighter-rouge">Java</code>方法执行的内存模型, 每个方法调用就对应着一个栈帧的入栈和出栈; 一个栈帧里面存储了局部变量表, 操作数栈, 动态链接, 方法出口等信息</p>
+<p>Code Unit也叫码元（代码单元），表示计算机中实际存储Unicode的基本单位，取决于编码方式。</p>
 
-<p>局部变量表存储了编译器可知的各种基本数据类型, 对象引用, <code class="highlighter-rouge">returnAddress</code>; 局部变量表的大小在编译期间即可确定, 运行期间大小不变</p>
+<p>比如：</p>
 
-<h4 id="222-异常情况">2.2.2 异常情况</h4>
+<ul>
+  <li>
+    <p><code class="highlighter-rouge">UTF-8</code>： <code class="highlighter-rouge">Code Unit</code>是 1 字节（8 Bit）；比如：<code class="highlighter-rouge">a</code>在UTF-8编码下占 1 个字节，表示为<code class="highlighter-rouge">0x61</code>。</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">UTF-16</code>： <code class="highlighter-rouge">Code Unit</code>是 2 字节（16 Bit）；比如：<code class="highlighter-rouge">a</code>在UTF-16编码下占 2 个字节，表示为<code class="highlighter-rouge">0x0061</code>。</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">UTF-32</code>： <code class="highlighter-rouge">Code Unit</code>是 4 字节（32 Bit）；比如：<code class="highlighter-rouge">a</code>在UTF-32编码下占 4 个字节，表示为<code class="highlighter-rouge">0x00000061</code>。</p>
+  </li>
+</ul>
 
-<ol>
-  <li><strong>StackOverflowError</strong>: 线程请求栈深度大于虚拟机允许深度</li>
-</ol>
+<h1 id="三字符编码方式">三、字符编码方式</h1>
 
-<p>异常示例代码:</p>
+<p>字符编码方式决定了字符如何存储、传输和解码；常见的编码方式有：UTF-8、UTF-16、UTF-32等</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class JavaVMStackSOF {
+<ul>
+  <li>
+    <p><code class="highlighter-rouge">UTF-8</code>：可变长度，用 1 到 4 个字节来存储 Unicode 字符；为了节省存储资源。</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">UTF-16</code>：可变长度，用 2 或 4 个字节存储字符。</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">UTF-32</code>：固定长度，每个字符始终使用 4 字节存储。</p>
+  </li>
+</ul>
 
-    private int stackLength = 1;
+<p>比如：</p>
 
-    public void stackLeak() {
-        stackLength++;
-        stackLeak();
-    }
+<p><code class="highlighter-rouge">é</code>的Code Point是：<code class="highlighter-rouge">U+0065 + U+0301</code></p>
 
-    public static void main(String[] args) {
-        JavaVMStackSOF sof = new JavaVMStackSOF();
-        try {
-            sof.stackLeak();
-        } catch (Throwable e) {
-            System.out.println("Stack Length: " + sof.stackLength);
-            throw e;
-        }
-    }
-}
-</code></pre></div></div>
+<p>当以<code class="highlighter-rouge">UTF-32</code>方式编码时，每个Code Point未超过4字节，所以表示为：0x00000065，0x00000301</p>
 
-<ol>
-  <li><strong>OutOfMemoryError</strong>: 虚拟机栈动态扩展时无法申请到足够内存</li>
-</ol>
+<p>当以<code class="highlighter-rouge">UTF-16</code>方式编码时，每个Code Point未超过2字节，所以表示为：0x0065，0x0301</p>
 
-<p>异常示例代码:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class JavaVMStackOOM {
-
-    private void dontStop() {
-        while (true) {
-        }
-    }
-
-    public void stackLeakByThread() {
-        while (true) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    dontStop();
-                }
-            }).start();
-        }
-    }
-
-    public static void main(String[] args) {
-        JavaVMStackOOM oom = new JavaVMStackOOM();
-        oom.stackLeakByThread();
-    }
-}
-</code></pre></div></div>
-
-<p><strong>注</strong>: 由于操作系统分配给每个进程的内存空间是有限制的, 所以如果是由于建立过多的线程导致内存溢出, 在不能减少线程数或者更换<code class="highlighter-rouge">64</code>位虚拟机的情况下, 可以选择通过减少最大堆和减少栈容量来换取更多的线程</p>
-
-<h3 id="23-本地方法栈">2.3 本地方法栈</h3>
+<p>当以<code class="highlighter-rouge">UTF-8</code>方式编码时，0x0301值超过了128，需要按<code class="highlighter-rouge">UTF-8</code>格式拆分为0xCC，0x81，所以表示为：0x65，0xCC，0x81</p>
 
 <blockquote>
-  <p>线程私有</p>
+  <p>Q：<code class="highlighter-rouge">UTF-8</code>编码为什么是按128做比较，按理说1字节（0xFF）表示的最大值是255？</p>
+
+  <p>A：有两个原因：一是为了与<code class="highlighter-rouge">ASCII</code>兼容，<code class="highlighter-rouge">ASCII</code>只支持了128个字符编码，在<code class="highlighter-rouge">UTF-8</code>编码中，前128位与<code class="highlighter-rouge">ASCII</code>编码相同；二是<code class="highlighter-rouge">UTF-8</code>编码中，会将第一个字节的高位部分用来标识这个字符的编码长度，具体为：</p>
+
+  <ul>
+    <li>
+      <p><code class="highlighter-rouge">0xxxxxxx</code>：表示 1 字节字符（<code class="highlighter-rouge">ASCII</code> 范围）</p>
+    </li>
+    <li>
+      <p><code class="highlighter-rouge">110xxxxx</code>：表示 2 字节字符</p>
+    </li>
+    <li>
+      <p><code class="highlighter-rouge">1110xxxx</code>：表示 3 字节字符</p>
+    </li>
+    <li>
+      <p><code class="highlighter-rouge">11110xxx</code>：表示 4 字节字符</p>
+    </li>
+  </ul>
+
+  <p><img src="/img/post/Font/UTF-8编码规则.png" alt="UTF-8编码规则" /></p>
 </blockquote>
-
-<h4 id="231-存储数据类型">2.3.1 存储数据类型</h4>
-
-<p>和虚拟机栈类似, 只是本地方法栈提供的是<code class="highlighter-rouge">Native</code>方法服务</p>
-
-<h4 id="232-异常情况">2.3.2 异常情况</h4>
-
-<p><code class="highlighter-rouge">StackOverflowError</code>和<code class="highlighter-rouge">OutOfMemoryError</code></p>
-
-<h3 id="24-java堆">2.4 Java堆</h3>
-
-<blockquote>
-  <ol>
-    <li>线程共享</li>
-    <li>垃圾收集管理的主要区域</li>
-  </ol>
-</blockquote>
-
-<h4 id="241-存储数据类型">2.4.1 存储数据类型</h4>
-
-<p>几乎所有的对象实例都在这里分配</p>
-
-<h4 id="242-异常情况">2.4.2 异常情况</h4>
-
-<p><code class="highlighter-rouge">OutOfMemoryError</code></p>
-
-<p>异常示例:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class JavaVMHeapOOM {
-
-    static class HeapOOM {
-    }
-
-    public static void main(String[] args) {
-        List&lt;HeapOOM&gt; list = new ArrayList();
-        while (true) {
-            list.add(new HeapOOM());
-        }
-    }
-}
-</code></pre></div></div>
-
-<h3 id="25-方法区">2.5 方法区</h3>
-
-<blockquote>
-  <ol>
-    <li>线程共享</li>
-    <li>该区域的垃圾回收目标主要是针对常量池的回收和对类型的卸载</li>
-  </ol>
-</blockquote>
-
-<h4 id="251-存储数据类型">2.5.1 存储数据类型</h4>
-
-<p>存储已被虚拟机加载的类信息, 常量, 静态变量, 即使编译器编译后的代码等数据</p>
-
-<h4 id="252-运行时常量池">2.5.2 运行时常量池</h4>
-
-<p>运行时常量池是方法区的一部分, 但是<code class="highlighter-rouge">JDK6</code>之后, 常量池被放入了堆中;</p>
-
-<p><code class="highlighter-rouge">Class</code>文件中也有常量池部分, 即编译期生成的各种字面量和符号引用, 这部分将在类加载后进入方法区的运行时常量池中, 此外还会把翻译出来的直接引用也存储在运行时常量池中</p>
-
-<p>运行时常量池相对于<code class="highlighter-rouge">Class</code>文件常量池的另外一个最重要的特征是具备动态性, 即运行期间也可以将新的常量放入池中, 比如<code class="highlighter-rouge">String</code>的<code class="highlighter-rouge">intern()</code>方法</p>
-
-<p><code class="highlighter-rouge">String.intern()</code>作用是: 如果字符串常量池中已经包含一个等于此<code class="highlighter-rouge">String</code>对象的字符串, 则返回代表池中这个字符串的<code class="highlighter-rouge">String</code>对象; 否则, 将此<code class="highlighter-rouge">String</code>对象包含的字符串添加到常量池中, 并且返回此<code class="highlighter-rouge">String</code>对象的引用</p>
-
-<p>同样, 收方法区的限制, 当常量池无法再申请到内存时会抛出<code class="highlighter-rouge">OutOfMemoryError</code></p>
-
-<h4 id="253-异常情况">2.5.3 异常情况</h4>
-
-<p><code class="highlighter-rouge">OutOfMemoryError</code>: 方法区无法满足内存分配需求</p>
-
-<p>异常示例:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class RuntimeConstantPoolOOM {
-    public static void main(String[] args) {
-        List&lt;String&gt; list = new ArrayList&lt;&gt;();
-        int i = 0;
-        while (true) {
-            list.add(String.valueOf(i++).intern());
-        }
-    }
-}
-</code></pre></div></div>
-
-<h3 id="26-直接内存">2.6 直接内存</h3>
-
-<p>直接内存不是虚拟机运行时数据区的一部分, 但是也被频繁使用, 如: 在<code class="highlighter-rouge">JDK1.4</code>中新加入了<code class="highlighter-rouge">NIO</code>类, 引入了一种基于通道(<code class="highlighter-rouge">Chanel</code>)和缓冲区(<code class="highlighter-rouge">Buffer</code>)的<code class="highlighter-rouge">I/O</code>方式, 它可以使用<code class="highlighter-rouge">Native</code>函数库直接分配堆外内存, 然后通过一个存储在<code class="highlighter-rouge">Java</code>堆中的<code class="highlighter-rouge">DirectByteBuffer</code>对象作为这块内存的引用进行操作, 避免了在<code class="highlighter-rouge">Java</code>堆和<code class="highlighter-rouge">Native</code>堆中来回复制数据, 提高性能</p>
-
-<p>同样会产生<code class="highlighter-rouge">OutOfMemoryError</code></p>
-
-<hr />
-
-<h2 id="三-常见问题">三. 常见问题</h2>
-
-<p><strong>注</strong>: 下文摘自文末参考链接, 权作个人笔记~</p>
-
-<ol>
-  <li>
-    <p>程序运行永远都是在栈中进行的，因而参数传递时, 只存在传递基本类型和对象引用的问题, 不会直接传对象本身;  但是传引用的错觉是如何造成的呢? 在运行栈中, 基本类型和引用的处理是一样的, 都是传值, 所以, 如果是传引用的方法调用, 也同时可以理解为“传引用值”的传值调用, 即引用的处理跟基本类型是完全一样的; 但是当进入被调用方法时, 被传递的这个引用的值, 被程序解释(或者查找)到堆中的对象, 这个时候才对应到真正的对象; 如果此时进行修改; 修改的是引用对应的对象; 而不是引用本身; 即: 修改的是堆中的数据; 所以这个修改是可以保持的了</p>
-  </li>
-  <li>
-    <p>我产生的对象不多呀, 为什么还会产生<code class="highlighter-rouge">OutOfMemory</code>?</p>
-  </li>
-</ol>
-
-<p>答: 你继承层次忒多了, <code class="highlighter-rouge">Heap</code>中产生的对象是先产生父类, 然后才产生子类, 明白不?</p>
-
-<ol>
-  <li>
-    <p><code class="highlighter-rouge">OutOfMemory</code>错误分几种?
-答: 分两种, 分别是<code class="highlighter-rouge">OutOfMemoryError:java heap size</code>和<code class="highlighter-rouge">OutOfMemoryError: PermGen space</code>, 两种都是内存溢出, <code class="highlighter-rouge">heap size</code>是说申请不到新的内存了, 这个很常见，检查应用或调整堆内存大小; <code class="highlighter-rouge">PermGenspace</code>是因为永久存储区满了, 这个也很常见, 一般在热发布的环境中出现, 是因为每次发布应用系统都不重启, 久而久之永久存储区中的死对象太多导致新对象无法申请内存, 一般重新启动一下即可</p>
-  </li>
-  <li>
-    <p>为什么不建议在程序中显式的生命<code class="highlighter-rouge">System.gc()</code>?
-答: 因为显式声明是做堆内存全扫描, 也就是<code class="highlighter-rouge">Full GC</code>, 是需要停止所有的活动的(<code class="highlighter-rouge">Stop The World Collection</code>), 你的应用能承受这个吗?</p>
-  </li>
-</ol>
-
-<hr />
-
-<h2 id="四-参考链接">四. 参考链接</h2>
-
-<ol>
-  <li>
-    <p>http://www.importnew.com/1993.html</p>
-  </li>
-  <li>
-    <p>http://www.cnblogs.com/dolphin0520/p/3783345.html</p>
-  </li>
-  <li>
-    <p>http://hllvm.group.iteye.com/group/wiki/2905-JVM</p>
-  </li>
-  <li>
-    <p>http://hllvm.group.iteye.com/group/wiki/?show_full=true</p>
-  </li>
-</ol>
 
 
                 <hr>
@@ -441,12 +300,12 @@
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/2018/09/25/Java%E4%B9%8BIO%E6%B5%81/" data-toggle="tooltip" data-placement="top" title="Java之IO流">&larr; Previous Post</a>
+                        <a href="/2018/08/20/AndroidStudio%E4%BB%A3%E7%90%86%E8%AE%BE%E7%BD%AE%E8%B8%A9%E5%9D%91/" data-toggle="tooltip" data-placement="top" title="AndroidStudio代理设置">&larr; Previous Post</a>
                     </li>
                     
                     
                     <li class="next">
-                        <a href="/2018/09/28/JVM%E4%B9%8B%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8%E4%B8%8E%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E7%AD%96%E7%95%A5/" data-toggle="tooltip" data-placement="top" title="Java垃圾收集器与内存分配策略">Next Post &rarr;</a>
+                        <a href="/2018/08/24/Details/" data-toggle="tooltip" data-placement="top" title="Detail">Next Post &rarr;</a>
                     </li>
                     
                 </ul>
@@ -566,8 +425,8 @@
 <script type="text/javascript">
     /* * * CONFIGURATION VARIABLES * * */
     var disqus_shortname = "HusterYP";
-    var disqus_identifier = "/2018/09/27/JVM之内存区域与内存溢出异常";
-    var disqus_url = "http://localhost:4000/2018/09/27/JVM%E4%B9%8B%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F%E4%B8%8E%E5%86%85%E5%AD%98%E6%BA%A2%E5%87%BA%E5%BC%82%E5%B8%B8/";
+    var disqus_identifier = "/2018/08/20/一文读懂字符与编码";
+    var disqus_url = "http://localhost:4000/2018/08/20/%E4%B8%80%E6%96%87%E8%AF%BB%E6%87%82%E5%AD%97%E7%AC%A6%E4%B8%8E%E7%BC%96%E7%A0%81/";
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
