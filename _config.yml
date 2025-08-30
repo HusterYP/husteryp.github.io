@@ -1,5 +1,5 @@
 # Site settings
-title: 袁平
+title: 非专业程序员
 SEOTitle: 袁平 | HusterYP-Blog
 header-img: img/home-bg.jpg
 email: husteryp@gmail.com
@@ -25,7 +25,7 @@ github_username:    HusterYP
 highlighter: rouge
 permalink: pretty
 paginate: 10
-exclude: ["less","node_modules","Gruntfile.js","package.json","README.md"]
+exclude: ["less","node_modules","Gruntfile.js","package.json","README.md", "vendor"]
 anchorjs: true                          # if you want to customize anchor. check out line:181 of `post.html`
 
 
@@ -70,7 +70,7 @@ disqus_username: HusterYP
 
 # Sidebar settings
 sidebar: true                           # whether or not using Sidebar.
-sidebar-about-description: "A Wild Programmer"
+sidebar-about-description: "不积跬步，无以至千里"
 sidebar-avatar: /img/avatar.png      # use absolute URL, seeing it's used in both `/` and `/about/`
 
 
@@ -83,14 +83,14 @@ featured-condition-size: 1              # A tag will be featured if the size of 
 
 # Friends
 friends: [
-    {
-       title: "美团点评",
-       href: "https://tech.meituan.com/archives"
-    }, 
-    {
-      title: "天宇", 
-      href: "https://eriri.ink/"
-    }
+    # {
+    #    title: "美团点评",
+    #    href: "https://tech.meituan.com/archives"
+    # }, 
+    # {
+    #   title: "天宇", 
+    #   href: "https://eriri.ink/"
+    # }
     #,{
    #    title: "Foo",
    #    href: "#"

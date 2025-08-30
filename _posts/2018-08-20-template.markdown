@@ -14,7 +14,7 @@ tags:
 
 发布博客直接将`md`文件扔到`_post`文件夹下即可; 需要注意命名规范, 文件名需要以时间格式开头(参照`2018-08-20-template.md`命名)
 
-本地博客测试: `jekyll serve`
+本地博客测试: `bundle exec jekyll serve`
 
 博客首部
 
