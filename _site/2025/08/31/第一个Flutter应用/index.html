@@ -10,9 +10,9 @@
     <meta name="keyword"  content="">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>AutoLayout总结 - 袁平 | HusterYP-Blog</title>
+    <title>第一个Flutter应用 - 袁平 | HusterYP-Blog</title>
 
-    <link rel="canonical" href="http://localhost:4000/2019/03/23/AutoLayout%E6%80%BB%E7%BB%93/">
+    <link rel="canonical" href="http://localhost:4000/2025/08/31/%E7%AC%AC%E4%B8%80%E4%B8%AAFlutter%E5%BA%94%E7%94%A8/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/css/bootstrap.min.css">
@@ -140,15 +140,17 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/tags/#iOS" title="iOS">iOS</a>
+                        <a class="tag" href="/tags/#跨端渲染" title="跨端渲染">跨端渲染</a>
+                        
+                        <a class="tag" href="/tags/#Flutter" title="Flutter">Flutter</a>
                         
                     </div>
-                    <h1>AutoLayout总结</h1>
+                    <h1>第一个Flutter应用</h1>
                     
                     
-                    <h2 class="subheading">iOS布局基础</h2>
+                    <h2 class="subheading">Flutter环境搭建、应用编写与构建</h2>
                     
-                    <span class="meta">Posted by 袁平 on March 23, 2019</span>
+                    <span class="meta">Posted by 袁平 on August 31, 2025</span>
                 </div>
             </div>
         </div>
@@ -166,100 +168,52 @@
                 col-md-10 col-md-offset-1
                 post-container">
 
-				<h1 id="前言">前言</h1>
+				<h1 id="一环境搭建">一、环境搭建</h1>
 
-<p><code class="highlighter-rouge">AutoLayout</code>总结</p>
+<p>添加Flutter镜像：</p>
 
-<hr />
-
-<h1 id="正文">正文</h1>
-
-<hr />
-
-<h2 id="一-布局方式与背景">一. 布局方式与背景</h2>
-
-<p>在开始介绍<code class="highlighter-rouge">AutoLayout</code>之前，需要先介绍一下<code class="highlighter-rouge">iOS</code>中的布局方式；iOS<code class="highlighter-rouge">中主流的界面布局方式主要有手写代码布局，</code>xib<code class="highlighter-rouge">布局，</code>storyboard<code class="highlighter-rouge">布局；笔者更喜欢的还是手写代码的方式，一个可能与笔者之前</code>Android<code class="highlighter-rouge">经验相关（因为</code>Android<code class="highlighter-rouge">中多是使用手写</code>xml`的方式布局，另一个是，对于多人合作而言，手写代码其实更方便（减少冲突）；当然，对于单人的独立项目，其实没有什么优劣可言，选择一种自己更为熟悉与快捷的方式都是因人而异。</p>
-
-<p>关于<code class="highlighter-rouge">xib</code>布局和<code class="highlighter-rouge">storyboard</code>布局方式的区别，其实二者都是使用<code class="highlighter-rouge">IB</code>来进行可视化空间的拖拽与约束，唯一的区别是二者的侧重点不同；一般来说，单个的<code class="highlighter-rouge">xib</code>文件对应一个<code class="highlighter-rouge">ViewController</code>，对于一些自定义<code class="highlighter-rouge">View</code>，通常也会使用单个<code class="highlighter-rouge">xib</code>并从<code class="highlighter-rouge">main bundle</code>进行加载的方式来载入；而<code class="highlighter-rouge">storyboard</code>只能使用<code class="highlighter-rouge">ViewController</code>而不能用于单独的<code class="highlighter-rouge">UIView</code>（<code class="highlighter-rouge">UIView</code>只能基于<code class="highlighter-rouge">ViewController</code>使用，而<code class="highlighter-rouge">xib</code>同时支持两者）</p>
-
-<p><code class="highlighter-rouge">xib</code>实际上是一个<code class="highlighter-rouge">xml</code>文件，通过编译之后就得到<code class="highlighter-rouge">nib</code>文件</p>
-
-<p>在上面介绍的三种方式中，都可以使用<code class="highlighter-rouge">AutoLayout</code>的方式来进行布局；<code class="highlighter-rouge">AutoLayout</code>的出现，是为了解决不同尺寸屏幕的适配问题；<code class="highlighter-rouge">iPhone 5</code>之前，屏幕都是<code class="highlighter-rouge">3.5</code>寸的（<code class="highlighter-rouge">640 x 960</code>分辨率），这之前，屏幕尺寸相同，不存在适配问题，所有<code class="highlighter-rouge">View</code>坐标只需要计算好即可，但是<code class="highlighter-rouge">2012</code>年，苹果发布了<code class="highlighter-rouge">4.0</code>寸（<code class="highlighter-rouge">640 x 1136</code>分辨率）的<code class="highlighter-rouge">iPhone 5</code>，这样在<code class="highlighter-rouge">iOS</code>平台上就出现了不同尺寸的移动设备，使得原有的<code class="highlighter-rouge">frame</code>布局方式无法进行很好的屏幕适配，所以为了解决这一问题，就出现了<code class="highlighter-rouge">AutoLayout</code></p>
-
-<hr />
-
-<h2 id="二-原理与使用">二. 原理与使用</h2>
-
-<p><code class="highlighter-rouge">AutoLayout</code>其实类似于<code class="highlighter-rouge">Android</code>中的<code class="highlighter-rouge">RelativeLayout</code>，采用<code class="highlighter-rouge">View</code>之间的相对位置来进行布局；我们知道，要确定一个<code class="highlighter-rouge">View</code>的位置，需要知道<code class="highlighter-rouge">View</code>的<code class="highlighter-rouge">x，y，width，height</code>，即<code class="highlighter-rouge">View</code>的起始坐标点，宽度和高度信息；<code class="highlighter-rouge">AutoLayout</code>其实是通过解<code class="highlighter-rouge">View</code>之间建立的线性方程组（<code class="highlighter-rouge">y = ax + b</code>）来确定其信息的（如下图），当然，如果出现约束不完整的情况或者约束冲突的情况，就会出现解的不定性，表现出来即是<code class="highlighter-rouge">View</code>位置未达到预期</p>
-
-<p><img src="/img/post/AutoLayout/AutoLayout_1.png" alt="" /></p>
-
-<p>可约束的属性参见<a href="https://developer.apple.com/documentation/uikit/nslayoutattribute">NSLayoutAttribute</a>枚举</p>
-
-<p><code class="highlighter-rouge">AutoLayout</code>实际上是基于<code class="highlighter-rouge">Cassowary</code>算法的，<code class="highlighter-rouge">Cassowary</code>是<code class="highlighter-rouge">Alan Borning, Kim Marriott, Peter Stuckey</code>等人在<code class="highlighter-rouge">1997</code>年提出的一个解决布局问题的算法，<code class="highlighter-rouge">Cassowary</code>算法能够有效解决线性等式系统和线性不等式系统，这也是<code class="highlighter-rouge">AutoLayout</code>的性能保障</p>
-
-<p>当使用<code class="highlighter-rouge">AutoLayout</code>的时候，<code class="highlighter-rouge">View</code>的默认初始值会被弃用，如下代码，此时<code class="highlighter-rouge">UILable</code>的初始化宽高会失效；这里还需要注意一个<code class="highlighter-rouge">translatesAutoresizingMaskIntoConstraints</code>属性，从名字我们可以看出，该属性是控制是否把<code class="highlighter-rouge">AutoresizingMask</code>变成约束（<code class="highlighter-rouge">autoresizing mask</code>其实就是完全指定视图的尺寸和位置，即是否需要将其转换为线性方程组）；当使用<code class="highlighter-rouge">IB（Interface Builder）</code>布局的时候，即<code class="highlighter-rouge">xib，storyboard</code>方式，如果勾选了<code class="highlighter-rouge">Use Autolayout</code>选项（默认勾选），那么<code class="highlighter-rouge">IB</code>生成的控件的<code class="highlighter-rouge">translatesAutoresizingMaskIntoConstraints</code>属性都会被默认设置<code class="highlighter-rouge">false</code>；当使用手写代码布局时，<code class="highlighter-rouge">View</code>的<code class="highlighter-rouge">translatesAutoresizingMaskIntoConstraints</code>属性默认为<code class="highlighter-rouge">true</code>，但是<code class="highlighter-rouge">View</code>的<code class="highlighter-rouge">AutoresizingMask</code>属性默认被设置为<code class="highlighter-rouge">.None</code>，也就是说如果我们不去动<code class="highlighter-rouge">View</code>的<code class="highlighter-rouge">AutoresizingMask</code>属性，那么<code class="highlighter-rouge">AutoresizingMask</code>就不会对约束产生影响，所以，这个属性，一般也不需要手动设置（当然，为了保险，也可以手动将<code class="highlighter-rouge">translatesAutoresizingMaskIntoConstraints</code>属性置为<code class="highlighter-rouge">false</code>）</p>
-
-<p>当<code class="highlighter-rouge">translatesAutoresizingMaskIntoConstraints</code>属性为<code class="highlighter-rouge">true</code>时，<code class="highlighter-rouge">View</code>的<code class="highlighter-rouge">AutoresizingMask</code>将会转换为约束，一起参与到<code class="highlighter-rouge">AutoLayout</code>的约束计算中，即会对<code class="highlighter-rouge">AutoLayout</code>产生影响</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>let label = UILabel(frame: CGRect(x: 100, y: 100, width: 100, height: 200))
-label.backgroundColor = #colorLiteral(red: 1, green: 0.5763723254, blue: 0, alpha: 1)
-view.addSubview(label)
-label.translatesAutoresizingMaskIntoConstraints = false
-label.snp.makeConstraints { (make) in
-            make.width.equalTo(10)
-            make.leading.equalToSuperview().offset(40)
-            make.top.equalToSuperview().offset(40)
-}
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">export </span><span class="nv">PUB_HOSTED_URL</span><span class="o">=</span>https://pub.flutter-io.cn
+<span class="nb">export </span><span class="nv">FLUTTER_STORAGE_BASE_URL</span><span class="o">=</span>https://storage.flutter-io.cn
 </code></pre></div></div>
 
-<p>布局关系不仅限于等于，还可以是大于等于或者小于等于，这种不等关系在处理<code class="highlighter-rouge">UILabel</code>，<code class="highlighter-rouge">UIImageView</code>等具有自身内容尺寸（<code class="highlighter-rouge">Intrinsic Content Size</code>）的控件时非常有用；比如：<code class="highlighter-rouge">UILabel</code>的长度会随文字长度而变化，那么我们可以对<code class="highlighter-rouge">UILabel</code>控件添加两个约束，即<code class="highlighter-rouge">宽度大于等于50</code>与<code class="highlighter-rouge">宽度小于等于200</code>，这样，当文字很少时，宽度也至少为<code class="highlighter-rouge">50</code>，当文字很多时，宽度也不会超过<code class="highlighter-rouge">200</code></p>
+<p>下载Flutter SDK：https://docs.flutter.cn/install/archive</p>
 
-<p>某些用来展现内容的用户控件，例如<code class="highlighter-rouge">UILabel</code>、<code class="highlighter-rouge">UIButton</code>、<code class="highlighter-rouge">UIImageView</code>等，它们具有自身内容尺寸（<code class="highlighter-rouge">Intrinsic Content Size</code>），此类用户控件会根据自身内容尺寸添加布局约束；也就是说，如果开发者没有显式给出其宽度或者高度约束，则其自身内容约束将会起作用</p>
+<p>添加Flutter SDK环境变量：<code class="highlighter-rouge">export PATH="$PWD/flutter/bin:$PATH"</code></p>
 
-<p>具有<code class="highlighter-rouge">Intrinsic Content Size</code>的<code class="highlighter-rouge">View</code>参见下图（摘自官网）；具有<code class="highlighter-rouge">Intrinsic Content Size</code>属性的<code class="highlighter-rouge">View</code>都重写了<code class="highlighter-rouge">UIView</code>的<code class="highlighter-rouge">-(CGSize)intrinsicContentSize:</code>方法，并且在需要改变这个值的时候调用<code class="highlighter-rouge">invalidateIntrinsicContentSize</code>方法即可，通知系统这个值改变了；同样，当我们自定义<code class="highlighter-rouge">View</code>的时候，如果想要拥有<code class="highlighter-rouge">Intrinsic Content Size</code>属性，就可以重写该方法</p>
+<p>运行<code class="highlighter-rouge">flutter doctor</code>验证安装是否成功：</p>
 
-<p><img src="/img/post/AutoLayout/AutoLayout_2.png" alt="" /></p>
+<p><img src="/img/post/Flutter/Flutter Doctor.png" alt="Flutter Doctor" /></p>
 
-<p><code class="highlighter-rouge">AutoLayout</code>中还有两个比较重要的概念，<code class="highlighter-rouge">Content Hugging</code>与<code class="highlighter-rouge">Content Compression Resistance</code>约束；在讲解这两个属性之前，需要先了解一下<code class="highlighter-rouge">AutoLayout</code>中的优先级属性；所谓的优先级，我个人的理解其实是一种减少冲突与弱化约束的作用，即为各约束设置优先级，当出现冲突时<code class="highlighter-rouge">AutoLayout</code>优先满足高优先级的约束；关于优先级的使用，可以参见文末参考链接</p>
+<blockquote>
+  <p>我使用的是iOS开发环境，没装Android环境，也OK</p>
+</blockquote>
 
-<p><code class="highlighter-rouge">Content Hugging</code>约束：不想变大约束；即如果组件的此属性优先级比另一个组件此属性优先级高的话，那么这个组件就保持不变，另一个可以在需要拉伸的时候拉伸；可以简单理解为<code class="highlighter-rouge">Content Hugging</code>越大，<code class="highlighter-rouge">View</code>越难变大；默认值为<code class="highlighter-rouge">250</code></p>
+<h1 id="二构建第一个flutter应用">二、构建第一个Flutter应用</h1>
 
-<p><code class="highlighter-rouge">Content Compression Resistance</code>约束：不想变小约束；如果组件的此属性优先级比另一个组件此属性优先级高的话，那么这个组件就保持不变，另一个可以在需要压缩的时候压缩；可以简单理解为<code class="highlighter-rouge">Content Compression Resistance</code>越大，<code class="highlighter-rouge">View</code>越难变小；默认值为<code class="highlighter-rouge">750</code></p>
+<p>VSCode安装flutter插件，通过<code class="highlighter-rouge">command + shift + p</code>选择<code class="highlighter-rouge">Flutter: New Project</code>，之后按需选择<code class="highlighter-rouge">Application</code>（自带一个计数器的App）或者<code class="highlighter-rouge">Empty Application</code>：</p>
 
-<p>关于<code class="highlighter-rouge">Content Hugging</code>与<code class="highlighter-rouge">Content Compression Resistance</code>的应用，可以参见<a href="https://www.jianshu.com/p/f6bc007b30e5">博客</a></p>
+<table>
+  <thead>
+    <tr>
+      <th>New Project</th>
+      <th>Project Template</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><img src="/img/post/Flutter/New Project.png" alt="New Project" /></td>
+      <td><img src="/img/post/Flutter/Project Template.png" alt="Project Template" /></td>
+    </tr>
+  </tbody>
+</table>
 
-<hr />
+<p>我这里选的Application，点击main.dart下的run：</p>
 
-<h2 id="三-性能分析">三. 性能分析</h2>
+<p><img src="/img/post/Flutter/run.png" alt="run" /></p>
 
-<ol>
-  <li>
-    <p>https://time.geekbang.org/column/article/85332</p>
-  </li>
-  <li>
-    <p>https://www.jianshu.com/p/0b964dc17c04</p>
-  </li>
-  <li>
-    <p>https://xiaozhuanlan.com/topic/5378941206</p>
-  </li>
-  <li>
-    <p>https://draveness.me/layout-performance</p>
-  </li>
-  <li>
-    <p>https://juejin.im/post/5bd5a546f265da0af033cee6#heading-3</p>
-  </li>
-</ol>
+<p>可以看到运行效果：</p>
 
-<hr />
-
-<h2 id="四-参考">四. 参考</h2>
-
-<ol>
-  <li>https://www.jianshu.com/p/f6bc007b30e5</li>
-  <li>https://blog.csdn.net/hard_man/article/details/50888377</li>
-</ol>
-
+<p><img src="/img/post/Flutter/FlutterDemo.png" alt="FlutterDemo" /></p>
 
 
                 <hr>
@@ -270,13 +224,9 @@ label.snp.makeConstraints { (make) in
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/2019/02/27/iOS%E7%96%91%E9%9A%BE%E7%82%B9/" data-toggle="tooltip" data-placement="top" title="iOS疑难点">&larr; Previous Post</a>
+                        <a href="/2025/08/30/%E4%B8%80%E6%96%87%E8%AF%BB%E6%87%82%E5%AD%97%E7%AC%A6%E4%B8%8E%E7%BC%96%E7%A0%81/" data-toggle="tooltip" data-placement="top" title="一文读懂字符与编码">&larr; Previous Post</a>
                     </li>
                     
-                    
-                    <li class="next">
-                        <a href="/2019/04/29/iOS%E6%A0%B8%E5%BF%83%E5%8A%A8%E7%94%BB%E9%AB%98%E7%BA%A7%E6%8A%80%E5%B7%A7Tips/" data-toggle="tooltip" data-placement="top" title="iOS核心动画高级技巧Tips">Next Post &rarr;</a>
-                    </li>
                     
                 </ul>
 
@@ -403,8 +353,8 @@ label.snp.makeConstraints { (make) in
 <script type="text/javascript">
     /* * * CONFIGURATION VARIABLES * * */
     var disqus_shortname = "HusterYP";
-    var disqus_identifier = "/2019/03/23/AutoLayout总结";
-    var disqus_url = "http://localhost:4000/2019/03/23/AutoLayout%E6%80%BB%E7%BB%93/";
+    var disqus_identifier = "/2025/08/31/第一个Flutter应用";
+    var disqus_url = "http://localhost:4000/2025/08/31/%E7%AC%AC%E4%B8%80%E4%B8%AAFlutter%E5%BA%94%E7%94%A8/";
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
