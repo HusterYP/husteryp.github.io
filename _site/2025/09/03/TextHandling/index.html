@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Hello-World">
+    <meta name="keyword"  content="">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>Text Handling - 袁平 | HusterYP-Blog</title>
+
+    <link rel="canonical" href="http://localhost:4000/2025/09/03/TextHandling/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    <!-- Pygments Github CSS -->
+    <link rel="stylesheet" href="/css/syntax.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="http://cdn.staticfile.org/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">非专业程序员</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/about/">About</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/tags/">Tags</a>
+                    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Image to hack wechat -->
+<!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="/img/tag-bg.jpg" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/img/tag-bg.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/#跨端渲染" title="跨端渲染">跨端渲染</a>
+                        
+                        <a class="tag" href="/tags/#Font" title="Font">Font</a>
+                        
+                    </div>
+                    <h1>Text Handling</h1>
+                    
+                    
+                    <h2 class="subheading">Text Handling</h2>
+                    
+                    <span class="meta">Posted by 袁平 on September 3, 2025</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+				<ul>
+  <li>
+    <p>MacOS上系统字体路径一般为<code class="highlighter-rouge">/System/Library/Fonts/</code>，可以看到有ttc、ttf，有什么区别</p>
+
+    <ul>
+      <li>
+        <p><code class="highlighter-rouge">.ttf</code> (TrueType Font)</p>
+
+        <ul>
+          <li>
+            <p>单字体文件</p>
+          </li>
+          <li>
+            <p>包含一整套字体（一个 font），包括 glyph 轮廓、metrics、cmap 等表。</p>
+          </li>
+          <li>
+            <p>每个 <code class="highlighter-rouge">.ttf</code> 文件通常只对应一个 <strong>字体样式</strong>（例如 <em>Microsoft YaHei Regular</em>）。</p>
+          </li>
+          <li>
+            <p>适合单独分发、安装。</p>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <p><code class="highlighter-rouge">.ttc</code> (TrueType Collection)</p>
+
+        <ul>
+          <li>
+            <p>字体集合文件 (TrueType Collection)</p>
+          </li>
+          <li>
+            <p>内部可以包含多个 TrueType 字体（多个 <code class="highlighter-rouge">.ttf</code> 打包在一起）。</p>
+          </li>
+          <li>
+            <p>这些字体通常共享某些表（比如 glyph 轮廓、cmap），减少冗余，提高存储效率。</p>
+          </li>
+          <li>
+            <p>常用于一个 typeface 的多个变体（Regular, Bold, Italic, Light…）。</p>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li>
+    <p>TrueType和OpenType的区别：简单说就是OpenType是TrueType的扩展</p>
+
+    <ul>
+      <li>OpenType一般以otf为后缀，但也不能简单的根据文件名后缀区分二者，文件扩展名只是习惯，并不能完全说明内部格式。真正的区别要看字体表结构和 outline 格式</li>
+    </ul>
+  </li>
+</ul>
+
+<p><img src="/Users/ping/Desktop/husteryp.github.io/img/post/Font/TrueType vs OpenType.png" alt="TrueType vs OpenType" /></p>
+
+<ul>
+  <li>Font里面有什么：可以归类metrics、advance width、ascent、descent等</li>
+</ul>
+
+<p>如下是NewYork.ttf字体文件的内容：</p>
+
+<p><img src="/img/post/Font/NewYork-ttf.png" alt="NewYork-ttf" /></p>
+
+<p>分别解释下字体文件中的内容：</p>
+
+<ul>
+  <li>GlyphOrder：glyphID与glyphName的映射</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;GlyphOrder&gt;
+  &lt;GlyphID id="0" name=".notdef"/&gt;
+  &lt;GlyphID id="1" name=".null"/&gt;
+  &lt;GlyphID id="2" name="nonmarkingreturn"/&gt;
+  &lt;GlyphID id="3" name="space"/&gt;
+  &lt;GlyphID id="4" name="A"/&gt;
+  ...
+&lt;/GlyphOrder&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>head：Font Header，存储一些全局信息；关注几个值
+    <ul>
+      <li>unitsPerEm：可以发现，字体表里的数值一般都很大，其单位并不是像素值，而是 <code class="highlighter-rouge">em unit</code>，<code class="highlighter-rouge">&lt;unitsPerEm value="2048"/&gt;</code>表示<code class="highlighter-rouge">2048 units = 1 em = 设计的字高</code>，当字体在屏幕上以 16px 渲染时，1 em = 16px，其他数值可按比例换算</li>
+    </ul>
+  </li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;head&gt;
+  &lt;unitsPerEm value="2048"/&gt;
+  ...
+&lt;/head&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>hhea：Horizontal Header，横向排版信息，关注几个值
+    <ul>
+      <li>ascent &amp; descent：假设字体大小16，unitsPerEm如上为2048，则按比例换算：<code class="highlighter-rouge">ascent = 1950/2048 * 16 ≈ 15.2</code>，<code class="highlighter-rouge">descent ≈ 494/2048 * 16 ≈ 3.8</code></li>
+    </ul>
+  </li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;hhea&gt;
+	&lt;!-- MacOS一般使用hhea里的ascent、descent；OS_2表里还有几个ascent、descent，一般在Windows或专业设计上使用 --&gt;
+  &lt;ascent value="1950"/&gt;
+  &lt;descent value="-494"/&gt;
+  &lt;lineGap value="0"/&gt;
+  &lt;advanceWidthMax value="2818"/&gt;
+  &lt;minLeftSideBearing value="-693"/&gt;
+  &lt;minRightSideBearing value="-693"/&gt;
+  ...
+&lt;/hhea&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>maxp：字体里 glyph 的数量，以及一些最大值参数</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;maxp&gt;
+  &lt;numGlyphs value="1811"/&gt;
+  ...
+&lt;/maxp&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>OS_2：参见<a href="https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6OS2.html">Apple文档</a></li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;OS_2&gt;
+	&lt;!-- 下标的大小和偏移 --&gt;
+  &lt;ySubscriptXSize value="650"/&gt;
+  &lt;ySubscriptYSize value="600"/&gt;
+  &lt;ySubscriptXOffset value="0"/&gt;
+  &lt;ySubscriptYOffset value="75"/&gt;
+  
+  &lt;!-- 上标的大小和偏移 --&gt;
+  &lt;ySuperscriptXSize value="650"/&gt;
+  &lt;ySuperscriptYSize value="600"/&gt;
+  &lt;ySuperscriptXOffset value="0"/&gt;
+  &lt;ySuperscriptYOffset value="350"/&gt;
+
+  &lt;!-- 删除线的粗细和垂直位置 --&gt;
+  &lt;yStrikeoutSize value="12"/&gt;
+  &lt;yStrikeoutPosition value="620"/&gt;
+
+  &lt;!-- 
+  ulUnicodeRange表示字体支持的Unicode范围，用ulUnicodeRange1 … ulUnicodeRange4 这 4 个 32 位字段来表示，总共 128 个 bit，对应 128 个 Unicode Block，如果某 bit = 1，表示字体支持该区块中的至少一些字符
+  映射表见：https://learn.microsoft.com/en-us/typography/opentype/spec/os2#ur
+  Windows系统用 ulUnicodeRange 来挑选字体；
+  macOS/iOS系统更依赖 cmap 表（精确的字符映射），ulUnicodeRange 只是附加信息；
+  浏览器排版一般直接查 cmap，但 ulUnicodeRange 有时用于字体 fallback 策略；
+  --&gt;
+  &lt;ulUnicodeRange1 value="10100001 00000000 00000010 11111111"/&gt;
+  &lt;ulUnicodeRange2 value="00000010 00000000 00100000 01011110"/&gt;
+  &lt;ulUnicodeRange3 value="00000000 00000000 00000000 00000000"/&gt;
+  &lt;ulUnicodeRange4 value="00000000 00000000 00000000 00000000"/&gt;
+
+  &lt;!-- 专业排版（比如 InDesign）一般使用sTypoAscender、sTypoDescender --&gt;
+  &lt;sTypoAscender value="1950"/&gt;
+  &lt;sTypoDescender value="-494"/&gt;
+  &lt;sTypoLineGap value="0"/&gt;
+
+  &lt;!-- Windows一般使用sTypoAscender、sTypoDescender --&gt;
+  &lt;usWinAscent value="1950"/&gt;
+  &lt;usWinDescent value="494"/&gt;
+  ...
+&lt;/OS_2&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>hmtx：Horizontal Metrics，记录每个 glyph 的 advance width 和left side bearing
+    <ul>
+      <li>当排版引擎绘制一个字形时：
+        <ol>
+          <li>把字形放在当前点 + lsb 偏移位置。</li>
+          <li>画完后，将光标向右移动 <code class="highlighter-rouge">advanceWidth</code>，准备绘制下一个字形。</li>
+        </ol>
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;hmtx&gt;
+  &lt;mtx name=".notdef" width="2048" lsb="199"/&gt;
+  &lt;mtx name=".null" width="0" lsb="0"/&gt;
+  &lt;mtx name="A" width="1244" lsb="-16"/&gt;
+  ...
+&lt;/hmtx&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>cmap：Character to Glyph Mapping，定义 Unicode code point → glyph ID 的映射</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;cmap&gt;
+  &lt;tableVersion version="0"/&gt;
+  &lt;cmap_format_4 platformID="0" platEncID="3" language="0"&gt;
+  	&lt;!-- A的Unicode code point是0x41 --&gt;
+    &lt;map code="0x41" name="A"/&gt;&lt;!-- LATIN CAPITAL LETTER A --&gt;
+    &lt;map code="0x42" name="B"/&gt;&lt;!-- LATIN CAPITAL LETTER B --&gt;
+    &lt;map code="0x43" name="C"/&gt;&lt;!-- LATIN CAPITAL LETTER C --&gt;
+    &lt;map code="0x44" name="D"/&gt;&lt;!-- LATIN CAPITAL LETTER D --&gt;
+    &lt;map code="0x45" name="E"/&gt;&lt;!-- LATIN CAPITAL LETTER E --&gt;
+    &lt;map code="0x46" name="F"/&gt;&lt;!-- LATIN CAPITAL LETTER F --&gt;
+    &lt;map code="0x47" name="G"/&gt;&lt;!-- LATIN CAPITAL LETTER G --&gt;
+    &lt;map code="0x48" name="H"/&gt;&lt;!-- LATIN CAPITAL LETTER H --&gt;
+    ...
+  &lt;/cmap_format_4&gt;
+  ...
+&lt;/cmap&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>loca：Index to Location，记录每个 glyph 在 glyf 表中的偏移量。</p>
+  </li>
+  <li>
+    <p>glyf：Glyph Data，真正的字形轮廓（矢量点、轮廓、控制点）；cmap 表负责把 Unicode 字符映射到 glyphID，而 glyf 表告诉渲染系统该 glyph 的具体形状</p>
+  </li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;glyf&gt;
+    &lt;TTGlyph name="A" xMin="-16" yMin="0" xMax="1260" yMax="1444"&gt;
+    &lt;contour&gt;
+      &lt;pt x="1086" y="213" on="1"/&gt;
+      &lt;pt x="1113" y="137" on="0"/&gt;
+      &lt;pt x="1161" y="50" on="0"/&gt;
+      &lt;pt x="1219" y="9" on="0"/&gt;
+      &lt;pt x="1260" y="1" on="1"/&gt;
+      &lt;pt x="1260" y="0" on="1"/&gt;
+      &lt;pt x="793" y="0" on="1"/&gt;
+      &lt;pt x="793" y="1" on="1"/&gt;
+      &lt;pt x="845" y="7" on="0"/&gt;
+      &lt;pt x="897" y="54" on="0"/&gt;
+      &lt;pt x="899" y="143" on="0"/&gt;
+      &lt;pt x="874" y="213" on="1"/&gt;
+      &lt;pt x="528" y="1200" on="1"/&gt;
+      &lt;pt x="528" y="1200" on="1"/&gt;
+      &lt;pt x="220" y="292" on="1"/&gt;
+      &lt;pt x="184" y="186" on="0"/&gt;
+      &lt;pt x="170" y="66" on="0"/&gt;
+      &lt;pt x="224" y="11" on="0"/&gt;
+      &lt;pt x="290" y="1" on="1"/&gt;
+      &lt;pt x="290" y="0" on="1"/&gt;
+      &lt;pt x="-16" y="0" on="1"/&gt;
+      &lt;pt x="-16" y="1" on="1"/&gt;
+      &lt;pt x="27" y="9" on="0"/&gt;
+      &lt;pt x="89" y="59" on="0"/&gt;
+      &lt;pt x="151" y="181" on="0"/&gt;
+      &lt;pt x="193" y="297" on="1"/&gt;
+      &lt;pt x="614" y="1444" on="1"/&gt;
+      &lt;pt x="648" y="1444" on="1"/&gt;
+    &lt;/contour&gt;
+    &lt;contour&gt;
+      &lt;pt x="290" y="532" on="1"/&gt;
+      &lt;pt x="294" y="544" on="1"/&gt;
+      &lt;pt x="859" y="544" on="1"/&gt;
+      &lt;pt x="860" y="532" on="1"/&gt;
+    &lt;/contour&gt;
+    &lt;instructions/&gt;
+  &lt;/TTGlyph&gt;
+  ...
+&lt;/glyf&gt;
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>name：字体名称、子家族、版本、版权、厂商信息等字符串。</p>
+  </li>
+  <li>
+    <p>post：PostScript，与 PostScript 兼容的信息，比如 italic angle、underline position、glyph 名称表。</p>
+  </li>
+</ul>
+
+<p><strong>GDEF</strong> (Glyph Definition Table)</p>
+
+<ul>
+  <li>OpenType Layout 表之一，标记 glyph 类别（基字、附加字、标点等）。</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>字符 → cmap → glyph
+            ↓
+           GDEF（分类/属性）
+            ↓
+           GSUB（替换字形，例如连字）
+            ↓
+           GPOS（调整位置，例如 kerning、mark 对齐）
+            ↓
+        绘制 glyph（glyf 表）
+</code></pre></div></div>
+
+<p><strong>GPOS</strong> (Glyph Positioning Table)</p>
+
+<ul>
+  <li>OpenType Layout 表之一，定义字形间的精细位置调整（如 kerning、上下标偏移）。</li>
+</ul>
+
+<p><strong>GSUB</strong> (Glyph Substitution Table)</p>
+
+<ul>
+  <li>OpenType Layout 表之一，定义字形替换规则（连字、上下文替换，拉丁/阿拉伯变体）。</li>
+</ul>
+
+<p><strong>HVAR</strong> (Horizontal Variations)</p>
+
+<ul>
+  <li>可变字体表，用于调整字宽的变化（横向）。</li>
+</ul>
+
+<p><strong>MVAR</strong> (Metrics Variations)</p>
+
+<ul>
+  <li>可变字体表，支持字度量参数（ascender、descender 等）的变化。</li>
+</ul>
+
+<p><strong>STAT</strong> (Style Attributes Table)</p>
+
+<ul>
+  <li>OpenType Variable Font 的样式坐标信息（比如 Weight=400, Width=100）。</li>
+</ul>
+
+<p><strong>avar</strong> (Axis Variations)</p>
+
+<ul>
+  <li>Variable Font 表，调整 variation axis 的映射关系（非线性调节）。</li>
+</ul>
+
+<p><strong>fvar</strong> (Font Variations)</p>
+
+<ul>
+  <li>Variable Font 的主要定义，列出轴（Axis，比如 Weight, Width, Optical Size）和实例（Regular, Bold…）。</li>
+</ul>
+
+<p><strong>gvar</strong> (Glyph Variations)</p>
+
+<ul>
+  <li>
+    <p>Variable Font 的关键表，定义 glyph 在不同轴下如何变形。</p>
+  </li>
+  <li>疑问：同一个字体中ascent、descent都相同吗？因为都是和Font中最高/低glyph做比较（或者这个描述对吗）</li>
+  <li>
+    <p>为什么descent有时候是负数？</p>
+  </li>
+  <li>层级关系图</li>
+</ul>
+
+<p><img src="https://developer.apple.com/library/archive/documentation/StringsTextFonts/Conceptual/TextAndWebiPhoneOS/Art/text_kit_arch_2x.png" alt="img" /></p>
+
+<ul>
+  <li>CoreText的层级
+    <ul>
+      <li>glyph run：包含一组连续的有相同样式和方向的glyph</li>
+    </ul>
+  </li>
+</ul>
+
+<p><img src="https://developer.apple.com/library/archive/documentation/StringsTextFonts/Conceptual/TextAndWebiPhoneOS/Art/core_text_arch_2x.png" alt="img" /></p>
+
+<ul>
+  <li>CTFont：可以用于查询：character-to-glyph mapping, its encoding, glyph data, and metrics such as ascent, leading,</li>
+  <li>font cascading：字体级联；Core Text 还提供了一种称为字体级联的自动字体替换机制。
+    <ul>
+      <li>字体级联基于级联列表（cascade lists），级联列表是一组有序的font descriptors数组；系统有一个默认的级联列表，根据用户当前的语言设置和font设置而不同</li>
+      <li><a href="https://developer.apple.com/documentation/coretext/1509506-ctfontcreateforstring">CTFontCreateForString</a>使用了级联列表，可以逆向看下</li>
+    </ul>
+  </li>
+  <li>可以逆向下实现</li>
+</ul>
+
+<div class="language-swift highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">class</span> <span class="kd">func</span> <span class="nf">preferredFont</span><span class="p">(</span><span class="n">forTextStyle</span> <span class="nv">style</span><span class="p">:</span> <span class="kt">UIFont</span><span class="o">.</span><span class="kt">TextStyle</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">UIFont</span>
+</code></pre></div></div>
+
+<h1 id="参考">参考</h1>
+
+<ul>
+  <li>https://developer.apple.com/library/archive/documentation/StringsTextFonts/Conceptual/TextAndWebiPhoneOS/Introduction/Introduction.html#//apple_ref/doc/uid/TP40009542-CH1-SW1</li>
+  <li>https://developer.apple.com/library/archive/documentation/2DDrawing/Conceptual/DrawingPrintingiOS/Introduction/Introduction.html#//apple_ref/doc/uid/TP40010156-CH1-SW1</li>
+  <li>https://developer.apple.com/library/archive/documentation/2DDrawing/Conceptual/DrawingPrintingiOS/Introduction/Introduction.html#//apple_ref/doc/uid/TP40010156-CH1-SW1</li>
+</ul>
+
+
+                <hr>
+
+                
+
+
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/2025/08/31/%E7%AC%AC%E4%B8%80%E4%B8%AAFlutter%E5%BA%94%E7%94%A8/" data-toggle="tooltip" data-placement="top" title="第一个Flutter应用">&larr; Previous Post</a>
+                    </li>
+                    
+                    
+                    <li class="next">
+                        <a href="/2025/09/13/%E4%B8%80%E6%96%87%E8%AF%BB%E6%87%82%E5%AD%97%E7%AC%A6-%E5%AD%97%E5%BD%A2-%E5%AD%97%E4%BD%93/" data-toggle="tooltip" data-placement="top" title="一文读懂字符、字形、字体">Next Post &rarr;</a>
+                    </li>
+                    
+                </ul>
+
+
+                
+
+                
+                <!-- disqus 评论框 start -->
+                <div class="comment">
+                    <div id="disqus_thread" class="disqus-thread"></div>
+                </div>
+                <!-- disqus 评论框 end -->
+                
+
+            </div>
+
+    <!-- Sidebar Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+        				
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#Algorithm" title="Algorithm" rel="5">
+                                    Algorithm
+                                </a>
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#Java" title="Java" rel="14">
+                                    Java
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#Android" title="Android" rel="10">
+                                    Android
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#Hust" title="Hust" rel="2">
+                                    Hust
+                                </a>
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#操作系统" title="操作系统" rel="3">
+                                    操作系统
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#View" title="View" rel="2">
+                                    View
+                                </a>
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#Note" title="Note" rel="2">
+                                    Note
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#iOS" title="iOS" rel="6">
+                                    iOS
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#跨端渲染" title="跨端渲染" rel="4">
+                                    跨端渲染
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#Font" title="Font" rel="3">
+                                    Font
+                                </a>
+                            
+        				
+                            
+        				
+                            
+        				
+        			</div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+                <hr>
+                <h5>FRIENDS</h5>
+                <ul class="list-inline">
+                    
+                </ul>
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+
+<!-- disqus 公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = "HusterYP";
+    var disqus_identifier = "/2025/09/03/TextHandling";
+    var disqus_url = "http://localhost:4000/2025/09/03/TextHandling/";
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<!-- disqus 公共JS代码 end -->
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("http://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                    
+                    
+
+                    <!-- add Weibo, Zhihu by Hux, add target = "_blank" to <a> by Hux -->
+                    
+                    
+
+
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/HusterYP">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; 非专业程序员 2025
+                    <br>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js "></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/js/bootstrap.min.js "></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js "></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("http://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+
+
+<!-- Baidu Tongji -->
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>

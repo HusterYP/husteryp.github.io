@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Hello-World">
+    <meta name="keyword"  content="">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>一文读懂字符、字形、字体 - 袁平 | HusterYP-Blog</title>
+
+    <link rel="canonical" href="http://localhost:4000/2025/09/13/%E4%B8%80%E6%96%87%E8%AF%BB%E6%87%82%E5%AD%97%E7%AC%A6-%E5%AD%97%E5%BD%A2-%E5%AD%97%E4%BD%93/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    <!-- Pygments Github CSS -->
+    <link rel="stylesheet" href="/css/syntax.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="http://cdn.staticfile.org/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">非专业程序员</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/about/">About</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/tags/">Tags</a>
+                    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Image to hack wechat -->
+<!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="/img/tag-bg.jpg" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/img/tag-bg.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/#跨端渲染" title="跨端渲染">跨端渲染</a>
+                        
+                        <a class="tag" href="/tags/#Font" title="Font">Font</a>
+                        
+                    </div>
+                    <h1>一文读懂字符、字形、字体</h1>
+                    
+                    
+                    <h2 class="subheading">Character、Glyph、Font的区别</h2>
+                    
+                    <span class="meta">Posted by 袁平 on September 13, 2025</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+				<h1 id="一引言">一、引言</h1>
+
+<p>什么是Character？什么是Glyph？Character和Glyph是否一一对应？我们常说的Font又包含哪些东西？如果要自己实现一套文本的分词、测量和布局，又需要理清楚哪些概念？ascent、descent、lineHeight之间的关系是怎么样的？</p>
+
+<p>本文将尽量以简洁易懂的方式来解释以上问题，也可以提前Mark起来，作为日后的速查手册。</p>
+
+<h1 id="二character">二、Character</h1>
+
+<p>Character也叫字符，是一个抽象概念，比如字母<code class="highlighter-rouge">A</code>、中文<code class="highlighter-rouge">你</code>等都可以视为一个字符，它只是一个语义单位，不关心具体长什么样。</p>
+
+<h1 id="三glpyh">三、Glpyh</h1>
+
+<p>Glpyh也叫字形，表示字符的绘制方式；一个字符可以有多种方式绘制，比如字母A，可以有不同的大小、粗细、斜体、衬线等，但都是同一个字符；这些不同的绘制方式，都叫字形。</p>
+
+<p><img src="/img/post/一文读懂字符、字形、字体/glyph_A.png" alt="glyph_A" /></p>
+
+<h2 id="31-character与glyph的关系">3.1 Character与Glyph的关系</h2>
+
+<p>字符与字形并非一一对应关系，一个字符可以由多个字形表示，比如<code class="highlighter-rouge">é</code>可以是<code class="highlighter-rouge">e</code>和重音符号<code class="highlighter-rouge">´</code>的组合，在一些连字情况下，一个字形也可以代表多个字符，如下：</p>
+
+<p><img src="/img/post/一文读懂字符、字形、字体/ligatures.png" alt="ligatures" /></p>
+
+<h1 id="四font">四、Font</h1>
+
+<h2 id="41-typeface">4.1 Typeface</h2>
+
+<p>指一套具有统一设计风格的Font集合，它是一种设计概念，而不是具体的文件</p>
+
+<h2 id="42-font">4.2 Font</h2>
+
+<p>Font可以理解成Typeface的某个具体实现。</p>
+
+<p>以Helvetica为例：</p>
+
+<ul>
+  <li>Typeface：Helvetica</li>
+  <li>Font：
+    <ul>
+      <li>Helvetica Regular.ttf</li>
+      <li>Helvetica Bold.ttf</li>
+      <li>Helvetica Italic.ttf</li>
+      <li>Helvetica Bold Italic.ttf</li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="43-font-family">4.3 Font Family</h2>
+
+<p>Font Family是一组属于同一个Typeface的字体（Fonts），它们共享设计风格，只是字重/宽度/样式不同。</p>
+
+<p>比如：Helvetica是一个Font Family，里面包含字体：</p>
+
+<ul>
+  <li>Helvetica Regular</li>
+  <li>Helvetica Bold</li>
+  <li>Helvetica Italic</li>
+  <li>Helvetica Bold Italic</li>
+</ul>
+
+<h2 id="44-font-descriptor">4.4 Font Descriptor</h2>
+
+<p>Font Descriptor（字体描述符）是一种属性集合（Font Family、Font Weight、样式 (italic/oblique)、大小等），用来描述或查询一个字体；它不是字体文件，而是一个“过滤条件”或“配置对象”，在 CoreText 里对应 <code class="highlighter-rouge">CTFontDescriptor</code>。</p>
+
+<p>Font Descriptor可以用于匹配系统中符合条件的字体，也可以用它来派生一个具体的CTFont，如：</p>
+
+<div class="language-swift highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// 这里的 descriptor 只是描述条件，真正的字体对象是 font</span>
+<span class="k">let</span> <span class="nv">descriptor</span> <span class="o">=</span> <span class="kt">CTFontDescriptorCreateWithAttributes</span><span class="p">([</span>
+    <span class="nv">kCTFontFamilyNameAttribute</span><span class="p">:</span> <span class="s">"Microsoft YaHei"</span><span class="p">,</span>
+    <span class="nv">kCTFontWeightTrait</span><span class="p">:</span> <span class="mf">0.8</span>
+<span class="p">])</span>
+<span class="k">let</span> <span class="nv">font</span> <span class="o">=</span> <span class="kt">CTFontCreateWithFontDescriptor</span><span class="p">(</span><span class="n">descriptor</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="kc">nil</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h2 id="45-font-collections">4.5 Font Collections</h2>
+
+<p>Font Collections是一组字体的集合，通常用于检索和筛选，在 CoreText 里对应CTFontCollection。</p>
+
+<p>它可以包含系统中所有可用字体，也可以按条件过滤出子集，主要用途有：</p>
+
+<ul>
+  <li>
+    <p>枚举系统安装的字体</p>
+  </li>
+  <li>
+    <p>根据 <code class="highlighter-rouge">Font Descriptor</code> 找到所有匹配的字体</p>
+  </li>
+  <li>
+    <p>做字体选择器 UI（比如 Word 里的字体下拉框）</p>
+  </li>
+</ul>
+
+<h2 id="46-小结">4.6 小结</h2>
+
+<p><img src="/img/post/一文读懂字符、字形、字体/Font.png" alt="Font" /></p>
+
+<h2 id="47-glyph与font的关系">4.7 Glyph与Font的关系</h2>
+
+<p>简单理解，Font里存储了Glyph的绘制样式，Glyph与Unicode的映射关系等。</p>
+
+<p>Font里有各种各样的表，存储了Unicode code point与GlyphID的映射关系，每个Glyph绘制时的advance width 和left side bearing等，后续会有单独的文章详细解析Font文件内容，这里先理解二者的概念。</p>
+
+<h1 id="五文字排版的基本概念">五、文字排版的基本概念</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>基本概念</th>
+      <th>解释</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>metrics</td>
+      <td>由字体设计师提供，用于描述每个Glyph周围的间距</td>
+    </tr>
+    <tr>
+      <td>advance width</td>
+      <td>前进宽度，基线方向到下一个Glyph origin的距离，或者理解为字形绘制完后，光标应该前进多少距离</td>
+    </tr>
+    <tr>
+      <td>left-side bearing</td>
+      <td>Glyph origin与Glyph左侧的间距</td>
+    </tr>
+    <tr>
+      <td>right-side bearing</td>
+      <td>Glyph右侧与advance width终点的距离</td>
+    </tr>
+    <tr>
+      <td>ascent</td>
+      <td>Glyph origin到Font中最高Glyph的顶部距离</td>
+    </tr>
+    <tr>
+      <td>descent</td>
+      <td>Glyph origin到Font中最低Glyph的底部距离</td>
+    </tr>
+    <tr>
+      <td>bounding box<br />bounding rectangle</td>
+      <td>包含Glyph可视区域（注意非advance width）最小rect</td>
+    </tr>
+    <tr>
+      <td>kerning</td>
+      <td>通常，Glyph一般按advance width排列，但为了提高可读性，通常会引入kerning来扩大或缩小两个glyph之间的间距，比如W和A：<br /><img src="/img/post/一文读懂字符、字形、字体/kerning.png" alt="kerning" /></td>
+    </tr>
+    <tr>
+      <td>leading/linegap</td>
+      <td>line之间的添加的距离</td>
+    </tr>
+    <tr>
+      <td>lineHeight</td>
+      <td>lineHeight = ascent + descent + leading</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>一图胜过千言，贴两张经典的图：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>图一</th>
+      <th>图二</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><img src="/img/post/一文读懂字符、字形、字体/glyph_1.png" alt="glyph_1" /></td>
+      <td><img src="/img/post/一文读懂字符、字形、字体/glyph_2.png" alt="glyph_2" /></td>
+    </tr>
+  </tbody>
+</table>
+
+<blockquote>
+  <p>更多精彩内容欢迎关注🌍公众号：非专业程序员Ping</p>
+</blockquote>
+
+
+                <hr>
+
+                
+
+
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/2025/09/03/TextHandling/" data-toggle="tooltip" data-placement="top" title="Text Handling">&larr; Previous Post</a>
+                    </li>
+                    
+                    
+                    <li class="next">
+                        <a href="/2025/09/14/Typora%E6%BF%80%E6%B4%BB/" data-toggle="tooltip" data-placement="top" title="Typora激活">Next Post &rarr;</a>
+                    </li>
+                    
+                </ul>
+
+
+                
+
+                
+                <!-- disqus 评论框 start -->
+                <div class="comment">
+                    <div id="disqus_thread" class="disqus-thread"></div>
+                </div>
+                <!-- disqus 评论框 end -->
+                
+
+            </div>
+
+    <!-- Sidebar Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+        				
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#Algorithm" title="Algorithm" rel="5">
+                                    Algorithm
+                                </a>
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#Java" title="Java" rel="14">
+                                    Java
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#Android" title="Android" rel="10">
+                                    Android
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#Hust" title="Hust" rel="2">
+                                    Hust
+                                </a>
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#操作系统" title="操作系统" rel="3">
+                                    操作系统
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#View" title="View" rel="2">
+                                    View
+                                </a>
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#Note" title="Note" rel="2">
+                                    Note
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#iOS" title="iOS" rel="6">
+                                    iOS
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#跨端渲染" title="跨端渲染" rel="4">
+                                    跨端渲染
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#Font" title="Font" rel="3">
+                                    Font
+                                </a>
+                            
+        				
+                            
+        				
+                            
+        				
+        			</div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+                <hr>
+                <h5>FRIENDS</h5>
+                <ul class="list-inline">
+                    
+                </ul>
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+
+<!-- disqus 公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = "HusterYP";
+    var disqus_identifier = "/2025/09/13/一文读懂字符、字形、字体";
+    var disqus_url = "http://localhost:4000/2025/09/13/%E4%B8%80%E6%96%87%E8%AF%BB%E6%87%82%E5%AD%97%E7%AC%A6-%E5%AD%97%E5%BD%A2-%E5%AD%97%E4%BD%93/";
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<!-- disqus 公共JS代码 end -->
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("http://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                    
+                    
+
+                    <!-- add Weibo, Zhihu by Hux, add target = "_blank" to <a> by Hux -->
+                    
+                    
+
+
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/HusterYP">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; 非专业程序员 2025
+                    <br>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js "></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/js/bootstrap.min.js "></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js "></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("http://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+
+
+<!-- Baidu Tongji -->
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>

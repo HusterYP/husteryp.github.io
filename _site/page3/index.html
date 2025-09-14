@@ -154,6 +154,129 @@
             ">
     			
 <div class="post-preview">
+    <a href="/2018/11/15/%E8%BF%9B%E7%A8%8B%E4%B8%8E%E7%BA%BF%E7%A8%8B/">
+        <h2 class="post-title">
+            进程与线程
+        </h2>
+        
+        <h3 class="post-subtitle">
+            进程与线程总结
+        </h3>
+        
+        <div class="post-content-preview">
+            前言
+
+
+  操作系统之进程与线程总结
+
+
+
+
+正文
+
+
+
+一. 进程
+
+定义: 一个运行中的程序
+
+进程和程序的区别: 一个进程是某种类型的活动, 它有程序, 输入, 输出以及状态, 如果一个程序运行了两遍, 则算作两个进程
+
+进程地址空间见下图:
+
+
+
+内核模式和用户模式的实现: 通常是用某个控制寄存器中的一个模式位实现的
+
+进程有三种状态: 运行态, 就绪态, 阻塞态; 其相互之间的切...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by 袁平 on November 15, 2018
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
+    <a href="/2018/11/09/Java%E5%B9%B6%E5%8F%91-%E4%B8%89/">
+        <h2 class="post-title">
+            Java并发[三]
+        </h2>
+        
+        <h3 class="post-subtitle">
+            Java并发编程实战第三部分第四部分总结
+        </h3>
+        
+        <div class="post-content-preview">
+            前言
+
+
+  讲解锁等高级主题
+
+
+
+
+正文
+
+
+
+一. 死锁及其避免
+
+
+  
+    死锁出现的原因通常是出现锁环路造成的, 不管是显示的还是隐式的
+  
+  
+    通过定义获取锁的顺序来避免死锁: 通过System.identityHashCode(object)来返回一个锁对象的Object.hashCode()的返回值; 通过这个值来定义锁的顺序, 并在整个应用程序中都按照这个...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by 袁平 on November 9, 2018
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
+    <a href="/2018/11/02/Java%E5%B9%B6%E5%8F%91-%E4%BA%8C/">
+        <h2 class="post-title">
+            Java并发[二]
+        </h2>
+        
+        <h3 class="post-subtitle">
+            Java并发编程实战第二部分总结
+        </h3>
+        
+        <div class="post-content-preview">
+            前言
+
+
+  主要讲解了Executor框架
+
+
+
+
+正文
+
+
+
+一. Executor框架
+
+
+  线程池: 可以通过Executors中的静态工厂方法之一来创建一个线程池
+
+
+
+  
+    newFixedThreadPool: 创建一个固定长度的线程池, 每当提交一个任务时就创建一个线程, 直到达到线程池的最大数量, 这是线程池规模将不再变化(如果某个线程发生异常终止, 那么线程池会...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by 袁平 on November 2, 2018
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
     <a href="/2018/10/31/Java%E5%B9%B6%E5%8F%91%E4%B8%80/">
         <h2 class="post-title">
             Java并发[一]
@@ -406,114 +529,6 @@ Android动画也是Android系统中一个很重要的模块, 在平时开发中,
 </div>
 <hr>
 
-<div class="post-preview">
-    <a href="/2018/10/02/JVM%E4%B9%8B%E7%B1%BB%E6%96%87%E4%BB%B6%E7%BB%93%E6%9E%84%E4%B8%8E%E7%B1%BB%E5%8A%A0%E8%BD%BD%E6%9C%BA%E5%88%B6/">
-        <h2 class="post-title">
-            Java类文件结构与类加载机制
-        </h2>
-        
-        <h3 class="post-subtitle">
-            深入理解Java虚拟机第六章第七章总结
-        </h3>
-        
-        <div class="post-content-preview">
-            前言
-
-本文是对«深入理解Java虚拟机»第六章第七章以及其他博客的总结, 权做笔记~
-
-
-
-正文
-
-
-
-一. 类文件结构
-
-Class文件是一组以8位字节为基础单位的二进制流, 当遇到需要占据8位字节以上空间的数据项时, 则会按照高位在前的方式分割成若干个8位字节进行存储
-
-Class文件格式采用一种类似于C语言结构体的伪结构来存储数据, 这种伪结构中只有两种数据类型: 无符号数和表; 无...
-        </div>
-    </a>
-    <p class="post-meta">
-        Posted by 袁平 on October 2, 2018
-    </p>
-</div>
-<hr>
-
-<div class="post-preview">
-    <a href="/2018/09/28/JVM%E4%B9%8B%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8%E4%B8%8E%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E7%AD%96%E7%95%A5/">
-        <h2 class="post-title">
-            Java垃圾收集器与内存分配策略
-        </h2>
-        
-        <h3 class="post-subtitle">
-            深入理解Java虚拟机第三章总结
-        </h3>
-        
-        <div class="post-content-preview">
-            前言
-
-本文为«深入理解Java虚拟机»第三章以及部分博客内容总结, 权作个人笔记~
-
-注: 文中部分图片来自: http://hllvm.group.iteye.com/group/wiki/?show_full=true
-
-
-
-正文
-
-
-
-一. 对象是否死亡
-
-进行垃圾收集首先需要的就是判断对象是否死亡, 也就是是否可以清除收集, 下面将讲解判断对象是否死亡的方法
-
-1.1 引用计数算法...
-        </div>
-    </a>
-    <p class="post-meta">
-        Posted by 袁平 on September 28, 2018
-    </p>
-</div>
-<hr>
-
-<div class="post-preview">
-    <a href="/2018/09/27/JVM%E4%B9%8B%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F%E4%B8%8E%E5%86%85%E5%AD%98%E6%BA%A2%E5%87%BA%E5%BC%82%E5%B8%B8/">
-        <h2 class="post-title">
-            Java内存区域与内存溢出异常
-        </h2>
-        
-        <h3 class="post-subtitle">
-            深入理解Java虚拟机第二章总结
-        </h3>
-        
-        <div class="post-content-preview">
-            前言
-
-本文是对«深入理解Java虚拟机»第二章以及其他博客的阅读总结
-
-重点是需要去理解各区域存储的是什么, 以此从底层理解对象的创建与引用等过程; 同时还需要明确的一点是各部分会产生的异常, 以及产生异常的原因
-
-注: 文中部分图片来自网络, 但是忘了出处, 侵删~
-
-
-
-正文
-
-
-
-一. 基本概念
-
-在开始讲解之前, 需要先明确关于JVM的一些基本概念
-
-我们都知道, Java是一个跨...
-        </div>
-    </a>
-    <p class="post-meta">
-        Posted by 袁平 on September 27, 2018
-    </p>
-</div>
-<hr>
-
 
 <!-- Pager -->
 
@@ -610,8 +625,14 @@ Class文件格式采用一种类似于C语言结构体的伪结构来存储数�
                             
                         
                             
-                                <a href="/tags/#跨端渲染" title="跨端渲染" rel="2">
+                                <a href="/tags/#跨端渲染" title="跨端渲染" rel="4">
                                     跨端渲染
+                                </a>
+                            
+                        
+                            
+                                <a href="/tags/#Font" title="Font" rel="3">
+                                    Font
                                 </a>
                             
                         
