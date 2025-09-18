@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Hello-World">
+    <meta name="keyword"  content="">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>一文读懂Font文件 - 袁平 | HusterYP-Blog</title>
+
+    <link rel="canonical" href="http://localhost:4000/2025/09/17/%E4%B8%80%E6%96%87%E8%AF%BB%E6%87%82Font%E6%96%87%E4%BB%B6/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    <!-- Pygments Github CSS -->
+    <link rel="stylesheet" href="/css/syntax.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="http://cdn.staticfile.org/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">非专业程序员</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/about/">About</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/tags/">Tags</a>
+                    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Image to hack wechat -->
+<!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="/img/tag-bg.jpg" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/img/tag-bg.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/#跨端渲染" title="跨端渲染">跨端渲染</a>
+                        
+                        <a class="tag" href="/tags/#Font" title="Font">Font</a>
+                        
+                    </div>
+                    <h1>一文读懂Font文件</h1>
+                    
+                    
+                    <h2 class="subheading">深入介绍Font文件内容</h2>
+                    
+                    <span class="meta">Posted by 袁平 on September 17, 2025</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+				<h1 id="一引言">一、引言</h1>
+
+<blockquote>
+  <p>在开始阅读本文之前，推荐先阅读<a href="https://mp.weixin.qq.com/s/96YJGYKLoxENC4qT9tYNoQ">字符（Character）、字形（Glyph）、字体的区别</a>理解基本概念。</p>
+
+  <p>如果你对字符与Unicode的相关概念还不理解，推荐阅读<a href="https://mp.weixin.qq.com/s/EYPO3sSjtIstD3RmlRCs9w">字符与编码</a></p>
+</blockquote>
+
+<p>前文，我们介绍了<a href="https://mp.weixin.qq.com/s/96YJGYKLoxENC4qT9tYNoQ">字符（Character）、字形（Glyph）、字体的区别</a>，这里我们再来实际分析一个字体文件中到底有什么，这有利于我们后续理解文字排版引擎的工作原理和流程。</p>
+
+<p>macOS上系统字体路径一般为<code class="highlighter-rouge">/System/Library/Fonts/</code>，可以看到有文件后缀有<code class="highlighter-rouge">ttc</code>和<code class="highlighter-rouge">ttf</code>，二者有什么区别呢？</p>
+
+<p><strong>1）<code class="highlighter-rouge">.ttf</code> (TrueType Font)</strong></p>
+
+<p><code class="highlighter-rouge">ttf</code>表示这是一个单字体文件，每个 <code class="highlighter-rouge">.ttf</code> 文件通常只对应一个字体样式（例如 <em>Microsoft YaHei Regular</em>）</p>
+
+<p><strong>2）<code class="highlighter-rouge">.ttc</code> (TrueType Collection)</strong></p>
+
+<p><code class="highlighter-rouge">ttc</code>表示这是一个字体集合文件，内部可以包含多个 TrueType 字体（多个 <code class="highlighter-rouge">.ttf</code> 打包在一起），这些字体通常共享某些表（比如 glyph 轮廓、cmap），减少冗余，提高存储效率，常用于一个 Typeface 的多个变体（Regular, Bold, Italic, Light…）</p>
+
+<p>上面提到了TrueType，与之对应的还有OpenType，二者其实都是字体类型标准，简单理解就是OpenType是TrueType的扩展，OpenType支持更多的特性，比如：连字、RTL、上下标等。</p>
+
+<p>OpenType一般以<code class="highlighter-rouge">otf</code>为后缀，但也不能简单的根据文件名后缀区分二者，文件扩展名只是习惯，并不能完全说明内部格式，真正的区别还是要看字体表结构，比如OpenType有GSUB、GPOS、GDEF等扩展表。</p>
+
+<p>下面，我们来真正解析一个字体文件，看里面有什么，可以通过如下命令行将字体解析成XML。</p>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 对于ttf文件</span>
+ttx NewYork.ttf
+<span class="c"># ttc文件是个字体集合，需要明确指明要提取哪个index的字体</span>
+ttx <span class="nt">-y</span> 0 Times.ttc
+</code></pre></div></div>
+
+<h1 id="二font文件解析">二、Font文件解析</h1>
+
+<p>我们以NewYork.ttf文件为例，如下是NewYork.ttf中的表</p>
+
+<p><img src="/img/post/一文读懂Font文件/NewYork-ttf.png" alt="NewYork-ttf" /></p>
+
+<h2 id="21-glyphorder">2.1 GlyphOrder</h2>
+
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;GlyphOrder&gt;</span>
+  <span class="nt">&lt;GlyphID</span> <span class="na">id=</span><span class="s">"0"</span> <span class="na">name=</span><span class="s">".notdef"</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;GlyphID</span> <span class="na">id=</span><span class="s">"1"</span> <span class="na">name=</span><span class="s">".null"</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;GlyphID</span> <span class="na">id=</span><span class="s">"2"</span> <span class="na">name=</span><span class="s">"nonmarkingreturn"</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;GlyphID</span> <span class="na">id=</span><span class="s">"3"</span> <span class="na">name=</span><span class="s">"space"</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;GlyphID</span> <span class="na">id=</span><span class="s">"4"</span> <span class="na">name=</span><span class="s">"A"</span><span class="nt">/&gt;</span>
+  ...
+<span class="nt">&lt;/GlyphOrder&gt;</span>
+</code></pre></div></div>
+
+<p>GlyphOrder定义glyphID与glyphName的映射。</p>
+
+<h2 id="22-head">2.2 head</h2>
+
+<p>Font Header，存储一些全局信息；关注几个值：</p>
+
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;head&gt;</span>
+  <span class="nt">&lt;unitsPerEm</span> <span class="na">value=</span><span class="s">"2048"</span><span class="nt">/&gt;</span>
+  ...
+<span class="nt">&lt;/head&gt;</span>
+</code></pre></div></div>
+
+<p><strong>1）unitsPerEm</strong></p>
+
+<p>字体表里的数值一般都很大（见后文），其单位并不是像素值，而是 <code class="highlighter-rouge">em unit</code>，<code class="highlighter-rouge">&lt;unitsPerEm value="2048"/&gt;</code>表示<code class="highlighter-rouge">2048 units = 1 em = 设计的字高</code>，比如当字体在屏幕上以 16px 渲染时，1 em = 16px，其他数值可按比例换算</p>
+
+<h2 id="23-hhea">2.3 hhea</h2>
+
+<p>Horizontal Typesetting Header，横向排版信息，关注几个值</p>
+
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;hhea&gt;</span>
+	<span class="c">&lt;!-- MacOS一般使用hhea里的ascent、descent；OS_2表里还有几个ascent、descent，一般在Windows或专业设计上使用 --&gt;</span>
+  <span class="nt">&lt;ascent</span> <span class="na">value=</span><span class="s">"1950"</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;descent</span> <span class="na">value=</span><span class="s">"-494"</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;lineGap</span> <span class="na">value=</span><span class="s">"0"</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;advanceWidthMax</span> <span class="na">value=</span><span class="s">"2818"</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;minLeftSideBearing</span> <span class="na">value=</span><span class="s">"-693"</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;minRightSideBearing</span> <span class="na">value=</span><span class="s">"-693"</span><span class="nt">/&gt;</span>
+  ...
+<span class="nt">&lt;/hhea&gt;</span>
+</code></pre></div></div>
+
+<p><strong>1）ascent &amp; descent</strong></p>
+
+<p>假设字体大小16，unitsPerEm如上为2048，则按比例换算：<code class="highlighter-rouge">ascent = 1950/2048 * 16 ≈ 15.2</code>，<code class="highlighter-rouge">descent ≈ 494/2048 * 16 ≈ 3.8</code>。</p>
+
+<p>需要注意，OS_2表中也有ascent、descent的定义，这是因为不同平台会读取不同表中的ascent、descent，比如macOS、iOS一般使用hhea中的值，Windows一般使用OS_2表中的usWinAscent、usWinDescent，专业排版软件（如InDesign）一般用OS_2表中的sTypoAscender、sTypoDescender。</p>
+
+<p><strong>Q：对于同一个Font，ascent、descent的值是固定的吗？</strong></p>
+
+<p>这个问题的答案需要加定语，对于同一个Font，在同一个平台上，ascent、descent是固定的。</p>
+
+<p><strong>Q：为什么descent值是负数？</strong></p>
+
+<p>可以理解成规范，TrueType/OpenType的规范里，descent是负数，表示基线（baseline）以下延伸的高度。</p>
+
+<h2 id="24-maxp">2.4 maxp</h2>
+
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;maxp&gt;</span>
+  <span class="nt">&lt;numGlyphs</span> <span class="na">value=</span><span class="s">"1811"</span><span class="nt">/&gt;</span>
+  ...
+<span class="nt">&lt;/maxp&gt;</span>
+</code></pre></div></div>
+
+<p>定义字体里 glyph 的数量，以及一些最大值参数。</p>
+
+<h2 id="25-os_2">2.5 OS_2</h2>
+
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;OS_2&gt;</span>
+	<span class="c">&lt;!-- 下标的大小和偏移 --&gt;</span>
+  <span class="nt">&lt;ySubscriptXSize</span> <span class="na">value=</span><span class="s">"650"</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;ySubscriptYSize</span> <span class="na">value=</span><span class="s">"600"</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;ySubscriptXOffset</span> <span class="na">value=</span><span class="s">"0"</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;ySubscriptYOffset</span> <span class="na">value=</span><span class="s">"75"</span><span class="nt">/&gt;</span>
+  
+  <span class="c">&lt;!-- 上标的大小和偏移 --&gt;</span>
+  <span class="nt">&lt;ySuperscriptXSize</span> <span class="na">value=</span><span class="s">"650"</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;ySuperscriptYSize</span> <span class="na">value=</span><span class="s">"600"</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;ySuperscriptXOffset</span> <span class="na">value=</span><span class="s">"0"</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;ySuperscriptYOffset</span> <span class="na">value=</span><span class="s">"350"</span><span class="nt">/&gt;</span>
+
+  <span class="c">&lt;!-- 删除线的粗细和垂直位置 --&gt;</span>
+  <span class="nt">&lt;yStrikeoutSize</span> <span class="na">value=</span><span class="s">"12"</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;yStrikeoutPosition</span> <span class="na">value=</span><span class="s">"620"</span><span class="nt">/&gt;</span>
+
+  <span class="c">&lt;!-- 
+  ulUnicodeRange表示字体支持的Unicode范围，用ulUnicodeRange1 … ulUnicodeRange4 这 4 个 32 位字段来表示，总共 128 个 bit，对应 128 个 Unicode Block，如果某 bit = 1，表示字体支持该区块中的至少一些字符，
+  映射表见：https://learn.microsoft.com/en-us/typography/opentype/spec/os2#ur
+  --&gt;</span>
+  <span class="nt">&lt;ulUnicodeRange1</span> <span class="na">value=</span><span class="s">"10100001 00000000 00000010 11111111"</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;ulUnicodeRange2</span> <span class="na">value=</span><span class="s">"00000010 00000000 00100000 01011110"</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;ulUnicodeRange3</span> <span class="na">value=</span><span class="s">"00000000 00000000 00000000 00000000"</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;ulUnicodeRange4</span> <span class="na">value=</span><span class="s">"00000000 00000000 00000000 00000000"</span><span class="nt">/&gt;</span>
+
+  <span class="c">&lt;!-- 专业排版（比如 InDesign）一般使用sTypoAscender、sTypoDescender --&gt;</span>
+  <span class="nt">&lt;sTypoAscender</span> <span class="na">value=</span><span class="s">"1950"</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;sTypoDescender</span> <span class="na">value=</span><span class="s">"-494"</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;sTypoLineGap</span> <span class="na">value=</span><span class="s">"0"</span><span class="nt">/&gt;</span>
+
+  <span class="c">&lt;!-- Windows一般使用sTypoAscender、sTypoDescender --&gt;</span>
+  <span class="nt">&lt;usWinAscent</span> <span class="na">value=</span><span class="s">"1950"</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;usWinDescent</span> <span class="na">value=</span><span class="s">"494"</span><span class="nt">/&gt;</span>
+  ...
+<span class="nt">&lt;/OS_2&gt;</span>
+</code></pre></div></div>
+
+<p>参见<a href="https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6OS2.html">Apple文档</a>，关注几个值：</p>
+
+<p><strong>1）ySubscriptXSize &amp; ySubscriptYSize &amp; ySubscriptXOffset &amp; ySubscriptYOffset</strong></p>
+
+<p>下标的大小和偏移</p>
+
+<p><strong>2）ySuperscriptXSize &amp; ySuperscriptYSize &amp; ySuperscriptXOffset &amp; ySuperscriptYOffset</strong></p>
+
+<p>上标的大小和偏移</p>
+
+<p><strong>3）yStrikeoutSize &amp; yStrikeoutPosition</strong></p>
+
+<p>删除线的粗细和垂直位置</p>
+
+<p><strong>4）ulUnicodeRange1 &amp; ulUnicodeRange2 &amp; ulUnicodeRange3 &amp; ulUnicodeRange4</strong></p>
+
+<p>ulUnicodeRange表示该字体支持的Unicode范围，用ulUnicodeRange1 … ulUnicodeRange4 这 4 个 32 位字段来表示，总共 128 个 bit，对应 128 个 Unicode Block，如果某 bit = 1，表示字体支持该区块中的至少一些字符，映射表见：https://learn.microsoft.com/en-us/typography/opentype/spec/os2#ur 。</p>
+
+<p>Windows系统通常用 ulUnicodeRange 来看一个字体是否支持某Unicode；macOS/iOS系统一般用 cmap 表（精确的字符映射），ulUnicodeRange只作为辅助信息；浏览器排版一般直接查 cmap，但 ulUnicodeRange 有时也用于字体 fallback 策略。</p>
+
+<p><strong>5）sTypoAscender &amp; sTypoDescender &amp; usWinAscent &amp; usWinDescent</strong></p>
+
+<p>如前文所述，不同系统会取不同的值作为ascent、descent</p>
+
+<h2 id="26-hmtx">2.6 hmtx</h2>
+
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;hmtx&gt;</span>
+  <span class="nt">&lt;mtx</span> <span class="na">name=</span><span class="s">".notdef"</span> <span class="na">width=</span><span class="s">"2048"</span> <span class="na">lsb=</span><span class="s">"199"</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;mtx</span> <span class="na">name=</span><span class="s">".null"</span> <span class="na">width=</span><span class="s">"0"</span> <span class="na">lsb=</span><span class="s">"0"</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;mtx</span> <span class="na">name=</span><span class="s">"A"</span> <span class="na">width=</span><span class="s">"1244"</span> <span class="na">lsb=</span><span class="s">"-16"</span><span class="nt">/&gt;</span>
+  ...
+<span class="nt">&lt;/hmtx&gt;</span>
+</code></pre></div></div>
+
+<p>Horizontal Metrics，记录每个 glyph 的 advance width 和left side bearing。</p>
+
+<p>简单理解排版引擎绘制字形的流程是：将字形放在当前点 + lsb 偏移位置进行绘制，画完后，将光标向右移动 <code class="highlighter-rouge">advanceWidth</code>，准备绘制下一个字形。</p>
+
+<h2 id="27-cmap">2.7 cmap</h2>
+
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;cmap&gt;</span>
+  <span class="nt">&lt;tableVersion</span> <span class="na">version=</span><span class="s">"0"</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;cmap_format_4</span> <span class="na">platformID=</span><span class="s">"0"</span> <span class="na">platEncID=</span><span class="s">"3"</span> <span class="na">language=</span><span class="s">"0"</span><span class="nt">&gt;</span>
+  	<span class="c">&lt;!-- A的Unicode code point是0x41 --&gt;</span>
+    <span class="nt">&lt;map</span> <span class="na">code=</span><span class="s">"0x41"</span> <span class="na">name=</span><span class="s">"A"</span><span class="nt">/&gt;</span><span class="c">&lt;!-- LATIN CAPITAL LETTER A --&gt;</span>
+    <span class="nt">&lt;map</span> <span class="na">code=</span><span class="s">"0x42"</span> <span class="na">name=</span><span class="s">"B"</span><span class="nt">/&gt;</span><span class="c">&lt;!-- LATIN CAPITAL LETTER B --&gt;</span>
+    <span class="nt">&lt;map</span> <span class="na">code=</span><span class="s">"0x43"</span> <span class="na">name=</span><span class="s">"C"</span><span class="nt">/&gt;</span><span class="c">&lt;!-- LATIN CAPITAL LETTER C --&gt;</span>
+    <span class="nt">&lt;map</span> <span class="na">code=</span><span class="s">"0x44"</span> <span class="na">name=</span><span class="s">"D"</span><span class="nt">/&gt;</span><span class="c">&lt;!-- LATIN CAPITAL LETTER D --&gt;</span>
+    <span class="nt">&lt;map</span> <span class="na">code=</span><span class="s">"0x45"</span> <span class="na">name=</span><span class="s">"E"</span><span class="nt">/&gt;</span><span class="c">&lt;!-- LATIN CAPITAL LETTER E --&gt;</span>
+    <span class="nt">&lt;map</span> <span class="na">code=</span><span class="s">"0x46"</span> <span class="na">name=</span><span class="s">"F"</span><span class="nt">/&gt;</span><span class="c">&lt;!-- LATIN CAPITAL LETTER F --&gt;</span>
+    <span class="nt">&lt;map</span> <span class="na">code=</span><span class="s">"0x47"</span> <span class="na">name=</span><span class="s">"G"</span><span class="nt">/&gt;</span><span class="c">&lt;!-- LATIN CAPITAL LETTER G --&gt;</span>
+    <span class="nt">&lt;map</span> <span class="na">code=</span><span class="s">"0x48"</span> <span class="na">name=</span><span class="s">"H"</span><span class="nt">/&gt;</span><span class="c">&lt;!-- LATIN CAPITAL LETTER H --&gt;</span>
+    ...
+  <span class="nt">&lt;/cmap_format_4&gt;</span>
+  ...
+<span class="nt">&lt;/cmap&gt;</span>
+</code></pre></div></div>
+
+<p>Character to Glyph Mapping，定义 Unicode code point → glyph ID 的映射，cmap表中能精确的查到该Font支持哪些Unicode。</p>
+
+<h2 id="28-glyf">2.8 glyf</h2>
+
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;glyf&gt;</span>
+    <span class="nt">&lt;TTGlyph</span> <span class="na">name=</span><span class="s">"A"</span> <span class="na">xMin=</span><span class="s">"-16"</span> <span class="na">yMin=</span><span class="s">"0"</span> <span class="na">xMax=</span><span class="s">"1260"</span> <span class="na">yMax=</span><span class="s">"1444"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;contour&gt;</span>
+      <span class="nt">&lt;pt</span> <span class="na">x=</span><span class="s">"1086"</span> <span class="na">y=</span><span class="s">"213"</span> <span class="na">on=</span><span class="s">"1"</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;pt</span> <span class="na">x=</span><span class="s">"1113"</span> <span class="na">y=</span><span class="s">"137"</span> <span class="na">on=</span><span class="s">"0"</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;pt</span> <span class="na">x=</span><span class="s">"1161"</span> <span class="na">y=</span><span class="s">"50"</span> <span class="na">on=</span><span class="s">"0"</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;pt</span> <span class="na">x=</span><span class="s">"1219"</span> <span class="na">y=</span><span class="s">"9"</span> <span class="na">on=</span><span class="s">"0"</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;pt</span> <span class="na">x=</span><span class="s">"1260"</span> <span class="na">y=</span><span class="s">"1"</span> <span class="na">on=</span><span class="s">"1"</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;pt</span> <span class="na">x=</span><span class="s">"1260"</span> <span class="na">y=</span><span class="s">"0"</span> <span class="na">on=</span><span class="s">"1"</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;pt</span> <span class="na">x=</span><span class="s">"793"</span> <span class="na">y=</span><span class="s">"0"</span> <span class="na">on=</span><span class="s">"1"</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;pt</span> <span class="na">x=</span><span class="s">"793"</span> <span class="na">y=</span><span class="s">"1"</span> <span class="na">on=</span><span class="s">"1"</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;pt</span> <span class="na">x=</span><span class="s">"845"</span> <span class="na">y=</span><span class="s">"7"</span> <span class="na">on=</span><span class="s">"0"</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;pt</span> <span class="na">x=</span><span class="s">"897"</span> <span class="na">y=</span><span class="s">"54"</span> <span class="na">on=</span><span class="s">"0"</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;pt</span> <span class="na">x=</span><span class="s">"899"</span> <span class="na">y=</span><span class="s">"143"</span> <span class="na">on=</span><span class="s">"0"</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;pt</span> <span class="na">x=</span><span class="s">"874"</span> <span class="na">y=</span><span class="s">"213"</span> <span class="na">on=</span><span class="s">"1"</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;pt</span> <span class="na">x=</span><span class="s">"528"</span> <span class="na">y=</span><span class="s">"1200"</span> <span class="na">on=</span><span class="s">"1"</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;pt</span> <span class="na">x=</span><span class="s">"528"</span> <span class="na">y=</span><span class="s">"1200"</span> <span class="na">on=</span><span class="s">"1"</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;pt</span> <span class="na">x=</span><span class="s">"220"</span> <span class="na">y=</span><span class="s">"292"</span> <span class="na">on=</span><span class="s">"1"</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;pt</span> <span class="na">x=</span><span class="s">"184"</span> <span class="na">y=</span><span class="s">"186"</span> <span class="na">on=</span><span class="s">"0"</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;pt</span> <span class="na">x=</span><span class="s">"170"</span> <span class="na">y=</span><span class="s">"66"</span> <span class="na">on=</span><span class="s">"0"</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;pt</span> <span class="na">x=</span><span class="s">"224"</span> <span class="na">y=</span><span class="s">"11"</span> <span class="na">on=</span><span class="s">"0"</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;pt</span> <span class="na">x=</span><span class="s">"290"</span> <span class="na">y=</span><span class="s">"1"</span> <span class="na">on=</span><span class="s">"1"</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;pt</span> <span class="na">x=</span><span class="s">"290"</span> <span class="na">y=</span><span class="s">"0"</span> <span class="na">on=</span><span class="s">"1"</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;pt</span> <span class="na">x=</span><span class="s">"-16"</span> <span class="na">y=</span><span class="s">"0"</span> <span class="na">on=</span><span class="s">"1"</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;pt</span> <span class="na">x=</span><span class="s">"-16"</span> <span class="na">y=</span><span class="s">"1"</span> <span class="na">on=</span><span class="s">"1"</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;pt</span> <span class="na">x=</span><span class="s">"27"</span> <span class="na">y=</span><span class="s">"9"</span> <span class="na">on=</span><span class="s">"0"</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;pt</span> <span class="na">x=</span><span class="s">"89"</span> <span class="na">y=</span><span class="s">"59"</span> <span class="na">on=</span><span class="s">"0"</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;pt</span> <span class="na">x=</span><span class="s">"151"</span> <span class="na">y=</span><span class="s">"181"</span> <span class="na">on=</span><span class="s">"0"</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;pt</span> <span class="na">x=</span><span class="s">"193"</span> <span class="na">y=</span><span class="s">"297"</span> <span class="na">on=</span><span class="s">"1"</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;pt</span> <span class="na">x=</span><span class="s">"614"</span> <span class="na">y=</span><span class="s">"1444"</span> <span class="na">on=</span><span class="s">"1"</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;pt</span> <span class="na">x=</span><span class="s">"648"</span> <span class="na">y=</span><span class="s">"1444"</span> <span class="na">on=</span><span class="s">"1"</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;/contour&gt;</span>
+    <span class="nt">&lt;contour&gt;</span>
+      <span class="nt">&lt;pt</span> <span class="na">x=</span><span class="s">"290"</span> <span class="na">y=</span><span class="s">"532"</span> <span class="na">on=</span><span class="s">"1"</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;pt</span> <span class="na">x=</span><span class="s">"294"</span> <span class="na">y=</span><span class="s">"544"</span> <span class="na">on=</span><span class="s">"1"</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;pt</span> <span class="na">x=</span><span class="s">"859"</span> <span class="na">y=</span><span class="s">"544"</span> <span class="na">on=</span><span class="s">"1"</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;pt</span> <span class="na">x=</span><span class="s">"860"</span> <span class="na">y=</span><span class="s">"532"</span> <span class="na">on=</span><span class="s">"1"</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;/contour&gt;</span>
+    <span class="nt">&lt;instructions/&gt;</span>
+  <span class="nt">&lt;/TTGlyph&gt;</span>
+  ...
+<span class="nt">&lt;/glyf&gt;</span>
+</code></pre></div></div>
+
+<p>Glyph Data，真正的字形轮廓（矢量点、轮廓、控制点）；cmap 表负责把 Unicode 字符映射到 glyphID，而 glyf 表告诉渲染系统该 glyph 的具体形状。</p>
+
+<h2 id="29-name">2.9 name</h2>
+
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;name&gt;</span>
+  <span class="nt">&lt;namerecord</span> <span class="na">nameID=</span><span class="s">"0"</span> <span class="na">platformID=</span><span class="s">"3"</span> <span class="na">platEncID=</span><span class="s">"1"</span> <span class="na">langID=</span><span class="s">"0x409"</span><span class="nt">&gt;</span>
+    © 2017-2024 Apple Inc. All rights reserved.
+  <span class="nt">&lt;/namerecord&gt;</span>
+  <span class="nt">&lt;namerecord</span> <span class="na">nameID=</span><span class="s">"1"</span> <span class="na">platformID=</span><span class="s">"3"</span> <span class="na">platEncID=</span><span class="s">"1"</span> <span class="na">langID=</span><span class="s">"0x409"</span><span class="nt">&gt;</span>
+    .New York
+  <span class="nt">&lt;/namerecord&gt;</span>
+  <span class="nt">&lt;namerecord</span> <span class="na">nameID=</span><span class="s">"2"</span> <span class="na">platformID=</span><span class="s">"3"</span> <span class="na">platEncID=</span><span class="s">"1"</span> <span class="na">langID=</span><span class="s">"0x409"</span><span class="nt">&gt;</span>
+    Regular
+  <span class="nt">&lt;/namerecord&gt;</span>
+  <span class="nt">&lt;namerecord</span> <span class="na">nameID=</span><span class="s">"3"</span> <span class="na">platformID=</span><span class="s">"3"</span> <span class="na">platEncID=</span><span class="s">"1"</span> <span class="na">langID=</span><span class="s">"0x409"</span><span class="nt">&gt;</span>
+    .New York; 20.0d1e1; 2024-05-06
+  <span class="nt">&lt;/namerecord&gt;</span>
+  <span class="nt">&lt;namerecord</span> <span class="na">nameID=</span><span class="s">"4"</span> <span class="na">platformID=</span><span class="s">"3"</span> <span class="na">platEncID=</span><span class="s">"1"</span> <span class="na">langID=</span><span class="s">"0x409"</span><span class="nt">&gt;</span>
+    .New York
+  <span class="nt">&lt;/namerecord&gt;</span>
+  <span class="nt">&lt;namerecord</span> <span class="na">nameID=</span><span class="s">"5"</span> <span class="na">platformID=</span><span class="s">"3"</span> <span class="na">platEncID=</span><span class="s">"1"</span> <span class="na">langID=</span><span class="s">"0x409"</span><span class="nt">&gt;</span>
+    20.0d1e1
+  <span class="nt">&lt;/namerecord&gt;</span>
+  <span class="nt">&lt;namerecord</span> <span class="na">nameID=</span><span class="s">"6"</span> <span class="na">platformID=</span><span class="s">"3"</span> <span class="na">platEncID=</span><span class="s">"1"</span> <span class="na">langID=</span><span class="s">"0x409"</span><span class="nt">&gt;</span>
+    .NewYork-Regular
+  <span class="nt">&lt;/namerecord&gt;</span>
+  ...
+<span class="nt">&lt;/name&gt;</span>
+</code></pre></div></div>
+
+<p>name表中定义的是字体名称、字体家族、PostScript Name、厂商信息等。</p>
+
+<p>nameID对应的含义如下：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>nameID</th>
+      <th>含义</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>0</td>
+      <td>Copyright notice</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>Font Family name（字体家族名，比如 <em>New York</em>）</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>Font Subfamily name（字重/样式，比如 <em>Regular</em>、<em>Bold</em>）</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>Unique font identifier（唯一ID，通常包含厂商名+版本号）</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>Full font name（family + subfamily，比如 <em>New York Regular</em>）</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>Version string</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>PostScript name（唯一的、无空格的名字）</td>
+    </tr>
+    <tr>
+      <td>…</td>
+      <td>…</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>这里需要重点介绍下PostScript Name：PostScript Name是字体在一个系统里的<strong>唯一标识</strong>，是单个字符串，不允许有空格，一般是 FamilyName-StyleName 形式，比如：<code class="highlighter-rouge">.NewYork-Regular</code>，<code class="highlighter-rouge">Helvetica-Bold</code>，<code class="highlighter-rouge">NotoSansCJKsc-Regular</code>等。</p>
+
+<p>在CoreText的API里，一般都要求传PostScript Name，比如：<a href="https://developer.apple.com/documentation/coretext/ctfontcreatewithname(_:_:_:)">CTFontCreateWithName</a></p>
+
+<h2 id="210-gdef">2.10 GDEF</h2>
+
+<p>Glyph Definition Table，简单理解GDEF表就是是GPOS / GSUB的辅助表，比如GPOS和 GSUB需要知道「哪些字形是 mark、哪些能连接、哪些有变体」等信息，这些元数据就是放在GDEF 表里的。</p>
+
+<h2 id="211-gpos">2.11 GPOS</h2>
+
+<p>Glyph Positioning Table，控制字形的相对位置（如kerning、上下标等），比如「A + V」之间要减少间距，或者音标放在元音正上方等。</p>
+
+<h2 id="212-gsub">2.12 GSUB</h2>
+
+<p>Glyph Substitution Table，控制字形替换（连字、、阿拉伯文变体、直角引号换弯引号等），比如<code class="highlighter-rouge">f</code> + <code class="highlighter-rouge">i</code> → <code class="highlighter-rouge">ﬁ</code>，<code class="highlighter-rouge">'quoteleft'</code> → <code class="highlighter-rouge">‘</code>等。</p>
+
+<h2 id="213-hvar--mvar--avar--fvar--gvar">2.13 HVAR &amp; MVAR &amp; avar &amp; fvar &amp; gvar…</h2>
+
+<p>这几个表是用于转换可变字体的，可变字体不在本文范围内，不再详述。</p>
+
+<blockquote>
+  <p>更多精彩内容欢迎关注🌍公众号：非专业程序员Ping</p>
+</blockquote>
+
+
+                <hr>
+
+                
+
+
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/2025/09/14/Typora%E6%BF%80%E6%B4%BB/" data-toggle="tooltip" data-placement="top" title="Typora激活">&larr; Previous Post</a>
+                    </li>
+                    
+                    
+                </ul>
+
+
+                
+
+                
+                <!-- disqus 评论框 start -->
+                <div class="comment">
+                    <div id="disqus_thread" class="disqus-thread"></div>
+                </div>
+                <!-- disqus 评论框 end -->
+                
+
+            </div>
+
+    <!-- Sidebar Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+        				
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#Algorithm" title="Algorithm" rel="5">
+                                    Algorithm
+                                </a>
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#Java" title="Java" rel="14">
+                                    Java
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#Android" title="Android" rel="10">
+                                    Android
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#Hust" title="Hust" rel="2">
+                                    Hust
+                                </a>
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#操作系统" title="操作系统" rel="3">
+                                    操作系统
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#View" title="View" rel="2">
+                                    View
+                                </a>
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#Note" title="Note" rel="2">
+                                    Note
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#iOS" title="iOS" rel="6">
+                                    iOS
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#跨端渲染" title="跨端渲染" rel="4">
+                                    跨端渲染
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#Font" title="Font" rel="3">
+                                    Font
+                                </a>
+                            
+        				
+                            
+        				
+                            
+        				
+        			</div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+                <hr>
+                <h5>FRIENDS</h5>
+                <ul class="list-inline">
+                    
+                </ul>
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+
+<!-- disqus 公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = "HusterYP";
+    var disqus_identifier = "/2025/09/17/一文读懂Font文件";
+    var disqus_url = "http://localhost:4000/2025/09/17/%E4%B8%80%E6%96%87%E8%AF%BB%E6%87%82Font%E6%96%87%E4%BB%B6/";
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<!-- disqus 公共JS代码 end -->
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("http://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                    
+                    
+
+                    <!-- add Weibo, Zhihu by Hux, add target = "_blank" to <a> by Hux -->
+                    
+                    
+
+
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/HusterYP">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; 非专业程序员 2025
+                    <br>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js "></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/js/bootstrap.min.js "></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js "></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("http://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+
+
+<!-- Baidu Tongji -->
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>

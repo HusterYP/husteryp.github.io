@@ -5,9 +5,375 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Mon, 15 Sep 2025 00:24:35 +0800</pubDate>
-    <lastBuildDate>Mon, 15 Sep 2025 00:24:35 +0800</lastBuildDate>
+    <pubDate>Fri, 19 Sep 2025 00:53:50 +0800</pubDate>
+    <lastBuildDate>Fri, 19 Sep 2025 00:53:50 +0800</lastBuildDate>
     <generator>Jekyll v3.8.5</generator>
+    
+      <item>
+        <title>一文读懂Font文件</title>
+        <description>&lt;h1 id=&quot;一引言&quot;&gt;一、引言&lt;/h1&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;在开始阅读本文之前，推荐先阅读&lt;a href=&quot;https://mp.weixin.qq.com/s/96YJGYKLoxENC4qT9tYNoQ&quot;&gt;字符（Character）、字形（Glyph）、字体的区别&lt;/a&gt;理解基本概念。&lt;/p&gt;
+
+  &lt;p&gt;如果你对字符与Unicode的相关概念还不理解，推荐阅读&lt;a href=&quot;https://mp.weixin.qq.com/s/EYPO3sSjtIstD3RmlRCs9w&quot;&gt;字符与编码&lt;/a&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;前文，我们介绍了&lt;a href=&quot;https://mp.weixin.qq.com/s/96YJGYKLoxENC4qT9tYNoQ&quot;&gt;字符（Character）、字形（Glyph）、字体的区别&lt;/a&gt;，这里我们再来实际分析一个字体文件中到底有什么，这有利于我们后续理解文字排版引擎的工作原理和流程。&lt;/p&gt;
+
+&lt;p&gt;macOS上系统字体路径一般为&lt;code class=&quot;highlighter-rouge&quot;&gt;/System/Library/Fonts/&lt;/code&gt;，可以看到有文件后缀有&lt;code class=&quot;highlighter-rouge&quot;&gt;ttc&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;ttf&lt;/code&gt;，二者有什么区别呢？&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;1）&lt;code class=&quot;highlighter-rouge&quot;&gt;.ttf&lt;/code&gt; (TrueType Font)&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ttf&lt;/code&gt;表示这是一个单字体文件，每个 &lt;code class=&quot;highlighter-rouge&quot;&gt;.ttf&lt;/code&gt; 文件通常只对应一个字体样式（例如 &lt;em&gt;Microsoft YaHei Regular&lt;/em&gt;）&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;2）&lt;code class=&quot;highlighter-rouge&quot;&gt;.ttc&lt;/code&gt; (TrueType Collection)&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ttc&lt;/code&gt;表示这是一个字体集合文件，内部可以包含多个 TrueType 字体（多个 &lt;code class=&quot;highlighter-rouge&quot;&gt;.ttf&lt;/code&gt; 打包在一起），这些字体通常共享某些表（比如 glyph 轮廓、cmap），减少冗余，提高存储效率，常用于一个 Typeface 的多个变体（Regular, Bold, Italic, Light…）&lt;/p&gt;
+
+&lt;p&gt;上面提到了TrueType，与之对应的还有OpenType，二者其实都是字体类型标准，简单理解就是OpenType是TrueType的扩展，OpenType支持更多的特性，比如：连字、RTL、上下标等。&lt;/p&gt;
+
+&lt;p&gt;OpenType一般以&lt;code class=&quot;highlighter-rouge&quot;&gt;otf&lt;/code&gt;为后缀，但也不能简单的根据文件名后缀区分二者，文件扩展名只是习惯，并不能完全说明内部格式，真正的区别还是要看字体表结构，比如OpenType有GSUB、GPOS、GDEF等扩展表。&lt;/p&gt;
+
+&lt;p&gt;下面，我们来真正解析一个字体文件，看里面有什么，可以通过如下命令行将字体解析成XML。&lt;/p&gt;
+
+&lt;div class=&quot;language-shell highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;# 对于ttf文件&lt;/span&gt;
+ttx NewYork.ttf
+&lt;span class=&quot;c&quot;&gt;# ttc文件是个字体集合，需要明确指明要提取哪个index的字体&lt;/span&gt;
+ttx &lt;span class=&quot;nt&quot;&gt;-y&lt;/span&gt; 0 Times.ttc
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h1 id=&quot;二font文件解析&quot;&gt;二、Font文件解析&lt;/h1&gt;
+
+&lt;p&gt;我们以NewYork.ttf文件为例，如下是NewYork.ttf中的表&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/一文读懂Font文件/NewYork-ttf.png&quot; alt=&quot;NewYork-ttf&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;21-glyphorder&quot;&gt;2.1 GlyphOrder&lt;/h2&gt;
+
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;GlyphOrder&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;GlyphID&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;id=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;.notdef&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;GlyphID&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;id=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;.null&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;GlyphID&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;id=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;2&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;nonmarkingreturn&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;GlyphID&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;id=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;3&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;space&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;GlyphID&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;id=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;4&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;A&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  ...
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;/GlyphOrder&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;GlyphOrder定义glyphID与glyphName的映射。&lt;/p&gt;
+
+&lt;h2 id=&quot;22-head&quot;&gt;2.2 head&lt;/h2&gt;
+
+&lt;p&gt;Font Header，存储一些全局信息；关注几个值：&lt;/p&gt;
+
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;head&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;unitsPerEm&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;2048&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  ...
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;/head&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;strong&gt;1）unitsPerEm&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;字体表里的数值一般都很大（见后文），其单位并不是像素值，而是 &lt;code class=&quot;highlighter-rouge&quot;&gt;em unit&lt;/code&gt;，&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;unitsPerEm value=&quot;2048&quot;/&amp;gt;&lt;/code&gt;表示&lt;code class=&quot;highlighter-rouge&quot;&gt;2048 units = 1 em = 设计的字高&lt;/code&gt;，比如当字体在屏幕上以 16px 渲染时，1 em = 16px，其他数值可按比例换算&lt;/p&gt;
+
+&lt;h2 id=&quot;23-hhea&quot;&gt;2.3 hhea&lt;/h2&gt;
+
+&lt;p&gt;Horizontal Typesetting Header，横向排版信息，关注几个值&lt;/p&gt;
+
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;hhea&amp;gt;&lt;/span&gt;
+	&lt;span class=&quot;c&quot;&gt;&amp;lt;!-- MacOS一般使用hhea里的ascent、descent；OS_2表里还有几个ascent、descent，一般在Windows或专业设计上使用 --&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;ascent&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1950&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;descent&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;-494&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;lineGap&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;advanceWidthMax&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;2818&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;minLeftSideBearing&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;-693&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;minRightSideBearing&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;-693&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  ...
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;/hhea&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;strong&gt;1）ascent &amp;amp; descent&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;假设字体大小16，unitsPerEm如上为2048，则按比例换算：&lt;code class=&quot;highlighter-rouge&quot;&gt;ascent = 1950/2048 * 16 ≈ 15.2&lt;/code&gt;，&lt;code class=&quot;highlighter-rouge&quot;&gt;descent ≈ 494/2048 * 16 ≈ 3.8&lt;/code&gt;。&lt;/p&gt;
+
+&lt;p&gt;需要注意，OS_2表中也有ascent、descent的定义，这是因为不同平台会读取不同表中的ascent、descent，比如macOS、iOS一般使用hhea中的值，Windows一般使用OS_2表中的usWinAscent、usWinDescent，专业排版软件（如InDesign）一般用OS_2表中的sTypoAscender、sTypoDescender。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Q：对于同一个Font，ascent、descent的值是固定的吗？&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;这个问题的答案需要加定语，对于同一个Font，在同一个平台上，ascent、descent是固定的。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Q：为什么descent值是负数？&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;可以理解成规范，TrueType/OpenType的规范里，descent是负数，表示基线（baseline）以下延伸的高度。&lt;/p&gt;
+
+&lt;h2 id=&quot;24-maxp&quot;&gt;2.4 maxp&lt;/h2&gt;
+
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;maxp&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;numGlyphs&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1811&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  ...
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;/maxp&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;定义字体里 glyph 的数量，以及一些最大值参数。&lt;/p&gt;
+
+&lt;h2 id=&quot;25-os_2&quot;&gt;2.5 OS_2&lt;/h2&gt;
+
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;OS_2&amp;gt;&lt;/span&gt;
+	&lt;span class=&quot;c&quot;&gt;&amp;lt;!-- 下标的大小和偏移 --&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;ySubscriptXSize&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;650&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;ySubscriptYSize&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;600&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;ySubscriptXOffset&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;ySubscriptYOffset&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;75&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  
+  &lt;span class=&quot;c&quot;&gt;&amp;lt;!-- 上标的大小和偏移 --&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;ySuperscriptXSize&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;650&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;ySuperscriptYSize&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;600&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;ySuperscriptXOffset&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;ySuperscriptYOffset&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;350&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+
+  &lt;span class=&quot;c&quot;&gt;&amp;lt;!-- 删除线的粗细和垂直位置 --&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;yStrikeoutSize&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;12&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;yStrikeoutPosition&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;620&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+
+  &lt;span class=&quot;c&quot;&gt;&amp;lt;!-- 
+  ulUnicodeRange表示字体支持的Unicode范围，用ulUnicodeRange1 … ulUnicodeRange4 这 4 个 32 位字段来表示，总共 128 个 bit，对应 128 个 Unicode Block，如果某 bit = 1，表示字体支持该区块中的至少一些字符，
+  映射表见：https://learn.microsoft.com/en-us/typography/opentype/spec/os2#ur
+  --&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;ulUnicodeRange1&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;10100001 00000000 00000010 11111111&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;ulUnicodeRange2&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;00000010 00000000 00100000 01011110&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;ulUnicodeRange3&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;00000000 00000000 00000000 00000000&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;ulUnicodeRange4&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;00000000 00000000 00000000 00000000&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+
+  &lt;span class=&quot;c&quot;&gt;&amp;lt;!-- 专业排版（比如 InDesign）一般使用sTypoAscender、sTypoDescender --&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;sTypoAscender&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1950&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;sTypoDescender&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;-494&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;sTypoLineGap&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+
+  &lt;span class=&quot;c&quot;&gt;&amp;lt;!-- Windows一般使用sTypoAscender、sTypoDescender --&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;usWinAscent&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1950&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;usWinDescent&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;494&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  ...
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;/OS_2&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;参见&lt;a href=&quot;https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6OS2.html&quot;&gt;Apple文档&lt;/a&gt;，关注几个值：&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;1）ySubscriptXSize &amp;amp; ySubscriptYSize &amp;amp; ySubscriptXOffset &amp;amp; ySubscriptYOffset&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;下标的大小和偏移&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;2）ySuperscriptXSize &amp;amp; ySuperscriptYSize &amp;amp; ySuperscriptXOffset &amp;amp; ySuperscriptYOffset&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;上标的大小和偏移&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;3）yStrikeoutSize &amp;amp; yStrikeoutPosition&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;删除线的粗细和垂直位置&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;4）ulUnicodeRange1 &amp;amp; ulUnicodeRange2 &amp;amp; ulUnicodeRange3 &amp;amp; ulUnicodeRange4&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;ulUnicodeRange表示该字体支持的Unicode范围，用ulUnicodeRange1 … ulUnicodeRange4 这 4 个 32 位字段来表示，总共 128 个 bit，对应 128 个 Unicode Block，如果某 bit = 1，表示字体支持该区块中的至少一些字符，映射表见：https://learn.microsoft.com/en-us/typography/opentype/spec/os2#ur 。&lt;/p&gt;
+
+&lt;p&gt;Windows系统通常用 ulUnicodeRange 来看一个字体是否支持某Unicode；macOS/iOS系统一般用 cmap 表（精确的字符映射），ulUnicodeRange只作为辅助信息；浏览器排版一般直接查 cmap，但 ulUnicodeRange 有时也用于字体 fallback 策略。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;5）sTypoAscender &amp;amp; sTypoDescender &amp;amp; usWinAscent &amp;amp; usWinDescent&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;如前文所述，不同系统会取不同的值作为ascent、descent&lt;/p&gt;
+
+&lt;h2 id=&quot;26-hmtx&quot;&gt;2.6 hmtx&lt;/h2&gt;
+
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;hmtx&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;mtx&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;.notdef&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;width=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;2048&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;lsb=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;199&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;mtx&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;.null&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;width=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;lsb=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;mtx&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;A&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;width=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1244&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;lsb=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;-16&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  ...
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;/hmtx&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Horizontal Metrics，记录每个 glyph 的 advance width 和left side bearing。&lt;/p&gt;
+
+&lt;p&gt;简单理解排版引擎绘制字形的流程是：将字形放在当前点 + lsb 偏移位置进行绘制，画完后，将光标向右移动 &lt;code class=&quot;highlighter-rouge&quot;&gt;advanceWidth&lt;/code&gt;，准备绘制下一个字形。&lt;/p&gt;
+
+&lt;h2 id=&quot;27-cmap&quot;&gt;2.7 cmap&lt;/h2&gt;
+
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;cmap&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;tableVersion&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;version=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;cmap_format_4&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;platformID=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;platEncID=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;3&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;language=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+  	&lt;span class=&quot;c&quot;&gt;&amp;lt;!-- A的Unicode code point是0x41 --&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;map&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;code=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0x41&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;A&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;&lt;span class=&quot;c&quot;&gt;&amp;lt;!-- LATIN CAPITAL LETTER A --&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;map&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;code=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0x42&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;B&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;&lt;span class=&quot;c&quot;&gt;&amp;lt;!-- LATIN CAPITAL LETTER B --&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;map&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;code=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0x43&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;C&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;&lt;span class=&quot;c&quot;&gt;&amp;lt;!-- LATIN CAPITAL LETTER C --&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;map&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;code=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0x44&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;D&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;&lt;span class=&quot;c&quot;&gt;&amp;lt;!-- LATIN CAPITAL LETTER D --&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;map&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;code=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0x45&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;E&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;&lt;span class=&quot;c&quot;&gt;&amp;lt;!-- LATIN CAPITAL LETTER E --&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;map&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;code=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0x46&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;F&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;&lt;span class=&quot;c&quot;&gt;&amp;lt;!-- LATIN CAPITAL LETTER F --&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;map&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;code=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0x47&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;G&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;&lt;span class=&quot;c&quot;&gt;&amp;lt;!-- LATIN CAPITAL LETTER G --&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;map&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;code=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0x48&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;H&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;&lt;span class=&quot;c&quot;&gt;&amp;lt;!-- LATIN CAPITAL LETTER H --&amp;gt;&lt;/span&gt;
+    ...
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/cmap_format_4&amp;gt;&lt;/span&gt;
+  ...
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;/cmap&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Character to Glyph Mapping，定义 Unicode code point → glyph ID 的映射，cmap表中能精确的查到该Font支持哪些Unicode。&lt;/p&gt;
+
+&lt;h2 id=&quot;28-glyf&quot;&gt;2.8 glyf&lt;/h2&gt;
+
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;glyf&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;TTGlyph&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;A&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;xMin=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;-16&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;yMin=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;xMax=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1260&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;yMax=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1444&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;contour&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;pt&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;x=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1086&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;y=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;213&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;on=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;pt&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;x=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1113&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;y=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;137&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;on=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;pt&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;x=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1161&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;y=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;50&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;on=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;pt&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;x=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1219&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;y=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;9&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;on=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;pt&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;x=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1260&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;y=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;on=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;pt&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;x=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1260&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;y=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;on=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;pt&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;x=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;793&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;y=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;on=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;pt&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;x=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;793&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;y=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;on=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;pt&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;x=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;845&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;y=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;7&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;on=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;pt&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;x=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;897&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;y=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;54&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;on=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;pt&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;x=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;899&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;y=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;143&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;on=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;pt&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;x=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;874&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;y=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;213&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;on=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;pt&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;x=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;528&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;y=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1200&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;on=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;pt&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;x=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;528&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;y=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1200&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;on=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;pt&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;x=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;220&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;y=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;292&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;on=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;pt&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;x=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;184&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;y=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;186&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;on=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;pt&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;x=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;170&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;y=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;66&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;on=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;pt&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;x=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;224&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;y=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;11&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;on=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;pt&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;x=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;290&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;y=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;on=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;pt&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;x=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;290&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;y=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;on=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;pt&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;x=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;-16&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;y=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;on=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;pt&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;x=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;-16&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;y=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;on=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;pt&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;x=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;27&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;y=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;9&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;on=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;pt&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;x=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;89&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;y=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;59&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;on=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;pt&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;x=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;151&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;y=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;181&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;on=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;pt&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;x=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;193&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;y=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;297&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;on=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;pt&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;x=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;614&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;y=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1444&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;on=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;pt&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;x=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;648&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;y=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1444&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;on=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/contour&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;contour&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;pt&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;x=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;290&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;y=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;532&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;on=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;pt&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;x=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;294&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;y=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;544&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;on=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;pt&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;x=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;859&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;y=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;544&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;on=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;pt&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;x=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;860&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;y=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;532&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;on=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/contour&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;instructions/&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/TTGlyph&amp;gt;&lt;/span&gt;
+  ...
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;/glyf&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Glyph Data，真正的字形轮廓（矢量点、轮廓、控制点）；cmap 表负责把 Unicode 字符映射到 glyphID，而 glyf 表告诉渲染系统该 glyph 的具体形状。&lt;/p&gt;
+
+&lt;h2 id=&quot;29-name&quot;&gt;2.9 name&lt;/h2&gt;
+
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;name&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;namerecord&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;nameID=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;platformID=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;3&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;platEncID=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;langID=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0x409&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+    © 2017-2024 Apple Inc. All rights reserved.
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/namerecord&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;namerecord&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;nameID=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;platformID=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;3&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;platEncID=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;langID=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0x409&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+    .New York
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/namerecord&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;namerecord&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;nameID=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;2&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;platformID=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;3&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;platEncID=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;langID=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0x409&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+    Regular
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/namerecord&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;namerecord&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;nameID=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;3&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;platformID=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;3&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;platEncID=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;langID=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0x409&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+    .New York; 20.0d1e1; 2024-05-06
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/namerecord&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;namerecord&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;nameID=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;4&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;platformID=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;3&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;platEncID=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;langID=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0x409&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+    .New York
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/namerecord&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;namerecord&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;nameID=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;5&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;platformID=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;3&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;platEncID=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;langID=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0x409&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+    20.0d1e1
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/namerecord&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;namerecord&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;nameID=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;6&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;platformID=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;3&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;platEncID=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;langID=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0x409&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+    .NewYork-Regular
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/namerecord&amp;gt;&lt;/span&gt;
+  ...
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;/name&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;name表中定义的是字体名称、字体家族、PostScript Name、厂商信息等。&lt;/p&gt;
+
+&lt;p&gt;nameID对应的含义如下：&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;nameID&lt;/th&gt;
+      &lt;th&gt;含义&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;0&lt;/td&gt;
+      &lt;td&gt;Copyright notice&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;1&lt;/td&gt;
+      &lt;td&gt;Font Family name（字体家族名，比如 &lt;em&gt;New York&lt;/em&gt;）&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;2&lt;/td&gt;
+      &lt;td&gt;Font Subfamily name（字重/样式，比如 &lt;em&gt;Regular&lt;/em&gt;、&lt;em&gt;Bold&lt;/em&gt;）&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;3&lt;/td&gt;
+      &lt;td&gt;Unique font identifier（唯一ID，通常包含厂商名+版本号）&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;4&lt;/td&gt;
+      &lt;td&gt;Full font name（family + subfamily，比如 &lt;em&gt;New York Regular&lt;/em&gt;）&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;5&lt;/td&gt;
+      &lt;td&gt;Version string&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;6&lt;/td&gt;
+      &lt;td&gt;PostScript name（唯一的、无空格的名字）&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;…&lt;/td&gt;
+      &lt;td&gt;…&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;这里需要重点介绍下PostScript Name：PostScript Name是字体在一个系统里的&lt;strong&gt;唯一标识&lt;/strong&gt;，是单个字符串，不允许有空格，一般是 FamilyName-StyleName 形式，比如：&lt;code class=&quot;highlighter-rouge&quot;&gt;.NewYork-Regular&lt;/code&gt;，&lt;code class=&quot;highlighter-rouge&quot;&gt;Helvetica-Bold&lt;/code&gt;，&lt;code class=&quot;highlighter-rouge&quot;&gt;NotoSansCJKsc-Regular&lt;/code&gt;等。&lt;/p&gt;
+
+&lt;p&gt;在CoreText的API里，一般都要求传PostScript Name，比如：&lt;a href=&quot;https://developer.apple.com/documentation/coretext/ctfontcreatewithname(_:_:_:)&quot;&gt;CTFontCreateWithName&lt;/a&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;210-gdef&quot;&gt;2.10 GDEF&lt;/h2&gt;
+
+&lt;p&gt;Glyph Definition Table，简单理解GDEF表就是是GPOS / GSUB的辅助表，比如GPOS和 GSUB需要知道「哪些字形是 mark、哪些能连接、哪些有变体」等信息，这些元数据就是放在GDEF 表里的。&lt;/p&gt;
+
+&lt;h2 id=&quot;211-gpos&quot;&gt;2.11 GPOS&lt;/h2&gt;
+
+&lt;p&gt;Glyph Positioning Table，控制字形的相对位置（如kerning、上下标等），比如「A + V」之间要减少间距，或者音标放在元音正上方等。&lt;/p&gt;
+
+&lt;h2 id=&quot;212-gsub&quot;&gt;2.12 GSUB&lt;/h2&gt;
+
+&lt;p&gt;Glyph Substitution Table，控制字形替换（连字、、阿拉伯文变体、直角引号换弯引号等），比如&lt;code class=&quot;highlighter-rouge&quot;&gt;f&lt;/code&gt; + &lt;code class=&quot;highlighter-rouge&quot;&gt;i&lt;/code&gt; → &lt;code class=&quot;highlighter-rouge&quot;&gt;ﬁ&lt;/code&gt;，&lt;code class=&quot;highlighter-rouge&quot;&gt;'quoteleft'&lt;/code&gt; → &lt;code class=&quot;highlighter-rouge&quot;&gt;‘&lt;/code&gt;等。&lt;/p&gt;
+
+&lt;h2 id=&quot;213-hvar--mvar--avar--fvar--gvar&quot;&gt;2.13 HVAR &amp;amp; MVAR &amp;amp; avar &amp;amp; fvar &amp;amp; gvar…&lt;/h2&gt;
+
+&lt;p&gt;这几个表是用于转换可变字体的，可变字体不在本文范围内，不再详述。&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;更多精彩内容欢迎关注🌍公众号：非专业程序员Ping&lt;/p&gt;
+&lt;/blockquote&gt;
+</description>
+        <pubDate>Wed, 17 Sep 2025 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2025/09/17/%E4%B8%80%E6%96%87%E8%AF%BB%E6%87%82Font%E6%96%87%E4%BB%B6/</link>
+        <guid isPermaLink="true">http://localhost:4000/2025/09/17/%E4%B8%80%E6%96%87%E8%AF%BB%E6%87%82Font%E6%96%87%E4%BB%B6/</guid>
+        
+        <category>跨端渲染</category>
+        
+        <category>Font</category>
+        
+        
+      </item>
     
       <item>
         <title>Typora激活</title>
@@ -212,397 +578,6 @@
         <pubDate>Sat, 13 Sep 2025 00:00:00 +0800</pubDate>
         <link>http://localhost:4000/2025/09/13/%E4%B8%80%E6%96%87%E8%AF%BB%E6%87%82%E5%AD%97%E7%AC%A6-%E5%AD%97%E5%BD%A2-%E5%AD%97%E4%BD%93/</link>
         <guid isPermaLink="true">http://localhost:4000/2025/09/13/%E4%B8%80%E6%96%87%E8%AF%BB%E6%87%82%E5%AD%97%E7%AC%A6-%E5%AD%97%E5%BD%A2-%E5%AD%97%E4%BD%93/</guid>
-        
-        <category>跨端渲染</category>
-        
-        <category>Font</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>Text Handling</title>
-        <description>&lt;ul&gt;
-  &lt;li&gt;
-    &lt;p&gt;MacOS上系统字体路径一般为&lt;code class=&quot;highlighter-rouge&quot;&gt;/System/Library/Fonts/&lt;/code&gt;，可以看到有ttc、ttf，有什么区别&lt;/p&gt;
-
-    &lt;ul&gt;
-      &lt;li&gt;
-        &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;.ttf&lt;/code&gt; (TrueType Font)&lt;/p&gt;
-
-        &lt;ul&gt;
-          &lt;li&gt;
-            &lt;p&gt;单字体文件&lt;/p&gt;
-          &lt;/li&gt;
-          &lt;li&gt;
-            &lt;p&gt;包含一整套字体（一个 font），包括 glyph 轮廓、metrics、cmap 等表。&lt;/p&gt;
-          &lt;/li&gt;
-          &lt;li&gt;
-            &lt;p&gt;每个 &lt;code class=&quot;highlighter-rouge&quot;&gt;.ttf&lt;/code&gt; 文件通常只对应一个 &lt;strong&gt;字体样式&lt;/strong&gt;（例如 &lt;em&gt;Microsoft YaHei Regular&lt;/em&gt;）。&lt;/p&gt;
-          &lt;/li&gt;
-          &lt;li&gt;
-            &lt;p&gt;适合单独分发、安装。&lt;/p&gt;
-          &lt;/li&gt;
-        &lt;/ul&gt;
-      &lt;/li&gt;
-      &lt;li&gt;
-        &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;.ttc&lt;/code&gt; (TrueType Collection)&lt;/p&gt;
-
-        &lt;ul&gt;
-          &lt;li&gt;
-            &lt;p&gt;字体集合文件 (TrueType Collection)&lt;/p&gt;
-          &lt;/li&gt;
-          &lt;li&gt;
-            &lt;p&gt;内部可以包含多个 TrueType 字体（多个 &lt;code class=&quot;highlighter-rouge&quot;&gt;.ttf&lt;/code&gt; 打包在一起）。&lt;/p&gt;
-          &lt;/li&gt;
-          &lt;li&gt;
-            &lt;p&gt;这些字体通常共享某些表（比如 glyph 轮廓、cmap），减少冗余，提高存储效率。&lt;/p&gt;
-          &lt;/li&gt;
-          &lt;li&gt;
-            &lt;p&gt;常用于一个 typeface 的多个变体（Regular, Bold, Italic, Light…）。&lt;/p&gt;
-          &lt;/li&gt;
-        &lt;/ul&gt;
-      &lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;TrueType和OpenType的区别：简单说就是OpenType是TrueType的扩展&lt;/p&gt;
-
-    &lt;ul&gt;
-      &lt;li&gt;OpenType一般以otf为后缀，但也不能简单的根据文件名后缀区分二者，文件扩展名只是习惯，并不能完全说明内部格式。真正的区别要看字体表结构和 outline 格式&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;img src=&quot;/Users/ping/Desktop/husteryp.github.io/img/post/Font/TrueType vs OpenType.png&quot; alt=&quot;TrueType vs OpenType&quot; /&gt;&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;Font里面有什么：可以归类metrics、advance width、ascent、descent等&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;如下是NewYork.ttf字体文件的内容：&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/Font/NewYork-ttf.png&quot; alt=&quot;NewYork-ttf&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;分别解释下字体文件中的内容：&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;GlyphOrder：glyphID与glyphName的映射&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&amp;lt;GlyphOrder&amp;gt;
-  &amp;lt;GlyphID id=&quot;0&quot; name=&quot;.notdef&quot;/&amp;gt;
-  &amp;lt;GlyphID id=&quot;1&quot; name=&quot;.null&quot;/&amp;gt;
-  &amp;lt;GlyphID id=&quot;2&quot; name=&quot;nonmarkingreturn&quot;/&amp;gt;
-  &amp;lt;GlyphID id=&quot;3&quot; name=&quot;space&quot;/&amp;gt;
-  &amp;lt;GlyphID id=&quot;4&quot; name=&quot;A&quot;/&amp;gt;
-  ...
-&amp;lt;/GlyphOrder&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;head：Font Header，存储一些全局信息；关注几个值
-    &lt;ul&gt;
-      &lt;li&gt;unitsPerEm：可以发现，字体表里的数值一般都很大，其单位并不是像素值，而是 &lt;code class=&quot;highlighter-rouge&quot;&gt;em unit&lt;/code&gt;，&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;unitsPerEm value=&quot;2048&quot;/&amp;gt;&lt;/code&gt;表示&lt;code class=&quot;highlighter-rouge&quot;&gt;2048 units = 1 em = 设计的字高&lt;/code&gt;，当字体在屏幕上以 16px 渲染时，1 em = 16px，其他数值可按比例换算&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&amp;lt;head&amp;gt;
-  &amp;lt;unitsPerEm value=&quot;2048&quot;/&amp;gt;
-  ...
-&amp;lt;/head&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;hhea：Horizontal Header，横向排版信息，关注几个值
-    &lt;ul&gt;
-      &lt;li&gt;ascent &amp;amp; descent：假设字体大小16，unitsPerEm如上为2048，则按比例换算：&lt;code class=&quot;highlighter-rouge&quot;&gt;ascent = 1950/2048 * 16 ≈ 15.2&lt;/code&gt;，&lt;code class=&quot;highlighter-rouge&quot;&gt;descent ≈ 494/2048 * 16 ≈ 3.8&lt;/code&gt;&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&amp;lt;hhea&amp;gt;
-	&amp;lt;!-- MacOS一般使用hhea里的ascent、descent；OS_2表里还有几个ascent、descent，一般在Windows或专业设计上使用 --&amp;gt;
-  &amp;lt;ascent value=&quot;1950&quot;/&amp;gt;
-  &amp;lt;descent value=&quot;-494&quot;/&amp;gt;
-  &amp;lt;lineGap value=&quot;0&quot;/&amp;gt;
-  &amp;lt;advanceWidthMax value=&quot;2818&quot;/&amp;gt;
-  &amp;lt;minLeftSideBearing value=&quot;-693&quot;/&amp;gt;
-  &amp;lt;minRightSideBearing value=&quot;-693&quot;/&amp;gt;
-  ...
-&amp;lt;/hhea&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;maxp：字体里 glyph 的数量，以及一些最大值参数&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&amp;lt;maxp&amp;gt;
-  &amp;lt;numGlyphs value=&quot;1811&quot;/&amp;gt;
-  ...
-&amp;lt;/maxp&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;OS_2：参见&lt;a href=&quot;https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6OS2.html&quot;&gt;Apple文档&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&amp;lt;OS_2&amp;gt;
-	&amp;lt;!-- 下标的大小和偏移 --&amp;gt;
-  &amp;lt;ySubscriptXSize value=&quot;650&quot;/&amp;gt;
-  &amp;lt;ySubscriptYSize value=&quot;600&quot;/&amp;gt;
-  &amp;lt;ySubscriptXOffset value=&quot;0&quot;/&amp;gt;
-  &amp;lt;ySubscriptYOffset value=&quot;75&quot;/&amp;gt;
-  
-  &amp;lt;!-- 上标的大小和偏移 --&amp;gt;
-  &amp;lt;ySuperscriptXSize value=&quot;650&quot;/&amp;gt;
-  &amp;lt;ySuperscriptYSize value=&quot;600&quot;/&amp;gt;
-  &amp;lt;ySuperscriptXOffset value=&quot;0&quot;/&amp;gt;
-  &amp;lt;ySuperscriptYOffset value=&quot;350&quot;/&amp;gt;
-
-  &amp;lt;!-- 删除线的粗细和垂直位置 --&amp;gt;
-  &amp;lt;yStrikeoutSize value=&quot;12&quot;/&amp;gt;
-  &amp;lt;yStrikeoutPosition value=&quot;620&quot;/&amp;gt;
-
-  &amp;lt;!-- 
-  ulUnicodeRange表示字体支持的Unicode范围，用ulUnicodeRange1 … ulUnicodeRange4 这 4 个 32 位字段来表示，总共 128 个 bit，对应 128 个 Unicode Block，如果某 bit = 1，表示字体支持该区块中的至少一些字符
-  映射表见：https://learn.microsoft.com/en-us/typography/opentype/spec/os2#ur
-  Windows系统用 ulUnicodeRange 来挑选字体；
-  macOS/iOS系统更依赖 cmap 表（精确的字符映射），ulUnicodeRange 只是附加信息；
-  浏览器排版一般直接查 cmap，但 ulUnicodeRange 有时用于字体 fallback 策略；
-  --&amp;gt;
-  &amp;lt;ulUnicodeRange1 value=&quot;10100001 00000000 00000010 11111111&quot;/&amp;gt;
-  &amp;lt;ulUnicodeRange2 value=&quot;00000010 00000000 00100000 01011110&quot;/&amp;gt;
-  &amp;lt;ulUnicodeRange3 value=&quot;00000000 00000000 00000000 00000000&quot;/&amp;gt;
-  &amp;lt;ulUnicodeRange4 value=&quot;00000000 00000000 00000000 00000000&quot;/&amp;gt;
-
-  &amp;lt;!-- 专业排版（比如 InDesign）一般使用sTypoAscender、sTypoDescender --&amp;gt;
-  &amp;lt;sTypoAscender value=&quot;1950&quot;/&amp;gt;
-  &amp;lt;sTypoDescender value=&quot;-494&quot;/&amp;gt;
-  &amp;lt;sTypoLineGap value=&quot;0&quot;/&amp;gt;
-
-  &amp;lt;!-- Windows一般使用sTypoAscender、sTypoDescender --&amp;gt;
-  &amp;lt;usWinAscent value=&quot;1950&quot;/&amp;gt;
-  &amp;lt;usWinDescent value=&quot;494&quot;/&amp;gt;
-  ...
-&amp;lt;/OS_2&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;hmtx：Horizontal Metrics，记录每个 glyph 的 advance width 和left side bearing
-    &lt;ul&gt;
-      &lt;li&gt;当排版引擎绘制一个字形时：
-        &lt;ol&gt;
-          &lt;li&gt;把字形放在当前点 + lsb 偏移位置。&lt;/li&gt;
-          &lt;li&gt;画完后，将光标向右移动 &lt;code class=&quot;highlighter-rouge&quot;&gt;advanceWidth&lt;/code&gt;，准备绘制下一个字形。&lt;/li&gt;
-        &lt;/ol&gt;
-      &lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&amp;lt;hmtx&amp;gt;
-  &amp;lt;mtx name=&quot;.notdef&quot; width=&quot;2048&quot; lsb=&quot;199&quot;/&amp;gt;
-  &amp;lt;mtx name=&quot;.null&quot; width=&quot;0&quot; lsb=&quot;0&quot;/&amp;gt;
-  &amp;lt;mtx name=&quot;A&quot; width=&quot;1244&quot; lsb=&quot;-16&quot;/&amp;gt;
-  ...
-&amp;lt;/hmtx&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;cmap：Character to Glyph Mapping，定义 Unicode code point → glyph ID 的映射&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&amp;lt;cmap&amp;gt;
-  &amp;lt;tableVersion version=&quot;0&quot;/&amp;gt;
-  &amp;lt;cmap_format_4 platformID=&quot;0&quot; platEncID=&quot;3&quot; language=&quot;0&quot;&amp;gt;
-  	&amp;lt;!-- A的Unicode code point是0x41 --&amp;gt;
-    &amp;lt;map code=&quot;0x41&quot; name=&quot;A&quot;/&amp;gt;&amp;lt;!-- LATIN CAPITAL LETTER A --&amp;gt;
-    &amp;lt;map code=&quot;0x42&quot; name=&quot;B&quot;/&amp;gt;&amp;lt;!-- LATIN CAPITAL LETTER B --&amp;gt;
-    &amp;lt;map code=&quot;0x43&quot; name=&quot;C&quot;/&amp;gt;&amp;lt;!-- LATIN CAPITAL LETTER C --&amp;gt;
-    &amp;lt;map code=&quot;0x44&quot; name=&quot;D&quot;/&amp;gt;&amp;lt;!-- LATIN CAPITAL LETTER D --&amp;gt;
-    &amp;lt;map code=&quot;0x45&quot; name=&quot;E&quot;/&amp;gt;&amp;lt;!-- LATIN CAPITAL LETTER E --&amp;gt;
-    &amp;lt;map code=&quot;0x46&quot; name=&quot;F&quot;/&amp;gt;&amp;lt;!-- LATIN CAPITAL LETTER F --&amp;gt;
-    &amp;lt;map code=&quot;0x47&quot; name=&quot;G&quot;/&amp;gt;&amp;lt;!-- LATIN CAPITAL LETTER G --&amp;gt;
-    &amp;lt;map code=&quot;0x48&quot; name=&quot;H&quot;/&amp;gt;&amp;lt;!-- LATIN CAPITAL LETTER H --&amp;gt;
-    ...
-  &amp;lt;/cmap_format_4&amp;gt;
-  ...
-&amp;lt;/cmap&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;
-    &lt;p&gt;loca：Index to Location，记录每个 glyph 在 glyf 表中的偏移量。&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;glyf：Glyph Data，真正的字形轮廓（矢量点、轮廓、控制点）；cmap 表负责把 Unicode 字符映射到 glyphID，而 glyf 表告诉渲染系统该 glyph 的具体形状&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&amp;lt;glyf&amp;gt;
-    &amp;lt;TTGlyph name=&quot;A&quot; xMin=&quot;-16&quot; yMin=&quot;0&quot; xMax=&quot;1260&quot; yMax=&quot;1444&quot;&amp;gt;
-    &amp;lt;contour&amp;gt;
-      &amp;lt;pt x=&quot;1086&quot; y=&quot;213&quot; on=&quot;1&quot;/&amp;gt;
-      &amp;lt;pt x=&quot;1113&quot; y=&quot;137&quot; on=&quot;0&quot;/&amp;gt;
-      &amp;lt;pt x=&quot;1161&quot; y=&quot;50&quot; on=&quot;0&quot;/&amp;gt;
-      &amp;lt;pt x=&quot;1219&quot; y=&quot;9&quot; on=&quot;0&quot;/&amp;gt;
-      &amp;lt;pt x=&quot;1260&quot; y=&quot;1&quot; on=&quot;1&quot;/&amp;gt;
-      &amp;lt;pt x=&quot;1260&quot; y=&quot;0&quot; on=&quot;1&quot;/&amp;gt;
-      &amp;lt;pt x=&quot;793&quot; y=&quot;0&quot; on=&quot;1&quot;/&amp;gt;
-      &amp;lt;pt x=&quot;793&quot; y=&quot;1&quot; on=&quot;1&quot;/&amp;gt;
-      &amp;lt;pt x=&quot;845&quot; y=&quot;7&quot; on=&quot;0&quot;/&amp;gt;
-      &amp;lt;pt x=&quot;897&quot; y=&quot;54&quot; on=&quot;0&quot;/&amp;gt;
-      &amp;lt;pt x=&quot;899&quot; y=&quot;143&quot; on=&quot;0&quot;/&amp;gt;
-      &amp;lt;pt x=&quot;874&quot; y=&quot;213&quot; on=&quot;1&quot;/&amp;gt;
-      &amp;lt;pt x=&quot;528&quot; y=&quot;1200&quot; on=&quot;1&quot;/&amp;gt;
-      &amp;lt;pt x=&quot;528&quot; y=&quot;1200&quot; on=&quot;1&quot;/&amp;gt;
-      &amp;lt;pt x=&quot;220&quot; y=&quot;292&quot; on=&quot;1&quot;/&amp;gt;
-      &amp;lt;pt x=&quot;184&quot; y=&quot;186&quot; on=&quot;0&quot;/&amp;gt;
-      &amp;lt;pt x=&quot;170&quot; y=&quot;66&quot; on=&quot;0&quot;/&amp;gt;
-      &amp;lt;pt x=&quot;224&quot; y=&quot;11&quot; on=&quot;0&quot;/&amp;gt;
-      &amp;lt;pt x=&quot;290&quot; y=&quot;1&quot; on=&quot;1&quot;/&amp;gt;
-      &amp;lt;pt x=&quot;290&quot; y=&quot;0&quot; on=&quot;1&quot;/&amp;gt;
-      &amp;lt;pt x=&quot;-16&quot; y=&quot;0&quot; on=&quot;1&quot;/&amp;gt;
-      &amp;lt;pt x=&quot;-16&quot; y=&quot;1&quot; on=&quot;1&quot;/&amp;gt;
-      &amp;lt;pt x=&quot;27&quot; y=&quot;9&quot; on=&quot;0&quot;/&amp;gt;
-      &amp;lt;pt x=&quot;89&quot; y=&quot;59&quot; on=&quot;0&quot;/&amp;gt;
-      &amp;lt;pt x=&quot;151&quot; y=&quot;181&quot; on=&quot;0&quot;/&amp;gt;
-      &amp;lt;pt x=&quot;193&quot; y=&quot;297&quot; on=&quot;1&quot;/&amp;gt;
-      &amp;lt;pt x=&quot;614&quot; y=&quot;1444&quot; on=&quot;1&quot;/&amp;gt;
-      &amp;lt;pt x=&quot;648&quot; y=&quot;1444&quot; on=&quot;1&quot;/&amp;gt;
-    &amp;lt;/contour&amp;gt;
-    &amp;lt;contour&amp;gt;
-      &amp;lt;pt x=&quot;290&quot; y=&quot;532&quot; on=&quot;1&quot;/&amp;gt;
-      &amp;lt;pt x=&quot;294&quot; y=&quot;544&quot; on=&quot;1&quot;/&amp;gt;
-      &amp;lt;pt x=&quot;859&quot; y=&quot;544&quot; on=&quot;1&quot;/&amp;gt;
-      &amp;lt;pt x=&quot;860&quot; y=&quot;532&quot; on=&quot;1&quot;/&amp;gt;
-    &amp;lt;/contour&amp;gt;
-    &amp;lt;instructions/&amp;gt;
-  &amp;lt;/TTGlyph&amp;gt;
-  ...
-&amp;lt;/glyf&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;
-    &lt;p&gt;name：字体名称、子家族、版本、版权、厂商信息等字符串。&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;post：PostScript，与 PostScript 兼容的信息，比如 italic angle、underline position、glyph 名称表。&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;strong&gt;GDEF&lt;/strong&gt; (Glyph Definition Table)&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;OpenType Layout 表之一，标记 glyph 类别（基字、附加字、标点等）。&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;字符 → cmap → glyph
-            ↓
-           GDEF（分类/属性）
-            ↓
-           GSUB（替换字形，例如连字）
-            ↓
-           GPOS（调整位置，例如 kerning、mark 对齐）
-            ↓
-        绘制 glyph（glyf 表）
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;&lt;strong&gt;GPOS&lt;/strong&gt; (Glyph Positioning Table)&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;OpenType Layout 表之一，定义字形间的精细位置调整（如 kerning、上下标偏移）。&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;strong&gt;GSUB&lt;/strong&gt; (Glyph Substitution Table)&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;OpenType Layout 表之一，定义字形替换规则（连字、上下文替换，拉丁/阿拉伯变体）。&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;strong&gt;HVAR&lt;/strong&gt; (Horizontal Variations)&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;可变字体表，用于调整字宽的变化（横向）。&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;strong&gt;MVAR&lt;/strong&gt; (Metrics Variations)&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;可变字体表，支持字度量参数（ascender、descender 等）的变化。&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;strong&gt;STAT&lt;/strong&gt; (Style Attributes Table)&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;OpenType Variable Font 的样式坐标信息（比如 Weight=400, Width=100）。&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;strong&gt;avar&lt;/strong&gt; (Axis Variations)&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;Variable Font 表，调整 variation axis 的映射关系（非线性调节）。&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;strong&gt;fvar&lt;/strong&gt; (Font Variations)&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;Variable Font 的主要定义，列出轴（Axis，比如 Weight, Width, Optical Size）和实例（Regular, Bold…）。&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;strong&gt;gvar&lt;/strong&gt; (Glyph Variations)&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;
-    &lt;p&gt;Variable Font 的关键表，定义 glyph 在不同轴下如何变形。&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;疑问：同一个字体中ascent、descent都相同吗？因为都是和Font中最高/低glyph做比较（或者这个描述对吗）&lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;为什么descent有时候是负数？&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;层级关系图&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;img src=&quot;https://developer.apple.com/library/archive/documentation/StringsTextFonts/Conceptual/TextAndWebiPhoneOS/Art/text_kit_arch_2x.png&quot; alt=&quot;img&quot; /&gt;&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;CoreText的层级
-    &lt;ul&gt;
-      &lt;li&gt;glyph run：包含一组连续的有相同样式和方向的glyph&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;img src=&quot;https://developer.apple.com/library/archive/documentation/StringsTextFonts/Conceptual/TextAndWebiPhoneOS/Art/core_text_arch_2x.png&quot; alt=&quot;img&quot; /&gt;&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;CTFont：可以用于查询：character-to-glyph mapping, its encoding, glyph data, and metrics such as ascent, leading,&lt;/li&gt;
-  &lt;li&gt;font cascading：字体级联；Core Text 还提供了一种称为字体级联的自动字体替换机制。
-    &lt;ul&gt;
-      &lt;li&gt;字体级联基于级联列表（cascade lists），级联列表是一组有序的font descriptors数组；系统有一个默认的级联列表，根据用户当前的语言设置和font设置而不同&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;https://developer.apple.com/documentation/coretext/1509506-ctfontcreateforstring&quot;&gt;CTFontCreateForString&lt;/a&gt;使用了级联列表，可以逆向看下&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-  &lt;li&gt;可以逆向下实现&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;div class=&quot;language-swift highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;kd&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;kd&quot;&gt;func&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;preferredFont&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;forTextStyle&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;style&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;UIFont&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;TextStyle&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;UIFont&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h1 id=&quot;参考&quot;&gt;参考&lt;/h1&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;https://developer.apple.com/library/archive/documentation/StringsTextFonts/Conceptual/TextAndWebiPhoneOS/Introduction/Introduction.html#//apple_ref/doc/uid/TP40009542-CH1-SW1&lt;/li&gt;
-  &lt;li&gt;https://developer.apple.com/library/archive/documentation/2DDrawing/Conceptual/DrawingPrintingiOS/Introduction/Introduction.html#//apple_ref/doc/uid/TP40010156-CH1-SW1&lt;/li&gt;
-  &lt;li&gt;https://developer.apple.com/library/archive/documentation/2DDrawing/Conceptual/DrawingPrintingiOS/Introduction/Introduction.html#//apple_ref/doc/uid/TP40010156-CH1-SW1&lt;/li&gt;
-&lt;/ul&gt;
-</description>
-        <pubDate>Wed, 03 Sep 2025 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2025/09/03/TextHandling/</link>
-        <guid isPermaLink="true">http://localhost:4000/2025/09/03/TextHandling/</guid>
         
         <category>跨端渲染</category>
         
