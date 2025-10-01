@@ -5,9 +5,402 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Fri, 19 Sep 2025 00:53:50 +0800</pubDate>
-    <lastBuildDate>Fri, 19 Sep 2025 00:53:50 +0800</lastBuildDate>
+    <pubDate>Thu, 02 Oct 2025 01:03:42 +0800</pubDate>
+    <lastBuildDate>Thu, 02 Oct 2025 01:03:42 +0800</lastBuildDate>
     <generator>Jekyll v3.8.5</generator>
+    
+      <item>
+        <title>从0到1自定义文字排版引擎：原理篇</title>
+        <description>&lt;h1 id=&quot;引言&quot;&gt;引言&lt;/h1&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;前面我们讲解了&lt;a href=&quot;https://mp.weixin.qq.com/s/EYPO3sSjtIstD3RmlRCs9w&quot;&gt;字符与编码&lt;/a&gt;，知道了Character与Unicode的关系和区别，也介绍了&lt;a href=&quot;https://mp.weixin.qq.com/s/96YJGYKLoxENC4qT9tYNoQ&quot;&gt;字符（Character）、字形（Glyph）、字体的区别&lt;/a&gt;，并通过实际解析一个Font文件，真正了解到了&lt;a href=&quot;https://mp.weixin.qq.com/s/D0A8HAQaQNart7KAdWXyJg&quot;&gt;Font文件中有什么&lt;/a&gt;；如果你对这些概念还熟悉，推荐先阅读前面几篇文章打好基础。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;作为程序员，日常和文本打交道肯定最多，不知道你是否深入想过这样一个问题：&lt;/p&gt;
+
+&lt;p&gt;一段中英日等多国混排的文字，系统（排版引擎）是如何知道怎么排布每个文字的，特别是不同国家的语言排版规则不同，比如中文、英文是从左向右排列，阿拉伯文是从右向左排列的；阿拉伯文会有连字（ligature），中文没有连字；更细节的，为了增强文本的可读性和美观性，系统一般还会将文字紧凑处理（kerning）、连字处理（ligature）等，排版引擎在其中到底做了哪些事情，每一步的基本原理又是怎么样的，本文将带你逐步揭开排版引擎的神秘面纱。&lt;/p&gt;
+
+&lt;p&gt;通过本文，或许你也能自定义一个文字排版引擎了。&lt;/p&gt;
+
+&lt;h1 id=&quot;一文本预处理unicode归一化&quot;&gt;一、文本预处理/Unicode归一化&lt;/h1&gt;
+
+&lt;p&gt;在&lt;a href=&quot;https://mp.weixin.qq.com/s/EYPO3sSjtIstD3RmlRCs9w&quot;&gt;字符与编码&lt;/a&gt;一文中，我们知道同一个字符可能对应多个code point，比如&lt;code class=&quot;highlighter-rouge&quot;&gt;👨‍👩‍👧&lt;/code&gt;对应&lt;code class=&quot;highlighter-rouge&quot;&gt;U+1F468 + U+200D + U+1F469 + U+200D + U+1F467&lt;/code&gt; ；甚至Unicode为了兼容历史编码，也允许一个字符有多种表示方法，比如&lt;code class=&quot;highlighter-rouge&quot;&gt;é&lt;/code&gt;可以表示为：单一code point（U+00E9），组合code point（&lt;code class=&quot;highlighter-rouge&quot;&gt;U+0065 + U+0301&lt;/code&gt;）。&lt;/p&gt;
+
+&lt;p&gt;预处理就是保证字符串在进行排版/字形选择（shaping）之前是稳定、唯一、可预测的，避免因为 Unicode 的多种表示方法导致排版不一致，比如避免&lt;code class=&quot;highlighter-rouge&quot;&gt;é&lt;/code&gt;被分开成&lt;code class=&quot;highlighter-rouge&quot;&gt;e&lt;/code&gt;和 &lt;code class=&quot;highlighter-rouge&quot;&gt;́&lt;/code&gt;排版渲染。&lt;/p&gt;
+
+&lt;p&gt;预处理一般步骤是：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;strong&gt;编码转换&lt;/strong&gt;：将字符统一成UTF-32编码&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;规范化（Normalization）&lt;/strong&gt;：NFC/NFD/NFKC/NFKD等，Web 标准和绝大多数现代系统都默认使用NFC&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;strong&gt;Q：NFC/NFD/NFKC/NFKD是什么&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;这些是Unicode标准里定义的几种规范化形式，区别是：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/文字排版引擎/归一化标准.png&quot; alt=&quot;归一化标准&quot; /&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;二分段&quot;&gt;二、分段&lt;/h1&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;为什么要分段：不同国家、语言的排版规则不同，比如阿拉伯文有连字、中文没有，阿拉伯文从右到左排，中文从左往右排，分段之后方便后续的字体选择和shaping，比如HarfBuzz 这样的 shaping 引擎一次只能处理一个 Script run&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;分段就是把字符串按 Unicode Script (Latin, Han, Hiragana, Katakana 等) 划分成 run（分组）。&lt;/p&gt;
+
+&lt;p&gt;原理比较简单，Unicode 为每个 code point 定义了一个 Script 属性，遍历字符串，按 Script 属性连续分段即可。&lt;/p&gt;
+
+&lt;p&gt;比如对于&lt;code class=&quot;highlighter-rouge&quot;&gt;Hello世界あい&lt;/code&gt;，从左往右扫描字符串，每遇到 Script 改变，就切分出一个 run，最后会被划分成：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Hello&lt;/code&gt;” → Latin&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;世界&lt;/code&gt; → Han&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;あい&lt;/code&gt; → Hiragana&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;strong&gt;特殊情况：&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;有些字符的 Script = Common（标点、数字、空格）或 Inherited（音调符号、声调标记），这些字符分段时需要特殊处理，规则一般是：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;如果是 Common → 继承相邻 run 的 Script（如果左右run都有Script，一般跟随左边；如果左边没有run，比如开头就是空格，那就跟随右边；如果左右都没有run，比如&lt;code class=&quot;highlighter-rouge&quot;&gt;!!!&lt;/code&gt;，那整体就是一个Common run）。&lt;/li&gt;
+  &lt;li&gt;如果是 Inherited → 附着到前一个 base 字符的 Script。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;比如：&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;世界!&lt;/code&gt; → “世界” (Han) + “!” (也归 Han run)&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;é&lt;/code&gt; (e + 重音符) → 整体算 Latin&lt;/p&gt;
+
+&lt;h1 id=&quot;三双向文本处理bidi&quot;&gt;三、双向文本处理（BiDi）&lt;/h1&gt;
+
+&lt;p&gt;BiDi就是将字符从&lt;strong&gt;逻辑顺序&lt;/strong&gt;处理成&lt;strong&gt;视觉顺序&lt;/strong&gt;，计算机里字符串总是按逻辑顺序存储（用户输入顺序），但在渲染时，不同语言有不同的书写方向，比如中文、英文从左往右排列，阿拉伯文、希伯来文从右往左排列，如果一段文本中既有中文、英文，又有阿拉伯文、希伯来文，那还得处理混排时的顺序，BiDi就是处理混排情况下文本的实际显示顺序的。&lt;/p&gt;
+
+&lt;p&gt;在后续的例子中，为了方便演示，我们假设以小写字母作为LTR，以大写字母作为RTL，比如：&lt;/p&gt;
+
+&lt;div class=&quot;language-scss highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nt&quot;&gt;abc&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;ABC&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;abc&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;：表示&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;LTR&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;（从左往右排）书写方向&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;ABC&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;：表示&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;RTL&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;（从右往左排）书写方向&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Unicode有一套完整的BiDi算法（细节可&lt;a href=&quot;https://www.unicode.org/reports/tr9/&quot;&gt;参考链接&lt;/a&gt;），在介绍原理之前需要先了解几个基本概念：&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;1）字符类型（Character Types）&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;Unicode给每个code point定义了一个Bidi_Class的属性（Unicode的方向属性）：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;L&lt;/code&gt; = Left-to-Right（中文、英文…）&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;R&lt;/code&gt; = Right-to-Left（希伯来文）&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;AL&lt;/code&gt; = Arabic Letter（阿拉伯文）&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;EN&lt;/code&gt; = European Number（欧洲数字）&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;AN&lt;/code&gt; = Arabic Number（阿拉伯数字）&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ON&lt;/code&gt; = Other Neutral（标点符号）&lt;/li&gt;
+  &lt;li&gt;…&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;这些方向属性会有一个隐含的分类：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;strong&gt;强类型&lt;/strong&gt;：这类字符具有明确的方向性，如英文字母是从左往右（LTR），阿拉伯文是从右往左（RLT）&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;弱类型&lt;/strong&gt;：这类字符方向性不明确，比如数字和一些符号（如出现在数字之间的符号&lt;code class=&quot;highlighter-rouge&quot;&gt;.&lt;/code&gt;、 &lt;code class=&quot;highlighter-rouge&quot;&gt;,&lt;/code&gt;等），比如阿拉伯数字&lt;code class=&quot;highlighter-rouge&quot;&gt;123&lt;/code&gt;，&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;中性类型&lt;/strong&gt;：这类字符完全没有方向性，如空格、标点符号（&lt;code class=&quot;highlighter-rouge&quot;&gt;.&lt;/code&gt;、 &lt;code class=&quot;highlighter-rouge&quot;&gt;,&lt;/code&gt;、 &lt;code class=&quot;highlighter-rouge&quot;&gt;?&lt;/code&gt;等），它们的方向完全由周围的强类型字符决定&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/文字排版引擎/BiDi_Class.png&quot; alt=&quot;BiDi_Class&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;比如：&lt;/p&gt;
+
+&lt;div class=&quot;language-scss highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;// 如下为计算机中存储的逻辑顺序&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;abc&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;ABC&lt;/span&gt;
+
+&lt;span class=&quot;nt&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;L&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;L&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;L&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;space&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;WS&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;A&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;R&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;B&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;R&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;C&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;R&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;strong&gt;2）段落基本方向（Base Direction）&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;在没有明确指定段落方向时，会采用默认规则来确定段落基本方向，即选择段落中&lt;strong&gt;第一个强类型字符&lt;/strong&gt;的方向作为段落基本方向，段落开头的弱/中性字符会被忽略，直到遇到第一个强类型字符；如果整段都没有强类型字符，则默认LTR。&lt;/p&gt;
+
+&lt;p&gt;比如：&lt;/p&gt;
+
+&lt;div class=&quot;language-scss highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;// 如下为计算机中存储的逻辑顺序&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;// case-1&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;abc&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;ABC&lt;/span&gt;
+
+&lt;span class=&quot;nt&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;L&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;L&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;L&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;space&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;WS&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;A&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;R&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;A&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;R&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;C&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;R&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+
+&lt;span class=&quot;err&quot;&gt;段落方向为&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;LTR&lt;/span&gt;
+
+&lt;span class=&quot;o&quot;&gt;//&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;case-2&lt;/span&gt;
+&lt;span class=&quot;s2&quot;&gt;&quot;123abc&quot;&lt;/span&gt;
+
+&lt;span class=&quot;nt&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;EN&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;EN&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;EN&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;L&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;L&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;L&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+
+&lt;span class=&quot;err&quot;&gt;段落方向为&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;LTR&lt;/span&gt;
+
+&lt;span class=&quot;o&quot;&gt;//&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;case-3&lt;/span&gt;
+&lt;span class=&quot;s2&quot;&gt;&quot;123&quot;&lt;/span&gt;
+
+&lt;span class=&quot;nt&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;EN&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;EN&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;EN&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+
+&lt;span class=&quot;err&quot;&gt;段落方向为默认&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;LTR&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;段落基本方向主要有三个作用：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;确定初始的嵌套等级（见下），如果基本方向为LTR，则嵌套等级从0开始；如果基本方向为RTL，则嵌套等级从1开始&lt;/li&gt;
+  &lt;li&gt;决定中性字符的方向，如果中性字符左右都没有强类型字符，那就会跟随段落方向，比如&lt;code class=&quot;highlighter-rouge&quot;&gt;Hello !&lt;/code&gt;中&lt;code class=&quot;highlighter-rouge&quot;&gt;!&lt;/code&gt;会跟随段落方向LTR&lt;/li&gt;
+  &lt;li&gt;决定段落中文档流方向，如果基本方向为LTR，文本将从容器左侧开始向右排；如果基本方向为RTL，文本将从容器右侧开始向左排&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;strong&gt;3）嵌套等级（Embedding Levels）&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;BiDi算法中用偶数等级（0, 2, 4…）代表LTR方向，奇数等级（1, 3, 5…）代表RTL方向；如前所述，段落基本方向决定了初始的嵌套等级（0级为LTR，1级为RTL），当文本中出现方向变化时，算法会相应地提升嵌套等级。&lt;/p&gt;
+
+&lt;p&gt;从段落初始等级开始，当遇到方向变化时，就提升一个等级；对于强类型字符等级比较容易确定，对于弱类型与中性类型字符则需要结合上下文来共同确定。&lt;/p&gt;
+
+&lt;p&gt;对于弱类型字符：比如AN/EN数字及其之间的标点符号，这些字符即使在 RTL 文本中也通常按 LTR 书写。&lt;/p&gt;
+
+&lt;p&gt;对于中性字符：假设中性字符&lt;code class=&quot;highlighter-rouge&quot;&gt;c&lt;/code&gt;左右字符（逻辑顺序）分别为&lt;code class=&quot;highlighter-rouge&quot;&gt;b&lt;/code&gt;、&lt;code class=&quot;highlighter-rouge&quot;&gt;d&lt;/code&gt;，&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;如果b、d都为强类型字符，且&lt;code class=&quot;highlighter-rouge&quot;&gt;direction(b) = direction(d) = D&lt;/code&gt;，则&lt;code class=&quot;highlighter-rouge&quot;&gt;direction(c) = D&lt;/code&gt;&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;如果b是强类型字符，且&lt;code class=&quot;highlighter-rouge&quot;&gt;direction(b) = RTL&lt;/code&gt;，且d是AN或EN，则&lt;code class=&quot;highlighter-rouge&quot;&gt;direction(c) = RTL&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;如果b是AN或EN，且d是强类型字符，且&lt;code class=&quot;highlighter-rouge&quot;&gt;direction(d) = RTL&lt;/code&gt;，则&lt;code class=&quot;highlighter-rouge&quot;&gt;direction(c) = RTL&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;如果b是AN或EN，且d是AN或EN，则&lt;code class=&quot;highlighter-rouge&quot;&gt;direction(c) = RTL&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;否则&lt;code class=&quot;highlighter-rouge&quot;&gt;direction(c) = direction(EL(c))&lt;/code&gt;（即其嵌套级别的方向，如果没有控制符明确限制则为段落基本方向）&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;比如：&lt;/p&gt;
+
+&lt;div class=&quot;language-scss highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;// 段落基本方向是LTR，初始等级0&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;逻辑顺序：&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;car&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;means&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;CAR&lt;/span&gt;&lt;span class=&quot;nc&quot;&gt;.&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;嵌套等级：&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;00000000001110&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;解释：&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;CAR&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;为&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;RTL&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;，方向变化所以从&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;提升到&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;；中性字符&lt;/span&gt;&lt;span class=&quot;nc&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;在段落首尾时遵循&lt;/span&gt;
+
+&lt;span class=&quot;o&quot;&gt;//&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;段落基本方向是&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;RTL&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;，初始等级&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;1&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;逻辑顺序：&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;CAR&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;means&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;car&lt;/span&gt;&lt;span class=&quot;nc&quot;&gt;.&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;嵌套等级：&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;11112222222221&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;解释：第一个空格左右分别时&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;RTL&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;和&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;LTR&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;，会遵循段落方向；第二个空格左右都是&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;LTR&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;，被提升为&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;LTR&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;strong&gt;Q：为什么需要2、3、4等更高等级的嵌套呢？&lt;/strong&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Unicode中有一些嵌套控制符，可以显示提升嵌套等级，比如LRE（U+202A），RLE（U+202B）等&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/文字排版引擎/嵌套控制符.png&quot; alt=&quot;嵌套控制符&quot; /&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;BiDi算法会从最高嵌套等级逐级反转字符，如果没有多级嵌套，遇到复杂结构时（比如 RTL 内嵌 LTR，再内嵌数字），就无法只反转某一层而保持其他层次稳定&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;理解上面概念后，我们来简述BiDi算法的基本过程：&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;1）分段并确定段落基本方向&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;BiDi算法是针对段落生效的，拿到一篇文档后，需要先将文档拆分成段落，并为段落确定基本方向。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;2）为每个字符分配嵌套等级&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;3）在奇数层做镜像字符替换&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;在奇数级别（即 RTL 层级）中，对称字符（如括号、尖括号、引号等）要“镜像”替换。&lt;/p&gt;
+
+&lt;p&gt;例如在 RTL 层中，一个 “(” 应该显示为 “)”，一个 “)” 应该显示为 “(”。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;4）阿拉伯连字处理&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;用一个新字符替换相邻的阿拉伯字符，并确定每个阿拉伯字符的位置和形状。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;5）按嵌入级别反转子串以生成视觉顺序&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;对每行（line）分别处理（因为段落可能跨多行），假设最高嵌套等级为&lt;code class=&quot;highlighter-rouge&quot;&gt;EL_h&lt;/code&gt;，&lt;strong&gt;最低奇数级别&lt;/strong&gt;为&lt;code class=&quot;highlighter-rouge&quot;&gt;EL_l&lt;/code&gt;，从EL_h递减到EL_l，在每一级别就地反转子串&lt;/p&gt;
+
+&lt;p&gt;递归处理完后，由高层级到低层级反转嵌套子串，就能得到最终每行的视觉顺序。&lt;/p&gt;
+
+&lt;p&gt;详细逻辑可以参考：https://cs.uwaterloo.ca/~dberry/ATEP/Slides/UnicodeBiDiAlgorithm.pdf&lt;/p&gt;
+
+&lt;p&gt;下面以几个例子说明：&lt;/p&gt;
+
+&lt;div class=&quot;language-scss highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;// case-1&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;逻辑顺序：&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;car&lt;/span&gt;&lt;span class=&quot;err&quot;&gt; &lt;/span&gt;&lt;span class=&quot;na&quot;&gt;means&lt;/span&gt;&lt;span class=&quot;err&quot;&gt; &lt;/span&gt;&lt;span class=&quot;na&quot;&gt;CAR&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;.
+段落等级：&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;（第一个强字符为&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;LTR&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;，所以段落等级为&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;）
+嵌套等级：&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;00000000001110&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;
+反转&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;level&lt;/span&gt;&lt;span class=&quot;err&quot;&gt; &lt;/span&gt;&lt;span class=&quot;na&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;car&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;means&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;RAC&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;
+
+&lt;span class=&quot;o&quot;&gt;//&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;case-2&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;逻辑顺序：&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;RLE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;car&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MEANS&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;CAR&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;PDF&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;段落等级：&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;（&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;RLT&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;开启一个新的嵌套等级，嵌套等级提升到&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;，段落等级为&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;；&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;PDF&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;为表示嵌套终止）&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;嵌套等级：&lt;/span&gt;     &lt;span class=&quot;m&quot;&gt;22211111111111&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;反转&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;level&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;：&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;rac&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MEANS&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;CAR&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;反转&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;level&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;~&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;：&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;RAC&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SNAEM&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;car&lt;/span&gt;
+
+&lt;span class=&quot;o&quot;&gt;//&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;case-3&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;逻辑顺序：&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;he&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;said&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;[RLE]car MEANS CAR[PDF].&quot;&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;段落等级：&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;嵌套等级：&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;000000000&lt;/span&gt;     &lt;span class=&quot;m&quot;&gt;2221111111111&lt;/span&gt;     &lt;span class=&quot;m&quot;&gt;00&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;反转&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;level&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;：&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;he&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;said&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;rac MEANS CAR.&quot;&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;反转&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;level&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;~&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;：&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;he&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;said&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;RAC SNAEM car.&quot;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h1 id=&quot;四字体匹配与fallback&quot;&gt;四、字体匹配与Fallback&lt;/h1&gt;
+
+&lt;p&gt;字体匹配与Fallback是一个复杂的过程，我们后续的塑形与测量都依赖字体文件。&lt;/p&gt;
+
+&lt;p&gt;由于任何一个字体都不可能覆盖 Unicode 的所有字符，比如：Times New Roman 渲染拉丁字母没问题，但遇到中文 “你” 就会变成“豆腐块”（小方块：是操作系统在没找到合适字体来显示字符时，会兜底到占位符，比如☐或�等）；所以排版系统实际要做的就是：确保每个字符都有合适的字体来渲染，同时尽量保持风格一致。&lt;/p&gt;
+
+&lt;p&gt;每个字符都有对应的code point，在&lt;a href=&quot;https://mp.weixin.qq.com/s/D0A8HAQaQNart7KAdWXyJg&quot;&gt;Font文件中有什么&lt;/a&gt;一文中，我们知道了字体文件中有各种各样的表，其中cmap表存储了code point与glyphID的映射，通过cmap表我们可以精确的查到该Font是否支持某个code point，但是仅通过cmap查询是不够的，主要有两个原因：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;操作系统一般安装了成百上千种字体，如果对每个code point都去遍历所有Font的cmap表，那开销会非常大&lt;/li&gt;
+  &lt;li&gt;不同Font支持的Unicode范围是有交集的，一个code point可能匹配出多个Font，为了渲染风格的统一，我们期望相同Script的字符尽量用同一种Font&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;&lt;strong&gt;Q：相同Script的字符如果使用了不同的Font，会有什么问题&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;Unicode 为了节省码点空间，将许多中、日、韩来源相同但字形有细微差异的汉字合并到了同一个码点上，也就是所谓的&lt;a href=&quot;https://zh.wikipedia.org/wiki/%E4%B8%AD%E6%97%A5%E9%9F%93%E7%B5%B1%E4%B8%80%E8%A1%A8%E6%84%8F%E6%96%87%E5%AD%97&quot;&gt;中日韩统一表意文字&lt;/a&gt;（CJK Unified Ideographs）；如下，同一个code point在不同语言下样式不同，如果不处理Script，那可能会在一个日文段落里显示出中文的“房”字形，这在专业排版上是不可接受的。另外，不同的Font格设计风格（字宽、基线、形态）也不同，如果一个段落里穿插不同的Font，那最终排版看起来也会很奇怪。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/Users/ping/Desktop/husteryp.github.io/img/post/文字排版引擎/CJK Unifined.png&quot; alt=&quot;CJK Unifined&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;现代操作系统做字体匹配与Fallback的方式一般是：&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;1）通过前面的分段，将一段字符串按Script分成不同的run&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;2）检查用户指定的主字体是否支持&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;检查用户指定字体（主字体）的cmap是否支持对应字符（code point），如果支持则命中主字体，如果不支持则进入Fallback流程。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;3）Fallback时按OS_2表中的ulUnicodeRange掩码初步筛选支持的Unicode范围&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;注意OS_2表只是一个大概范围，并不代表完全支持该范围的Unicode，如果要精确查询是否支持还是要查cmap表。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;4）通过&lt;code class=&quot;highlighter-rouge&quot;&gt;GSUB&lt;/code&gt;/&lt;code class=&quot;highlighter-rouge&quot;&gt;GPOS&lt;/code&gt; 表精确查找支持哪些Script&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;GSUB&lt;/code&gt;/&lt;code class=&quot;highlighter-rouge&quot;&gt;GPOS&lt;/code&gt;中定义了&lt;code class=&quot;highlighter-rouge&quot;&gt;ScriptList&lt;/code&gt;，明确声明字体为哪些Script提供了shaping规则；排版引擎通过&lt;code class=&quot;highlighter-rouge&quot;&gt;GSUB&lt;/code&gt;/&lt;code class=&quot;highlighter-rouge&quot;&gt;GPOS&lt;/code&gt;表来处理复杂的排版规则，比如字形替换、连字、上下标对齐等，排版引擎会优先选择明确支持对应Script的Font。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;5）通过cmap表验证支持的code point&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;如果匹配出多个Fallback字体，那系统可能会根据用户设置的主字体风格，系统语言、字体优先级等来选择最优的字体。&lt;/p&gt;
+
+&lt;p&gt;当然，操作系统中一般会对Script的Fallback字体表有缓存，上面的3、4步骤一般不用每次都做，Fallback表类似于：&lt;/p&gt;
+
+&lt;div class=&quot;language-json highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;scripts&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;hans&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Microsoft YaHei&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;SimSun&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Source Han Sans SC&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;hant&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Microsoft JhengHei&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Source Han Sans TC&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;latn&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Arial&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Times New Roman&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Verdana&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Microsoft YaHei&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;...&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;kana&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Meiryo&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Yu Gothic&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Source Han Sans JP&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;},&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;families&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Arial&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;regular&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;arial.ttf&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;bold&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;arialbd.ttf&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;},&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;...&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;我们后续也会逆向探究下CoreText中的字体级联（Fallback）机制，更细节的这里不再展开。&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;&lt;strong&gt;Q：像&lt;code class=&quot;highlighter-rouge&quot;&gt;👨‍👩‍👧&lt;/code&gt;这种由多个code point组成的字符，是怎么匹配Font的&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;像&lt;code class=&quot;highlighter-rouge&quot;&gt;👨‍👩‍👧&lt;/code&gt;这种由多个code point组成的字符（如下），一般称之为Grapheme Cluster（字素簇）：&lt;/p&gt;
+
+&lt;div class=&quot;language-scss highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;err&quot;&gt;👨&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;U&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;1F468&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;MAN&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;  
+&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;U&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;200D&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;ZWJ&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;Zero&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;Width&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;Joiner&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;  
+&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;👩&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;U&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;1F469&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;WOMAN&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;  
+&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;U&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;200D&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;ZWJ&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;Zero&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;Width&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;Joiner&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;  
+&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;👧&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;U&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;1F467&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;GIRL&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Unicode Emoji 标准里规定了哪些序列可以组合成单个 emoji（如 👨‍👩‍👧、👩‍❤️‍👩 等），排版引擎会根据Emoji data（来自Unicode数据表）来判断这是不是一个合法的ZWJ Sequence，识别成功会将其视为一个不可分割的单元，在匹配字体时会做如下处理：&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;1）用组合序列的第一个非ZWJ code point 去查找字体&lt;/strong&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;ZWJ：Zero Width Joiner，零宽度连接符，它的作用就像“胶水”，告诉排版引擎两侧字符不可分割。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;对于&lt;code class=&quot;highlighter-rouge&quot;&gt;👨‍👩‍👧&lt;/code&gt;来说，就是用 &lt;code class=&quot;highlighter-rouge&quot;&gt;U+1F468&lt;/code&gt; (👨)，去查找字体，查找和Fallback过程同上。一般而言会匹配到系统内置的彩色表情符号字体：macOS/iOS上一般是&lt;code class=&quot;highlighter-rouge&quot;&gt;Apple Color Emoji&lt;/code&gt;，Windows上是&lt;code class=&quot;highlighter-rouge&quot;&gt;Segoe UI Emoji&lt;/code&gt;，Android上一般是&lt;code class=&quot;highlighter-rouge&quot;&gt;Noto Color Emoji&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;2）用匹配的字体进行字形替换&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;这一步其实发生在下面的塑性阶段，在查到的字体表中通过 GSUB表把多个 code point 映射成一个彩色的glyph，也就是字形替换。&lt;/p&gt;
+
+&lt;p&gt;如果这一步没找到合法的可替换字形，那就Fallback到单独显示&lt;code class=&quot;highlighter-rouge&quot;&gt;👨 👩 👧&lt;/code&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;五字形选择与shaping&quot;&gt;五、字形选择与Shaping&lt;/h1&gt;
+
+&lt;p&gt;这一步的目标是将抽象的字符转换成具体的glyphIDs和布局信息，以供下一步排版使用；输入是一段单一 Script、单一字体的文本 run和上面匹配出的字体，输出是一个字形序列，包括glyphIDs、x_advance、y_advance、x_offset、y_offset等。&lt;/p&gt;
+
+&lt;p&gt;大致分为两步：&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;1）code point映射到glyphID&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;每个code point会通过字体的cmap表映射成一个glyphID。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;2）文本塑形：应用GSUB、GPOS规则&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;Shaping引擎会读取字体文件中的GSUB表，进行字形替换，比如连字，emoji替换等；读取GPOS表，调整字形的位置，比如上下标位置、字间距（kerning）、阿拉伯文的连写等。&lt;/p&gt;
+
+&lt;h1 id=&quot;六测量与排版&quot;&gt;六、测量与排版&lt;/h1&gt;
+
+&lt;p&gt;这一步的目标是将字形序列按自定义布局规则排版到二维坐标系下，简单讲就是确定每个glyph的位置、大小信息，以供下一步绘制使用。&lt;/p&gt;
+
+&lt;p&gt;大致分为两步：&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;1）获取字形的metrics&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;从字体文件的hhea/OS_2表中读取出每个glyph的ascent、descent等信息，用于确定baseline、lineHeight等信息。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;2）自定义布局确定每个glyph位置&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;从上面得到的baseline、lineHeight等信息，以及第六步得到的advance宽度（glyph前进量）等，可以计算出每个glyph的宽高、对齐基线，这样我们就能像前端一样自定义文档流布局（Inline、Inline-Block、Block）来精确的排版每个glyph的位置。&lt;/p&gt;
+
+&lt;h1 id=&quot;七渲染上屏&quot;&gt;七、渲染上屏&lt;/h1&gt;
+
+&lt;p&gt;经过上面的塑形、排版过程，我们已经能得到按显示顺序排列且带有精确位置的glyph序列，绘制阶段就是将这些抽象的glyph序列上屏显示出来。&lt;/p&gt;
+
+&lt;p&gt;这一步一般有软光栅、硬光栅等多种选型，在macOS/iOS上，可以通过CoreText来绘制字形序列，比如：&lt;a href=&quot;https://developer.apple.com/documentation/coretext/ctfontdrawglyphs(_:_:_:_:_:)&quot;&gt;CTFontDrawGlyphs&lt;/a&gt;；本文主要讲解排版引擎流程，渲染部分不再展开，后续有时间再单独开篇研究。&lt;/p&gt;
+
+&lt;h1 id=&quot;总结&quot;&gt;总结&lt;/h1&gt;
+
+&lt;p&gt;至此，我们自定义文字排版引擎的原理篇告一段落；相信通过以上讲解，我们对文字排版的流程有了一个大致了解，下一步我们将结合ICU、HarfBuzz等来实战实现一个小型的自定义文字排版引擎。&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;更多精彩内容，欢迎关注🌍公众号：非专业程序员Ping&lt;/p&gt;
+&lt;/blockquote&gt;
+</description>
+        <pubDate>Wed, 01 Oct 2025 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2025/10/01/%E6%96%87%E5%AD%97%E6%8E%92%E7%89%88%E5%BC%95%E6%93%8E/</link>
+        <guid isPermaLink="true">http://localhost:4000/2025/10/01/%E6%96%87%E5%AD%97%E6%8E%92%E7%89%88%E5%BC%95%E6%93%8E/</guid>
+        
+        <category>跨端渲染</category>
+        
+        <category>Font</category>
+        
+        
+      </item>
     
       <item>
         <title>一文读懂Font文件</title>
@@ -1325,296 +1718,6 @@ label.snp.makeConstraints { (make) in
         <pubDate>Wed, 27 Feb 2019 00:00:00 +0800</pubDate>
         <link>http://localhost:4000/2019/02/27/iOS%E7%96%91%E9%9A%BE%E7%82%B9/</link>
         <guid isPermaLink="true">http://localhost:4000/2019/02/27/iOS%E7%96%91%E9%9A%BE%E7%82%B9/</guid>
-        
-        <category>iOS</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>iOS多线程与网络</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;p&gt;iOS多线程编程各种方式总结&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;一-概述&quot;&gt;一. 概述&lt;/h2&gt;
-
-&lt;p&gt;iOS中多线程的实现方式有如下四种：&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/iOS_Thread/多线程实现方案的比较.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;本文主要总结常用的两种方式&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;二-gcd&quot;&gt;二. GCD&lt;/h2&gt;
-
-&lt;h3 id=&quot;21-gcd概述&quot;&gt;2.1 GCD概述&lt;/h3&gt;
-
-&lt;p&gt;GCD即Grand Central Dispatch，是苹果公司为多核的并行运算提出的解决方案，能自动合理地利用多核CPU（比如双核、四核），同时还能自动管理线程的生命周期（创建线程、调度任务、销毁线程），不需要手动管理；由C语言实现&lt;/p&gt;
-
-&lt;h3 id=&quot;22-gcd使用&quot;&gt;2.2 GCD使用&lt;/h3&gt;
-
-&lt;h4 id=&quot;221-主要方法&quot;&gt;2.2.1 主要方法&lt;/h4&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;dispatch_sync(dispatch_queue_t queue, dispatch_block_t block)&lt;/code&gt; ：同步&lt;/li&gt;
-    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;dispatch_async(dispatch_queue_t queue, dispatch_block_t block)&lt;/code&gt; ：异步&lt;/li&gt;
-    &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;dispatch_barrier_async(dispatch_queue_t queue, dispatch_block_t block)&lt;/code&gt; ：等待前面的任务执行完成之后才执行，且它后面的任务等它执行完成之后才会执行；这里的 queue 不能是全局的并发队列（可用于解决读写锁的问题；如数据库操作中，读操作可以并行提高效率，写操作需要等待前面的读操作完成之后再执行，写操作执行完之后，之后的读操作又可以实现并行，如下）&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;	dispatch_async(queue, ^{
-            // reading
-        });
-        dispatch_async(queue, ^{
-            // reading
-        });
-        dispatch_barrier_sync(queue, ^{
-            // writing
-        });
-        dispatch_async(queue, ^{
-            // reading
-        });
-        dispatch_async(queue, ^{
-            // reading
-        });
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h4 id=&quot;222-队列&quot;&gt;2.2.2 队列&lt;/h4&gt;
-
-&lt;p&gt;GCD中有两个重要的概念：任务和队列&lt;/p&gt;
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;任务有两种执行方式：同步执行和异步执行，他们之间的区别是否会创建新的线程&lt;/li&gt;
-    &lt;li&gt;队列：用于存放任务。有两种队列， 串行队列和并行队列；区别如下：&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/iOS_Thread/串行队列和并行队列.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;可以通过如下方式获取或者创建队列：&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;使用 &lt;code class=&quot;highlighter-rouge&quot;&gt;dispatch_queue_create&lt;/code&gt; 创建（串行或并行）&lt;/li&gt;
-    &lt;li&gt;使用 &lt;code class=&quot;highlighter-rouge&quot;&gt;dispatch_get_global_queue&lt;/code&gt; 获取全局并发队列（所有应用程序都可用，且区分优先级）&lt;/li&gt;
-    &lt;li&gt;使用 &lt;code class=&quot;highlighter-rouge&quot;&gt;dispatch_get_main_queue&lt;/code&gt; 获得主队列&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;// 自己创建队列：第一个参数是标识符，用于 DEBUG 的时候标识唯一的队列；
-// 第二个参数用来表示创建的队列是串行的还是并行的，传入 DISPATCH_QUEUE_SERIAL 或 NULL 表示创建串行队列。传入 DISPATCH_QUEUE_CONCURRENT 表示创建并行队列
-
-  //串行队列
-  dispatch_queue_t queue = dispatch_queue_create(&quot;tk.bourne.testQueue&quot;, NULL);
-  dispatch_queue_t queue = dispatch_queue_create(&quot;tk.bourne.testQueue&quot;, DISPATCH_QUEUE_SERIAL);
-  //并行队列
-  dispatch_queue_t queue = dispatch_queue_create(&quot;tk.bourne.testQueue&quot;, DISPATCH_QUEUE_CONCURRENT);
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  // 全局并行队列：
-  dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h4 id=&quot;223-队列组dispatch-group&quot;&gt;2.2.3 队列组(Dispatch Group)&lt;/h4&gt;
-
-&lt;p&gt;可用于实现当并行执行block时，监听所有block执行结束&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;	dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
-        dispatch_group_t group = dispatch_group_create();
-        dispatch_group_async(group, queue, ^{
-            NSLog(@&quot;Block 1&quot;);
-        });
-        dispatch_group_async(group, queue, ^{
-            NSLog(@&quot;Block 2&quot;);
-        });
-        dispatch_group_async(group, queue, ^{
-            NSLog(@&quot;Block 3&quot;);
-        });
-        dispatch_group_notify(group, dispatch_get_main_queue(), ^{
-            NSLog(@&quot;Done&quot;);
-        });
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;应用举例：分别执行两个耗时的操作，等两个异步操作都执行完之后，回到主线程执行操作；如果想要高效实现上述需求，可用队列组；如下&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;dispatch_group_t group =  dispatch_group_create();
-dispatch_group_async(group, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-    // 执行1个耗时的异步操作
-});
-dispatch_group_async(group, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-    // 执行1个耗时的异步操作
-});
-dispatch_group_notify(group, dispatch_get_main_queue(), ^{
-    // 等前面的异步操作都执行完毕后，回到主线程...
-});
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h4 id=&quot;224-其他&quot;&gt;2.2.4 其他&lt;/h4&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;延迟执行：通过&lt;code class=&quot;highlighter-rouge&quot;&gt;dispatch_walltime&lt;/code&gt;生成绝对时间&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;dispatch_time_t time = dispatch_time(DISPATCH_TIME_NOW, 3ull * NSEC_PER_SEC); // ull表示：unsigned long long 
-        dispatch_after(time, dispatch_get_main_queue(), ^{
-            
-});
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;dipatch_apply：相当于dipatch_sync和dispatch group的关联API，该函数将指定的block追加到指定的queue中，并等待全部处理执行结束；其也会阻塞直到执行完毕，可用其替代for循环
-    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
-dispatch_apply(10, queue, ^(size_t index) { // index表示当前索引，自动增加
-  NSLog(@&quot;%zu&quot;, index);
-});
-NSLog(@&quot;Done&quot;); // 最后执行
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;dispatch_suspend / dispatch_resume：用于挂起和恢复queue&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;Dispatch Semaphore：计数为0时等待，计数为1或大于1时，减1而不是等待&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;dispatch_once：保证在应用程序中只执行一次指定处理的API&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;Dispatch IO：当读取大文件时，将文件分成合适的大小并使用Global Queue读取的话，会快很多，如果想尝试提高文件读取速度，可以使用Dispatch IO&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h4 id=&quot;225-备注&quot;&gt;2.2.5 备注&lt;/h4&gt;
-
-&lt;p&gt;在iOS6.0之前，在GCD中每当使用带creat单词的函数创建对象之后，都应该对其进行一次release操作。在iOS6.0之后，GCD被纳入到了ARC的内存管理机制中，在使用GCD的时候我们就像对待普通OC对象一样对待GCD,因此不再需要我们调用release方法&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;三-nsoperation&quot;&gt;三. NSOperation&lt;/h2&gt;
-
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;本身是个抽象类，需要使用其子类：NSInvocationOperation，NSBlockOperation，或自定义子类&lt;/li&gt;
-    &lt;li&gt;默认情况下，调用 NSInvocationOperation 的 start 方法并不会开一条新线程去执行，而是在当前线程执行；需要把 NSOperation 放到一个 NSOperationQueue 中才会执行异步操作&lt;/li&gt;
-    &lt;li&gt;NSBlockOperation：只要 NSBlockOperation 封装的操作数 &amp;gt; 1，就会异步执行操作&lt;/li&gt;
-    &lt;li&gt;支持取消，暂停和恢复，还可以设置依赖来保证执行顺序，如 &lt;code class=&quot;highlighter-rouge&quot;&gt;[operationB addDependency:operationA]; // 操作B依赖于操作A&lt;/code&gt;；还可以在不同 queue 的 NSOperation 之间创建依赖关系&lt;/li&gt;
-    &lt;li&gt;支持监听一个操作的执行完毕：通过 &lt;code class=&quot;highlighter-rouge&quot;&gt;completionBlock&lt;/code&gt; 和 &lt;code class=&quot;highlighter-rouge&quot;&gt;setCompletionBlock&lt;/code&gt; 实现&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;四-网络请求&quot;&gt;四. 网络请求&lt;/h2&gt;
-
-&lt;p&gt;网络请求常用类：&lt;/p&gt;
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;NSURL：请求地址&lt;/li&gt;
-    &lt;li&gt;NSURLRequest：一个NSURLRequest对象就代表一个请求，它包含的信息有：一个 NSURL 对象，请求方法，请求头，请求体，请求超时等&lt;/li&gt;
-    &lt;li&gt;NSMutableURLRequest：NSURLRequest的子类&lt;/li&gt;
-    &lt;li&gt;NSURLConnection：负责发送请求；支持发送同步请求（sendSynchronousRequest）和异步请求（sendAsynchronousRequest）；还可以设置代理监听网络请求过程（开始响应，接收数据，结束响应，请求出错）&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;第三方框架：&lt;/p&gt;
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;ASIHttpRequest&lt;/li&gt;
-    &lt;li&gt;AFNetworking&lt;/li&gt;
-    &lt;li&gt;MKNetworkKit&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;iOS中发送 HTTP 请求的方案：&lt;/p&gt;
-&lt;ul&gt;
-  &lt;li&gt;苹果原生
-    &lt;blockquote&gt;
-      &lt;ol&gt;
-        &lt;li&gt;NSURLConnection：用法简单，坑较多&lt;/li&gt;
-        &lt;li&gt;NSURLSession：功能比 NSURLConnection 强大，苹果推荐使用(但是NSURLSessionTask是一个抽象类，本身不能使用，只能使用它的子类：NSURLSessionDataTask\NSURLSessionUploadTask\NSURLSessionDownloadTask)&lt;/li&gt;
-        &lt;li&gt;CFNetwork：NSURL*的底层实现，纯C语言&lt;/li&gt;
-      &lt;/ol&gt;
-    &lt;/blockquote&gt;
-  &lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;两种为NSURLConnection设置代理方式的区别：&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    //第一种设置方式：
-    //通过该方法设置代理，会自动的发送请求
-    // [[NSURLConnection alloc]initWithRequest:request delegate:self];
-
-    //第二种设置方式：
-    //设置代理，startImmediately为NO的时候，该方法不会自动发送请求
-    NSURLConnection *connect = [[NSURLConnection alloc]initWithRequest:request delegate:self startImmediately:NO];
-    //手动通过代码的方式来发送请求
-    //注意该方法内部会自动的把connect添加到当前线程的RunLoop中在默认模式下执行
-    [connect start];
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;五-数据解析&quot;&gt;五. 数据解析&lt;/h2&gt;
-
-&lt;p&gt;Json解析（转OC数据类型）：&lt;/p&gt;
-&lt;blockquote&gt;
-  &lt;ol&gt;
-    &lt;li&gt;第三方框架：JSONKit、SBJson、TouchJSON（性能从左到右，越差）&lt;/li&gt;
-    &lt;li&gt;苹果原生：NSJSONSerialization（性能最好）&lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/iOS_Thread/Json转OC数据类型.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;XML解析：&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;解析方式有两种：
-    &lt;blockquote&gt;
-      &lt;ol&gt;
-        &lt;li&gt;DOM：一次性将整个XML文档加载进内存，比较适合解析小文件&lt;/li&gt;
-        &lt;li&gt;SAX：从根元素开始，按顺序一个元素一个元素往下解析，比较适合解析大文件&lt;/li&gt;
-      &lt;/ol&gt;
-    &lt;/blockquote&gt;
-  &lt;/li&gt;
-  &lt;li&gt;解析API：
-    &lt;blockquote&gt;
-      &lt;ol&gt;
-        &lt;li&gt;官方原生：NSXMLParser，SAX方式解析&lt;/li&gt;
-        &lt;li&gt;libxml2：纯C语言，默认包含在iOS SDK中，同时支持DOM和SAX方式解析&lt;/li&gt;
-        &lt;li&gt;GDataXML：DOM方式解析，由Google开发，基于libxml2&lt;/li&gt;
-      &lt;/ol&gt;
-    &lt;/blockquote&gt;
-  &lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;六-runloop&quot;&gt;六. RunLoop&lt;/h2&gt;
-
-&lt;p&gt;RunLoop是iOS中比较重要的一点，较短篇幅无法讲完，后面有机会再另起新篇总结&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;七-参考博客&quot;&gt;七. 参考博客&lt;/h2&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;https://www.jianshu.com/p/0b0d9b1f1f19&lt;/li&gt;
-&lt;/ol&gt;
-
-</description>
-        <pubDate>Sun, 24 Feb 2019 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2019/02/24/iOS%E5%A4%9A%E7%BA%BF%E7%A8%8B/</link>
-        <guid isPermaLink="true">http://localhost:4000/2019/02/24/iOS%E5%A4%9A%E7%BA%BF%E7%A8%8B/</guid>
         
         <category>iOS</category>
         
