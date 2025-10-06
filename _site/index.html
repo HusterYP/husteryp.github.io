@@ -154,6 +154,34 @@
             ">
     			
 <div class="post-preview">
+    <a href="/2025/10/03/CoreText-Font-Fallback/">
+        <h2 class="post-title">
+            CoreText Font Fallback
+        </h2>
+        
+        <h3 class="post-subtitle">
+            CoreText中的字体级联/Font Fallback机制
+        </h3>
+        
+        <div class="post-content-preview">
+            一、引言
+
+
+  本文基于Xcode 16.4，iOS 18.5模拟器分析，不同系统版本可能有区别。
+
+
+前面我们介绍了自定义文字排版引擎的原理，其中有一个复杂部分是字体Fallback，本文将通过逆向手段分析CoreText中CTFontCopyDefaultCascadeListForLanguages的实现，通过了解系统的字体回退实现，可以帮助我们实现更好的生产级别的文字排版引擎。
+
+...
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by 袁平 on October 3, 2025
+    </p>
+</div>
+<hr>
+
+<div class="post-preview">
     <a href="/2025/10/01/%E6%96%87%E5%AD%97%E6%8E%92%E7%89%88%E5%BC%95%E6%93%8E/">
         <h2 class="post-title">
             从0到1自定义文字排版引擎：原理篇
@@ -430,50 +458,6 @@ AutoLayout总结
 </div>
 <hr>
 
-<div class="post-preview">
-    <a href="/2019/02/27/iOS%E7%96%91%E9%9A%BE%E7%82%B9/">
-        <h2 class="post-title">
-            iOS疑难点
-        </h2>
-        
-        <h3 class="post-subtitle">
-            iOS疑难点总结，不定期更新
-        </h3>
-        
-        <div class="post-content-preview">
-            前言
-
-iOS疑难点总结，部分摘自参考链接
-
-
-
-正文
-
-
-
-self.var还是_var?
-
-在iOS中常见到如下写法：
-
-@interface Demo ()
-
-@property(nonatomic, strong) NSString *name;
-
-@end
-
-@implementation Demo
-
-- (void)test {
-    _name = @"";
-//    se...
-        </div>
-    </a>
-    <p class="post-meta">
-        Posted by 袁平 on February 27, 2019
-    </p>
-</div>
-<hr>
-
 
 <!-- Pager -->
 
@@ -566,13 +550,13 @@ self.var还是_var?
                             
                         
                             
-                                <a href="/tags/#跨端渲染" title="跨端渲染" rel="5">
+                                <a href="/tags/#跨端渲染" title="跨端渲染" rel="6">
                                     跨端渲染
                                 </a>
                             
                         
                             
-                                <a href="/tags/#Font" title="Font" rel="4">
+                                <a href="/tags/#Font" title="Font" rel="5">
                                     Font
                                 </a>
                             

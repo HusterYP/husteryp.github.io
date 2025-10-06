@@ -5,9 +5,842 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Thu, 02 Oct 2025 01:03:42 +0800</pubDate>
-    <lastBuildDate>Thu, 02 Oct 2025 01:03:42 +0800</lastBuildDate>
+    <pubDate>Tue, 07 Oct 2025 01:34:38 +0800</pubDate>
+    <lastBuildDate>Tue, 07 Oct 2025 01:34:38 +0800</lastBuildDate>
     <generator>Jekyll v3.8.5</generator>
+    
+      <item>
+        <title>CoreText Font Fallback</title>
+        <description>&lt;h1 id=&quot;一引言&quot;&gt;一、引言&lt;/h1&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;本文基于Xcode 16.4，iOS 18.5模拟器分析，不同系统版本可能有区别。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;前面我们介绍了&lt;a href=&quot;https://mp.weixin.qq.com/s/fcL6if52qYQUTChEjntHJg&quot;&gt;自定义文字排版引擎的原理&lt;/a&gt;，其中有一个复杂部分是字体Fallback，本文将通过逆向手段分析CoreText中&lt;code class=&quot;highlighter-rouge&quot;&gt;CTFontCopyDefaultCascadeListForLanguages&lt;/code&gt;的实现，通过了解系统的字体回退实现，可以帮助我们实现更好的生产级别的文字排版引擎。&lt;/p&gt;
+
+&lt;p&gt;在开始之前，先介绍下&lt;code class=&quot;highlighter-rouge&quot;&gt;CTFontCopyDefaultCascadeListForLanguages&lt;/code&gt; API，其完整的函数签名如下：&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;官方文档：https://developer.apple.com/documentation/coretext/ctfontcopydefaultcascadelistforlanguages(&lt;em&gt;:&lt;/em&gt;:)&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;div class=&quot;language-swift highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;kd&quot;&gt;func&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;CTFontCopyDefaultCascadeListForLanguages&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;_&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;font&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;CTFont&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;_&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;languagePrefList&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;CFArray&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;?&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;CFArray&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;?&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;一个字体不可能支持所有的Unicode，比如Helvetica不支持中文，PingFang不支持韩文，在实际渲染时，往往是多个字体共同参与完成的，另外不同字体支持的Unicode有交集，那最终选择哪个字体也是有优先级的；&lt;code class=&quot;highlighter-rouge&quot;&gt;CTFontCopyDefaultCascadeListForLanguages&lt;/code&gt;的作用就是：给定一个字体和语言列表，返回系统默认的Fallback列表（也叫级联列表，CascadeList），简单理解就是系统会按这个Fallabck列表进行优先级选择Fallback字体。&lt;/p&gt;
+
+&lt;p&gt;在macOS/iOS中，我们也可以通过&lt;code class=&quot;highlighter-rouge&quot;&gt;kCTFontCascadeListAttribute&lt;/code&gt;显示指定Fallback链（如下），这样就能自定义Fallback，当然，如果不指定的话会系统也会启用默认Fallback，来尽量保证文本渲染正确。&lt;/p&gt;
+
+&lt;div class=&quot;language-swift highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;kd&quot;&gt;func&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;makeAttributedStringWithFallback&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
+    &lt;span class=&quot;nv&quot;&gt;text&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;String&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+    &lt;span class=&quot;nv&quot;&gt;baseFontName&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;String&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;Helvetica&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+    &lt;span class=&quot;nv&quot;&gt;size&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;CGFloat&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;16&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+    &lt;span class=&quot;nv&quot;&gt;languages&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;String&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;zh-Hans&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;ja&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;ko&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;NSAttributedString&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;baseFont&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;CTFontCreateWithName&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;baseFontName&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;CFString&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;size&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kc&quot;&gt;nil&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;fallbacks&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;CTFontCopyDefaultCascadeListForLanguages&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;baseFont&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;languages&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;CFArray&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;as?&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;CTFontDescriptor&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;??&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[]&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;attributes&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;CFString&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Any&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;
+        &lt;span class=&quot;nv&quot;&gt;kCTFontNameAttribute&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;baseFontName&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+        &lt;span class=&quot;nv&quot;&gt;kCTFontSizeAttribute&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;size&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+  	&lt;span class=&quot;c1&quot;&gt;// 可以在这里修改fallbacks，来自定义回退&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;fallbacks&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;isEmpty&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;attributes&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;kCTFontCascadeListAttribute&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;fallbacks&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;newDescriptor&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;CTFontDescriptorCreateWithAttributes&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;attributes&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;CFDictionary&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;finalFont&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;CTFontCreateWithFontDescriptor&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;newDescriptor&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;size&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kc&quot;&gt;nil&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;attributesDict&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;NSAttributedString&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Key&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Any&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;
+        &lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;font&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;finalFont&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;NSAttributedString&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;text&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;attributes&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;attributesDict&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;下面，我们按如下调用Demo来实际研究下：&lt;/p&gt;
+
+&lt;div class=&quot;language-swift highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;ctFont&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;UIFont&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;systemFont&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;ofSize&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;16&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;languages&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;String&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;zh-Hans&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;cascadeList&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;CTFontCopyDefaultCascadeListForLanguages&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ctFont&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;languages&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;CFArray&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h1 id=&quot;二调用链路&quot;&gt;二、调用链路&lt;/h1&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/FontFallback/CTFontCopyDefaultCascadeListForLanguages.png&quot; alt=&quot;CTFontCopyDefaultCascadeListForLanguages&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;如上是&lt;code class=&quot;highlighter-rouge&quot;&gt;CTFontCopyDefaultCascadeListForLanguages&lt;/code&gt;的调用链路，可以看出大致分为两条处理链路：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;strong&gt;Preset Fallbacks&lt;/strong&gt;：系统预设Fallback，这是一个“快速通道”，系统内部维护了一个针对特定字体（如系统UI字体）的硬编码Fallback列表，如果请求的主字体在这个预设列表中，系统会直接使用这个列表，速度非常快。&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;System Default Fallbacks&lt;/strong&gt;：系统默认Fallback，这是一个“通用通道”，如果预设列表没有命中，系统会启动默认Fallback流程，该流程会加载一个全局的、定义了完整回退规则的配置文件，根据用户的语言偏好设置，动态地为请求的字体生成一个Fallback列表，并进行缓存以提高后续调用效率。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;后文我们也将按这两个流程分开分析。&lt;/p&gt;
+
+&lt;p&gt;完整的反汇编逻辑和注释可以参考：https://github.com/HusterYP/FontFallback&lt;/p&gt;
+
+&lt;h1 id=&quot;三tbasefontcreatefallbacks&quot;&gt;三、TBaseFont::CreateFallbacks&lt;/h1&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-assembly&quot;&gt;/**
+* 核心分发函数，决定是使用预设Fallback还是系统默认Fallback。
+*
+* @param result@&amp;lt;X0&amp;gt; (TBaseFont*) TBaseFont 实例。
+* @param a2@&amp;lt;X1&amp;gt;     (int) 标志位，可能表示是否为系统UI字体。
+* @param a3@&amp;lt;X2&amp;gt;     (int) 字体属性。
+* @param a4@&amp;lt;X3&amp;gt;     (_QWORD*) 未知参数，可能是字符集。
+* @param a5@&amp;lt;X4&amp;gt;     (CFArrayRef) 语言列表。
+* @param a6@&amp;lt;X8&amp;gt;     (_QWORD*) 用于接收结果的输出指针。
+*
+* @return __int64 无实际意义。
+ */
+__int64 __usercall TBaseFont::CreateFallbacks@&amp;lt;X0&amp;gt;(__int64 result@&amp;lt;X0&amp;gt;, __int64 a2@&amp;lt;X1&amp;gt;, __int64 a3@&amp;lt;X2&amp;gt;, __int64 a4@&amp;lt;X3&amp;gt;, __int64 a5@&amp;lt;X4&amp;gt;, _QWORD *a6@&amp;lt;X8&amp;gt;)
+{
+	...
+  // 保存参数
+  v6 = a3;  // 字体特性标志
+  v7 = a5;  // 语言数组指针
+  v8 = a2;  // 系统UI字体标志
+  v9 = (TBaseFont *)result;  // 基础字体对象
+  ...
+  // 如果系统UI字体标志不为 0，尝试创建预设字体回退
+  if ( (_DWORD)a2 )
+  {
+    v11 = (_QWORD *)a4;
+    // 从字体对象中获取字体名，如.SFUI-Regular
+    v12 = (*(__int64 (**)(void))(*(_QWORD *)result + 560LL))();
+    if ( v12 )
+    {
+      v13 = v12;
+      // 初始化字体描述符源对象
+      TDescriptorSource::TDescriptorSource((TDescriptorSource *)&amp;amp;v33);
+      _X26 = &amp;amp;v34;
+      // 创建预设字体回退列表
+      _X0 = TDescriptorSource::CreatePresetFallbacks(v13, v11, v7, v6, &amp;amp;v34);
+      ...
+    }
+  }
+  // 检查预设字体回退是否成功创建
+  v24 = objc_retain(_X0);
+  if ( v24 )
+  {
+    v25 = v24;
+    v26 = CFArrayGetCount(v24);
+    result = objc_release(v25);
+    // 如果预设字体回退不为空，直接返回
+    if ( v26 )
+      return result;
+  }
+  ...
+  // 如果预设字体回退为空，创建系统默认字体回退
+  v27 = TBaseFont::GetCSSFamily(v9);
+  _X23 = &amp;amp;v34;
+
+  // 创建系统默认字体回退列表
+  _X0 = TBaseFont::CreateSystemDefaultFallbacks((__int64)v9, v27, v7, v8, &amp;amp;v34);
+  ...
+  return result;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;这是处理预设Fallback和默认Fallback的入口函数。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;1）&lt;code class=&quot;highlighter-rouge&quot;&gt;result@&amp;lt;X0&amp;gt;&lt;/code&gt;参数是什么&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;首先我们主要关注的是第一个入参&lt;code class=&quot;highlighter-rouge&quot;&gt;result@&amp;lt;X0&amp;gt;&lt;/code&gt;，我们先尝试反汇编x0，发现它其实指向的是类 &lt;code class=&quot;highlighter-rouge&quot;&gt;TTenuousComponentFont&lt;/code&gt; （CoreText 内部的一个私有类，继承自 &lt;code class=&quot;highlighter-rouge&quot;&gt;TBaseFont&lt;/code&gt;）的虚函数表，如下，下面的&lt;code class=&quot;highlighter-rouge&quot;&gt;udf&lt;/code&gt; 其实是因为LLDB尝试将数据当代码解读，但其实它是一个指针表，所以识别成了未定义。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/FontFallback/CreateFallbacks-1.png&quot; alt=&quot;CreateFallbacks-1&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;CoreText 是由 C++ 和 Objective-C 混合实现的，C++类对象的方法调用是通过虚函数表（vtable）实现的，C++ 虚表是一个函数指针数组，对象里保存着一个 vptr（虚表指针），指向它所属类的 vtable。&lt;/p&gt;
+
+&lt;p&gt;下面我们尝试将&lt;code class=&quot;highlighter-rouge&quot;&gt;result@&amp;lt;X0&amp;gt;&lt;/code&gt;按虚表指针解析，主要是&lt;code class=&quot;highlighter-rouge&quot;&gt;dis -c 5 -s xxx&lt;/code&gt;，可以通过这种方式索引各方法。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/FontFallback/CreateFallbacks-2.png&quot; alt=&quot;CreateFallbacks&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;继续往上追溯，&lt;code class=&quot;highlighter-rouge&quot;&gt;result@&amp;lt;X0&amp;gt;&lt;/code&gt;其实来自原始入参CTFont中的一个属性。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;2）什么情况下会触发Preset Fallbacks&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;提取主要控制逻辑如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-assembly&quot;&gt;// 如果系统UI字体标志不为 0，尝试创建预设字体回退
+if ( (_DWORD)a2 )
+{
+  v11 = (_QWORD *)a4;
+  // 从字体对象中获取字体名，如.SFUI-Regular
+  v12 = (*(__int64 (**)(void))(*(_QWORD *)result + 560LL))();
+  if ( v12 )
+  {
+  	...
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;可以发现当&lt;code class=&quot;highlighter-rouge&quot;&gt;a2&lt;/code&gt;非0时会触发Preset Fallbacks，继续往上追溯&lt;code class=&quot;highlighter-rouge&quot;&gt;a2&lt;/code&gt;来自于&lt;code class=&quot;highlighter-rouge&quot;&gt;TFont::IsSystemUIFontAndForShaping((TFont *)v5, &amp;amp;v14)&lt;/code&gt;，&lt;code class=&quot;highlighter-rouge&quot;&gt;IsSystemUIFontAndForShaping&lt;/code&gt;不在本文重点，简单理解就是如果是系统UI字体且用于文本塑形的字体则返回true，比如典型的&lt;code class=&quot;highlighter-rouge&quot;&gt;UIFont.systemFont&lt;/code&gt;（&lt;code class=&quot;highlighter-rouge&quot;&gt;.SFUI-Regular&lt;/code&gt;：San Francisco (SF)字体家族中的字体）判定为true。&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Q：为什么只有系统UI字体才有预设Fallback&lt;/p&gt;
+
+  &lt;p&gt;简单理解就是只有系统UI字体是系统完全可控可感知的，所以可以提前构建Fallback列表&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;&lt;strong&gt;3）什么情况下会触发System Default Fallbacks&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;从上面反汇编逻辑比较容易看出，当Preset Fallbacks的结果为空时，会继续走System Default Fallbacks兜底。&lt;/p&gt;
+
+&lt;h1 id=&quot;四preset-fallbacks&quot;&gt;四、Preset Fallbacks&lt;/h1&gt;
+
+&lt;h2 id=&quot;41-获取全局预设fallback列表ctpresetfallbacks&quot;&gt;4.1 获取全局预设Fallback列表CTPresetFallbacks&lt;/h2&gt;
+
+&lt;p&gt;在分析系统是如何为特定字体构建预设Fallback（字体的级联列表）之前，我们需要先知道预设列表是从哪里读取的。&lt;/p&gt;
+
+&lt;p&gt;系统是通过&lt;code class=&quot;highlighter-rouge&quot;&gt;GetCTPresetFallbacksDictionary&lt;/code&gt;获取预设列表的，继续往下追溯预设列表最终来自&lt;code class=&quot;highlighter-rouge&quot;&gt;GSFontCacheGetData&lt;/code&gt;：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-assembly&quot;&gt;/*
+ * 函数: GSFontCacheGetData
+ * -------------------------
+ * @brief  从图形服务（GraphicsServices）的字体缓存中根据键名获取数据。
+ * @param  a1 (void*)      String入参，实际是对应plist名称，比如预设列表的plist名称CTPresetFallbacks.plist
+ * @param  a2 (const char*) 在此反汇编中未使用，可能是寄存器传参的残留。
+ * @return (void*)         返回一个指向缓存数据的指针，如果找不到则可能返回NULL。
+ */
+void *__fastcall GSFontCacheGetData(void *a1, const char *a2)
+{
+  // =================================================================
+  // 快速通道 1: 检查是否请求 &quot;DefaultFontFallbacks.plist&quot;
+  // =================================================================
+  // 调用 a1 的 isEqualToString: 方法，与字符串 &quot;DefaultFontFallbacks.plist&quot;（stru_6BEB8）比较
+  if ( (unsigned int)objc_msgSend_isEqualToString_(a1, a2, &amp;amp;stru_6BEB8) )
+  {
+    // 如果是，直接返回全局变量 kDefaultFontFallbacks 的值。
+    // 这是一个非常高效的硬编码路径，用于获取默认的后备字体规则。
+    v4 = &amp;amp;kDefaultFontFallbacks;
+    return (void *)*v4;
+  }
+
+  // =================================================================
+  // 快速通道 2: 检查是否请求 &quot;CTPresetFallbacks.plist&quot;
+  // =================================================================
+  // 调用 a1 的 isEqualToString: 方法，与字符串 &quot;CTPresetFallbacks.plist&quot;（stru_6BED8）比较
+  if ( (unsigned int)objc_msgSend_isEqualToString_(v2, v3, &amp;amp;stru_6BED8) )
+  {
+    // 如果是，直接返回全局变量 CTPresetFallbacks 的值。
+    // 这正是我们之前分析的、包含了所有预设后备规则的那个.plist文件的内容。
+    // 系统通过这个键来加载整个预设后备字典。
+    v4 = &amp;amp;CTPresetFallbacks;
+    return (void *)*v4;
+  }
+
+  // =================================================================
+  // 快速通道 3: 检查是否请求某个特殊字典
+  // =================================================================
+  // 调用 a1 的 isEqualToString: 方法，与字符串 &quot;CTFontInfo.plist&quot;（stru_6BEF8）比较
+  if ( !((unsigned __int64)objc_msgSend_isEqualToString_(v2, v5, &amp;amp;stru_6BEF8) &amp;amp; 1) )
+  {
+    // 如果键不是 stru_6BEF8，则进入下面的常规查询逻辑
+    // =================================================================
+    // 常规查询路径: 在一个全局字典 (unk_1EB8F0) 中查找
+    // =================================================================
+    // 检查键是否为 &quot;CTCharacterSets.plist&quot; (stru_6BF18)
+    if ( (unsigned int)objc_msgSend_isEqualToString_(v2, v7, &amp;amp;stru_6BF18) )
+    {
+      // **键名转换/别名**: 如果是，则将要查询的键替换为另一个字符串 &quot;CTCharacterSets&quot; (stru_6BF38)
+      v9 = &amp;amp;stru_6BF38;
+    }
+    // 检查键是否为 &quot;GSFontCache.plist&quot; (stru_6BF58)
+    else if ( (unsigned int)objc_msgSend_isEqualToString_(v2, v8, &amp;amp;stru_6BF58) )
+    {
+      // **键名转换/别名**: 如果是，则将要查询的键替换为另一个字符串 &quot;GSFontCache&quot; (stru_6BF78)
+      v9 = &amp;amp;stru_6BF78;
+    }
+    else
+    {
+      // 检查键是否为 &quot;CoreTextConfig.plist&quot; (stru_6BF98)
+      if ( !(unsigned int)objc_msgSend_isEqualToString_(v2, v8, &amp;amp;stru_6BF98) )
+        // 如果键不匹配上面任何一个需要转换的键，则使用原始的键 v2 在全局字典中查找
+        return objc_msgSend_objectForKey_(&amp;amp;unk_1EB8F0, v8, v2);
+      
+      // **键名转换/别名**: 如果键是 stru_6BF98，则将其替换为 &quot;CoreTextConfig&quot; (stru_6BFB8)
+      v9 = &amp;amp;stru_6BFB8;
+    }
+    
+    // 对于所有经过“键名转换”的情况，使用转换后的新键 v9 在全局字典中查找
+    // objectForKeyedSubscript: 是 OC 中字典下标语法 (dictionary[key]) 的底层实现
+    return objc_msgSend_objectForKeyedSubscript_(&amp;amp;unk_1EB8F0, v8, v9);
+  }
+
+  // 如果快速通道3的检查为真 (键等于 stru_6BEF8)，则直接返回整个全局字典 unk_1EB8F0
+  return &amp;amp;unk_1EB8F0;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;从反汇编逻辑不太容易看，可以结合LLDB Debug一起分析：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/FontFallback/CTPresetFallbacks-plist.png&quot; alt=&quot;CTPresetFallbacks-plist&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;在查询预设列表时，入参是&lt;code class=&quot;highlighter-rouge&quot;&gt;CTPresetFallbacks.plist&lt;/code&gt;，系统会从&lt;strong&gt;全局变量CTPresetFallbacks&lt;/strong&gt;中读取预设列表，CTPresetFallbacks是全局共享的，是在CoreText服务启动时构建的一个全局常量，内容如下：&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;完整列表见：https://github.com/HusterYP/FontFallback/blob/main/CTPresetFallbacks.plist&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;div class=&quot;language-json highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;...&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;.SFUI-Regular&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;     &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;.AppleSystemFallback-Regular&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;.AppleColorEmojiUI&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;.SFGeorgian-Regular&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;HelveticaNeue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;.AppleSymbolsFB&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+                &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;ar&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;.AppleArabicFont-Regular&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;//&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;如果系统语言是阿拉伯语(ar)，则使用此字体&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;ur&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;.AppleUrduFont-Regular&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;//&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;如果是乌尔都语(ur)，则使用此字体&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;},&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+                &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;ja&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;.AppleJapaneseFont-Regular&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;//&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;如果是日语(ja)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;ko&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;.AppleKoreanFont-Regular&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;//&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;如果是韩语(ko)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;my&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;NotoSansMyanmar-Regular&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;my-Qaag&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;NotoSansZawgyi-Regular&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;zh-HK&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;.AppleHongKongChineseFont-Regular&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;//&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;香港繁体中文&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;zh-Hans&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;.AppleSimplifiedChineseFont-Regular&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;//&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;简体中文&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;zh-Hant&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;.AppleTraditionalChineseFont-Regular&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;//&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;台湾繁体中文&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;zh-MO&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;.AppleMacaoChineseFont-Regular&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;},&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;.ThonburiUI-Regular&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;.SFHebrew-Regular&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;.SFArmenian-Regular&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;.AppleIndicFont-Regular&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;KohinoorDevanagari-Regular&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;Kailasa&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;KohinoorBangla-Regular&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;KohinoorGujarati-Regular&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;MuktaMahee-Regular&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;NotoSansKannada-Regular&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;KhmerSangamMN&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;LaoSangamMN&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;MalayalamSangamMN&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;NotoSansOriya&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;SinhalaSangamMN&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;TamilSangamMN&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;KohinoorTelugu-Regular&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;NotoSansArmenian-Regular&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;EuphemiaUCAS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Menlo-Regular&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;AppleSymbols&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;ArialMT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;STIXTwoMath-Regular&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;.HiraKakuInterface-W4&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;HelveticaNeue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Kefa-Regular&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;Galvji&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;.PhoneFallback&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;);&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;SystemWideFallbacks&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;     &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+                &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;128&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;887&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Charter-Roman&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+                &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;895&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;895&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;DINCondensed-Bold&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+                &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;975&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1315&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Charter-Roman&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+                &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1316&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1319&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;.SFUI-Regular&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+				&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;...&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;CTPresetFallbacks.plist中主要定义了两组内容：&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;1）为特定字体定义Fallback列表/级联列表&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;比如我们这里要查询&lt;code class=&quot;highlighter-rouge&quot;&gt;.SFUI-Regular&lt;/code&gt;的Fallback列表，就用&lt;code class=&quot;highlighter-rouge&quot;&gt;.SFUI-Regular&lt;/code&gt;作为key去CTPresetFallbacks.plist中找到一组字典进行解析，解析逻辑后面会讲。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;2）SystemWideFallbacks&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;SystemWideFallbacks定义了一个全局级别的 Fallback 映射，和字体无关，按 Unicode code point 范围定义；每个元素是一个三元组，包括：起始 Unicode 码点 + 结束 Unicode 码点 + 指定 Fallback 字体。&lt;/p&gt;
+
+&lt;p&gt;比如128～887范围优先用Charter-Roman。&lt;/p&gt;
+
+&lt;h2 id=&quot;42-预设列表解析流程&quot;&gt;4.2 预设列表解析流程&lt;/h2&gt;
+
+&lt;p&gt;获取到全局预设列表之后，我们再来看系统是如何针对特定字体（系统的UI字体）构建级联列表的，主要逻辑在&lt;code class=&quot;highlighter-rouge&quot;&gt;CreatePresetFallbacks&lt;/code&gt;中，如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-assembly&quot;&gt;/*
+* 实现“快速通道”，从一个全局的、硬编码的字典中查找并创建预设列表。
+*
+* @param a1@&amp;lt;X1&amp;gt; (CFStringRef) 字体名称或标识符。
+* @param a2@&amp;lt;X2&amp;gt; (_QWORD*)     输出参数，可能用于字符集。
+* @param a3@&amp;lt;X3&amp;gt; (CFArrayRef)  语言列表。
+* @param a4@&amp;lt;X4&amp;gt; (int)         标志位。
+* @param a5@&amp;lt;X8&amp;gt; (_QWORD*)     用于接收结果的输出指针。
+*
+* @return __int64 返回创建的预设列表 (CFArrayRef)。
+*/
+__int64 __usercall TDescriptorSource::CreatePresetFallbacks@&amp;lt;X0&amp;gt;(__int64 a1@&amp;lt;X1&amp;gt;, _QWORD *a2@&amp;lt;X2&amp;gt;, __int64 a3@&amp;lt;X3&amp;gt;, __int64 a4@&amp;lt;X4&amp;gt;, _QWORD *a5@&amp;lt;X8&amp;gt;)
+{
+  ...
+  _X19 = a5;
+  // 1. 获取全局预设字典
+  result = GetCTPresetFallbacksDictionary();
+  v11 = result;
+  // 2. 创建有序的语言列表
+  v12 = CreateOrderedLanguages(v6);
+  // 3. 使用字体名 a1 在预设字典中查找
+  v13 = CFDictionaryGetValue(v11, v8);
+  // 4. 如果找到匹配项，并且它是一个数组，则开始处理
+  if ( v13 &amp;amp;&amp;amp; (v15 = v13, v16 = CFGetTypeID(v13), v16 == CFArrayGetTypeID()) )
+  {
+    // 创建一个可变数组用于存放结果
+    v37 = CFArrayCreateMutable(*(_QWORD *)kCFAllocatorDefault_ptr, 0LL, kCFTypeArrayCallBacks_ptr);
+    v17 = CFArrayGetCount(v15);
+    if ( v17 )
+    {
+      // 5. 遍历预设数组中的每一项
+      do
+      {
+        v20 = (__CFString *)CFArrayGetValueAtIndex(v15, v19);
+        v21 = CFGetTypeID(v20);
+				// 5a. 如果是字典类型，说明是按语言区分的后备字体
+        if ( v21 == CFDictionaryGetTypeID() )
+        {
+          // 遍历上面构建的语言列表，在字典中查找匹配的后备字体
+          do
+          {
+            v25 = CFArrayGetValueAtIndex(v12, v24);
+            if ( v20 )
+            {
+              v26 = CFDictionaryGetValue(v20, v25);
+              if ( v26 )
+                TDescriptorSource::AppendFontDescriptorFromName(&amp;amp;v37, v26, 1024LL);
+            }
+          }
+          while ( v23 != v24 );
+        }
+        // 5b. 如果是字符串类型，直接作为后备字体名
+        else
+        {
+          // ... 对Emoji等特殊字体进行处理 ...
+          TDescriptorSource::AppendFontDescriptorFromName(&amp;amp;v37, v20, 1024LL);
+        }
+        ++v19;
+      }
+      while ( v19 != v18 );
+    }
+  }
+  // 将最终结果写入输出指针并返回
+  ...
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;代码注释已经比较清晰，总结下来解析流程是：&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;1）通过字体名从全局预设列表中查询Fallback数组&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;比如我们通过&lt;code class=&quot;highlighter-rouge&quot;&gt;.SFUI-Regular&lt;/code&gt;查询到的原始Fallback数组如下：&lt;/p&gt;
+
+&lt;div class=&quot;language-json highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;s2&quot;&gt;&quot;.SFUI-Regular&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;     &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;.AppleSystemFallback-Regular&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;.AppleColorEmojiUI&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;.SFGeorgian-Regular&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;HelveticaNeue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;.AppleSymbolsFB&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+                &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;ar&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;.AppleArabicFont-Regular&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;//&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;如果系统语言是阿拉伯语(ar)，则使用此字体&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;ur&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;.AppleUrduFont-Regular&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;//&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;如果是乌尔都语(ur)，则使用此字体&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;},&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+                &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;ja&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;.AppleJapaneseFont-Regular&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;//&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;如果是日语(ja)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;ko&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;.AppleKoreanFont-Regular&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;//&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;如果是韩语(ko)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;my&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;NotoSansMyanmar-Regular&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;my-Qaag&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;NotoSansZawgyi-Regular&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;zh-HK&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;.AppleHongKongChineseFont-Regular&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;//&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;香港繁体中文&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;zh-Hans&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;.AppleSimplifiedChineseFont-Regular&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;//&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;简体中文&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;zh-Hant&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;.AppleTraditionalChineseFont-Regular&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;//&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;台湾繁体中文&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;zh-MO&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;.AppleMacaoChineseFont-Regular&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;},&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+	  	&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;...&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;strong&gt;2）遍历Fallback数组，如果是字典类型，需要按语言区分Fallback字体&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;还记得最初&lt;code class=&quot;highlighter-rouge&quot;&gt;CTFontCopyDefaultCascadeListForLanguages&lt;/code&gt;的函数签名中，第二个参数支持传语言列表：&lt;/p&gt;
+
+&lt;div class=&quot;language-swift highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;kd&quot;&gt;func&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;CTFontCopyDefaultCascadeListForLanguages&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;_&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;font&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;CTFont&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;_&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;languagePrefList&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;CFArray&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;?&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;CFArray&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;?&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;系统会通过&lt;code class=&quot;highlighter-rouge&quot;&gt;CreateOrderedLanguages&lt;/code&gt;创建一个有序的语言数组，具体做法是将调用者想要的语言（languagePrefList）、App自身想要的语言、以及用户在整个系统中设置的语言偏好合并成一个有序的语言数组。&lt;/p&gt;
+
+&lt;p&gt;然后遍历语言数组，从字典中筛选出对应语言的Fallback字体添加到结果中。&lt;/p&gt;
+
+&lt;p&gt;从这里可以看出，&lt;strong&gt;同一字体的Fallback列表，还会受语言影响&lt;/strong&gt;，比如：&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;zh-Hans&lt;/th&gt;
+      &lt;th&gt;zh-HK&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;img src=&quot;/img/post/FontFallback/zh-Hans.png&quot; alt=&quot;zh-Hans&quot; /&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;img src=&quot;/img/post/FontFallback/zh-HK.png&quot; alt=&quot;zh-HK&quot; /&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Q：为什么Fallback字体还跟语言设置相关?&lt;/p&gt;
+
+  &lt;p&gt;参考&lt;a href=&quot;https://mp.weixin.qq.com/s/fcL6if52qYQUTChEjntHJg&quot;&gt;自定义文字排版引擎的原理&lt;/a&gt;一文中针对「相同Script的字符如果使用了不同的Font，会有什么问题」的回答&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;&lt;strong&gt;3）遍历Fallback数组，如果是字符串类型，「直接」作为Fallback字体&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;「直接」加引号，因为还会处理Emoji字体等特殊情况。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;4）Fallback数组遍历完成之后，构建完成该字体最终的预设Fallabck列表/级联列表&lt;/strong&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;42-preset-fallbacks小结&quot;&gt;4.2 Preset Fallbacks小结&lt;/h2&gt;
+
+&lt;p&gt;总结下Preset Fallbacks流程：&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;1）系统从全局常量CTPresetFallbacks中读取预设列表&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;2）根据用户指定主字体名从全局预设列表中查询Fallback数组&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;3）遍历Fallback数组，如果为字典类型，根据用户指定语言、App偏好语言、系统设置偏好语言来选择Fallback字体&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;4）遍历Fallback数组，如果为字符串类型，「直接」作为Fallback字体&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;5）Fallback数组遍历完后，对应字体的级联列表构建完成&lt;/strong&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;五system-default-fallbacks&quot;&gt;五、System Default Fallbacks&lt;/h1&gt;
+
+&lt;p&gt;如果系统预设Fallback没有查到结果，则会兜底到系统默认Fallback逻辑，为字体动态构建级联列表。&lt;/p&gt;
+
+&lt;h2 id=&quot;51-cssfamily分类&quot;&gt;5.1 CSSFamily分类&lt;/h2&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-assembly&quot;&gt;__int64 __usercall TBaseFont::CreateFallbacks@&amp;lt;X0&amp;gt;(__int64 result@&amp;lt;X0&amp;gt;, __int64 a2@&amp;lt;X1&amp;gt;, __int64 a3@&amp;lt;X2&amp;gt;, __int64 a4@&amp;lt;X3&amp;gt;, __int64 a5@&amp;lt;X4&amp;gt;, _QWORD *a6@&amp;lt;X8&amp;gt;)
+{
+  ...
+  // 如果预设字体回退为空，创建系统默认字体回退
+  v27 = TBaseFont::GetCSSFamily(v9);
+  _X23 = &amp;amp;v34;
+
+  // 创建系统默认字体回退列表
+  _X0 = TBaseFont::CreateSystemDefaultFallbacks((__int64)v9, v27, v7, v8, &amp;amp;v34);
+  ...
+  return result;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;系统默认Fallback，会先通过&lt;code class=&quot;highlighter-rouge&quot;&gt;TBaseFont::GetCSSFamily&lt;/code&gt;将用户指定主字体分类，这是后续查表的关键；GetCSSFamily会读取字体特征进行分类，主要分为：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;strong&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;sans-serif&lt;/code&gt; (无衬线体)&lt;/strong&gt;：字体笔画的末端没有额外的装饰性“脚”，如Helvetica、Arial、San Francisco (SF Pro)、PingFang SC (苹方)&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;serif&lt;/code&gt; (衬线体)&lt;/strong&gt;：字体笔画的末端有装饰性的“脚”（衬线），如Times New Roman、Georgia、New York、宋体&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;monospace&lt;/code&gt; (等宽体)&lt;/strong&gt;：所有字符占据相同的宽度，如Menlo、Courier、Monaco、SF Mono&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;cursive&lt;/code&gt; (手写体)&lt;/strong&gt;：如Snell Roundhand&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;fantasy&lt;/code&gt; (装饰体)&lt;/strong&gt;：如Papyrus&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;除此外，苹果在UI上下文中，还有几个扩展的CSSFamily分类：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ui-serif&lt;/code&gt;&lt;/strong&gt;：用于 UI 的衬线字体，主要指 &lt;code class=&quot;highlighter-rouge&quot;&gt;New York&lt;/code&gt; 家族&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ui-sans-serif&lt;/code&gt;&lt;/strong&gt;：用于 UI 的无衬线字体，即 &lt;code class=&quot;highlighter-rouge&quot;&gt;San Francisco&lt;/code&gt; 家族&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ui-monospace&lt;/code&gt;&lt;/strong&gt;：用于 UI 的等宽字体，即 &lt;code class=&quot;highlighter-rouge&quot;&gt;SF Mono&lt;/code&gt;。&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ui-rounded&lt;/code&gt;&lt;/strong&gt;：用于 UI 的圆体字体。如 &lt;code class=&quot;highlighter-rouge&quot;&gt;SF Pro Rounded&lt;/code&gt; 和 &lt;code class=&quot;highlighter-rouge&quot;&gt;SF Compact Rounded&lt;/code&gt;&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;52-获取系统默认fallback列表kdefaultfontfallbacks&quot;&gt;5.2 获取系统默认Fallback列表kDefaultFontFallbacks&lt;/h2&gt;
+
+&lt;p&gt;和全局预设列表一样，系统默认Fallback列表也是通过&lt;code class=&quot;highlighter-rouge&quot;&gt;GSFontCacheGetData&lt;/code&gt;读取配置文件。&lt;/p&gt;
+
+&lt;p&gt;调用链路是：&lt;code class=&quot;highlighter-rouge&quot;&gt;CreateSystemDefaultFallbacks -&amp;gt; CopyDefaultSubstitutionListForLanguages -&amp;gt; CopyFontFallbacksForLanguages -&amp;gt; CopyFontFallbacks -&amp;gt; CopyDefaultFontFallbacks -&amp;gt; GSFontCacheGetData&lt;/code&gt;；通过GSFontCacheGetData读取系统默认Fallback列表时，入参是&lt;code class=&quot;highlighter-rouge&quot;&gt;DefaultFontFallbacks.plist&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/FontFallback/DefaultFontFallbacks.plist.png&quot; alt=&quot;DefaultFontFallbacks.plist&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;也是从一个全局常量&lt;code class=&quot;highlighter-rouge&quot;&gt;kDefaultFontFallbacks&lt;/code&gt;中获取的，内容如下：&lt;/p&gt;
+
+&lt;div class=&quot;language-json highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;common&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;     &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;...&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;);&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;cursive&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;     &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;...&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;);&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;default&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;     &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;...&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;);&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;fantasy&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;     &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;...&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;);&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;monospace&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;     &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;...&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;);&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;sans-serif&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;     &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;Helvetica&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;AppleColorEmoji&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;.AppleSymbolsFB&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+                &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;ar&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;GeezaPro;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;ja&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;HiraginoSans-W3&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;ko&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;AppleSDGothicNeo-Regular&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;my&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;NotoSansMyanmar-Regular&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;my-Qaag&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;NotoSansZawgyi-Regular&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;ur&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;NotoNastaliqUrdu;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;zh-HK&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;PingFangHK-Regular&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;zh-Hans&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;PingFangSC-Regular&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;zh-Hant&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;PingFangTC-Regular&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;zh-MO&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;PingFangMO-Regular&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;},&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;Thonburi&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;ArialHebrew&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;);&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;serif&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;     &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;...&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;);&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;ui-monospace&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;     &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;...&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;);&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;ui-rounded&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;     &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;...&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;);&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;ui-serif&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;     &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;...&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;);&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;DefaultFontFallbacks.plist&lt;/code&gt;的格式基本和&lt;code class=&quot;highlighter-rouge&quot;&gt;CTPresetFallbacks.plist&lt;/code&gt;类似，也是KV结构，Value部分也分为字符串和字典类型，字典类型也会根据用户指定语言来择优选取。&lt;/p&gt;
+
+&lt;h2 id=&quot;53-解析并缓存系统默认fallback列表&quot;&gt;5.3 解析并缓存系统默认Fallback列表&lt;/h2&gt;
+
+&lt;p&gt;解析和缓存逻辑主要由&lt;code class=&quot;highlighter-rouge&quot;&gt;CopyFontFallbacks&lt;/code&gt;处理，主逻辑如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-assembly&quot;&gt;/**
+ * CoreText 字体回退 - 复制字体回退列表函数
+ * 功能: 根据字体描述符和语言信息复制相应的字体回退列表
+ * 
+ * 参数:
+ *   a1 (_QWORD *): 输出参数指针，用于接收生成的字体回退数组
+ *   a2 (__int64): 字体描述符对象指针
+ *   a3 (__CFString *): 主要语言代码字符串
+ *   a4 (__CFString *): 次要语言代码字符串（可选）
+ *   a5 (__int64): 语言数组指针（可选）
+ * 
+ * 返回值:
+ *   __int64: 操作结果
+ */
+__int64 __fastcall TFontFallbacks::CopyFontFallbacks(_QWORD *a1, __int64 a2, __CFString *a3, __CFString *a4, __int64 a5)
+{
+	...
+  // 保存参数到局部变量和寄存器
+  _X22 = a5;  // 语言数组指针
+  v6 = a4;    // 次要语言代码
+  v7 = a3;    // 主要语言代码
+  v8 = a2;    // 字体描述符对象
+  v9 = a1;    // 输出参数指针
+  // 先在Font实例成员变量字典中查找Fallback缓存
+  v16 = CFDictionaryGetValue(_X0, a3);
+  ...
+  // 如果没有找到缓存，则动态构建
+  if ( !_X9 )
+  {
+  	...
+    // 获取系统默认Fallback列表
+    CopyDefaultFontFallbacks();
+    v22 = objc_retain(_X0);
+    if ( v22 )
+    {
+      // 用cssfamliy从系统默认Fallback列表中查找映射
+      v24 = CFDictionaryGetValue(v22, v6);      
+      // 检查是否找到了有效的字体列表
+      if ( v24 &amp;amp;&amp;amp; CFArrayGetCount(v24) &amp;gt;= 1 )
+      {
+      	...
+      	// 解析列表
+        // 根据用户指定语言、App偏好语言、系统设置偏好语言创建有序语言数组
+        v29 = CreateOrderedLanguages(_X22);
+        // 处理字体回退列表
+        TDescriptorSource::ProcessFallbackList(v24, (__int64)&amp;amp;v59, v31, v29);
+
+        // 解析通用（common）字体回退列表
+        v34 = CFDictionaryGetValue(_X25, &amp;amp;stru_1F69C8);
+        TDescriptorSource::ProcessFallbackList(v36, (__int64)&amp;amp;v59, v31, v29);
+
+				// 缓存结果到Font实例
+        v44 = objc_retain(_X0);
+        if ( v44 )
+        {
+        	...
+        	CFDictionarySetValue(_X0, v7, _X2);
+        }
+      }
+    }
+  // 处理特定语言的回退逻辑
+  ...
+  return objc_release(v57);
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;注意CopyFontFallbacks中一共调了两次ProcessFallbackList，逻辑是先取对应CSSFamily的（比如sans-serif）Fallback列表，再取common的Fallback列表，最终将二者合并起来作为对应字体的Fallback结果。&lt;/p&gt;
+
+&lt;p&gt;ProcessFallbackList解析字体列表的逻辑和预设Fallback类似，也是根据Value是字符串类型还是字典类型来区分解析，此处不再赘述。&lt;/p&gt;
+
+&lt;p&gt;最后，CopyFontFallbacks还会将Fallback结果缓存到Font实例的字典变量中，key是&lt;code class=&quot;highlighter-rouge&quot;&gt;cssfamily + languages&lt;/code&gt;（逗号分隔开），比如：&lt;code class=&quot;highlighter-rouge&quot;&gt;sans-serif,zh-HK&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/FontFallback/CopyFontFallbacks.png&quot; alt=&quot;CopyFontFallbacks&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;CopyFontFallbacks逻辑比较清晰，总结下来是：&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;1）先从Font实例中获取Fallback缓存，如果已经构建过则直接使用&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;2）缓存获取失败，走动态构建，将对应CSSFamily的Fallback列表和common的Fallback列表合并成最终Fallback结果&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;3）缓存Fallback结果到Font实例，key是&lt;code class=&quot;highlighter-rouge&quot;&gt;cssfamily + languages&lt;/code&gt;&lt;/strong&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;54-语言处理与线程安全&quot;&gt;5.4 语言处理与线程安全&lt;/h2&gt;
+
+&lt;p&gt;CopyFontFallbacksForLanguages在调用CopyFontFallbacks之前，会对用户指定的语言（即&lt;code class=&quot;highlighter-rouge&quot;&gt;CTFontCopyDefaultCascadeListForLanguages&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;languagePrefList&lt;/code&gt;参数）进行处理：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-assembly&quot;&gt;__int64 __usercall TFontFallbacks::CopyFontFallbacksForLanguages@&amp;lt;X0&amp;gt;(__int64 a1@&amp;lt;X0&amp;gt;, __int64 a2@&amp;lt;X1&amp;gt;, __int64 a3@&amp;lt;X2&amp;gt;, __int64 a4@&amp;lt;X8&amp;gt;)
+{
+  // 如果没有提供语言数组，直接调用单语言版本
+  if ( !a3 )
+    return TFontFallbacks::CopyFontFallbacks((_QWORD *)a4, a1, (__CFString *)a2, 0LL, 0LL);
+	...
+  // 获取系统有序语言数组
+  v7 = GetOrderedLanguages;
+  // 遍历输入的语言代码数组
+  do
+  {
+    // 检查规范化后的语言代码是否在系统支持的语言列表中
+    __asm { LDAPR           X3, [X22], [X22] }
+    if ( (unsigned int)CFArrayContainsValue(v7, 0LL, v8, _X3) )
+    {
+      // 如果支持，添加到有效语言数组中
+      CFArrayAppendValue(v6, v21);
+
+    }
+    ++v12;
+  }
+  while ( v11 != v12 );
+  ...
+  // 如果找到了有效的语言代码
+  if ( CFArrayGetCount(v6) )
+  {
+      TFontFallbacks::CopyFontFallbacks(v24, v25, _X2, v4, v6);
+  }
+  else
+  {
+    // 如果没有找到有效语言，使用单语言版本
+    TFontFallbacks::CopyFontFallbacks(v24, v25, v4, 0LL, 0LL);
+  }
+  ...
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;大致逻辑是：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;如果&lt;code class=&quot;highlighter-rouge&quot;&gt;languagePrefList&lt;/code&gt;传nil（注意空数组不算nil），则直接用cssfamily查询CopyFontFallbacks&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;如果&lt;code class=&quot;highlighter-rouge&quot;&gt;languagePrefList&lt;/code&gt;不为nil，会将用户指定的languages通过GetOrderedLanguages过滤一遍，去除系统不支持的language，然后使用cssfamily + languages查询CopyFontFallbacks&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;另外，&lt;code class=&quot;highlighter-rouge&quot;&gt;CopyFontFallbacks&lt;/code&gt;会有对字典的读写操作，为了线程安全，CopyDefaultSubstitutionListForLanguages会对整个流程加一把大锁：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-assembly&quot;&gt;__int64 __usercall TDescriptorSource::CopyDefaultSubstitutionListForLanguages@&amp;lt;X0&amp;gt;(__int64 a1@&amp;lt;X0&amp;gt;, __int64 a2@&amp;lt;X1&amp;gt;, __int64 a3@&amp;lt;X8&amp;gt;)
+{
+  TDescriptorSource *v6; // 锁对象指针
+  // 这个锁确保字体回退缓存的线程安全访问
+  v6 = (TDescriptorSource *)os_unfair_lock_lock_with_options(&amp;amp;TDescriptorSource::sFontFallbacksLock, 327680LL);
+  ...
+  TFontFallbacks::CopyFontFallbacksForLanguages(TDescriptorSource::sFontFallbacksCache, v4, v3, v5);
+  // 释放字体回退缓存锁并返回
+  return os_unfair_lock_unlock(&amp;amp;TDescriptorSource::sFontFallbacksLock);
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;55-结果处理与返回&quot;&gt;5.5 结果处理与返回&lt;/h2&gt;
+
+&lt;p&gt;最后&lt;code class=&quot;highlighter-rouge&quot;&gt;CreateSystemDefaultFallbacks&lt;/code&gt;会对&lt;code class=&quot;highlighter-rouge&quot;&gt;CopyDefaultSubstitutionListForLanguages&lt;/code&gt;中获取到的字体描述符进行处理，即排除用户指定字体，防止自己Fallback自己。&lt;/p&gt;
+
+&lt;h1 id=&quot;六总结&quot;&gt;六、总结&lt;/h1&gt;
+
+&lt;p&gt;至此，我们通过逆向的手段梳理完了&lt;code class=&quot;highlighter-rouge&quot;&gt;CTFontCopyDefaultCascadeListForLanguages&lt;/code&gt;的完整流程，最后整理下结论如下：&lt;/p&gt;
+
+&lt;p&gt;整体分为两个大流程：&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;1、Preset Fallbacks：预设Fallback&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;1.1 系统从全局常量CTPresetFallbacks中读取预设列表&lt;/p&gt;
+
+&lt;p&gt;1.2 根据用户指定主字体名从全局预设列表中查询Fallback数组&lt;/p&gt;
+
+&lt;p&gt;1.3 遍历Fallback数组，如果为字典类型，根据用户指定语言、App偏好语言、系统设置偏好语言来选择Fallback字体&lt;/p&gt;
+
+&lt;p&gt;1.4 遍历Fallback数组，如果为字符串类型，「直接」作为Fallback字体&lt;/p&gt;
+
+&lt;p&gt;1.5 Fallback数组遍历完后，对应字体的级联列表构建完成&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;2、System Default Fallbacks：系统默认Fallback&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;1.1 获取主字体的CSSFamily分类&lt;/p&gt;
+
+&lt;p&gt;1.2 从全局常量kDefaultFontFallbacks中读取默认Fallback列表&lt;/p&gt;
+
+&lt;p&gt;1.3 用&lt;code class=&quot;highlighter-rouge&quot;&gt;cssfamily + languages&lt;/code&gt;从字体实例中获取Fallback缓存，如果已经构建则直接使用&lt;/p&gt;
+
+&lt;p&gt;1.4 缓存缺失则动态构建，根据CSSFamily获取对应字体的Fallback列表并解析，获取common类型的Fallback列表并解析，合并二者结果作为最终Fallback结果&lt;/p&gt;
+
+&lt;p&gt;1.5 用&lt;code class=&quot;highlighter-rouge&quot;&gt;cssfamily + languages&lt;/code&gt;将Fallback结果缓存到Font实例&lt;/p&gt;
+
+&lt;p&gt;1.6 处理并返回Fallback结果&lt;/p&gt;
+</description>
+        <pubDate>Fri, 03 Oct 2025 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2025/10/03/CoreText-Font-Fallback/</link>
+        <guid isPermaLink="true">http://localhost:4000/2025/10/03/CoreText-Font-Fallback/</guid>
+        
+        <category>跨端渲染</category>
+        
+        <category>Font</category>
+        
+        
+      </item>
     
       <item>
         <title>从0到1自定义文字排版引擎：原理篇</title>
@@ -280,7 +1113,7 @@
 
 &lt;p&gt;Unicode 为了节省码点空间，将许多中、日、韩来源相同但字形有细微差异的汉字合并到了同一个码点上，也就是所谓的&lt;a href=&quot;https://zh.wikipedia.org/wiki/%E4%B8%AD%E6%97%A5%E9%9F%93%E7%B5%B1%E4%B8%80%E8%A1%A8%E6%84%8F%E6%96%87%E5%AD%97&quot;&gt;中日韩统一表意文字&lt;/a&gt;（CJK Unified Ideographs）；如下，同一个code point在不同语言下样式不同，如果不处理Script，那可能会在一个日文段落里显示出中文的“房”字形，这在专业排版上是不可接受的。另外，不同的Font格设计风格（字宽、基线、形态）也不同，如果一个段落里穿插不同的Font，那最终排版看起来也会很奇怪。&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&quot;/Users/ping/Desktop/husteryp.github.io/img/post/文字排版引擎/CJK Unifined.png&quot; alt=&quot;CJK Unifined&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;/img/post/文字排版引擎/CJK Unifined.png&quot; alt=&quot;CJK Unifined&quot; /&gt;&lt;/p&gt;
 
 &lt;p&gt;现代操作系统做字体匹配与Fallback的方式一般是：&lt;/p&gt;
 
@@ -1568,156 +2401,6 @@ label.snp.makeConstraints { (make) in
         <pubDate>Sat, 23 Mar 2019 00:00:00 +0800</pubDate>
         <link>http://localhost:4000/2019/03/23/AutoLayout%E6%80%BB%E7%BB%93/</link>
         <guid isPermaLink="true">http://localhost:4000/2019/03/23/AutoLayout%E6%80%BB%E7%BB%93/</guid>
-        
-        <category>iOS</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>iOS疑难点</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;p&gt;iOS疑难点总结，部分摘自参考链接&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;selfvar还是_var&quot;&gt;self.var还是_var?&lt;/h2&gt;
-
-&lt;p&gt;在iOS中常见到如下写法：&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;@interface Demo ()
-
-@property(nonatomic, strong) NSString *name;
-
-@end
-
-@implementation Demo
-
-- (void)test {
-    _name = @&quot;&quot;;
-//    self.name = @&quot;&quot;;
-}
-
-@end
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;在上述写法中，&lt;code class=&quot;highlighter-rouge&quot;&gt;self.name&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;_name&lt;/code&gt;有什么区别呢?&lt;/p&gt;
-
-&lt;p&gt;在解释其区别之前，需要先了解一下OC中的属性和实例变量，实例变量具有私有性，一般仅在类内部使用，为了方便给外界读写这个实例变量，就有了属性（@property）&lt;/p&gt;
-
-&lt;p&gt;在iOS第一版中，需要同时声明属性和底层实例变量，那时，属性是oc语言的一个新的机制，并且要求必须声明与之对应的实例变量；如下：&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;// MyViewController.h
-
-@interface MyViewController : UIViewController
-{
-    UIButton *myButton; // 实例变量
-}
-
-@property (nonatomic, retain) UIButton *myButton; // 属性
-
-@end
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;之后，苹果将默认编译器从GCC转换为LLVM(low level virtual machine)，从此不再需要为属性声明实例变量了。如果LLVM发现一个没有匹配实例变量的属性，它将自动创建一个以下划线开头的实例变量（即&lt;code class=&quot;highlighter-rouge&quot;&gt;var&lt;/code&gt;属性及与其对应的&lt;code class=&quot;highlighter-rouge&quot;&gt;_var&lt;/code&gt;实例变量），如下：&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;// MyViewController.h
-
-@interface MyViewController : UIViewController
-
-@property (nonatomic, retain) UIButton *myButton; // 将自动创建一个_myButton实例变量与之对应
-
-@end
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-&lt;p&gt;在MyViewController.m中可以直接使用&lt;code class=&quot;highlighter-rouge&quot;&gt;_myButton&lt;/code&gt;实例变量，也可以通过self.myButton来访问，二者的区别也是下面要讲解的；&lt;/p&gt;
-
-&lt;p&gt;再来看下面一个例子：&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;// MyViewController.h
-
-@interface MyViewController : UIViewController
-{
-    NSString *name; // 实例变量
-}
-
-@end
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-&lt;p&gt;在MyViewController.m文件中，如果通过self.name访问的话，编译器会报错，Xcode会提示使用-&amp;gt;，即使用self-&amp;gt;name，这是因为OC中点表达式表示调用方法，而这里的name是一个实例变量，没有与其对应的name方法&lt;/p&gt;
-
-&lt;p&gt;另外，还有一个与@property合用的@synthesize，通过@synthesize还可以指定与属性对应的实例变量名，如下：&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;// MyViewController.h
-
-@interface MyViewController : UIViewController
-
-@property (nonatomic, retain) UIButton * myButton;
-
-@end
-
-// MyViewController.m
-
-@implementation MyViewController
-
-@synthesize myButton = otherButton;
-
-@end
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-&lt;p&gt;此时，与属性myButton对应的实例变量名为otherButton了，默认的&lt;code class=&quot;highlighter-rouge&quot;&gt;_myButton&lt;/code&gt;就不能使用了；还需要注意的一点是，如果只是声明了&lt;code class=&quot;highlighter-rouge&quot;&gt;@synthesize myButton;&lt;/code&gt;，那么此时默认与myButton对应的实例变量名为myButton，&lt;code class=&quot;highlighter-rouge&quot;&gt;_myButton&lt;/code&gt;也不能用了&lt;/p&gt;
-
-&lt;p&gt;到这里我们应该知道了使用&lt;code class=&quot;highlighter-rouge&quot;&gt;self.var&lt;/code&gt;与&lt;code class=&quot;highlighter-rouge&quot;&gt;_var&lt;/code&gt;的区别，即self.var实际上是调用了属性方法，即getter和setter方法，而&lt;code class=&quot;highlighter-rouge&quot;&gt;_var&lt;/code&gt;是直接调用的实例变量，不会走getter和setter方法；因此，这里需要注意的是，当我们要重写getter方法时，在getter方法中必须使用&lt;code class=&quot;highlighter-rouge&quot;&gt;_var&lt;/code&gt;实例变量，否则会造成getter方法的递归调用；同理，重写setter方法时，在setter方法中也只能使用&lt;code class=&quot;highlighter-rouge&quot;&gt;_var&lt;/code&gt;实例变量，否则也会造成settter方法的递归调用；另外，直接访问实例变量的话，就不会调用其setter方法，这样就绕过了为相关属性所定义的内存管理语义。例如：在ARC下直接访问一个语义为copy的属性，那么并不会copy该属性，而仅仅是保留新值并释放旧值&lt;/p&gt;
-
-&lt;p&gt;&lt;strong&gt;参考链接：&lt;/strong&gt;&lt;/p&gt;
-&lt;ol&gt;
-  &lt;li&gt;https://www.jianshu.com/p/48056965ddce&lt;/li&gt;
-  &lt;li&gt;http://www.cnblogs.com/crazypebble/archive/2013/11/23/3439261.html&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;property与synthesize&quot;&gt;@property与@synthesize&lt;/h2&gt;
-
-&lt;p&gt;我们知道@property可用于在头文件中声明getter和settter方法，@synthesize方法可用于.m文件中实现getter和setter方法；但是实际情况是，如果我们只是在头文件中使用了@property，而没有在.m文件中使用@synthesize，编译器实际上还是会为我们生成getter和setter方法；这是因为从Xcode 4.4 开始，@synthesize属性是默认声明了的&lt;/p&gt;
-
-&lt;p&gt;&lt;strong&gt;参考链接：&lt;/strong&gt;&lt;/p&gt;
-&lt;ol&gt;
-  &lt;li&gt;https://stackoverflow.com/questions/7496463/objective-c-property-declaration-without-implementation-synthesize&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;扩展extension与分类category&quot;&gt;扩展(extension)与分类(category)&lt;/h2&gt;
-
-&lt;p&gt;&lt;strong&gt;参考链接：&lt;/strong&gt;&lt;/p&gt;
-&lt;ol&gt;
-  &lt;li&gt;https://www.jianshu.com/p/9e827a1708c6&lt;/li&gt;
-  &lt;li&gt;https://blog.csdn.net/hherima/article/details/44242469&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;宏定义中的dowhile0使用&quot;&gt;宏定义中的do{}while(0)使用&lt;/h2&gt;
-
-&lt;p&gt;&lt;strong&gt;参考链接：&lt;/strong&gt;&lt;/p&gt;
-&lt;ol&gt;
-  &lt;li&gt;https://blog.csdn.net/luoweifu/article/details/38563162&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;toolbartab-bar和navigationbar的区别&quot;&gt;Toolbar，Tab Bar和NavigationBar的区别&lt;/h2&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Toolbar&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;Tab Bar&lt;/code&gt;都是显示在&lt;code class=&quot;highlighter-rouge&quot;&gt;App&lt;/code&gt;的底部，&lt;code class=&quot;highlighter-rouge&quot;&gt;Toolbar&lt;/code&gt;中包含的内容和当前界面相关，比如：添加一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Item&lt;/code&gt;，删除一个&lt;code class=&quot;highlighter-rouge&quot;&gt;Item&lt;/code&gt;，拍照等；&lt;code class=&quot;highlighter-rouge&quot;&gt;Tab Bar&lt;/code&gt;是用于在不同界面之间切换的；需要注意的是，&lt;code class=&quot;highlighter-rouge&quot;&gt;Toolbar&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;Tab Bar&lt;/code&gt;不能在同一个界面中使用&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;NavigationBar&lt;/code&gt;是顶部的导航栏&lt;/p&gt;
-</description>
-        <pubDate>Wed, 27 Feb 2019 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2019/02/27/iOS%E7%96%91%E9%9A%BE%E7%82%B9/</link>
-        <guid isPermaLink="true">http://localhost:4000/2019/02/27/iOS%E7%96%91%E9%9A%BE%E7%82%B9/</guid>
         
         <category>iOS</category>
         
