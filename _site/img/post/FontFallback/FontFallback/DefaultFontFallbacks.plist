@@ -1,0 +1,220 @@
+{
+    common =     (
+        "KohinoorDevanagari-Regular",
+        Kailasa,
+        "KohinoorBangla-Regular",
+        "KohinoorGujarati-Regular",
+        "MuktaMahee-Regular",
+        "NotoSansKannada-Regular",
+        KhmerSangamMN,
+        LaoSangamMN,
+        MalayalamSangamMN,
+        NotoSansOriya,
+        SinhalaSangamMN,
+        TamilSangamMN,
+        "KohinoorTelugu-Regular",
+        "NotoSansArmenian-Regular",
+        EuphemiaUCAS,
+        "Menlo-Regular",
+        AppleSymbols,
+        ArialMT,
+        "STIXTwoMath-Regular",
+        ".HiraKakuInterface-W4",
+        HelveticaNeue,
+        "Kefa-Regular",
+        Galvji,
+        ".PhoneFallback"
+    );
+    cursive =     (
+        SnellRoundhand,
+        Helvetica,
+        AppleColorEmoji,
+        ".AppleSymbolsFB",
+                {
+            ar = GeezaPro;
+            ja = "HiraMinProN-W3";
+            ko = "AppleSDGothicNeo-Regular";
+            my = "NotoSansMyanmar-Regular";
+            "my-Qaag" = "NotoSansZawgyi-Regular";
+            ur = NotoNastaliqUrdu;
+            "zh-HK" = "PingFangHK-Regular";
+            "zh-Hans" = "PingFangSC-Regular";
+            "zh-Hant" = "PingFangTC-Regular";
+            "zh-MO" = "PingFangMO-Regular";
+        },
+        Thonburi,
+        ArialHebrew
+    );
+    default =     (
+        ".AppleSystemFallback-Regular",
+        ".AppleColorEmojiUI",
+        ".SFGeorgian-Regular",
+        HelveticaNeue,
+        ".AppleSymbolsFB",
+                {
+            ar = ".AppleArabicFont-Regular";
+            ja = ".AppleJapaneseFont-Regular";
+            ko = ".AppleKoreanFont-Regular";
+            my = "NotoSansMyanmar-Regular";
+            "my-Qaag" = "NotoSansZawgyi-Regular";
+            ur = ".AppleUrduFont-Regular";
+            "zh-HK" = ".AppleHongKongChineseFont-Regular";
+            "zh-Hans" = ".AppleSimplifiedChineseFont-Regular";
+            "zh-Hant" = ".AppleTraditionalChineseFont-Regular";
+            "zh-MO" = ".AppleMacaoChineseFont-Regular";
+        },
+        ".ThonburiUI-Regular",
+        ".SFHebrew-Regular",
+        ".SFArmenian-Regular",
+        ".AppleIndicFont-Regular"
+    );
+    fantasy =     (
+        Zapfino,
+        AppleColorEmoji,
+        ".AppleSymbolsFB",
+                {
+            ar = GeezaPro;
+            ja = "HiraMinProN-W3";
+            ko = "AppleSDGothicNeo-Regular";
+            my = "NotoSansMyanmar-Regular";
+            "my-Qaag" = "NotoSansZawgyi-Regular";
+            ur = NotoNastaliqUrdu;
+            "zh-HK" = "PingFangHK-Regular";
+            "zh-Hans" = "PingFangSC-Regular";
+            "zh-Hant" = "PingFangTC-Regular";
+            "zh-MO" = "PingFangMO-Regular";
+        },
+        Thonburi,
+        ArialHebrew
+    );
+    monospace =     (
+        "Menlo-Regular",
+        CourierNewPSMT,
+        Helvetica,
+        AppleColorEmoji,
+        ".AppleSymbolsFB",
+                {
+            ar = GeezaPro;
+            ja = "HiraginoSans-W3";
+            ko = "AppleSDGothicNeo-Regular";
+            my = "NotoSansMyanmar-Regular";
+            "my-Qaag" = "NotoSansZawgyi-Regular";
+            ur = NotoNastaliqUrdu;
+            "zh-HK" = "PingFangHK-Regular";
+            "zh-Hans" = "PingFangSC-Regular";
+            "zh-Hant" = "PingFangTC-Regular";
+            "zh-MO" = "PingFangMO-Regular";
+        },
+        Thonburi,
+        ArialHebrew
+    );
+    "sans-serif" =     (
+        Helvetica,
+        AppleColorEmoji,
+        ".AppleSymbolsFB",
+                {
+            ar = GeezaPro;
+            ja = "HiraginoSans-W3";
+            ko = "AppleSDGothicNeo-Regular";
+            my = "NotoSansMyanmar-Regular";
+            "my-Qaag" = "NotoSansZawgyi-Regular";
+            ur = NotoNastaliqUrdu;
+            "zh-HK" = "PingFangHK-Regular";
+            "zh-Hans" = "PingFangSC-Regular";
+            "zh-Hant" = "PingFangTC-Regular";
+            "zh-MO" = "PingFangMO-Regular";
+        },
+        Thonburi,
+        ArialHebrew
+    );
+    serif =     (
+        ".TimesFB",
+        Helvetica,
+        AppleColorEmoji,
+        ".AppleSymbolsFB",
+                {
+            ar = GeezaPro;
+            ja = "HiraMinProN-W3";
+            ko = "AppleSDGothicNeo-Regular";
+            my = "NotoSansMyanmar-Regular";
+            "my-Qaag" = "NotoSansZawgyi-Regular";
+            ur = NotoNastaliqUrdu;
+            "zh-HK" = "PingFangHK-Regular";
+            "zh-Hans" = "PingFangSC-Regular";
+            "zh-Hant" = "PingFangTC-Regular";
+            "zh-MO" = "PingFangMO-Regular";
+        },
+        Thonburi,
+        ArialHebrew
+    );
+    "ui-monospace" =     (
+        "Menlo-Regular",
+        CourierNewPSMT,
+        ".SFGeorgian-Regular",
+        Helvetica,
+        AppleColorEmoji,
+        ".AppleSymbolsFB",
+                {
+            ar = ".AppleArabicFont-Regular";
+            ja = ".AppleJapaneseFont-Regular";
+            ko = ".AppleKoreanFont-Regular";
+            my = "NotoSansMyanmar-Regular";
+            "my-Qaag" = "NotoSansZawgyi-Regular";
+            ur = ".AppleUrduFont-Regular";
+            "zh-HK" = ".AppleHongKongChineseFont-Regular";
+            "zh-Hans" = ".AppleSimplifiedChineseFont-Regular";
+            "zh-Hant" = ".AppleTraditionalChineseFont-Regular";
+            "zh-MO" = ".AppleMacaoChineseFont-Regular";
+        },
+        ".ThonburiUI-Regular",
+        ".SFHebrew-Regular",
+        ".SFArmenian-Regular",
+        ".AppleIndicFont-Regular"
+    );
+    "ui-rounded" =     (
+        ".AppleSystemFallback-Regular",
+        ".AppleColorEmojiUI",
+        ".SFGeorgianRounded-Regular",
+        HelveticaNeue,
+        ".AppleSymbolsFB",
+                {
+            ar = ".SFArabicRounded-Regular";
+            ja = ".AppleJapaneseFont-Regular";
+            ko = ".AppleKoreanFont-Regular";
+            my = "NotoSansMyanmar-Regular";
+            "my-Qaag" = "NotoSansZawgyi-Regular";
+            ur = ".AppleUrduFont-Regular";
+            "zh-HK" = ".AppleHongKongChineseFont-Regular";
+            "zh-Hans" = ".AppleSimplifiedChineseFont-Regular";
+            "zh-Hant" = ".AppleTraditionalChineseFont-Regular";
+            "zh-MO" = ".AppleMacaoChineseFont-Regular";
+        },
+        ".ThonburiUI-Regular",
+        ".SFHebrewRounded-Regular",
+        ".SFArmenianRounded-Regular",
+        ".AppleIndicFont-Regular"
+    );
+    "ui-serif" =     (
+        ".TimesFB",
+        ".SFGeorgian-Regular",
+        Helvetica,
+        AppleColorEmoji,
+        ".AppleSymbolsFB",
+                {
+            ar = ".AppleArabicFont-Regular";
+            ja = "HiraMinProN-W3";
+            ko = ".AppleKoreanFont-Regular";
+            my = "NotoSansMyanmar-Regular";
+            "my-Qaag" = "NotoSansZawgyi-Regular";
+            ur = ".AppleUrduFont-Regular";
+            "zh-HK" = ".AppleHongKongChineseFont-Regular";
+            "zh-Hans" = ".AppleSimplifiedChineseFont-Regular";
+            "zh-Hant" = ".AppleTraditionalChineseFont-Regular";
+            "zh-MO" = ".AppleMacaoChineseFont-Regular";
+        },
+        ".ThonburiUI-Regular",
+        ".SFHebrew-Regular",
+        ".SFArmenian-Regular",
+        ".AppleIndicFont-Regular"
+    );
+}

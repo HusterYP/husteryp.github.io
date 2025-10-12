@@ -5,9 +5,80 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Tue, 07 Oct 2025 01:34:38 +0800</pubDate>
-    <lastBuildDate>Tue, 07 Oct 2025 01:34:38 +0800</lastBuildDate>
+    <pubDate>Sun, 12 Oct 2025 01:07:52 +0800</pubDate>
+    <lastBuildDate>Sun, 12 Oct 2025 01:07:52 +0800</lastBuildDate>
     <generator>Jekyll v3.8.5</generator>
+    
+      <item>
+        <title>【持续更新】新手必备！！如何白嫖逆向工具</title>
+        <description>&lt;h1 id=&quot;引言&quot;&gt;引言&lt;/h1&gt;
+
+&lt;p&gt;工欲善其事，必先利其器。&lt;/p&gt;
+
+&lt;p&gt;前面我们通过逆向手段分析了&lt;a href=&quot;https://mp.weixin.qq.com/s/EpaNjLcG6DZBc128A2gdIQ&quot;&gt;CoreText中的字体级联/Font Fallback机制&lt;/a&gt;，用到了Hopper、IDA等逆向工具，但接触过的小伙伴应该知道，这些逆向工具都是收费的，即使有免费试用，比如Hopper，但也只能试用半个小时，逆向分析时，每次刚分析出一点头绪就重启了，很是打断思路。&lt;/p&gt;
+
+&lt;p&gt;本文将整理这些资源，确保我们在分析过程中，能顺畅使用！！&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;文中所有资源可在🌍公众号：「非专业程序员Ping」中回复xxx领取，持续更新！！&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/公众号.jpg&quot; alt=&quot;公众号&quot; /&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;hopper&quot;&gt;Hopper&lt;/h1&gt;
+
+&lt;p&gt;直接打开安装包即可使用，每次打开可能遇到：Hopper Disassembler 5.15.4 Cracked，不用管，点击OK可以正常使用。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/逆向/Hopper.png&quot; alt=&quot;Hopper&quot; /&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;ida&quot;&gt;IDA&lt;/h1&gt;
+
+&lt;p&gt;点击&lt;code class=&quot;highlighter-rouge&quot;&gt;IDAPro_lin.dmg&lt;/code&gt;直接安装，会安装好出两个IDA，一个32位的，一个64位的，平时使用时一般直接用64位的即可。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/逆向/IDA.png&quot; alt=&quot;IDA&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;解决ida已损坏问题&quot;&gt;解决IDA已损坏问题&lt;/h2&gt;
+
+&lt;p&gt;命令行执行：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;sudo xattr -rd com.apple.quarantine /Applications/IDA\ Pro\ 7.0/ida.app/
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;解决中文输入法下ida-crash问题&quot;&gt;解决中文输入法下IDA Crash问题&lt;/h2&gt;
+
+&lt;p&gt;将&lt;code class=&quot;highlighter-rouge&quot;&gt;libqcocoa.dylib&lt;/code&gt;文件替换&lt;code class=&quot;highlighter-rouge&quot;&gt;/Applications/IDA Pro 7.0/ida64.app/Contents/PlugIns/platforms&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/逆向/libqcocoa.png&quot; alt=&quot;libqcocoa&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;ida常用快捷键&quot;&gt;IDA常用快捷键&lt;/h2&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;快捷键&lt;/th&gt;
+      &lt;th&gt;用途&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Control + F&lt;/td&gt;
+      &lt;td&gt;搜索函数&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;F5&lt;/td&gt;
+      &lt;td&gt;反汇编函数&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/逆向/IDA_use.png&quot; alt=&quot;IDA_use&quot; /&gt;&lt;/p&gt;
+</description>
+        <pubDate>Sat, 11 Oct 2025 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2025/10/11/%E9%80%86%E5%90%91%E5%B7%A5%E5%85%B7/</link>
+        <guid isPermaLink="true">http://localhost:4000/2025/10/11/%E9%80%86%E5%90%91%E5%B7%A5%E5%85%B7/</guid>
+        
+        <category>逆向</category>
+        
+        
+      </item>
     
       <item>
         <title>CoreText Font Fallback</title>
@@ -2295,112 +2366,6 @@ self.layerView.layer.contents = (__bridge id)image.CGImage;
         <pubDate>Mon, 29 Apr 2019 00:00:00 +0800</pubDate>
         <link>http://localhost:4000/2019/04/29/iOS%E6%A0%B8%E5%BF%83%E5%8A%A8%E7%94%BB%E9%AB%98%E7%BA%A7%E6%8A%80%E5%B7%A7Tips/</link>
         <guid isPermaLink="true">http://localhost:4000/2019/04/29/iOS%E6%A0%B8%E5%BF%83%E5%8A%A8%E7%94%BB%E9%AB%98%E7%BA%A7%E6%8A%80%E5%B7%A7Tips/</guid>
-        
-        <category>iOS</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>AutoLayout总结</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoLayout&lt;/code&gt;总结&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;一-布局方式与背景&quot;&gt;一. 布局方式与背景&lt;/h2&gt;
-
-&lt;p&gt;在开始介绍&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoLayout&lt;/code&gt;之前，需要先介绍一下&lt;code class=&quot;highlighter-rouge&quot;&gt;iOS&lt;/code&gt;中的布局方式；iOS&lt;code class=&quot;highlighter-rouge&quot;&gt;中主流的界面布局方式主要有手写代码布局，&lt;/code&gt;xib&lt;code class=&quot;highlighter-rouge&quot;&gt;布局，&lt;/code&gt;storyboard&lt;code class=&quot;highlighter-rouge&quot;&gt;布局；笔者更喜欢的还是手写代码的方式，一个可能与笔者之前&lt;/code&gt;Android&lt;code class=&quot;highlighter-rouge&quot;&gt;经验相关（因为&lt;/code&gt;Android&lt;code class=&quot;highlighter-rouge&quot;&gt;中多是使用手写&lt;/code&gt;xml`的方式布局，另一个是，对于多人合作而言，手写代码其实更方便（减少冲突）；当然，对于单人的独立项目，其实没有什么优劣可言，选择一种自己更为熟悉与快捷的方式都是因人而异。&lt;/p&gt;
-
-&lt;p&gt;关于&lt;code class=&quot;highlighter-rouge&quot;&gt;xib&lt;/code&gt;布局和&lt;code class=&quot;highlighter-rouge&quot;&gt;storyboard&lt;/code&gt;布局方式的区别，其实二者都是使用&lt;code class=&quot;highlighter-rouge&quot;&gt;IB&lt;/code&gt;来进行可视化空间的拖拽与约束，唯一的区别是二者的侧重点不同；一般来说，单个的&lt;code class=&quot;highlighter-rouge&quot;&gt;xib&lt;/code&gt;文件对应一个&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewController&lt;/code&gt;，对于一些自定义&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;，通常也会使用单个&lt;code class=&quot;highlighter-rouge&quot;&gt;xib&lt;/code&gt;并从&lt;code class=&quot;highlighter-rouge&quot;&gt;main bundle&lt;/code&gt;进行加载的方式来载入；而&lt;code class=&quot;highlighter-rouge&quot;&gt;storyboard&lt;/code&gt;只能使用&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewController&lt;/code&gt;而不能用于单独的&lt;code class=&quot;highlighter-rouge&quot;&gt;UIView&lt;/code&gt;（&lt;code class=&quot;highlighter-rouge&quot;&gt;UIView&lt;/code&gt;只能基于&lt;code class=&quot;highlighter-rouge&quot;&gt;ViewController&lt;/code&gt;使用，而&lt;code class=&quot;highlighter-rouge&quot;&gt;xib&lt;/code&gt;同时支持两者）&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;xib&lt;/code&gt;实际上是一个&lt;code class=&quot;highlighter-rouge&quot;&gt;xml&lt;/code&gt;文件，通过编译之后就得到&lt;code class=&quot;highlighter-rouge&quot;&gt;nib&lt;/code&gt;文件&lt;/p&gt;
-
-&lt;p&gt;在上面介绍的三种方式中，都可以使用&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoLayout&lt;/code&gt;的方式来进行布局；&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoLayout&lt;/code&gt;的出现，是为了解决不同尺寸屏幕的适配问题；&lt;code class=&quot;highlighter-rouge&quot;&gt;iPhone 5&lt;/code&gt;之前，屏幕都是&lt;code class=&quot;highlighter-rouge&quot;&gt;3.5&lt;/code&gt;寸的（&lt;code class=&quot;highlighter-rouge&quot;&gt;640 x 960&lt;/code&gt;分辨率），这之前，屏幕尺寸相同，不存在适配问题，所有&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;坐标只需要计算好即可，但是&lt;code class=&quot;highlighter-rouge&quot;&gt;2012&lt;/code&gt;年，苹果发布了&lt;code class=&quot;highlighter-rouge&quot;&gt;4.0&lt;/code&gt;寸（&lt;code class=&quot;highlighter-rouge&quot;&gt;640 x 1136&lt;/code&gt;分辨率）的&lt;code class=&quot;highlighter-rouge&quot;&gt;iPhone 5&lt;/code&gt;，这样在&lt;code class=&quot;highlighter-rouge&quot;&gt;iOS&lt;/code&gt;平台上就出现了不同尺寸的移动设备，使得原有的&lt;code class=&quot;highlighter-rouge&quot;&gt;frame&lt;/code&gt;布局方式无法进行很好的屏幕适配，所以为了解决这一问题，就出现了&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoLayout&lt;/code&gt;&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;二-原理与使用&quot;&gt;二. 原理与使用&lt;/h2&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoLayout&lt;/code&gt;其实类似于&lt;code class=&quot;highlighter-rouge&quot;&gt;Android&lt;/code&gt;中的&lt;code class=&quot;highlighter-rouge&quot;&gt;RelativeLayout&lt;/code&gt;，采用&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;之间的相对位置来进行布局；我们知道，要确定一个&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的位置，需要知道&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;x，y，width，height&lt;/code&gt;，即&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的起始坐标点，宽度和高度信息；&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoLayout&lt;/code&gt;其实是通过解&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;之间建立的线性方程组（&lt;code class=&quot;highlighter-rouge&quot;&gt;y = ax + b&lt;/code&gt;）来确定其信息的（如下图），当然，如果出现约束不完整的情况或者约束冲突的情况，就会出现解的不定性，表现出来即是&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;位置未达到预期&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/AutoLayout/AutoLayout_1.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;可约束的属性参见&lt;a href=&quot;https://developer.apple.com/documentation/uikit/nslayoutattribute&quot;&gt;NSLayoutAttribute&lt;/a&gt;枚举&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoLayout&lt;/code&gt;实际上是基于&lt;code class=&quot;highlighter-rouge&quot;&gt;Cassowary&lt;/code&gt;算法的，&lt;code class=&quot;highlighter-rouge&quot;&gt;Cassowary&lt;/code&gt;是&lt;code class=&quot;highlighter-rouge&quot;&gt;Alan Borning, Kim Marriott, Peter Stuckey&lt;/code&gt;等人在&lt;code class=&quot;highlighter-rouge&quot;&gt;1997&lt;/code&gt;年提出的一个解决布局问题的算法，&lt;code class=&quot;highlighter-rouge&quot;&gt;Cassowary&lt;/code&gt;算法能够有效解决线性等式系统和线性不等式系统，这也是&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoLayout&lt;/code&gt;的性能保障&lt;/p&gt;
-
-&lt;p&gt;当使用&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoLayout&lt;/code&gt;的时候，&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的默认初始值会被弃用，如下代码，此时&lt;code class=&quot;highlighter-rouge&quot;&gt;UILable&lt;/code&gt;的初始化宽高会失效；这里还需要注意一个&lt;code class=&quot;highlighter-rouge&quot;&gt;translatesAutoresizingMaskIntoConstraints&lt;/code&gt;属性，从名字我们可以看出，该属性是控制是否把&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoresizingMask&lt;/code&gt;变成约束（&lt;code class=&quot;highlighter-rouge&quot;&gt;autoresizing mask&lt;/code&gt;其实就是完全指定视图的尺寸和位置，即是否需要将其转换为线性方程组）；当使用&lt;code class=&quot;highlighter-rouge&quot;&gt;IB（Interface Builder）&lt;/code&gt;布局的时候，即&lt;code class=&quot;highlighter-rouge&quot;&gt;xib，storyboard&lt;/code&gt;方式，如果勾选了&lt;code class=&quot;highlighter-rouge&quot;&gt;Use Autolayout&lt;/code&gt;选项（默认勾选），那么&lt;code class=&quot;highlighter-rouge&quot;&gt;IB&lt;/code&gt;生成的控件的&lt;code class=&quot;highlighter-rouge&quot;&gt;translatesAutoresizingMaskIntoConstraints&lt;/code&gt;属性都会被默认设置&lt;code class=&quot;highlighter-rouge&quot;&gt;false&lt;/code&gt;；当使用手写代码布局时，&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;translatesAutoresizingMaskIntoConstraints&lt;/code&gt;属性默认为&lt;code class=&quot;highlighter-rouge&quot;&gt;true&lt;/code&gt;，但是&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoresizingMask&lt;/code&gt;属性默认被设置为&lt;code class=&quot;highlighter-rouge&quot;&gt;.None&lt;/code&gt;，也就是说如果我们不去动&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoresizingMask&lt;/code&gt;属性，那么&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoresizingMask&lt;/code&gt;就不会对约束产生影响，所以，这个属性，一般也不需要手动设置（当然，为了保险，也可以手动将&lt;code class=&quot;highlighter-rouge&quot;&gt;translatesAutoresizingMaskIntoConstraints&lt;/code&gt;属性置为&lt;code class=&quot;highlighter-rouge&quot;&gt;false&lt;/code&gt;）&lt;/p&gt;
-
-&lt;p&gt;当&lt;code class=&quot;highlighter-rouge&quot;&gt;translatesAutoresizingMaskIntoConstraints&lt;/code&gt;属性为&lt;code class=&quot;highlighter-rouge&quot;&gt;true&lt;/code&gt;时，&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoresizingMask&lt;/code&gt;将会转换为约束，一起参与到&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoLayout&lt;/code&gt;的约束计算中，即会对&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoLayout&lt;/code&gt;产生影响&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;let label = UILabel(frame: CGRect(x: 100, y: 100, width: 100, height: 200))
-label.backgroundColor = #colorLiteral(red: 1, green: 0.5763723254, blue: 0, alpha: 1)
-view.addSubview(label)
-label.translatesAutoresizingMaskIntoConstraints = false
-label.snp.makeConstraints { (make) in
-            make.width.equalTo(10)
-            make.leading.equalToSuperview().offset(40)
-            make.top.equalToSuperview().offset(40)
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;布局关系不仅限于等于，还可以是大于等于或者小于等于，这种不等关系在处理&lt;code class=&quot;highlighter-rouge&quot;&gt;UILabel&lt;/code&gt;，&lt;code class=&quot;highlighter-rouge&quot;&gt;UIImageView&lt;/code&gt;等具有自身内容尺寸（&lt;code class=&quot;highlighter-rouge&quot;&gt;Intrinsic Content Size&lt;/code&gt;）的控件时非常有用；比如：&lt;code class=&quot;highlighter-rouge&quot;&gt;UILabel&lt;/code&gt;的长度会随文字长度而变化，那么我们可以对&lt;code class=&quot;highlighter-rouge&quot;&gt;UILabel&lt;/code&gt;控件添加两个约束，即&lt;code class=&quot;highlighter-rouge&quot;&gt;宽度大于等于50&lt;/code&gt;与&lt;code class=&quot;highlighter-rouge&quot;&gt;宽度小于等于200&lt;/code&gt;，这样，当文字很少时，宽度也至少为&lt;code class=&quot;highlighter-rouge&quot;&gt;50&lt;/code&gt;，当文字很多时，宽度也不会超过&lt;code class=&quot;highlighter-rouge&quot;&gt;200&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;某些用来展现内容的用户控件，例如&lt;code class=&quot;highlighter-rouge&quot;&gt;UILabel&lt;/code&gt;、&lt;code class=&quot;highlighter-rouge&quot;&gt;UIButton&lt;/code&gt;、&lt;code class=&quot;highlighter-rouge&quot;&gt;UIImageView&lt;/code&gt;等，它们具有自身内容尺寸（&lt;code class=&quot;highlighter-rouge&quot;&gt;Intrinsic Content Size&lt;/code&gt;），此类用户控件会根据自身内容尺寸添加布局约束；也就是说，如果开发者没有显式给出其宽度或者高度约束，则其自身内容约束将会起作用&lt;/p&gt;
-
-&lt;p&gt;具有&lt;code class=&quot;highlighter-rouge&quot;&gt;Intrinsic Content Size&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;参见下图（摘自官网）；具有&lt;code class=&quot;highlighter-rouge&quot;&gt;Intrinsic Content Size&lt;/code&gt;属性的&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;都重写了&lt;code class=&quot;highlighter-rouge&quot;&gt;UIView&lt;/code&gt;的&lt;code class=&quot;highlighter-rouge&quot;&gt;-(CGSize)intrinsicContentSize:&lt;/code&gt;方法，并且在需要改变这个值的时候调用&lt;code class=&quot;highlighter-rouge&quot;&gt;invalidateIntrinsicContentSize&lt;/code&gt;方法即可，通知系统这个值改变了；同样，当我们自定义&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;的时候，如果想要拥有&lt;code class=&quot;highlighter-rouge&quot;&gt;Intrinsic Content Size&lt;/code&gt;属性，就可以重写该方法&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/AutoLayout/AutoLayout_2.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoLayout&lt;/code&gt;中还有两个比较重要的概念，&lt;code class=&quot;highlighter-rouge&quot;&gt;Content Hugging&lt;/code&gt;与&lt;code class=&quot;highlighter-rouge&quot;&gt;Content Compression Resistance&lt;/code&gt;约束；在讲解这两个属性之前，需要先了解一下&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoLayout&lt;/code&gt;中的优先级属性；所谓的优先级，我个人的理解其实是一种减少冲突与弱化约束的作用，即为各约束设置优先级，当出现冲突时&lt;code class=&quot;highlighter-rouge&quot;&gt;AutoLayout&lt;/code&gt;优先满足高优先级的约束；关于优先级的使用，可以参见文末参考链接&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Content Hugging&lt;/code&gt;约束：不想变大约束；即如果组件的此属性优先级比另一个组件此属性优先级高的话，那么这个组件就保持不变，另一个可以在需要拉伸的时候拉伸；可以简单理解为&lt;code class=&quot;highlighter-rouge&quot;&gt;Content Hugging&lt;/code&gt;越大，&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;越难变大；默认值为&lt;code class=&quot;highlighter-rouge&quot;&gt;250&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Content Compression Resistance&lt;/code&gt;约束：不想变小约束；如果组件的此属性优先级比另一个组件此属性优先级高的话，那么这个组件就保持不变，另一个可以在需要压缩的时候压缩；可以简单理解为&lt;code class=&quot;highlighter-rouge&quot;&gt;Content Compression Resistance&lt;/code&gt;越大，&lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt;越难变小；默认值为&lt;code class=&quot;highlighter-rouge&quot;&gt;750&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;关于&lt;code class=&quot;highlighter-rouge&quot;&gt;Content Hugging&lt;/code&gt;与&lt;code class=&quot;highlighter-rouge&quot;&gt;Content Compression Resistance&lt;/code&gt;的应用，可以参见&lt;a href=&quot;https://www.jianshu.com/p/f6bc007b30e5&quot;&gt;博客&lt;/a&gt;&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;三-性能分析&quot;&gt;三. 性能分析&lt;/h2&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;https://time.geekbang.org/column/article/85332&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;https://www.jianshu.com/p/0b964dc17c04&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;https://xiaozhuanlan.com/topic/5378941206&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;https://draveness.me/layout-performance&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;https://juejin.im/post/5bd5a546f265da0af033cee6#heading-3&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;四-参考&quot;&gt;四. 参考&lt;/h2&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;https://www.jianshu.com/p/f6bc007b30e5&lt;/li&gt;
-  &lt;li&gt;https://blog.csdn.net/hard_man/article/details/50888377&lt;/li&gt;
-&lt;/ol&gt;
-
-</description>
-        <pubDate>Sat, 23 Mar 2019 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2019/03/23/AutoLayout%E6%80%BB%E7%BB%93/</link>
-        <guid isPermaLink="true">http://localhost:4000/2019/03/23/AutoLayout%E6%80%BB%E7%BB%93/</guid>
         
         <category>iOS</category>
         
