@@ -5,9 +5,205 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Sun, 12 Oct 2025 01:07:52 +0800</pubDate>
-    <lastBuildDate>Sun, 12 Oct 2025 01:07:52 +0800</lastBuildDate>
+    <pubDate>Wed, 15 Oct 2025 01:22:09 +0800</pubDate>
+    <lastBuildDate>Wed, 15 Oct 2025 01:22:09 +0800</lastBuildDate>
     <generator>Jekyll v3.8.5</generator>
+    
+      <item>
+        <title>新手小白也能看懂的逆向技巧</title>
+        <description>&lt;h1 id=&quot;引言&quot;&gt;引言&lt;/h1&gt;
+
+&lt;p&gt;在我们日常工作中，难免会遇到一些Crash等疑难问题需要查看系统实现，有时候在做一些高级定制功能时，比如自定义富文本渲染等，也需要查看系统是怎么做的；特别是对于iOS程序员来说，由于Apple的闭源生态，遇到以上问题基本只能靠逆向手段来逐步分析。学会汇编和逆向，可以说是一个程序员从入门走向进阶的第一步。&lt;/p&gt;
+
+&lt;p&gt;前面我们通过逆向手段分析了&lt;a href=&quot;https://mp.weixin.qq.com/s/EpaNjLcG6DZBc128A2gdIQ&quot;&gt;CoreText中的字体级联/Font Fallback机制&lt;/a&gt;，正好借此机会聊聊一些常用的逆向思路与技巧；本篇文章更多面向小白入门，不需要你有太多的汇编、LLDB知识，我们将结合一些典型场景来举一反三，当然，如果大家有更好的奇技淫巧欢迎一起交流、学习。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;持续更新，更多内容欢迎到我的公众号「非专业程序员Ping」一起交流！！&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/公众号.jpg&quot; alt=&quot;公众号&quot; /&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;一工欲善其事必先利其器&quot;&gt;一、工欲善其事，必先利其器&lt;/h1&gt;
+
+&lt;p&gt;在开始之前，需要先了解两个常用的逆向工具：Hopper 和 IDA。具体安装和使用我们也有专门的文章介绍：&lt;a href=&quot;https://mp.weixin.qq.com/s/ubcnejz3St0LD2H0HDO6PA&quot;&gt;常见逆向工具使用&lt;/a&gt;。&lt;/p&gt;
+
+&lt;p&gt;一般而言我们都是结合两个工具一起看，IDA 的反汇编通常比 Hopper 还原度更高，所以我们主用的还是IDA。&lt;/p&gt;
+
+&lt;h1 id=&quot;二查找二进制文件路径&quot;&gt;二、查找二进制文件路径&lt;/h1&gt;
+
+&lt;p&gt;分析的第一步，肯定是找到我们想要分析的入口函数，以&lt;a href=&quot;https://mp.weixin.qq.com/s/EpaNjLcG6DZBc128A2gdIQ&quot;&gt;CoreText中的字体级联/Font Fallback机制&lt;/a&gt;这篇文章的Case为例子，我们要研究的是 CTFontCopyDefaultCascadeListForLanguages 的实现，我们可以在LLDB中通过如下命令找到该符号所在库：&lt;/p&gt;
+
+&lt;div class=&quot;language-shell highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;image lookup &lt;span class=&quot;nt&quot;&gt;-rn&lt;/span&gt; CTFontCopyDefaultCascadeListForLanguages
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/新手小白也能看懂的逆向技巧/LLDB查看二进制路径.png&quot; alt=&quot;LLDB查看二进制路径&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;通过这个命令我们可以得到两个信息：&lt;/p&gt;
+
+&lt;p&gt;1）CTFontCopyDefaultCascadeListForLanguages 在CoreText库中&lt;/p&gt;
+
+&lt;p&gt;2）CoreText 二进制文件的路径&lt;/p&gt;
+
+&lt;p&gt;得到路径之后，在访达中可以通过快捷键 Command + Shift + G 可以快速跳转到位置，得到CoreText的二进制文件：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/新手小白也能看懂的逆向技巧/CoreText.png&quot; alt=&quot;CoreText&quot; /&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;三善用ai&quot;&gt;三、善用AI&lt;/h1&gt;
+
+&lt;p&gt;得到CoreText的二进制文件之后，我们通过IDA进行反汇编。&lt;/p&gt;
+
+&lt;p&gt;之后将 CTFontCopyDefaultCascadeListForLanguages 的主要调用逻辑Copy到单独的文件夹：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/新手小白也能看懂的逆向技巧/CTFontCopyDefaultCascadeListForLanguages.png&quot; alt=&quot;CTFontCopyDefaultCascadeListForLanguages&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;在AI没普及之前，我们一般是结合LLDB硬着头皮逐行分析，有了AI之后，我们可以直接将整个文件夹扔给AI（比如Cursor、GPT等），让AI给我们梳理流程、逐行注释，输出调用流程图等。&lt;/p&gt;
+
+&lt;p&gt;如下，是AI生成的函数调用流程；结合AI的逻辑梳理和注释，我们对 CTFontCopyDefaultCascadeListForLanguages 的整体逻辑会有一个大致的理解。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/新手小白也能看懂的逆向技巧/AI流程图.png&quot; alt=&quot;AI流程图&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;当然，AI也不是全能的，一些逻辑AI也只是猜测甚至乱说😩，具体的细节还需要我们结合LLDB、IDA一起分析，只是说有了AI之后，可以大大加快我们的分析效率。&lt;/p&gt;
+
+&lt;p&gt;下面我们将列举几个典型例子，我们日常分析中能遇到的也基本就这些。&lt;/p&gt;
+
+&lt;h1 id=&quot;四典型例子&quot;&gt;四、典型例子&lt;/h1&gt;
+
+&lt;h2 id=&quot;41-函数调用&quot;&gt;4.1 函数调用&lt;/h2&gt;
+
+&lt;p&gt;不管是面向对象，还是面向过程，在汇编的世界里，程序逻辑都是由一个一个独立的函数调用组成的；对函数而言，最重要的就是它的&lt;strong&gt;输入输出&lt;/strong&gt;，基本上我们只要读懂了每个函数的输入输出是什么，那我们就能理解整体的逻辑。&lt;/p&gt;
+
+&lt;p&gt;函数入参与返回值，按照数据类型不同可以总结为下面的表格：我们最常接触的，其实只有前两项&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/新手小白也能看懂的逆向技巧/函数入参与返回值.png&quot; alt=&quot;函数入参与返回值&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;举个🌰：&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;1）整数/指针类型&lt;/strong&gt;&lt;/p&gt;
+
+&lt;div class=&quot;language-swift highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;// 以如下调用为例&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;ctFont&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;UIFont&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;systemFont&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;ofSize&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;18&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;languages&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;zh-HK&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;zh-Hans&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+&lt;span class=&quot;kt&quot;&gt;CTFontCopyDefaultCascadeListForLanguages&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ctFont&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;languages&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;CFArray&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;入参&lt;/th&gt;
+      &lt;th&gt;返回值&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;img src=&quot;/img/post/新手小白也能看懂的逆向技巧/函数入参.png&quot; alt=&quot;函数入参&quot; /&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;img src=&quot;/img/post/新手小白也能看懂的逆向技巧/函数返回值.png&quot; alt=&quot;函数返回值&quot; /&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;&lt;strong&gt;2）浮点数类型&lt;/strong&gt;&lt;/p&gt;
+
+&lt;div class=&quot;language-swift highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;// 以getArea为例&lt;/span&gt;
+&lt;span class=&quot;kd&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;ViewController&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;UIViewController&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;override&lt;/span&gt; &lt;span class=&quot;kd&quot;&gt;func&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;viewDidLoad&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;super&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;viewDidLoad&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;let&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;area&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;getArea&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;frame&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;view&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;frame&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;nf&quot;&gt;print&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;area&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+    &lt;span class=&quot;kd&quot;&gt;func&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;getArea&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;frame&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;CGRect&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;CGFloat&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;frame&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;width&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;frame&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;height&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;入参&lt;/th&gt;
+      &lt;th&gt;返回值&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;img src=&quot;/img/post/新手小白也能看懂的逆向技巧/CGFloat函数入参.png&quot; alt=&quot;函数入参&quot; /&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;img src=&quot;/img/post/新手小白也能看懂的逆向技巧/CGFloat函数返回值.png&quot; alt=&quot;函数返回值&quot; /&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;h2 id=&quot;42-怎么确定一段地址的含义&quot;&gt;4.2 怎么确定一段地址的含义&lt;/h2&gt;
+
+&lt;p&gt;还是以举一个实际例子，在&lt;a href=&quot;https://mp.weixin.qq.com/s/EpaNjLcG6DZBc128A2gdIQ&quot;&gt;CoreText中的字体级联/Font Fallback机制&lt;/a&gt;文章中，我们要分析 TBaseFont::CreateFallbacks 的实现，签名如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-assembly&quot;&gt;__int64 __usercall TBaseFont::CreateFallbacks@&amp;lt;X0&amp;gt;(__int64 result@&amp;lt;X0&amp;gt;, __int64 a2@&amp;lt;X1&amp;gt;, __int64 a3@&amp;lt;X2&amp;gt;, __int64 a4@&amp;lt;X3&amp;gt;, __int64 a5@&amp;lt;X4&amp;gt;, _QWORD *a6@&amp;lt;X8&amp;gt;) 
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;其中第一个参数 result@&lt;X0&gt; 通过调用的地方我们知道是 CTFont 中的一个成员变量，但具体是什么不确定。&lt;/X0&gt;&lt;/p&gt;
+
+&lt;p&gt;我们最终结合LLDB做如下尝试分析出了 result@&lt;X0&gt; 的具体含义：&lt;/X0&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/新手小白也能看懂的逆向技巧/LLDB查看地址信息.png&quot; alt=&quot;LLDB查看地址信息&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;同理，我们如果拿到一段地址要分析其含义的话，也可以按这个步骤进行尝试。&lt;/p&gt;
+
+&lt;h2 id=&quot;43-如何修改-if-条件&quot;&gt;4.3 如何修改 if 条件&lt;/h2&gt;
+
+&lt;p&gt;我们以如下函数调用为例：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/新手小白也能看懂的逆向技巧/addNum.png&quot; alt=&quot;addNum&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;我们传入的num是1，正常逻辑会执行 num + 2 返回 3，那有没有办法不修改入参，执行 num + 1 的路径。&lt;/p&gt;
+
+&lt;p&gt;我们来看下这段逻辑的汇编代码：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/新手小白也能看懂的逆向技巧/addNum-tbz.png&quot; alt=&quot;addNum-tbz&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;图片注释说的比较明白；if 条件在汇编层面一般被翻译成 tbz（Test Bit and branch if Zero）、tbnz（Test Bit and branch if Not Zero）等，我们可以通过修改寄存器的值来更改执行分支；这在分析系统API时，是一个很有用的思路。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;举一反三，通过LLDB，我们可以实时修改任何寄存器、内存地址的值，这可以非常方便的帮我们浮现一些偶现的Bug、Crash等。&lt;/strong&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;44-如果跳过函数执行修改函数返回值&quot;&gt;4.4 如果跳过函数执行/修改函数返回值&lt;/h2&gt;
+
+&lt;p&gt;我们还是以上面的addNum为例，如果我们不修改入参，但是想修改返回值，应该怎么做：&lt;/p&gt;
+
+&lt;p&gt;最直接的方式是等addNum执行完后，修改返回值寄存器，如下，返回值存储在w0，我们可以修改成任意想要的值：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/新手小白也能看懂的逆向技巧/thread-return-register.png&quot; alt=&quot;thread-return-register&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;但这种方式有个弊端是，需要等函数执行完，在实际的场景中，我们往往&lt;strong&gt;希望不执行函数且能让函数返回我们想要的值&lt;/strong&gt;，比如：函数中可能会修改其他参数，函数可能有复杂的鉴权逻辑无法通过鉴权等，这些场景我们往往不希望或者不能让函数执行，这种情况下就需要另一个指令：&lt;strong&gt;thread return&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;以addNum为例，按如下步骤操作：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/新手小白也能看懂的逆向技巧/thread-return-si.png&quot; alt=&quot;thread-return-si&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/新手小白也能看懂的逆向技巧/thread-return-8.png&quot; alt=&quot;thread-return-8&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/新手小白也能看懂的逆向技巧/thread-return.png&quot; alt=&quot;thread-return&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;使用 thread return 时，需要注意，我们的&lt;strong&gt;断点需要打在 objc_msgSend 的入口处&lt;/strong&gt;，如果在 addNum 的入口打断点执行 thread return，最终可能会得到非预期值；原因是 thread return 改的是当前 frame 的返回寄存器，由于Objective-C的runtime特性，函数调用实际上是经过 objc_msgSend 给对象发消息，addNum 的上一个frame其实是 objc_msgSend，而 objc_msgSend 返回时可能会继续修改 w0 寄存器的值，会导致最终上层取到的值非预期。&lt;/p&gt;
+
+&lt;h2 id=&quot;45-善用-watchpoint-命令&quot;&gt;4.5 善用 watchpoint 命令&lt;/h2&gt;
+
+&lt;p&gt;在实际场景中，我们可能会遇到某个变量被很多地方修改，但是我们又无法一一断点，比如我们要查看哪些地方修改了 UIView 的 frame；或者某个值的修改链路很深，一般在系统库中比较常见，比如iOS中闭包嵌套闭包调用的场景。&lt;/p&gt;
+
+&lt;p&gt;针对以上场景，我们可以使用 watchpoint 命令，来观测变量的修改，watchpoint 的常见用法如下：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/新手小白也能看懂的逆向技巧/watchpoint.png&quot; alt=&quot;watchpoint&quot; /&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;五总结&quot;&gt;五、总结&lt;/h1&gt;
+
+&lt;p&gt;本文总结了我们在逆向的通用分析思路，以及LLDB调试汇编逻辑中可能遇到的常见技巧和场景；本文会长期更新，觉得有用的小伙伴可以关注下公众号，及时接收更新；当然，各路大神有更多有用技巧，也欢迎指教！&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/公众号.jpg&quot; alt=&quot;公众号&quot; /&gt;&lt;/p&gt;
+</description>
+        <pubDate>Sun, 12 Oct 2025 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2025/10/12/%E6%96%B0%E6%89%8B%E5%B0%8F%E7%99%BD%E4%B9%9F%E8%83%BD%E7%9C%8B%E6%87%82%E7%9A%84%E9%80%86%E5%90%91%E6%8A%80%E5%B7%A7/</link>
+        <guid isPermaLink="true">http://localhost:4000/2025/10/12/%E6%96%B0%E6%89%8B%E5%B0%8F%E7%99%BD%E4%B9%9F%E8%83%BD%E7%9C%8B%E6%87%82%E7%9A%84%E9%80%86%E5%90%91%E6%8A%80%E5%B7%A7/</guid>
+        
+        <category>逆向</category>
+        
+        
+      </item>
     
       <item>
         <title>【持续更新】新手必备！！如何白嫖逆向工具</title>
@@ -19,7 +215,7 @@
 
 &lt;p&gt;本文将整理这些资源，确保我们在分析过程中，能顺畅使用！！&lt;/p&gt;
 
-&lt;p&gt;&lt;strong&gt;文中所有资源可在🌍公众号：「非专业程序员Ping」中回复xxx领取，持续更新！！&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;文中所有资源可在🌍公众号：「非专业程序员Ping」中回复「逆向」领取，持续更新！！&lt;/strong&gt;&lt;/p&gt;
 
 &lt;p&gt;&lt;img src=&quot;/img/公众号.jpg&quot; alt=&quot;公众号&quot; /&gt;&lt;/p&gt;
 
@@ -2255,119 +2451,6 @@ ttx &lt;span class=&quot;nt&quot;&gt;-y&lt;/span&gt; 0 Times.ttc
         <guid isPermaLink="true">http://localhost:4000/2019/11/02/%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98/</guid>
         
         <category>操作系统</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>iOS核心动画高级技巧Tips</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;iOS&lt;/code&gt;核心动画高级技巧摘要&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;一-图层树&quot;&gt;一. 图层树&lt;/h2&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;和UIView最大的不同是CALayer不处理用户的交互；CALayer并不清楚具体的响应链，即使它提供了一些方法来判断是否一个触点在图层的范围之内&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;每一个UIview都有一个CALayer实例的图层属性&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;UIView没有暴露出来的CALayer的功能：
-    &lt;blockquote&gt;
-      &lt;ol&gt;
-        &lt;li&gt;阴影，圆角，带颜色的边框&lt;/li&gt;
-        &lt;li&gt;3D变换&lt;/li&gt;
-        &lt;li&gt;非矩形范围&lt;/li&gt;
-        &lt;li&gt;透明遮罩&lt;/li&gt;
-        &lt;li&gt;多级非线性动画&lt;/li&gt;
-      &lt;/ol&gt;
-    &lt;/blockquote&gt;
-  &lt;/li&gt;
-  &lt;li&gt;当满足以下条件的时候，你可能更需要使用CALayer而不是UIView:
-    &lt;blockquote&gt;
-      &lt;ol&gt;
-        &lt;li&gt;开发同时可以在Mac OS上运行的跨平台应用&lt;/li&gt;
-        &lt;li&gt;使用多种CALayer的子类（见第六章，“特殊的图层“），并且不想创建额外的UIView去包封装它们所有&lt;/li&gt;
-        &lt;li&gt;做一些对性能特别挑剔的工作，比如对UIView一些可忽略不计的操作都会引起显著的不同（尽管如此，你可能会直接想使用OpenGL绘图）&lt;/li&gt;
-      &lt;/ol&gt;
-    &lt;/blockquote&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;二-寄宿图&quot;&gt;二. 寄宿图&lt;/h2&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;利用CALayer在一个普通的UIView中显示了一张图片。这不是一个UIImageView，它不是我们通常用来展示图片的方法
-    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;UIImage *image = [UIImage imageNamed:@&quot;Snowman.png&quot;];
-//add it directly to our view's layer
-self.layerView.layer.contents = (__bridge id)image.CGImage;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
-  &lt;/li&gt;
-  &lt;li&gt;如果你不需要寄宿图，那就不要重写drawRect方法，这会造成CPU资源和内存的浪费，这也是为什么苹果建议：如果没有自定义绘制的任务就不要在子类中写一个空的-drawRect:方法(因为如果UIView检测到-drawRect: 方法被调用了，它就会为视图分配一个寄宿图，这个寄宿图的像素尺寸等于视图大小乘以 contentsScale的值)&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;三-图层几何学&quot;&gt;三. 图层几何学&lt;/h2&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;UIView有三个比较重要的布局属性：frame，bounds和center，CALayer对应地叫做frame，bounds和position。为了能清楚区分，图层用了“position”，视图用了“center”，但是他们都代表同样的值（frame代表了图层的外部坐标（也就是在父图层上占据的空间），bounds是内部坐标（{0, 0}通常是图层的左上角），center和position都代表了相对于父图层anchorPoint所在的位置）&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;视图的frame，bounds和center属性仅仅是存取方法，当操纵视图的frame，实际上是在改变位于视图下方CALayer的frame，不能够独立于图层之外改变视图的frame&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;对于视图或者图层来说，frame并不是一个非常清晰的属性，它其实是一个虚拟属性，是根据bounds，position和transform计算而来，所以当其中任何一个值发生改变，frame都会变化。相反，改变frame的值同样会影响到他们当中的值&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;当旋转时frame属性和bounds的宽高不再一致&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/iOS_Animation/frame.png&quot; alt=&quot;iOS_Animation&quot; /&gt;&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;认来说，anchorPoint位于图层的中点；视图的anchorPoint没有暴露，但是图层的anchorPoint可以被移动；比如你可以把它置于图层frame的左上角&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/iOS_Animation/anchorPoint.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;CALayer还有另外两个属性，zPosition和anchorPointZ，二者都是在Z轴上描述图层位置的浮点类型&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;CALayer并不关心任何响应链事件，所以不能直接处理触摸事件或者手势。但是它有一系列的方法帮你处理事件：-containsPoint:和-hitTest:&lt;/p&gt;
-    &lt;blockquote&gt;
-      &lt;ol&gt;
-        &lt;li&gt;-containsPoint:接受一个在本图层坐标系下的CGPoint，如果这个点在图层frame范围内就返回YES&lt;/li&gt;
-        &lt;li&gt;-hitTest:方法同样接受一个CGPoint类型参数，而不是BOOL类型，它返回图层本身，或者包含这个坐标点的叶子节点图层。这意味着不再需要像使用-containsPoint:那样，人工地在每个子图层变换或者测试点击的坐标。如果这个点在最外面图层的范围之外，则返回nil(注意当调用图层的-hitTest:方法时，测算的顺序严格依赖于图层树当中的图层顺序（和UIView处理事件类似）。之前提到的zPosition属性可以明显改变屏幕上图层的顺序，但不能改变事件传递的顺序)&lt;/li&gt;
-      &lt;/ol&gt;
-    &lt;/blockquote&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;四-视觉效果&quot;&gt;四. 视觉效果&lt;/h2&gt;
-
-</description>
-        <pubDate>Mon, 29 Apr 2019 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2019/04/29/iOS%E6%A0%B8%E5%BF%83%E5%8A%A8%E7%94%BB%E9%AB%98%E7%BA%A7%E6%8A%80%E5%B7%A7Tips/</link>
-        <guid isPermaLink="true">http://localhost:4000/2019/04/29/iOS%E6%A0%B8%E5%BF%83%E5%8A%A8%E7%94%BB%E9%AB%98%E7%BA%A7%E6%8A%80%E5%B7%A7Tips/</guid>
-        
-        <category>iOS</category>
         
         
       </item>
