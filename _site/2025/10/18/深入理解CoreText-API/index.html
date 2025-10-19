@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Hello-World">
+    <meta name="keyword"  content="">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>深入理解iOS CoreText API - 袁平 | HusterYP-Blog</title>
+
+    <link rel="canonical" href="http://localhost:4000/2025/10/18/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3CoreText-API/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    <!-- Pygments Github CSS -->
+    <link rel="stylesheet" href="/css/syntax.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="http://cdn.staticfile.org/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">非专业程序员</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/about/">About</a>
+                    </li>
+                    
+                    <li>
+                        <a href="/tags/">Tags</a>
+                    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Image to hack wechat -->
+<!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="/img/tag-bg.jpg" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/img/tag-bg.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/#跨端渲染" title="跨端渲染">跨端渲染</a>
+                        
+                        <a class="tag" href="/tags/#富文本" title="富文本">富文本</a>
+                        
+                    </div>
+                    <h1>深入理解iOS CoreText API</h1>
+                    
+                    
+                    <h2 class="subheading">iOS自定义富文本渲染基础篇</h2>
+                    
+                    <span class="meta">Posted by 袁平 on October 18, 2025</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+				<p>这篇文章是从0到1自定义富文本渲染的原理篇之一，此外你还可能感兴趣：</p>
+
+<ul>
+  <li><a href="https://mp.weixin.qq.com/s/EYPO3sSjtIstD3RmlRCs9w">一文读懂字符与编码</a></li>
+  <li><a href="https://mp.weixin.qq.com/s/96YJGYKLoxENC4qT9tYNoQ">一文读懂字符、字形、字体</a></li>
+  <li><a href="https://mp.weixin.qq.com/s/D0A8HAQaQNart7KAdWXyJg">一文读懂字体文件</a></li>
+  <li><a href="https://mp.weixin.qq.com/s/fcL6if52qYQUTChEjntHJg">从0到1自定义文字排版引擎：原理篇</a></li>
+  <li><a href="https://mp.weixin.qq.com/s/EpaNjLcG6DZBc128A2gdIQ">逆向分析CoreText中的字体级联/Font Fallback机制</a></li>
+  <li><a href="https://mp.weixin.qq.com/s/1oOSJkTIJ8njV49B6PsfgA">新手小白也能看懂的LLDB技巧/逆向技巧</a></li>
+</ul>
+
+<p>更多内容可订阅公众号「非专业程序员Ping」，文中所有代码可在公众号后台回复 “CoreText” 获取。</p>
+
+<h1 id="一引言">一、引言</h1>
+
+<p>CoreText是iOS/macOS中的文字排版引擎，提供了一系列对文本精确操作的API；UIKit中UILabel、UITextView等文本组件底层都是基于CoreText的，可以看官方提供的层级图：</p>
+
+<p><img src="https://lk9v5zgfb4.feishu.cn/space/api/box/stream/download/asynccode/?code=NzEzNDNiNmRiMWNjNTA1OTgzOWE0ZDZjMjgxNmUyODlfdTZzbzZMZGk3U0dRRG9UQ0lNTjI1QUJ2SDNpcGJxeXhfVG9rZW46Q1RrY2JYeDJQb0NEM3N4QmxxMGNVcVVxbjRmXzE3NjA4Nzc2MjY6MTc2MDg4MTIyNl9WNA" alt="" /></p>
+
+<p>本文的目的是结合实际使用例子，来介绍和总结CoreText中的重要概念和API。</p>
+
+<h1 id="二重要概念">二、重要概念</h1>
+
+<p>CoreText中有几个重要概念：CTTypesetter、CTFramesetter、CTFrame、CTLine、CTRun；它们之间的关系可以看官方提供的层级图：</p>
+
+<p><img src="https://lk9v5zgfb4.feishu.cn/space/api/box/stream/download/asynccode/?code=MGJhNmI2NDlmZDU0ODM2YTNlZDU4MjQ2YzM5MjkyZWJfZzFWV2tjY0tKdW5nSWQxWnZZUHF5TUhkbkY1SGl0RVNfVG9rZW46WE5tSWJYTDhVbzc1M3J4RnRwdmNCUlczbnRjXzE3NjA4Nzc2MjY6MTc2MDg4MTIyNl9WNA" alt="" /></p>
+
+<p>一篇文档可以分为：文档 -&gt; 段落 -&gt; 段落中的行 -&gt; 行中的文字，类似的，CoreText也是按这个结构来组织和管理API的，我们也可以根据诉求来选择不同层级的API。</p>
+
+<h2 id="21-ctframesetter">2.1 CTFramesetter</h2>
+
+<p>CTFramesetter类似于文档的概念，它负责将多段文本进行排版，管理多个段落（CTFrame）。</p>
+
+<p>CTFramesetter的输入是属性字符串（NSAttributedString）和路径（CGPath），负责将文本在指定路径上进行排版。</p>
+
+<h2 id="22-ctframe">2.2 CTFrame</h2>
+
+<p>CTFrame类似于段落的概念，其中包含了若干行（CTLine）以及对应行的位置、方向、行间距等信息。</p>
+
+<h2 id="23-ctline">2.3 CTLine</h2>
+
+<p>CTLine类似于行的概念，其中包含了若干个字形（CTRun）以及对应字形的位置等信息。</p>
+
+<h2 id="24-ctrun">2.4 CTRun</h2>
+
+<p>需要注意CTRun不是单个的字符，而是<strong>一段连续的且具有相同属性（字体、颜色等）的字形（Glyph）。</strong></p>
+
+<p>如下，每个虚线框都代表一个CTRun：</p>
+
+<p><img src="/img/post/深入理解CoreText/CTRun.png" alt="CTRun" /></p>
+
+<h2 id="25-cttypesetter">2.5 CTTypesetter</h2>
+
+<p>CTTypesetter支持对属性字符串进行换行，可以通过CTTypesetter来自定义换行（比如按word换行、按char换行等）或控制每行的内容，可以理解成更精细化的控制。</p>
+
+<h1 id="三重要api">三、重要API</h1>
+
+<h2 id="31-ctframesetter">3.1 CTFramesetter</h2>
+
+<p><strong>1）CTFramesetterCreateWithAttributedString</strong></p>
+
+<pre><code class="language-Swift">func CTFramesetterCreateWithAttributedString(_ attrString: CFAttributedString) -&gt; CTFramesetter
+</code></pre>
+
+<p>通过属性字符串来创建CTFramesetter。</p>
+
+<p>我们可以构造不同字体、颜色、大小的属性字符串，然后从属性字符串构造CTFramesetter，之后可以继续往下拆分得到段落、行、字形等信息，这样可以实现自定义排版、图文混排等复杂富文本样式。</p>
+
+<p><strong>2）CTFramesetterCreateWithTypesetter</strong></p>
+
+<pre><code class="language-Swift">func CTFramesetterCreateWithTypesetter(_ typesetter: CTTypesetter) -&gt; CTFramesetter
+</code></pre>
+
+<p>通过CTTypesetter来创建CTFramesetter，当我们需要对文本实现更精细控制，比如自定义换行时，可以自己构造CTTypesetter。</p>
+
+<p><strong>3）CTFramesetterCreateFrame</strong></p>
+
+<pre><code class="language-Swift">func CTFramesetterCreateFrame(
+    _ framesetter: CTFramesetter,
+    _ stringRange: CFRange,
+    _ path: CGPath,
+    _ frameAttributes: CFDictionary?
+) -&gt; CTFrame
+</code></pre>
+
+<p>生成CTFrame：在指定路径（path）为属性字符串的指定范围（stringRange）生成CTFrame。</p>
+
+<ul>
+  <li><code class="highlighter-rouge">framesetter</code></li>
+  <li><code class="highlighter-rouge">stringRange</code>：字符范围，注意需要以UTF-16编码格式计算；当 stringRange.length = 0 时，表示从起点（stringRange.location）到字符结束为止；比如当 CFRangeMake(0, 0) 表示全字符范围</li>
+  <li><code class="highlighter-rouge">path</code>：排版路径，可以是不规则矩形，这意味着可以传入不规则图形来实现文字环绕等高级效果</li>
+  <li><code class="highlighter-rouge">frameAttributes</code>：一个可选的字典，可以用于控制段落级别的布局行为，比如行间距等，一般用不到，可传 nil</li>
+</ul>
+
+<p><strong>4）CTFramesetterSuggestFrameSizeWithConstraints</strong></p>
+
+<pre><code class="language-Swift">func CTFramesetterSuggestFrameSizeWithConstraints(
+    _ framesetter: CTFramesetter,
+    _ stringRange: CFRange,
+    _ frameAttributes: CFDictionary?,
+    _ constraints: CGSize,
+    _ fitRange: UnsafeMutablePointer&lt;CFRange&gt;?
+) -&gt; CGSize
+</code></pre>
+
+<p>计算文本宽高：在给定约束尺寸（constraints）下计算文本范围（stringRange）的实际宽高。</p>
+
+<p>如下，我们可以计算出在宽高 100 x 100 的范围内排版，实际能放下的文本范围（fitRange）以及实际的文本尺寸：</p>
+
+<pre><code class="language-Swift">let attr = NSAttributedString(string: "这是一段测试文本，通过调用CTFramesetterSuggestFrameSizeWithConstraints来计算文本的宽高信息，并返回实际的range", attributes: [
+    .font: UIFont.systemFont(ofSize: 16),
+    .foregroundColor: UIColor.black
+])
+let framesetter = CTFramesetterCreateWithAttributedString(attr)
+var fitRange = CFRange(location: 0, length: 0)
+let size = CTFramesetterSuggestFrameSizeWithConstraints(
+    framesetter,
+    CFRangeMake(0, 0),
+    nil,
+    CGSize(width: 100, height: 100),
+    &amp;fitRange
+)
+print(size, fitRange, attr.length)
+</code></pre>
+
+<p>这个API在分页时非常有用，比如微信读书的翻页效果，需要知道在哪个地方截断，PDF的分页排版等。</p>
+
+<h3 id="311-ctframesetter使用示例">3.1.1 CTFramesetter使用示例</h3>
+
+<p><strong>1）实现一个支持AutoLayout且高度靠内容撑开的富文本View</strong></p>
+
+<p><img src="https://lk9v5zgfb4.feishu.cn/space/api/box/stream/download/asynccode/?code=Mzc4YmRjMzQxZTdhM2ZmZDYxODIxYTRkNjUyZDU1ZGRfV2hMUHBaTk8yZ1o4RnlZZFNreWw3c1lIVEtQSHVkTnBfVG9rZW46RmNrN2JkOFlXb3dmaHV4bllHNmNwdmpqblFlXzE3NjA4Nzc2MjY6MTc2MDg4MTIyNl9WNA" alt="" /></p>
+
+<p><strong>2）在圆形路径中绘制文本</strong></p>
+
+<p><img src="https://lk9v5zgfb4.feishu.cn/space/api/box/stream/download/asynccode/?code=M2I0NzA4ODA4OGUzOTAxMmYyNGQ4MjM0NzFiMDg4YmZfOGdRdVA4aUk5UUNvZ3FpclIzSlY5SVNuaHNzdXVpODlfVG9rZW46TzFiOWJzQlRUb1FuVmZ4cjhBNWNIZzl4blR0XzE3NjA4Nzc2MjY6MTc2MDg4MTIyNl9WNA" alt="" /></p>
+
+<p><strong>3）文本分页：模拟微信读书的分页逻辑</strong></p>
+
+<p><img src="https://lk9v5zgfb4.feishu.cn/space/api/box/stream/download/asynccode/?code=YTJlZGY5YjRkNjIxNDVkMzgxMGY5YWE5NjJkNGQ3OTdfa3hTYzNwZTV2UWx3bENCTWpLMHZodHdFckFxRUU0TThfVG9rZW46RXBNeWI4UGw4b0Y4dGp4UGVhQ2N0VE0ybkhkXzE3NjA4Nzc2MjY6MTc2MDg4MTIyNl9WNA" alt="" /></p>
+
+<h2 id="32-ctframe">3.2 CTFrame</h2>
+
+<p><strong>1）CTFramesetterCreateFrame</strong></p>
+
+<pre><code class="language-Swift">func CTFramesetterCreateFrame(
+    _ framesetter: CTFramesetter,
+    _ stringRange: CFRange,
+    _ path: CGPath,
+    _ frameAttributes: CFDictionary?
+) -&gt; CTFrame
+</code></pre>
+
+<p>创建CTFrame，在CTFramesetter一节中有介绍过，这是创建CTFrame的唯一方式。</p>
+
+<p><strong>2）CTFrameGetStringRange</strong></p>
+
+<pre><code class="language-Swift">func CTFrameGetStringRange(_ frame: CTFrame) -&gt; CFRange
+</code></pre>
+
+<p>获取CTFrame包含的字符范围。</p>
+
+<p>我们在调用CTFramesetterCreateFrame创建CTFrame时，会传入一个 stringRange 的参数，CTFrameGetStringRange也可以理解成获取这个 stringRange，区别是处理了当 stringRange.length 为0的情况。</p>
+
+<p><strong>3）CTFrameGetVisibleStringRange</strong></p>
+
+<pre><code class="language-Swift">func CTFrameGetVisibleStringRange(_ frame: CTFrame) -&gt; CFRange
+</code></pre>
+
+<p>获取CTFrame实际可见的字符范围。</p>
+
+<p>我们在调用CTFramesetterCreateFrame创建CTFrame时，会传入path，可能会把字符截断，CTFrameGetVisibleStringRange返回的就是可见的字符范围。</p>
+
+<p>需要注意和CTFrameGetStringRange进行区分，可以用如下Demo验证：</p>
+
+<pre><code class="language-Swift">let longText = String(repeating: "这是一个分栏布局的例子。Core Text 允许我们将一个长的属性字符串（CFAttributedString）流动到多个不同的路径（CGPath）中。我们只需要创建一个 CTFramesetter，然后循环调用 CTFramesetterCreateFrame。每次调用后，我们使用 CTFrameGetStringRange 来找出有多少文本被排入了当前的框架，然后将下一个框架的起始索引设置为这个范围的末尾。 ", count: 10)
+let attributedText = NSAttributedString(string: longText, attributes: [
+    .font: UIFont.systemFont(ofSize: 12),
+    .foregroundColor: UIColor.darkText
+])
+let framesetter = CTFramesetterCreateWithAttributedString(attributedText as CFAttributedString)
+let path = CGPath(rect: .init(x: 10, y: 100, width: 400, height: 200), transform: nil)
+let frame = CTFramesetterCreateFrame(
+    framesetter,
+    CFRange(location: 100, length: 0),
+    path,
+    nil
+)
+// 输出：CFRange(location: 100, length: 1980)
+print(CTFrameGetStringRange(frame))
+// 输出：CFRange(location: 100, length: 584)
+print(CTFrameGetVisibleStringRange(frame))
+</code></pre>
+
+<p><strong>4）CTFrameGetPath</strong></p>
+
+<pre><code class="language-Swift">func CTFrameGetPath(_ frame: CTFrame) -&gt; CGPath
+</code></pre>
+
+<p>获取创建CTFrame时传入的path。</p>
+
+<p><strong>5）CTFrameGetLines</strong></p>
+
+<pre><code class="language-Swift">func CTFrameGetLines(_ frame: CTFrame) -&gt; CFArray
+</code></pre>
+
+<p>获取CTFrame中所有的行（CTLine）。</p>
+
+<p><strong>6）CTFrameGetLineOrigins</strong></p>
+
+<pre><code class="language-Swift">func CTFrameGetLineOrigins(
+    _ frame: CTFrame,
+    _ range: CFRange,
+    _ origins: UnsafeMutablePointer&lt;CGPoint&gt;
+)
+</code></pre>
+
+<p>获取每一行的起点坐标。</p>
+
+<p>用法示例：</p>
+
+<pre><code class="language-Swift">let lines = CTFrameGetLines(frame) as! [CTLine]
+var origins = [CGPoint](repeating: .zero, count: lines.count)
+CTFrameGetLineOrigins(frame, CFRangeMake(0, 0), &amp;origins)
+</code></pre>
+
+<p><strong>7）CTFrameDraw</strong></p>
+
+<pre><code class="language-Swift">func CTFrameDraw(
+    _ frame: CTFrame,
+    _ context: CGContext
+)
+</code></pre>
+
+<p>绘制CTFrame。</p>
+
+<h3 id="321-ctframe使用示例">3.2.1 CTFrame使用示例</h3>
+
+<p><strong>1）绘制CTFrame</strong></p>
+
+<p><img src="https://lk9v5zgfb4.feishu.cn/space/api/box/stream/download/asynccode/?code=Yzc3YzE1YTFmZjJiOGY5NjE3ZGY2YWI2ZTVhMWE1ZmVfVUtqQVB3eEU3QWtsQ3JlcWJ2VDFwOXRFZkViQ2FHV0ZfVG9rZW46TXhlM2J0T0Nlb3NPTTJ4MWpuaGN2R0ZNbnhjXzE3NjA4Nzc2MjY6MTc2MDg4MTIyNl9WNA" alt="" /></p>
+
+<p><strong>2）高亮某一行</strong></p>
+
+<p><img src="https://lk9v5zgfb4.feishu.cn/space/api/box/stream/download/asynccode/?code=OGY4MzMxMjYxYWE4NTdjYzcyMDZiNjc2OGE0MzBjZjRfQzExaE44ZzNjaG8wRmtaeGZIcnJ1QmNWYWJ4WldtbGtfVG9rZW46U0FZQ2JXTXhBb2JNWDd4eDVGZmN0Rk5zbmlnXzE3NjA4Nzc2MjY6MTc2MDg4MTIyNl9WNA" alt="" /></p>
+
+<p><strong>3）检测点击字符</strong></p>
+
+<p><img src="https://lk9v5zgfb4.feishu.cn/space/api/box/stream/download/asynccode/?code=MzFkZGU0MjBkMmUxMjg5NDRjZTJlM2E2MDdhOWZiYjdfRmttZVJyNXJIUkdWblZpQjRESlFzd2VPYVE4bmlXd3VfVG9rZW46U0JvRmJpRzhyb1h4RGF4dHNaaWNraTdjbmpoXzE3NjA4Nzc2MjY6MTc2MDg4MTIyNl9WNA" alt="" /></p>
+
+<h2 id="33-ctline">3.3 CTLine</h2>
+
+<p><strong>1）CTLineCreateWithAttributedString</strong></p>
+
+<pre><code class="language-Swift">func CTLineCreateWithAttributedString(_ attrString: CFAttributedString) -&gt; CTLine
+</code></pre>
+
+<p>从属性字符串创建<strong>单行</strong>CTLine，如果字符串中有换行符（\n）的话，换行符会被转换成空格，如下：</p>
+
+<pre><code class="language-Swift">let line = CTLineCreateWithAttributedString(
+    NSAttributedString(string: "Hello CoreText\nWorld", attributes: [.font: UIFont.systemFont(ofSize: 16)])
+)
+</code></pre>
+
+<p><strong>2）CTLineCreateTruncatedLine</strong></p>
+
+<pre><code class="language-Swift">func CTLineCreateTruncatedLine(
+    _ line: CTLine,
+    _ width: Double,
+    _ truncationType: CTLineTruncationType,
+    _ truncationToken: CTLine?
+) -&gt; CTLine?
+</code></pre>
+
+<p>创建一个被截断的新行。</p>
+
+<ul>
+  <li><code class="highlighter-rouge">line</code>：待截断的行</li>
+  <li><code class="highlighter-rouge">width</code>：在多少宽度截断</li>
+  <li><code class="highlighter-rouge">truncationType</code>：start/end/middle，截断类型</li>
+  <li>truncationToken：在截断处添加的字符，nil表示不添加，一般使用省略符（…）</li>
+</ul>
+
+<pre><code class="language-Swift">let truncationToken = CTLineCreateWithAttributedString(
+    NSAttributedString(string: "…", attributes: [.font: UIFont.systemFont(ofSize: 16)])
+)
+let truncated = CTLineCreateTruncatedLine(line, 100, .end, truncationToken)
+</code></pre>
+
+<p><strong>3）CTLineCreateJustifiedLine</strong></p>
+
+<pre><code class="language-Swift">func CTLineCreateJustifiedLine(
+    _ line: CTLine,
+    _ justificationFactor: CGFloat,
+    _ justificationWidth: Double
+) -&gt; CTLine?
+</code></pre>
+
+<p>创建一个两端对齐的新行，类似书籍或报纸中两端对齐的排版效果。</p>
+
+<ul>
+  <li><code class="highlighter-rouge">line</code>：原始行</li>
+  <li><code class="highlighter-rouge">justificationFactor</code>：<code class="highlighter-rouge">justificationFactor &lt;= 0</code>表示不缩放，即与原始行相同；<code class="highlighter-rouge">justificationFactor &gt;= 1</code>表示完全缩放到指定宽度；<code class="highlighter-rouge">0 &lt; justificationFactor &lt; 1</code>表示部分缩放到指定宽度，可以看示例代码</li>
+  <li><code class="highlighter-rouge">justificationWidth</code>：缩放指定宽度</li>
+</ul>
+
+<p>示例：</p>
+
+<p><img src="https://lk9v5zgfb4.feishu.cn/space/api/box/stream/download/asynccode/?code=ZTYwMGVkMjhkY2YzOWQ3ZTg3ZDc4OTNlYzQ5YmFjNWNfMXpWbGNJcDFRakk4bmVJNjJOa1dEWXFlU2RkZGpaNnpfVG9rZW46T1dPbmJ4bHZPb3NCZEJ4VkExZ2MxWjVZbjhiXzE3NjA4Nzc2MjY6MTc2MDg4MTIyNl9WNA" alt="" /></p>
+
+<p><strong>4）CTLineDraw</strong></p>
+
+<pre><code class="language-Swift">func CTLineDraw(
+    _ line: CTLine,
+    _ context: CGContext
+)
+</code></pre>
+
+<p>绘制行。</p>
+
+<p><strong>5）CTLineGetGlyphCount</strong></p>
+
+<pre><code class="language-Swift">func CTLineGetGlyphCount(_ line: CTLine) -&gt; CFIndex
+</code></pre>
+
+<p>获取行内字形总数。</p>
+
+<p><strong>6）CTLineGetGlyphRuns</strong></p>
+
+<pre><code class="language-Swift">func CTLineGetGlyphRuns(_ line: CTLine) -&gt; CFArray
+</code></pre>
+
+<p>获取行内所有的CTRun。</p>
+
+<p><strong>7）CTLineGetStringRange</strong></p>
+
+<pre><code class="language-Swift">func CTLineGetStringRange(_ line: CTLine) -&gt; CFRange
+</code></pre>
+
+<p>获取该行对应的字符范围。</p>
+
+<p><strong>8）CTLineGetPenOffsetForFlush</strong></p>
+
+<pre><code class="language-Swift">func CTLineGetPenOffsetForFlush(
+    _ line: CTLine,
+    _ flushFactor: CGFloat,
+    _ flushWidth: Double
+) -&gt; Double
+</code></pre>
+
+<p>获取在指定宽度绘制时的水平偏移，一般配合 CGContext.textPosition 使用，可用于实现在固定宽度下文本的左对齐、右对齐、居中对齐及自定义水平偏移等。</p>
+
+<p>示例：</p>
+
+<p><img src="https://lk9v5zgfb4.feishu.cn/space/api/box/stream/download/asynccode/?code=MjdkYjRmN2VhZDljNzlkOGJlM2YwOTE2MjY0ZjYwZjZfUnA3UEpkUFFDWUlUajdRRkp1d0NEd1lBejBMTnVRSk5fVG9rZW46RmFQSGJ6UG9wb1lSckt4WUg3V2N3WjhvbndlXzE3NjA4Nzc2MjY6MTc2MDg4MTIyNl9WNA" alt="" /></p>
+
+<p><strong>9）CTLineGetImageBounds</strong></p>
+
+<pre><code class="language-Swift">func CTLineGetImageBounds(
+    _ line: CTLine,
+    _ context: CGContext?
+) -&gt; CGRect
+</code></pre>
+
+<p>获取行的<strong>视觉边界</strong>；注意 CTLineGetImageBounds 获取的是<strong>相对于CTLine局部坐标系的矩形</strong>，即以textPosition为原点的矩形。</p>
+
+<p>视觉边界可以看下面的例子，与之相对的是布局边界；这个API在实际应用中不常见，除非有特殊诉求，比如要检测精确的内容点击范围，给行绘制紧贴背景等。</p>
+
+<p><img src="https://lk9v5zgfb4.feishu.cn/space/api/box/stream/download/asynccode/?code=MTliN2NkOGE4NzRmZjE2NDY4YzNmZGM0YTc3NzUxM2VfQmFXUWNycVhUekY5TzE5aFAzOHl3UjE0RWVCY0NlWVVfVG9rZW46RWVZaWJ0Vkgzb09FRld4bktIN2NGYkZxbkZkXzE3NjA4Nzc2MjY6MTc2MDg4MTIyNl9WNA" alt="" /></p>
+
+<p><strong>10）CTLineGetTypographicBounds</strong></p>
+
+<pre><code class="language-Swift">func CTLineGetTypographicBounds(
+    _ line: CTLine,
+    _ ascent: UnsafeMutablePointer&lt;CGFloat&gt;?,
+    _ descent: UnsafeMutablePointer&lt;CGFloat&gt;?,
+    _ leading: UnsafeMutablePointer&lt;CGFloat&gt;?
+) -&gt; Double
+</code></pre>
+
+<p>获取上行（ascent）、下行（descent）、行距（leading）。</p>
+
+<p>这几个概念不熟悉的可以参考：<a href="https://mp.weixin.qq.com/s/96YJGYKLoxENC4qT9tYNoQ">一文读懂字符、字形、字体</a></p>
+
+<p>想了解这几个数值最终是从哪个地方读取的可以参考：<a href="https://mp.weixin.qq.com/s/D0A8HAQaQNart7KAdWXyJg">一文读懂字体文件</a></p>
+
+<p>通过这个API我们可以手动构造<strong>布局边界</strong>（见上面的例子），一般用于点击检测、绘制行背景等。</p>
+
+<p><strong>11）CTLineGetTrailingWhitespaceWidth</strong></p>
+
+<pre><code class="language-Swift">func CTLineGetTrailingWhitespaceWidth(_ line: CTLine) -&gt; Double
+</code></pre>
+
+<p>获取行尾空白字符的宽度（比如空格、制表符 (\t) 等），一般用于实现对齐时基于可见文本对齐等。</p>
+
+<p>示例：</p>
+
+<pre><code class="language-Swift">let line = CTLineCreateWithAttributedString(
+    NSAttributedString(string: "Hello  ", attributes: [.font: UIFont.systemFont(ofSize: 16)])
+)
+
+let totalWidth = CTLineGetTypographicBounds(line, nil, nil, nil)
+let trailingWidth = CTLineGetTrailingWhitespaceWidth(line)
+
+print("总宽度: \(totalWidth)")
+print("尾部空白宽度: \(trailingWidth)")
+print("可见文字宽度: \(totalWidth - trailingWidth)")
+</code></pre>
+
+<p><strong>12）CTLineGetStringIndexForPosition</strong></p>
+
+<pre><code class="language-Swift">func CTLineGetStringIndexForPosition(
+    _ line: CTLine,
+    _ position: CGPoint
+) -&gt; CFIndex
+</code></pre>
+
+<p>获取给定位置处的字符串索引。</p>
+
+<p><strong>注意：</strong>虽然官方文档说这个API一般用于点击检测，但实际测试下来<strong>这个API返回的点击索引不准确</strong>，比如虽然点击的是当前字符，但实际返回的索引是后一个字符的，如下：</p>
+
+<p><img src="/img/post/深入理解CoreText/CTLineGetStringIndexForPosition.png" alt="CTLineGetStringIndexForPosition" /></p>
+
+<p>查了下，发现这个API一般是用于计算光标位置的，比如点击「行」的左半部分，希望光标出现在「行」左侧，如果点击「行」的右半部分，希望光标出现在「行」的右侧。</p>
+
+<p>如果我们想精确做字符的点击检测，推荐使用字符/行的bounds来计算，参考「CTFrame使用示例-3」例子。</p>
+
+<p><strong>13）CTLineGetOffsetForStringIndex</strong></p>
+
+<pre><code class="language-Swift">func CTLineGetOffsetForStringIndex(
+    _ line: CTLine,
+    _ charIndex: CFIndex,
+    _ secondaryOffset: UnsafeMutablePointer&lt;CGFloat&gt;?
+) -&gt; CGFloat
+</code></pre>
+
+<p>获取指定字符索引相对于行的 x 轴偏移量。</p>
+
+<ul>
+  <li><code class="highlighter-rouge">line</code>：待查询的行</li>
+  <li><code class="highlighter-rouge">charIndex</code>：要查询的字符在<strong>原始属性字符串</strong>中的索引</li>
+  <li><code class="highlighter-rouge">secondaryOffset</code>：次要偏移值，在简单的LTR文本中，可以忽略（传nil即可），但在复杂的双向文本（BiDi）中会用到</li>
+</ul>
+
+<p>使用场景：</p>
+
+<ul>
+  <li>字符点击检测：见「CTFrame使用示例-3」例子</li>
+  <li>给某段字符绘制高亮和下划线</li>
+  <li>定位某个字符：比如想在一段文本中的某个字符上方显示弹窗，可以用这个API先定位该字符</li>
+</ul>
+
+<p><strong>14）CTLineEnumerateCaretOffsets</strong></p>
+
+<pre><code class="language-Swift">func CTLineEnumerateCaretOffsets(
+    _ line: CTLine,
+    _ block: @escaping (Double, CFIndex, Bool, UnsafeMutablePointer&lt;Bool&gt;) -&gt; Void
+)
+</code></pre>
+
+<p>遍历一行中光标所有的有效位置。</p>
+
+<ul>
+  <li><code class="highlighter-rouge">line</code></li>
+  <li><code class="highlighter-rouge">block</code>
+    <ul>
+      <li>Double：offset，相对于行的 x 轴偏移</li>
+      <li>CFIndex：与此光标位置相关的字符串索引</li>
+      <li>Bool：true 表示光标位于字符的前边（在 LTR 中即左侧），false 表示光标位于字符的后边（在 LTR 中即右侧）；在 BiDi 中需要特殊同一个字符可能会回调两次（比如 BiDi 边界的地方），需要用这个值区分前后</li>
+      <li>UnsafeMutablePointer<Bool>：stop 指针，赋值为 true 会停止遍历</Bool></li>
+    </ul>
+  </li>
+</ul>
+
+<p>使用场景：</p>
+
+<ul>
+  <li>绘制光标：富文本选区或者文本编辑器中，要绘制光标时，可以先通过 CTLineGetStringIndexForPosition 获取字符索引，再通过这个函数或者 CTLineGetOffsetForStringIndex 获取光标偏移</li>
+  <li>实现光标的左右键移动：可以用这个API将所有的光标位置存储到数组，并按offset排序，当用户按下右箭头 -&gt; 时，可以找到当前光标index，将index + 1即是下一个光标位置</li>
+</ul>
+
+<h3 id="331-ctline使用示例">3.3.1 CTLine使用示例</h3>
+
+<p>除了上面例子，再举一个：</p>
+
+<p><strong>1）高亮特定字符</strong></p>
+
+<p><img src="https://lk9v5zgfb4.feishu.cn/space/api/box/stream/download/asynccode/?code=MjJjMWYyZjU4MDFlMzY2ZDIxNGQ2MTgxYWQ5MDgwNThfZDI2VzA4WnRETlZ4Ym1hVXIxT1BBc3RoSUZ5ZUV6ck1fVG9rZW46QzlPOGJZRkYzb0NKdFh4NEcweWNudlZybktkXzE3NjA4Nzc2MjY6MTc2MDg4MTIyNl9WNA" alt="" /></p>
+
+<h2 id="34-ctrun">3.4 CTRun</h2>
+
+<p>CTRun相关API比较基础，这里主要介绍常用的。</p>
+
+<p><strong>1）CTLineGetGlyphRuns</strong></p>
+
+<pre><code class="language-Swift">func CTLineGetGlyphRuns(_ line: CTLine) -&gt; CFArray
+</code></pre>
+
+<p>获取CTRun的<strong>唯一</strong>方式。</p>
+
+<p><strong>2）CTRunGetAttributes</strong></p>
+
+<pre><code class="language-Swift">func CTRunGetAttributes(_ run: CTRun) -&gt; CFDictionary
+</code></pre>
+
+<p>获取CTRun的属性；比如想知道这个CTRun是不是粗体，是不是链接，是不是目标Run等，都可以通过这个API。</p>
+
+<p>示例：</p>
+
+<pre><code class="language-Swift">guard let attributes = CTRunGetAttributes(run) as? [NSAttributedString.Key: Any] else { continue }
+// 现在你可以检查属性
+if let color = attributes[.foregroundColor] as? UIColor {
+    // ...
+}
+if let font = attributes[.font] as? UIFont {
+    // ...
+}
+if let link = attributes[NSAttributedString.Key("my_custom_link_key")] {
+    // 这就是那个可点击的 run！
+}
+</code></pre>
+
+<p><strong>3）CTRunGetStringRange</strong></p>
+
+<pre><code class="language-Swift">func CTRunGetStringRange(_ run: CTRun) -&gt; CFRange
+</code></pre>
+
+<p>获取CTRun对应于原始属性字符串的哪个范围。</p>
+
+<p><strong>4）CTRunGetTypographicBounds</strong></p>
+
+<pre><code class="language-Swift">func CTRunGetTypographicBounds(
+    _ run: CTRun,
+    _ range: CFRange,
+    _ ascent: UnsafeMutablePointer&lt;CGFloat&gt;?,
+    _ descent: UnsafeMutablePointer&lt;CGFloat&gt;?,
+    _ leading: UnsafeMutablePointer&lt;CGFloat&gt;?
+) -&gt; Double
+</code></pre>
+
+<p>获取CTRun的度量信息，同上面许多API一样，当 range.length 为0时表示直到CTRun文本末尾。</p>
+
+<p><strong>5）CTRunGetPositions</strong></p>
+
+<pre><code class="language-Swift">func CTRunGetPositions(
+    _ run: CTRun,
+    _ range: CFRange,
+    _ buffer: UnsafeMutablePointer&lt;CGPoint&gt;
+)
+</code></pre>
+
+<p>获取CTRun中每一个字形的位置，注意这里的位置是<strong>相对于CTLine原点</strong>的。</p>
+
+<p><strong>6）CTRunDelegate</strong></p>
+
+<p>CTRunDelegate允许为属性字符串中的一段文本提供自定义布局测量信息，一般用于在文本中插入图片、自定义View等非文本元素。</p>
+
+<p>比如在文本中间插入图片：</p>
+
+<p><img src="https://lk9v5zgfb4.feishu.cn/space/api/box/stream/download/asynccode/?code=YmI5MzViNjczMjVlNDQ1ZDYwN2E3MDI0YTMyM2YxZDhfTlNJNmV4aGJtZloydTJPSWlYTUUwZ3NadkZ0NnNDcktfVG9rZW46R3JsM2JUUXZTb3ZNVm14SHV5dGNtZWhKblhjXzE3NjA4Nzc2MjY6MTc2MDg4MTIyNl9WNA" alt="" /></p>
+
+<h3 id="341-ctrun使用示例">3.4.1 CTRun使用示例</h3>
+
+<p><strong>1）基础绘制</strong></p>
+
+<p><img src="https://lk9v5zgfb4.feishu.cn/space/api/box/stream/download/asynccode/?code=MTAwM2RiN2M2YTBiZjBkOGU0OWYxM2U0NjE4ZmQyNzRfMEZMUllNV05Ob3NHdzFuTW9jNGxnRE0zNzFRNHdIakRfVG9rZW46QW1XM2JaVzVwb25qUHB4cVh0MGNQamZGbmFjXzE3NjA4Nzc2MjY6MTc2MDg4MTIyNl9WNA" alt="" /></p>
+
+<p><strong>2）链接点击识别</strong></p>
+
+<p><img src="https://lk9v5zgfb4.feishu.cn/space/api/box/stream/download/asynccode/?code=M2FkMGE5MzBhODAyNWMwNmE4NzFiYTM5NjE3ZDJlYWJfY0tIY1J2NEZicklpbERGTU9hNkNYd0N0VTFrS1hKUGxfVG9rZW46WDlUcGJjRDdyb0d3T1F4UndjQWNOYzRFbnNkXzE3NjA4Nzc2MjY6MTc2MDg4MTIyNl9WNA" alt="" /></p>
+
+<h2 id="35-cttypesetter">3.5 CTTypesetter</h2>
+
+<p>CTFramesetter会自动处理换行，当我们想手动控制换行时，可以用CTTypesetter。</p>
+
+<p><strong>1）CTTypesetterSuggestLineBreak</strong></p>
+
+<pre><code class="language-Swift">func CTTypesetterSuggestLineBreak(
+    _ typesetter: CTTypesetter,
+    _ startIndex: CFIndex,
+    _ width: Double
+) -&gt; CFIndex
+</code></pre>
+
+<p>按单词（word）换行。</p>
+
+<p>如下示例，输出：<code class="highlighter-rouge">Try word </code>和<code class="highlighter-rouge">wrapping</code></p>
+
+<pre><code class="language-Swift">let attrStringWith = NSAttributedString(string: "Try word wrapping", attributes: [.font: UIFont.systemFont(ofSize: 18)])
+let typesetter = CTTypesetterCreateWithAttributedString(attributedString)
+let totalLength = attributedString.length // UTF-16 长度
+var startIndex = 0
+var lineCount = 1
+
+while startIndex &lt; totalLength {
+    let charCount = CTTypesetterSuggestLineBreak(typesetter, startIndex, 100)
+    // 如果返回 0，意味着一个字符都放不下（或已结束）
+    if charCount == 0 {
+        if startIndex &lt; totalLength {
+            print("Line \(lineCount): (Error) 无法放下剩余字符。")
+        }
+        break
+    }
+    // 获取这一行的子字符串
+    let range = NSRange(location: startIndex, length: charCount)
+    let lineString = (attributedString.string as NSString).substring(with: range)
+    print("Line \(lineCount): '\(lineString)' (UTF-16 字符数: \(charCount))")
+    // 更新下一次循环的起始索引
+    startIndex += charCount
+    lineCount += 1
+}
+</code></pre>
+
+<p><strong>2）CTTypesetterSuggestClusterBreak</strong></p>
+
+<pre><code class="language-Swift">func CTTypesetterSuggestClusterBreak(
+    _ typesetter: CTTypesetter,
+    _ startIndex: CFIndex,
+    _ width: Double
+) -&gt; CFIndex
+</code></pre>
+
+<p>按字符（char）换行。</p>
+
+<p>如下示例，输出：<code class="highlighter-rouge">Try word wr</code>和<code class="highlighter-rouge">apping</code></p>
+
+<pre><code class="language-Swift">let attrStringWith = NSAttributedString(string: "Try word wrapping", attributes: [.font: UIFont.systemFont(ofSize: 18)])
+let typesetter = CTTypesetterCreateWithAttributedString(attributedString)
+let totalLength = attributedString.length // UTF-16 长度
+var startIndex = 0
+var lineCount = 1
+
+while startIndex &lt; totalLength {
+    let charCount = CTTypesetterSuggestClusterBreak(typesetter, startIndex, 100)
+    // 如果返回 0，意味着一个字符都放不下（或已结束）
+    if charCount == 0 {
+        if startIndex &lt; totalLength {
+            print("Line \(lineCount): (Error) 无法放下剩余字符。")
+        }
+        break
+    }
+    // 获取这一行的子字符串
+    let range = NSRange(location: startIndex, length: charCount)
+    let lineString = (attributedString.string as NSString).substring(with: range)
+    print("Line \(lineCount): '\(lineString)' (UTF-16 字符数: \(charCount))")
+    // 更新下一次循环的起始索引
+    startIndex += charCount
+    lineCount += 1
+}
+</code></pre>
+
+<h1 id="四总结">四、总结</h1>
+
+<p>以上是CoreText中常用的API及其场景代码举例，完整示例代码可在公众号「非专业程序员Ping」回复 “CoreText” 获取。</p>
+
+
+                <hr>
+
+                
+
+
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/2025/10/12/%E6%96%B0%E6%89%8B%E5%B0%8F%E7%99%BD%E4%B9%9F%E8%83%BD%E7%9C%8B%E6%87%82%E7%9A%84%E9%80%86%E5%90%91%E6%8A%80%E5%B7%A7/" data-toggle="tooltip" data-placement="top" title="新手小白也能看懂的逆向技巧">&larr; Previous Post</a>
+                    </li>
+                    
+                    
+                </ul>
+
+
+                
+
+                
+                <!-- disqus 评论框 start -->
+                <div class="comment">
+                    <div id="disqus_thread" class="disqus-thread"></div>
+                </div>
+                <!-- disqus 评论框 end -->
+                
+
+            </div>
+
+    <!-- Sidebar Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+        				
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#Algorithm" title="Algorithm" rel="5">
+                                    Algorithm
+                                </a>
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#Java" title="Java" rel="14">
+                                    Java
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#Android" title="Android" rel="10">
+                                    Android
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#Hust" title="Hust" rel="2">
+                                    Hust
+                                </a>
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#操作系统" title="操作系统" rel="3">
+                                    操作系统
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#View" title="View" rel="2">
+                                    View
+                                </a>
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#Note" title="Note" rel="2">
+                                    Note
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#iOS" title="iOS" rel="6">
+                                    iOS
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#跨端渲染" title="跨端渲染" rel="7">
+                                    跨端渲染
+                                </a>
+                            
+        				
+                            
+                				<a href="/tags/#Font" title="Font" rel="5">
+                                    Font
+                                </a>
+                            
+        				
+                            
+        				
+                            
+        				
+                            
+                				<a href="/tags/#逆向" title="逆向" rel="2">
+                                    逆向
+                                </a>
+                            
+        				
+                            
+        				
+        			</div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+                <hr>
+                <h5>FRIENDS</h5>
+                <ul class="list-inline">
+                    
+                </ul>
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+
+<!-- disqus 公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = "HusterYP";
+    var disqus_identifier = "/2025/10/18/深入理解CoreText API";
+    var disqus_url = "http://localhost:4000/2025/10/18/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3CoreText-API/";
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<!-- disqus 公共JS代码 end -->
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("http://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                    
+                    
+
+                    <!-- add Weibo, Zhihu by Hux, add target = "_blank" to <a> by Hux -->
+                    
+                    
+
+
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/HusterYP">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; 非专业程序员 2025
+                    <br>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js "></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/js/bootstrap.min.js "></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js "></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("http://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+
+
+<!-- Baidu Tongji -->
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>

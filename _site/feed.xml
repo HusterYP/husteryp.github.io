@@ -5,9 +5,677 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Wed, 15 Oct 2025 01:22:09 +0800</pubDate>
-    <lastBuildDate>Wed, 15 Oct 2025 01:22:09 +0800</lastBuildDate>
+    <pubDate>Sun, 19 Oct 2025 22:40:40 +0800</pubDate>
+    <lastBuildDate>Sun, 19 Oct 2025 22:40:40 +0800</lastBuildDate>
     <generator>Jekyll v3.8.5</generator>
+    
+      <item>
+        <title>深入理解iOS CoreText API</title>
+        <description>&lt;p&gt;这篇文章是从0到1自定义富文本渲染的原理篇之一，此外你还可能感兴趣：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://mp.weixin.qq.com/s/EYPO3sSjtIstD3RmlRCs9w&quot;&gt;一文读懂字符与编码&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://mp.weixin.qq.com/s/96YJGYKLoxENC4qT9tYNoQ&quot;&gt;一文读懂字符、字形、字体&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://mp.weixin.qq.com/s/D0A8HAQaQNart7KAdWXyJg&quot;&gt;一文读懂字体文件&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://mp.weixin.qq.com/s/fcL6if52qYQUTChEjntHJg&quot;&gt;从0到1自定义文字排版引擎：原理篇&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://mp.weixin.qq.com/s/EpaNjLcG6DZBc128A2gdIQ&quot;&gt;逆向分析CoreText中的字体级联/Font Fallback机制&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://mp.weixin.qq.com/s/1oOSJkTIJ8njV49B6PsfgA&quot;&gt;新手小白也能看懂的LLDB技巧/逆向技巧&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;更多内容可订阅公众号「非专业程序员Ping」，文中所有代码可在公众号后台回复 “CoreText” 获取。&lt;/p&gt;
+
+&lt;h1 id=&quot;一引言&quot;&gt;一、引言&lt;/h1&gt;
+
+&lt;p&gt;CoreText是iOS/macOS中的文字排版引擎，提供了一系列对文本精确操作的API；UIKit中UILabel、UITextView等文本组件底层都是基于CoreText的，可以看官方提供的层级图：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://lk9v5zgfb4.feishu.cn/space/api/box/stream/download/asynccode/?code=NzEzNDNiNmRiMWNjNTA1OTgzOWE0ZDZjMjgxNmUyODlfdTZzbzZMZGk3U0dRRG9UQ0lNTjI1QUJ2SDNpcGJxeXhfVG9rZW46Q1RrY2JYeDJQb0NEM3N4QmxxMGNVcVVxbjRmXzE3NjA4Nzc2MjY6MTc2MDg4MTIyNl9WNA&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;本文的目的是结合实际使用例子，来介绍和总结CoreText中的重要概念和API。&lt;/p&gt;
+
+&lt;h1 id=&quot;二重要概念&quot;&gt;二、重要概念&lt;/h1&gt;
+
+&lt;p&gt;CoreText中有几个重要概念：CTTypesetter、CTFramesetter、CTFrame、CTLine、CTRun；它们之间的关系可以看官方提供的层级图：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://lk9v5zgfb4.feishu.cn/space/api/box/stream/download/asynccode/?code=MGJhNmI2NDlmZDU0ODM2YTNlZDU4MjQ2YzM5MjkyZWJfZzFWV2tjY0tKdW5nSWQxWnZZUHF5TUhkbkY1SGl0RVNfVG9rZW46WE5tSWJYTDhVbzc1M3J4RnRwdmNCUlczbnRjXzE3NjA4Nzc2MjY6MTc2MDg4MTIyNl9WNA&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;一篇文档可以分为：文档 -&amp;gt; 段落 -&amp;gt; 段落中的行 -&amp;gt; 行中的文字，类似的，CoreText也是按这个结构来组织和管理API的，我们也可以根据诉求来选择不同层级的API。&lt;/p&gt;
+
+&lt;h2 id=&quot;21-ctframesetter&quot;&gt;2.1 CTFramesetter&lt;/h2&gt;
+
+&lt;p&gt;CTFramesetter类似于文档的概念，它负责将多段文本进行排版，管理多个段落（CTFrame）。&lt;/p&gt;
+
+&lt;p&gt;CTFramesetter的输入是属性字符串（NSAttributedString）和路径（CGPath），负责将文本在指定路径上进行排版。&lt;/p&gt;
+
+&lt;h2 id=&quot;22-ctframe&quot;&gt;2.2 CTFrame&lt;/h2&gt;
+
+&lt;p&gt;CTFrame类似于段落的概念，其中包含了若干行（CTLine）以及对应行的位置、方向、行间距等信息。&lt;/p&gt;
+
+&lt;h2 id=&quot;23-ctline&quot;&gt;2.3 CTLine&lt;/h2&gt;
+
+&lt;p&gt;CTLine类似于行的概念，其中包含了若干个字形（CTRun）以及对应字形的位置等信息。&lt;/p&gt;
+
+&lt;h2 id=&quot;24-ctrun&quot;&gt;2.4 CTRun&lt;/h2&gt;
+
+&lt;p&gt;需要注意CTRun不是单个的字符，而是&lt;strong&gt;一段连续的且具有相同属性（字体、颜色等）的字形（Glyph）。&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;如下，每个虚线框都代表一个CTRun：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/深入理解CoreText/CTRun.png&quot; alt=&quot;CTRun&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;25-cttypesetter&quot;&gt;2.5 CTTypesetter&lt;/h2&gt;
+
+&lt;p&gt;CTTypesetter支持对属性字符串进行换行，可以通过CTTypesetter来自定义换行（比如按word换行、按char换行等）或控制每行的内容，可以理解成更精细化的控制。&lt;/p&gt;
+
+&lt;h1 id=&quot;三重要api&quot;&gt;三、重要API&lt;/h1&gt;
+
+&lt;h2 id=&quot;31-ctframesetter&quot;&gt;3.1 CTFramesetter&lt;/h2&gt;
+
+&lt;p&gt;&lt;strong&gt;1）CTFramesetterCreateWithAttributedString&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;func CTFramesetterCreateWithAttributedString(_ attrString: CFAttributedString) -&amp;gt; CTFramesetter
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;通过属性字符串来创建CTFramesetter。&lt;/p&gt;
+
+&lt;p&gt;我们可以构造不同字体、颜色、大小的属性字符串，然后从属性字符串构造CTFramesetter，之后可以继续往下拆分得到段落、行、字形等信息，这样可以实现自定义排版、图文混排等复杂富文本样式。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;2）CTFramesetterCreateWithTypesetter&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;func CTFramesetterCreateWithTypesetter(_ typesetter: CTTypesetter) -&amp;gt; CTFramesetter
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;通过CTTypesetter来创建CTFramesetter，当我们需要对文本实现更精细控制，比如自定义换行时，可以自己构造CTTypesetter。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;3）CTFramesetterCreateFrame&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;func CTFramesetterCreateFrame(
+    _ framesetter: CTFramesetter,
+    _ stringRange: CFRange,
+    _ path: CGPath,
+    _ frameAttributes: CFDictionary?
+) -&amp;gt; CTFrame
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;生成CTFrame：在指定路径（path）为属性字符串的指定范围（stringRange）生成CTFrame。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;framesetter&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;stringRange&lt;/code&gt;：字符范围，注意需要以UTF-16编码格式计算；当 stringRange.length = 0 时，表示从起点（stringRange.location）到字符结束为止；比如当 CFRangeMake(0, 0) 表示全字符范围&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;path&lt;/code&gt;：排版路径，可以是不规则矩形，这意味着可以传入不规则图形来实现文字环绕等高级效果&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;frameAttributes&lt;/code&gt;：一个可选的字典，可以用于控制段落级别的布局行为，比如行间距等，一般用不到，可传 nil&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;strong&gt;4）CTFramesetterSuggestFrameSizeWithConstraints&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;func CTFramesetterSuggestFrameSizeWithConstraints(
+    _ framesetter: CTFramesetter,
+    _ stringRange: CFRange,
+    _ frameAttributes: CFDictionary?,
+    _ constraints: CGSize,
+    _ fitRange: UnsafeMutablePointer&amp;lt;CFRange&amp;gt;?
+) -&amp;gt; CGSize
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;计算文本宽高：在给定约束尺寸（constraints）下计算文本范围（stringRange）的实际宽高。&lt;/p&gt;
+
+&lt;p&gt;如下，我们可以计算出在宽高 100 x 100 的范围内排版，实际能放下的文本范围（fitRange）以及实际的文本尺寸：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;let attr = NSAttributedString(string: &quot;这是一段测试文本，通过调用CTFramesetterSuggestFrameSizeWithConstraints来计算文本的宽高信息，并返回实际的range&quot;, attributes: [
+    .font: UIFont.systemFont(ofSize: 16),
+    .foregroundColor: UIColor.black
+])
+let framesetter = CTFramesetterCreateWithAttributedString(attr)
+var fitRange = CFRange(location: 0, length: 0)
+let size = CTFramesetterSuggestFrameSizeWithConstraints(
+    framesetter,
+    CFRangeMake(0, 0),
+    nil,
+    CGSize(width: 100, height: 100),
+    &amp;amp;fitRange
+)
+print(size, fitRange, attr.length)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;这个API在分页时非常有用，比如微信读书的翻页效果，需要知道在哪个地方截断，PDF的分页排版等。&lt;/p&gt;
+
+&lt;h3 id=&quot;311-ctframesetter使用示例&quot;&gt;3.1.1 CTFramesetter使用示例&lt;/h3&gt;
+
+&lt;p&gt;&lt;strong&gt;1）实现一个支持AutoLayout且高度靠内容撑开的富文本View&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://lk9v5zgfb4.feishu.cn/space/api/box/stream/download/asynccode/?code=Mzc4YmRjMzQxZTdhM2ZmZDYxODIxYTRkNjUyZDU1ZGRfV2hMUHBaTk8yZ1o4RnlZZFNreWw3c1lIVEtQSHVkTnBfVG9rZW46RmNrN2JkOFlXb3dmaHV4bllHNmNwdmpqblFlXzE3NjA4Nzc2MjY6MTc2MDg4MTIyNl9WNA&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;2）在圆形路径中绘制文本&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://lk9v5zgfb4.feishu.cn/space/api/box/stream/download/asynccode/?code=M2I0NzA4ODA4OGUzOTAxMmYyNGQ4MjM0NzFiMDg4YmZfOGdRdVA4aUk5UUNvZ3FpclIzSlY5SVNuaHNzdXVpODlfVG9rZW46TzFiOWJzQlRUb1FuVmZ4cjhBNWNIZzl4blR0XzE3NjA4Nzc2MjY6MTc2MDg4MTIyNl9WNA&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;3）文本分页：模拟微信读书的分页逻辑&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://lk9v5zgfb4.feishu.cn/space/api/box/stream/download/asynccode/?code=YTJlZGY5YjRkNjIxNDVkMzgxMGY5YWE5NjJkNGQ3OTdfa3hTYzNwZTV2UWx3bENCTWpLMHZodHdFckFxRUU0TThfVG9rZW46RXBNeWI4UGw4b0Y4dGp4UGVhQ2N0VE0ybkhkXzE3NjA4Nzc2MjY6MTc2MDg4MTIyNl9WNA&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;32-ctframe&quot;&gt;3.2 CTFrame&lt;/h2&gt;
+
+&lt;p&gt;&lt;strong&gt;1）CTFramesetterCreateFrame&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;func CTFramesetterCreateFrame(
+    _ framesetter: CTFramesetter,
+    _ stringRange: CFRange,
+    _ path: CGPath,
+    _ frameAttributes: CFDictionary?
+) -&amp;gt; CTFrame
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;创建CTFrame，在CTFramesetter一节中有介绍过，这是创建CTFrame的唯一方式。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;2）CTFrameGetStringRange&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;func CTFrameGetStringRange(_ frame: CTFrame) -&amp;gt; CFRange
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;获取CTFrame包含的字符范围。&lt;/p&gt;
+
+&lt;p&gt;我们在调用CTFramesetterCreateFrame创建CTFrame时，会传入一个 stringRange 的参数，CTFrameGetStringRange也可以理解成获取这个 stringRange，区别是处理了当 stringRange.length 为0的情况。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;3）CTFrameGetVisibleStringRange&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;func CTFrameGetVisibleStringRange(_ frame: CTFrame) -&amp;gt; CFRange
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;获取CTFrame实际可见的字符范围。&lt;/p&gt;
+
+&lt;p&gt;我们在调用CTFramesetterCreateFrame创建CTFrame时，会传入path，可能会把字符截断，CTFrameGetVisibleStringRange返回的就是可见的字符范围。&lt;/p&gt;
+
+&lt;p&gt;需要注意和CTFrameGetStringRange进行区分，可以用如下Demo验证：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;let longText = String(repeating: &quot;这是一个分栏布局的例子。Core Text 允许我们将一个长的属性字符串（CFAttributedString）流动到多个不同的路径（CGPath）中。我们只需要创建一个 CTFramesetter，然后循环调用 CTFramesetterCreateFrame。每次调用后，我们使用 CTFrameGetStringRange 来找出有多少文本被排入了当前的框架，然后将下一个框架的起始索引设置为这个范围的末尾。 &quot;, count: 10)
+let attributedText = NSAttributedString(string: longText, attributes: [
+    .font: UIFont.systemFont(ofSize: 12),
+    .foregroundColor: UIColor.darkText
+])
+let framesetter = CTFramesetterCreateWithAttributedString(attributedText as CFAttributedString)
+let path = CGPath(rect: .init(x: 10, y: 100, width: 400, height: 200), transform: nil)
+let frame = CTFramesetterCreateFrame(
+    framesetter,
+    CFRange(location: 100, length: 0),
+    path,
+    nil
+)
+// 输出：CFRange(location: 100, length: 1980)
+print(CTFrameGetStringRange(frame))
+// 输出：CFRange(location: 100, length: 584)
+print(CTFrameGetVisibleStringRange(frame))
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;strong&gt;4）CTFrameGetPath&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;func CTFrameGetPath(_ frame: CTFrame) -&amp;gt; CGPath
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;获取创建CTFrame时传入的path。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;5）CTFrameGetLines&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;func CTFrameGetLines(_ frame: CTFrame) -&amp;gt; CFArray
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;获取CTFrame中所有的行（CTLine）。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;6）CTFrameGetLineOrigins&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;func CTFrameGetLineOrigins(
+    _ frame: CTFrame,
+    _ range: CFRange,
+    _ origins: UnsafeMutablePointer&amp;lt;CGPoint&amp;gt;
+)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;获取每一行的起点坐标。&lt;/p&gt;
+
+&lt;p&gt;用法示例：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;let lines = CTFrameGetLines(frame) as! [CTLine]
+var origins = [CGPoint](repeating: .zero, count: lines.count)
+CTFrameGetLineOrigins(frame, CFRangeMake(0, 0), &amp;amp;origins)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;strong&gt;7）CTFrameDraw&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;func CTFrameDraw(
+    _ frame: CTFrame,
+    _ context: CGContext
+)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;绘制CTFrame。&lt;/p&gt;
+
+&lt;h3 id=&quot;321-ctframe使用示例&quot;&gt;3.2.1 CTFrame使用示例&lt;/h3&gt;
+
+&lt;p&gt;&lt;strong&gt;1）绘制CTFrame&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://lk9v5zgfb4.feishu.cn/space/api/box/stream/download/asynccode/?code=Yzc3YzE1YTFmZjJiOGY5NjE3ZGY2YWI2ZTVhMWE1ZmVfVUtqQVB3eEU3QWtsQ3JlcWJ2VDFwOXRFZkViQ2FHV0ZfVG9rZW46TXhlM2J0T0Nlb3NPTTJ4MWpuaGN2R0ZNbnhjXzE3NjA4Nzc2MjY6MTc2MDg4MTIyNl9WNA&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;2）高亮某一行&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://lk9v5zgfb4.feishu.cn/space/api/box/stream/download/asynccode/?code=OGY4MzMxMjYxYWE4NTdjYzcyMDZiNjc2OGE0MzBjZjRfQzExaE44ZzNjaG8wRmtaeGZIcnJ1QmNWYWJ4WldtbGtfVG9rZW46U0FZQ2JXTXhBb2JNWDd4eDVGZmN0Rk5zbmlnXzE3NjA4Nzc2MjY6MTc2MDg4MTIyNl9WNA&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;3）检测点击字符&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://lk9v5zgfb4.feishu.cn/space/api/box/stream/download/asynccode/?code=MzFkZGU0MjBkMmUxMjg5NDRjZTJlM2E2MDdhOWZiYjdfRmttZVJyNXJIUkdWblZpQjRESlFzd2VPYVE4bmlXd3VfVG9rZW46U0JvRmJpRzhyb1h4RGF4dHNaaWNraTdjbmpoXzE3NjA4Nzc2MjY6MTc2MDg4MTIyNl9WNA&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;33-ctline&quot;&gt;3.3 CTLine&lt;/h2&gt;
+
+&lt;p&gt;&lt;strong&gt;1）CTLineCreateWithAttributedString&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;func CTLineCreateWithAttributedString(_ attrString: CFAttributedString) -&amp;gt; CTLine
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;从属性字符串创建&lt;strong&gt;单行&lt;/strong&gt;CTLine，如果字符串中有换行符（\n）的话，换行符会被转换成空格，如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;let line = CTLineCreateWithAttributedString(
+    NSAttributedString(string: &quot;Hello CoreText\nWorld&quot;, attributes: [.font: UIFont.systemFont(ofSize: 16)])
+)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;strong&gt;2）CTLineCreateTruncatedLine&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;func CTLineCreateTruncatedLine(
+    _ line: CTLine,
+    _ width: Double,
+    _ truncationType: CTLineTruncationType,
+    _ truncationToken: CTLine?
+) -&amp;gt; CTLine?
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;创建一个被截断的新行。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;line&lt;/code&gt;：待截断的行&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;width&lt;/code&gt;：在多少宽度截断&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;truncationType&lt;/code&gt;：start/end/middle，截断类型&lt;/li&gt;
+  &lt;li&gt;truncationToken：在截断处添加的字符，nil表示不添加，一般使用省略符（…）&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;let truncationToken = CTLineCreateWithAttributedString(
+    NSAttributedString(string: &quot;…&quot;, attributes: [.font: UIFont.systemFont(ofSize: 16)])
+)
+let truncated = CTLineCreateTruncatedLine(line, 100, .end, truncationToken)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;strong&gt;3）CTLineCreateJustifiedLine&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;func CTLineCreateJustifiedLine(
+    _ line: CTLine,
+    _ justificationFactor: CGFloat,
+    _ justificationWidth: Double
+) -&amp;gt; CTLine?
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;创建一个两端对齐的新行，类似书籍或报纸中两端对齐的排版效果。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;line&lt;/code&gt;：原始行&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;justificationFactor&lt;/code&gt;：&lt;code class=&quot;highlighter-rouge&quot;&gt;justificationFactor &amp;lt;= 0&lt;/code&gt;表示不缩放，即与原始行相同；&lt;code class=&quot;highlighter-rouge&quot;&gt;justificationFactor &amp;gt;= 1&lt;/code&gt;表示完全缩放到指定宽度；&lt;code class=&quot;highlighter-rouge&quot;&gt;0 &amp;lt; justificationFactor &amp;lt; 1&lt;/code&gt;表示部分缩放到指定宽度，可以看示例代码&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;justificationWidth&lt;/code&gt;：缩放指定宽度&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;示例：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://lk9v5zgfb4.feishu.cn/space/api/box/stream/download/asynccode/?code=ZTYwMGVkMjhkY2YzOWQ3ZTg3ZDc4OTNlYzQ5YmFjNWNfMXpWbGNJcDFRakk4bmVJNjJOa1dEWXFlU2RkZGpaNnpfVG9rZW46T1dPbmJ4bHZPb3NCZEJ4VkExZ2MxWjVZbjhiXzE3NjA4Nzc2MjY6MTc2MDg4MTIyNl9WNA&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;4）CTLineDraw&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;func CTLineDraw(
+    _ line: CTLine,
+    _ context: CGContext
+)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;绘制行。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;5）CTLineGetGlyphCount&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;func CTLineGetGlyphCount(_ line: CTLine) -&amp;gt; CFIndex
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;获取行内字形总数。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;6）CTLineGetGlyphRuns&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;func CTLineGetGlyphRuns(_ line: CTLine) -&amp;gt; CFArray
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;获取行内所有的CTRun。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;7）CTLineGetStringRange&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;func CTLineGetStringRange(_ line: CTLine) -&amp;gt; CFRange
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;获取该行对应的字符范围。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;8）CTLineGetPenOffsetForFlush&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;func CTLineGetPenOffsetForFlush(
+    _ line: CTLine,
+    _ flushFactor: CGFloat,
+    _ flushWidth: Double
+) -&amp;gt; Double
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;获取在指定宽度绘制时的水平偏移，一般配合 CGContext.textPosition 使用，可用于实现在固定宽度下文本的左对齐、右对齐、居中对齐及自定义水平偏移等。&lt;/p&gt;
+
+&lt;p&gt;示例：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://lk9v5zgfb4.feishu.cn/space/api/box/stream/download/asynccode/?code=MjdkYjRmN2VhZDljNzlkOGJlM2YwOTE2MjY0ZjYwZjZfUnA3UEpkUFFDWUlUajdRRkp1d0NEd1lBejBMTnVRSk5fVG9rZW46RmFQSGJ6UG9wb1lSckt4WUg3V2N3WjhvbndlXzE3NjA4Nzc2MjY6MTc2MDg4MTIyNl9WNA&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;9）CTLineGetImageBounds&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;func CTLineGetImageBounds(
+    _ line: CTLine,
+    _ context: CGContext?
+) -&amp;gt; CGRect
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;获取行的&lt;strong&gt;视觉边界&lt;/strong&gt;；注意 CTLineGetImageBounds 获取的是&lt;strong&gt;相对于CTLine局部坐标系的矩形&lt;/strong&gt;，即以textPosition为原点的矩形。&lt;/p&gt;
+
+&lt;p&gt;视觉边界可以看下面的例子，与之相对的是布局边界；这个API在实际应用中不常见，除非有特殊诉求，比如要检测精确的内容点击范围，给行绘制紧贴背景等。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://lk9v5zgfb4.feishu.cn/space/api/box/stream/download/asynccode/?code=MTliN2NkOGE4NzRmZjE2NDY4YzNmZGM0YTc3NzUxM2VfQmFXUWNycVhUekY5TzE5aFAzOHl3UjE0RWVCY0NlWVVfVG9rZW46RWVZaWJ0Vkgzb09FRld4bktIN2NGYkZxbkZkXzE3NjA4Nzc2MjY6MTc2MDg4MTIyNl9WNA&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;10）CTLineGetTypographicBounds&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;func CTLineGetTypographicBounds(
+    _ line: CTLine,
+    _ ascent: UnsafeMutablePointer&amp;lt;CGFloat&amp;gt;?,
+    _ descent: UnsafeMutablePointer&amp;lt;CGFloat&amp;gt;?,
+    _ leading: UnsafeMutablePointer&amp;lt;CGFloat&amp;gt;?
+) -&amp;gt; Double
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;获取上行（ascent）、下行（descent）、行距（leading）。&lt;/p&gt;
+
+&lt;p&gt;这几个概念不熟悉的可以参考：&lt;a href=&quot;https://mp.weixin.qq.com/s/96YJGYKLoxENC4qT9tYNoQ&quot;&gt;一文读懂字符、字形、字体&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;想了解这几个数值最终是从哪个地方读取的可以参考：&lt;a href=&quot;https://mp.weixin.qq.com/s/D0A8HAQaQNart7KAdWXyJg&quot;&gt;一文读懂字体文件&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;通过这个API我们可以手动构造&lt;strong&gt;布局边界&lt;/strong&gt;（见上面的例子），一般用于点击检测、绘制行背景等。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;11）CTLineGetTrailingWhitespaceWidth&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;func CTLineGetTrailingWhitespaceWidth(_ line: CTLine) -&amp;gt; Double
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;获取行尾空白字符的宽度（比如空格、制表符 (\t) 等），一般用于实现对齐时基于可见文本对齐等。&lt;/p&gt;
+
+&lt;p&gt;示例：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;let line = CTLineCreateWithAttributedString(
+    NSAttributedString(string: &quot;Hello  &quot;, attributes: [.font: UIFont.systemFont(ofSize: 16)])
+)
+
+let totalWidth = CTLineGetTypographicBounds(line, nil, nil, nil)
+let trailingWidth = CTLineGetTrailingWhitespaceWidth(line)
+
+print(&quot;总宽度: \(totalWidth)&quot;)
+print(&quot;尾部空白宽度: \(trailingWidth)&quot;)
+print(&quot;可见文字宽度: \(totalWidth - trailingWidth)&quot;)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;strong&gt;12）CTLineGetStringIndexForPosition&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;func CTLineGetStringIndexForPosition(
+    _ line: CTLine,
+    _ position: CGPoint
+) -&amp;gt; CFIndex
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;获取给定位置处的字符串索引。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;注意：&lt;/strong&gt;虽然官方文档说这个API一般用于点击检测，但实际测试下来&lt;strong&gt;这个API返回的点击索引不准确&lt;/strong&gt;，比如虽然点击的是当前字符，但实际返回的索引是后一个字符的，如下：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/post/深入理解CoreText/CTLineGetStringIndexForPosition.png&quot; alt=&quot;CTLineGetStringIndexForPosition&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;查了下，发现这个API一般是用于计算光标位置的，比如点击「行」的左半部分，希望光标出现在「行」左侧，如果点击「行」的右半部分，希望光标出现在「行」的右侧。&lt;/p&gt;
+
+&lt;p&gt;如果我们想精确做字符的点击检测，推荐使用字符/行的bounds来计算，参考「CTFrame使用示例-3」例子。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;13）CTLineGetOffsetForStringIndex&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;func CTLineGetOffsetForStringIndex(
+    _ line: CTLine,
+    _ charIndex: CFIndex,
+    _ secondaryOffset: UnsafeMutablePointer&amp;lt;CGFloat&amp;gt;?
+) -&amp;gt; CGFloat
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;获取指定字符索引相对于行的 x 轴偏移量。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;line&lt;/code&gt;：待查询的行&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;charIndex&lt;/code&gt;：要查询的字符在&lt;strong&gt;原始属性字符串&lt;/strong&gt;中的索引&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;secondaryOffset&lt;/code&gt;：次要偏移值，在简单的LTR文本中，可以忽略（传nil即可），但在复杂的双向文本（BiDi）中会用到&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;使用场景：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;字符点击检测：见「CTFrame使用示例-3」例子&lt;/li&gt;
+  &lt;li&gt;给某段字符绘制高亮和下划线&lt;/li&gt;
+  &lt;li&gt;定位某个字符：比如想在一段文本中的某个字符上方显示弹窗，可以用这个API先定位该字符&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;strong&gt;14）CTLineEnumerateCaretOffsets&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;func CTLineEnumerateCaretOffsets(
+    _ line: CTLine,
+    _ block: @escaping (Double, CFIndex, Bool, UnsafeMutablePointer&amp;lt;Bool&amp;gt;) -&amp;gt; Void
+)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;遍历一行中光标所有的有效位置。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;line&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;block&lt;/code&gt;
+    &lt;ul&gt;
+      &lt;li&gt;Double：offset，相对于行的 x 轴偏移&lt;/li&gt;
+      &lt;li&gt;CFIndex：与此光标位置相关的字符串索引&lt;/li&gt;
+      &lt;li&gt;Bool：true 表示光标位于字符的前边（在 LTR 中即左侧），false 表示光标位于字符的后边（在 LTR 中即右侧）；在 BiDi 中需要特殊同一个字符可能会回调两次（比如 BiDi 边界的地方），需要用这个值区分前后&lt;/li&gt;
+      &lt;li&gt;UnsafeMutablePointer&lt;Bool&gt;：stop 指针，赋值为 true 会停止遍历&lt;/Bool&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;使用场景：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;绘制光标：富文本选区或者文本编辑器中，要绘制光标时，可以先通过 CTLineGetStringIndexForPosition 获取字符索引，再通过这个函数或者 CTLineGetOffsetForStringIndex 获取光标偏移&lt;/li&gt;
+  &lt;li&gt;实现光标的左右键移动：可以用这个API将所有的光标位置存储到数组，并按offset排序，当用户按下右箭头 -&amp;gt; 时，可以找到当前光标index，将index + 1即是下一个光标位置&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;331-ctline使用示例&quot;&gt;3.3.1 CTLine使用示例&lt;/h3&gt;
+
+&lt;p&gt;除了上面例子，再举一个：&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;1）高亮特定字符&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://lk9v5zgfb4.feishu.cn/space/api/box/stream/download/asynccode/?code=MjJjMWYyZjU4MDFlMzY2ZDIxNGQ2MTgxYWQ5MDgwNThfZDI2VzA4WnRETlZ4Ym1hVXIxT1BBc3RoSUZ5ZUV6ck1fVG9rZW46QzlPOGJZRkYzb0NKdFh4NEcweWNudlZybktkXzE3NjA4Nzc2MjY6MTc2MDg4MTIyNl9WNA&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;34-ctrun&quot;&gt;3.4 CTRun&lt;/h2&gt;
+
+&lt;p&gt;CTRun相关API比较基础，这里主要介绍常用的。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;1）CTLineGetGlyphRuns&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;func CTLineGetGlyphRuns(_ line: CTLine) -&amp;gt; CFArray
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;获取CTRun的&lt;strong&gt;唯一&lt;/strong&gt;方式。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;2）CTRunGetAttributes&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;func CTRunGetAttributes(_ run: CTRun) -&amp;gt; CFDictionary
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;获取CTRun的属性；比如想知道这个CTRun是不是粗体，是不是链接，是不是目标Run等，都可以通过这个API。&lt;/p&gt;
+
+&lt;p&gt;示例：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;guard let attributes = CTRunGetAttributes(run) as? [NSAttributedString.Key: Any] else { continue }
+// 现在你可以检查属性
+if let color = attributes[.foregroundColor] as? UIColor {
+    // ...
+}
+if let font = attributes[.font] as? UIFont {
+    // ...
+}
+if let link = attributes[NSAttributedString.Key(&quot;my_custom_link_key&quot;)] {
+    // 这就是那个可点击的 run！
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;strong&gt;3）CTRunGetStringRange&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;func CTRunGetStringRange(_ run: CTRun) -&amp;gt; CFRange
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;获取CTRun对应于原始属性字符串的哪个范围。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;4）CTRunGetTypographicBounds&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;func CTRunGetTypographicBounds(
+    _ run: CTRun,
+    _ range: CFRange,
+    _ ascent: UnsafeMutablePointer&amp;lt;CGFloat&amp;gt;?,
+    _ descent: UnsafeMutablePointer&amp;lt;CGFloat&amp;gt;?,
+    _ leading: UnsafeMutablePointer&amp;lt;CGFloat&amp;gt;?
+) -&amp;gt; Double
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;获取CTRun的度量信息，同上面许多API一样，当 range.length 为0时表示直到CTRun文本末尾。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;5）CTRunGetPositions&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;func CTRunGetPositions(
+    _ run: CTRun,
+    _ range: CFRange,
+    _ buffer: UnsafeMutablePointer&amp;lt;CGPoint&amp;gt;
+)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;获取CTRun中每一个字形的位置，注意这里的位置是&lt;strong&gt;相对于CTLine原点&lt;/strong&gt;的。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;6）CTRunDelegate&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;CTRunDelegate允许为属性字符串中的一段文本提供自定义布局测量信息，一般用于在文本中插入图片、自定义View等非文本元素。&lt;/p&gt;
+
+&lt;p&gt;比如在文本中间插入图片：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://lk9v5zgfb4.feishu.cn/space/api/box/stream/download/asynccode/?code=YmI5MzViNjczMjVlNDQ1ZDYwN2E3MDI0YTMyM2YxZDhfTlNJNmV4aGJtZloydTJPSWlYTUUwZ3NadkZ0NnNDcktfVG9rZW46R3JsM2JUUXZTb3ZNVm14SHV5dGNtZWhKblhjXzE3NjA4Nzc2MjY6MTc2MDg4MTIyNl9WNA&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;341-ctrun使用示例&quot;&gt;3.4.1 CTRun使用示例&lt;/h3&gt;
+
+&lt;p&gt;&lt;strong&gt;1）基础绘制&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://lk9v5zgfb4.feishu.cn/space/api/box/stream/download/asynccode/?code=MTAwM2RiN2M2YTBiZjBkOGU0OWYxM2U0NjE4ZmQyNzRfMEZMUllNV05Ob3NHdzFuTW9jNGxnRE0zNzFRNHdIakRfVG9rZW46QW1XM2JaVzVwb25qUHB4cVh0MGNQamZGbmFjXzE3NjA4Nzc2MjY6MTc2MDg4MTIyNl9WNA&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;2）链接点击识别&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://lk9v5zgfb4.feishu.cn/space/api/box/stream/download/asynccode/?code=M2FkMGE5MzBhODAyNWMwNmE4NzFiYTM5NjE3ZDJlYWJfY0tIY1J2NEZicklpbERGTU9hNkNYd0N0VTFrS1hKUGxfVG9rZW46WDlUcGJjRDdyb0d3T1F4UndjQWNOYzRFbnNkXzE3NjA4Nzc2MjY6MTc2MDg4MTIyNl9WNA&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;35-cttypesetter&quot;&gt;3.5 CTTypesetter&lt;/h2&gt;
+
+&lt;p&gt;CTFramesetter会自动处理换行，当我们想手动控制换行时，可以用CTTypesetter。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;1）CTTypesetterSuggestLineBreak&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;func CTTypesetterSuggestLineBreak(
+    _ typesetter: CTTypesetter,
+    _ startIndex: CFIndex,
+    _ width: Double
+) -&amp;gt; CFIndex
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;按单词（word）换行。&lt;/p&gt;
+
+&lt;p&gt;如下示例，输出：&lt;code class=&quot;highlighter-rouge&quot;&gt;Try word &lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;wrapping&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;let attrStringWith = NSAttributedString(string: &quot;Try word wrapping&quot;, attributes: [.font: UIFont.systemFont(ofSize: 18)])
+let typesetter = CTTypesetterCreateWithAttributedString(attributedString)
+let totalLength = attributedString.length // UTF-16 长度
+var startIndex = 0
+var lineCount = 1
+
+while startIndex &amp;lt; totalLength {
+    let charCount = CTTypesetterSuggestLineBreak(typesetter, startIndex, 100)
+    // 如果返回 0，意味着一个字符都放不下（或已结束）
+    if charCount == 0 {
+        if startIndex &amp;lt; totalLength {
+            print(&quot;Line \(lineCount): (Error) 无法放下剩余字符。&quot;)
+        }
+        break
+    }
+    // 获取这一行的子字符串
+    let range = NSRange(location: startIndex, length: charCount)
+    let lineString = (attributedString.string as NSString).substring(with: range)
+    print(&quot;Line \(lineCount): '\(lineString)' (UTF-16 字符数: \(charCount))&quot;)
+    // 更新下一次循环的起始索引
+    startIndex += charCount
+    lineCount += 1
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;strong&gt;2）CTTypesetterSuggestClusterBreak&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;func CTTypesetterSuggestClusterBreak(
+    _ typesetter: CTTypesetter,
+    _ startIndex: CFIndex,
+    _ width: Double
+) -&amp;gt; CFIndex
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;按字符（char）换行。&lt;/p&gt;
+
+&lt;p&gt;如下示例，输出：&lt;code class=&quot;highlighter-rouge&quot;&gt;Try word wr&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;apping&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Swift&quot;&gt;let attrStringWith = NSAttributedString(string: &quot;Try word wrapping&quot;, attributes: [.font: UIFont.systemFont(ofSize: 18)])
+let typesetter = CTTypesetterCreateWithAttributedString(attributedString)
+let totalLength = attributedString.length // UTF-16 长度
+var startIndex = 0
+var lineCount = 1
+
+while startIndex &amp;lt; totalLength {
+    let charCount = CTTypesetterSuggestClusterBreak(typesetter, startIndex, 100)
+    // 如果返回 0，意味着一个字符都放不下（或已结束）
+    if charCount == 0 {
+        if startIndex &amp;lt; totalLength {
+            print(&quot;Line \(lineCount): (Error) 无法放下剩余字符。&quot;)
+        }
+        break
+    }
+    // 获取这一行的子字符串
+    let range = NSRange(location: startIndex, length: charCount)
+    let lineString = (attributedString.string as NSString).substring(with: range)
+    print(&quot;Line \(lineCount): '\(lineString)' (UTF-16 字符数: \(charCount))&quot;)
+    // 更新下一次循环的起始索引
+    startIndex += charCount
+    lineCount += 1
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h1 id=&quot;四总结&quot;&gt;四、总结&lt;/h1&gt;
+
+&lt;p&gt;以上是CoreText中常用的API及其场景代码举例，完整示例代码可在公众号「非专业程序员Ping」回复 “CoreText” 获取。&lt;/p&gt;
+</description>
+        <pubDate>Sat, 18 Oct 2025 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/2025/10/18/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3CoreText-API/</link>
+        <guid isPermaLink="true">http://localhost:4000/2025/10/18/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3CoreText-API/</guid>
+        
+        <category>跨端渲染</category>
+        
+        <category>富文本</category>
+        
+        
+      </item>
     
       <item>
         <title>新手小白也能看懂的逆向技巧</title>
@@ -2273,184 +2941,6 @@ ttx &lt;span class=&quot;nt&quot;&gt;-y&lt;/span&gt; 0 Times.ttc
         <category>跨端渲染</category>
         
         <category>Font</category>
-        
-        
-      </item>
-    
-      <item>
-        <title>虚拟内存</title>
-        <description>&lt;h1 id=&quot;前言&quot;&gt;前言&lt;/h1&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;虚拟内存算是操作系统中比较重要的一部分了，内容也很多，早在看操作系统相关书籍的时候就有想要总结这一部分，但是功力不够，总感觉串不起来；经过秋招这几个月对基础知识的回顾，感觉对虚拟内存这一部分有了自己的一个认识和体系，遂趁这个机会述以成文。&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;正文&quot;&gt;正文&lt;/h1&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;一-背景&quot;&gt;一. 背景&lt;/h2&gt;
-
-&lt;p&gt;在计算机硬件体系结构中，总有这样一种规律：性能越好，价格越高；为了中和性价比，在计算机硬件体系中多采用逐级缓存的结构，通过软件算法实现访问性能与价格成本的平衡，这在计算机的存储体系中体现的尤为明显。&lt;/p&gt;
-
-&lt;h3 id=&quot;11-dram-vs-sram&quot;&gt;1.1 DRAM vs SRAM&lt;/h3&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;DRAM&lt;/strong&gt;：动态随机访问存储器；价格低，访问速度较慢，耗电量较大，一般用于做主存。&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;SRAM&lt;/strong&gt;：静态随机访问存储器；价格高，访问速度快，耗电量低，一般用于做高速缓存。&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3 id=&quot;12-存储器层次结构&quot;&gt;1.2 存储器层次结构&lt;/h3&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/VirtualMemory/存储器层次结构.jpg&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;如上图，存储器的层次结构实际上是一个金字塔形状，从上到下，表示价格越来越低，容量越来越大；从上到下依次是：寄存器，L1，L2，L3三级高速缓存，主存，磁盘缓存，网络缓存。存储器的层次结构实际上也是一个逐级缓存的结构，其中，虚拟内存主要作用于主存与磁盘缓存之间，负责主存与磁盘之间的页面交换。&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;二-虚拟内存的目的&quot;&gt;二. 虚拟内存的目的&lt;/h2&gt;
-
-&lt;p&gt;虚拟内存有三个目的：&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;将主存视为磁盘的高速缓存，在主存中只保留活动区域，提高主存利用率&lt;/li&gt;
-  &lt;li&gt;为进程提供统一的地址空间，简化内存管理&lt;/li&gt;
-  &lt;li&gt;保护进程地址空间不被其他进程破坏&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;虚拟内存如何达到这三个目的，将在后文讲解。&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;三-虚拟内存的原理&quot;&gt;三. 虚拟内存的原理&lt;/h2&gt;
-
-&lt;h3 id=&quot;31-基本概念&quot;&gt;3.1 基本概念&lt;/h3&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;页表：可以理解为位于主存中的一个大数组，由页表项组成&lt;/li&gt;
-  &lt;li&gt;页表项：页表的基本组成单元，页表项分为两个部分：标志位和地址位&lt;/li&gt;
-  &lt;li&gt;虚拟页：主存与磁之间的基本传送单元，磁盘地址空间被视为一个个的虚拟页&lt;/li&gt;
-  &lt;li&gt;物理页：缓存在主存中的实际单元&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3 id=&quot;32-寻址的基本过程&quot;&gt;3.2 寻址的基本过程&lt;/h3&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;因为页表其实也是很占内存空间的，所以实际中会采用多级页表和动态创建页表的方式来减小页表大小，这里为了方便了解寻址的整体过程，就以单级页表为例；另外，页表项的高速缓存这里也没有考虑，高速缓存将在下一节介绍。&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;主存中有一个页表，页表由页表项组成，将虚拟页映射到物理页；处理器（CPU）进行一次寻址的过程是：处理器生成一个虚拟地址，交给MMU（地址翻译器）进行地址翻译，MMU将虚拟地址转换为页表索引，然后去主存中查找对应的页表项，如果主存中缓存该虚拟页，则主存将虚拟页对应的页表项传送给MMU，之后MMU从页表项计算出物理地址送给主存，主存将物理地址对应的数据通过数据总线送给处理器；如果主存中没有缓存虚拟页对应的物理页，则触发一次缺页异常，由主存从磁盘换取所需虚拟页之后，再次执行导致缺页的指令。&lt;/p&gt;
-
-&lt;p&gt;如下图所示：摘自《深入理解计算机系统》&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/VirtualMemory/寻址的基本过程.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h3 id=&quot;33-页表缓存&quot;&gt;3.3 页表缓存&lt;/h3&gt;
-
-&lt;p&gt;上文中提过，相比于 L1，L2，L3 三级高速缓存，主存的访问速度还是很慢的（ DRAM 比 SRAM 要慢约十多倍，磁盘比 DRAM 要慢约十万多倍），所以如果每次进行寻址的时候，都按照上述过程，先去主存查找页表项，然后再去主存取对应的物理页，那么，即使每次页面都命中的情况下，每次寻址也需要两次的 DRAM 访问（主存访问），如果算上缺页异常与主存与磁盘的页面替换，耗费的时间将更多。&lt;/p&gt;
-
-&lt;p&gt;为了加速 MMU 地址翻译的过程，会将页表项缓存到 TLB（TLB 见后补充解释） 和 L1 级高速缓存中，因此上述 MMU 进行地址翻译的过程就变成了：MMU 根据虚拟地址从 TLB 中查找页表项，如果找到，则直接进行后续物理地址生成；如果 TLB 未命中，则 MMU 从 L1 级高速缓存中查找对应的页表项，如果命中，则将该页表项缓存在 TLB 中并进行下一步，否则，继续从主存中查找页表项。&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;&lt;strong&gt;TLB&lt;/strong&gt;：TLB 是一个在 MMU 中的高速缓存，用于缓存页表项；如果 TLB 命中，那么所有的地址翻译都是在芯片上的 MMU 中完成的，因此非常快。&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;如下图所示：摘自《深入理解计算机系统》&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/VirtualMemory/地址翻译的基本过程.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h3 id=&quot;34-地址翻译的细节&quot;&gt;3.4 地址翻译的细节&lt;/h3&gt;
-
-&lt;h4 id=&quot;341-从-tlb-查找页表项&quot;&gt;3.4.1 从 TLB 查找页表项&lt;/h4&gt;
-
-&lt;p&gt;处理器生成的虚拟地址如下：&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/VirtualMemory/虚拟地址用于TLB.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;TLB 中每一行都保存着一个由单个页表项组成的块，用于组选择和行匹配的索引和标记字段是从虚拟地址中的虚拟页号（VPN）中提取出来的，如果 TLB 有 &lt;code class=&quot;highlighter-rouge&quot;&gt;T = 2^t&lt;/code&gt;个组，那么 TLB 索引（TLBI）是由 VPN 的 t 个最低位组成的，而 TLB 标记（TLBT）是由 VPN 中剩余的位组成的。&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;更多关于 TLB 查找页表项的细节可参见： https://www.cnblogs.com/alantu2018/p/9000777.html&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;h4 id=&quot;342-从主存中查找页表项&quot;&gt;3.4.2 从主存中查找页表项&lt;/h4&gt;
-
-&lt;p&gt;如下图：&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/VirtualMemory/虚拟地址用于页表.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;虚拟地址由两部分组成：虚拟页号和虚拟页偏移量；虚拟页号可以简单的视为页表索引，如：根据VPN 0 选择页表项0，根据 VPN 1 选择页表项1，依次类推。&lt;/p&gt;
-
-&lt;h4 id=&quot;343-从页表项生成物理地址&quot;&gt;3.4.3 从页表项生成物理地址&lt;/h4&gt;
-
-&lt;p&gt;仍如上图：&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/img/post/VirtualMemory/虚拟地址用于页表.PNG&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;可以看出，物理地址最终由两个部分组成：低位是虚拟地址的另一部分，即虚拟页偏移量，高位是页表项的另一部分（页表项还有一部分是标志位，上文介绍过）。&lt;/p&gt;
-
-&lt;p&gt;另外，根据上图，还可以看出&lt;strong&gt;MMU是如何根据页表项判断虚拟页是否在主存中有对应的物理页的&lt;/strong&gt;：上文中说过，页表项分为两部分，其中一部分是一个标志位（即途中的有效位），上图也说的很清楚了，如果有效位为 0 ，说明虚拟页对应的物理页还为被缓存在主存中（缺页），否则，说明命中。&lt;/p&gt;
-
-&lt;h3 id=&quot;35-页表优化&quot;&gt;3.5 页表优化&lt;/h3&gt;
-
-&lt;p&gt;上文提到过，页表占据的内存空间也是可观的；对于一个 32 位的地址空间，4KB 的页面和一个 4 字节的页表项，即使应用所引用的只是虚拟地址空间中很小的一部分，也总是需要一个 4MB 的页表常驻内存。为了优化页表占用的内存空间，实际中常采用多级页表。&lt;/p&gt;
-
-&lt;p&gt;多级页表的基本思路就是，增大单个页表项所能映射的虚拟页的大小，即进行粒度更大的映射（对于常驻内存的页表来说），如：之前一个页表项只能映射 4KB 的虚拟页，如果一个页表项能映射 4MB 的虚拟页的话，页表的大小也会相应的减小很多。&lt;/p&gt;
-
-&lt;p&gt;另外，多级页表还支持动态创建子级页表，即常驻内存的只有粒度最大的一级页表，二级页表等子级页表不需要常驻内存，在进行地址翻译时动态创建即可。&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;四-局部性原理与内存抖动&quot;&gt;四. 局部性原理与内存抖动&lt;/h2&gt;
-
-&lt;p&gt;MMU 进行地址翻译以及缺页时进行页面替换的算法在很大程度上都依赖于局部性原理。程序的局部性原理意思是，程序上次用到的数据和代码，在下次访问时很可能也会用到；因此将下次很可能会用到的数据缓存在访问速度更快的高速缓存中，将比较可观的提升程序性能。&lt;/p&gt;
-
-&lt;p&gt;比较常见的页面替换算法是：LRU 算法，即最近最少使用算法，以及其他更多页面置换算法可参见： https://www.cnblogs.com/dolphin0520/p/3749259.html&lt;/p&gt;
-
-&lt;p&gt;内存抖动的意思是，处理器进行数据访问时，不断产生缺页中断，不断进行页面置换，造成程序运行缓慢。出现内存抖动一般有两个原因：一个是页面置换算法的缺陷，差的页面置换算法通常会导致页面命中率的降低，造成频繁的缺页中断与页面置换；另一个也可能与我们自己写的程序有关。&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;五-虚拟内存与进程&quot;&gt;五. 虚拟内存与进程&lt;/h2&gt;
-
-&lt;p&gt;本文开始讲虚拟内存的目的时，提到了虚拟内存对于进程的两个目的：&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;为进程提供统一的地址空间，简化内存管理：&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;操作系统为进程分配地址空间时，由于是通过虚拟内存进行虚拟页与物理页的映射，所以，对于进程而言，物理内存在地址空间上可以是不连续的（另外，这里还想提一点的是，这种不连续的映射，可以减少内存碎片与不同进程数据的共享，即通过虚拟内存将多个进程映射到同一虚拟页即可实现进程间数据共享）；同时，对于每一个进程而言，其地址空间都是由 0 开始往高地址增长（因为有 MMU 进行地址翻译）&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;保护进程地址空间不被其他进程破坏：&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;进程在通过虚拟内存进行数据访问时，虚拟内存可以添加一些权限校验，防止进程间数据相互访问。&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;hr /&gt;
-
-&lt;h2 id=&quot;六-参考&quot;&gt;六. 参考&lt;/h2&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;《深入理解计算机系统》&lt;/li&gt;
-&lt;/ul&gt;
-
-</description>
-        <pubDate>Sat, 02 Nov 2019 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2019/11/02/%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98/</link>
-        <guid isPermaLink="true">http://localhost:4000/2019/11/02/%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98/</guid>
-        
-        <category>操作系统</category>
         
         
       </item>

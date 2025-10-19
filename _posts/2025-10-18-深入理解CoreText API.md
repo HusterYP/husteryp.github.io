@@ -2,7 +2,7 @@
 layout:     post
 title:      "深入理解iOS CoreText API"
 subtitle:   "iOS自定义富文本渲染基础篇"
-date:       2025-10-16
+date:       2025-10-18
 author:     "袁平"
 header-img: "img/tag-bg.jpg"
 tags:
