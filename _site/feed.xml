@@ -5,8 +5,8 @@
     <description>Hello-World</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Sun, 19 Oct 2025 23:52:22 +0800</pubDate>
-    <lastBuildDate>Sun, 19 Oct 2025 23:52:22 +0800</lastBuildDate>
+    <pubDate>Mon, 20 Oct 2025 23:48:01 +0800</pubDate>
+    <lastBuildDate>Mon, 20 Oct 2025 23:48:01 +0800</lastBuildDate>
     <generator>Jekyll v3.8.5</generator>
     
       <item>
@@ -936,8 +936,8 @@ while startIndex &amp;lt; totalLength {
 &lt;p&gt;&lt;img src=&quot;/img/post/逆向/IDA_use.png&quot; alt=&quot;IDA_use&quot; /&gt;&lt;/p&gt;
 </description>
         <pubDate>Sat, 11 Oct 2025 00:00:00 +0800</pubDate>
-        <link>http://localhost:4000/2025/10/11/%E9%80%86%E5%90%91%E5%B7%A5%E5%85%B7/</link>
-        <guid isPermaLink="true">http://localhost:4000/2025/10/11/%E9%80%86%E5%90%91%E5%B7%A5%E5%85%B7/</guid>
+        <link>http://localhost:4000/2025/10/11/%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0-%E6%96%B0%E6%89%8B%E5%BF%85%E5%A4%87-%E5%A6%82%E4%BD%95%E7%99%BD%E5%AB%96%E9%80%86%E5%90%91%E5%B7%A5%E5%85%B7/</link>
+        <guid isPermaLink="true">http://localhost:4000/2025/10/11/%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0-%E6%96%B0%E6%89%8B%E5%BF%85%E5%A4%87-%E5%A6%82%E4%BD%95%E7%99%BD%E5%AB%96%E9%80%86%E5%90%91%E5%B7%A5%E5%85%B7/</guid>
         
         <category>逆向</category>
         
