@@ -10,9 +10,9 @@
     <meta name="keyword"  content="">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>Java集合框架之LinkedHashMap - 袁平 | HusterYP-Blog</title>
+    <title>HarfBuzz概览 - 袁平 | HusterYP-Blog</title>
 
-    <link rel="canonical" href="http://localhost:4000/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/">
+    <link rel="canonical" href="http://localhost:4000/2025/10/25/HarfBuzz%E6%A6%82%E8%A7%88/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/css/bootstrap.min.css">
@@ -140,15 +140,17 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/tags/#Java" title="Java">Java</a>
+                        <a class="tag" href="/tags/#跨端渲染" title="跨端渲染">跨端渲染</a>
+                        
+                        <a class="tag" href="/tags/#富文本" title="富文本">富文本</a>
                         
                     </div>
-                    <h1>Java集合框架之LinkedHashMap</h1>
+                    <h1>HarfBuzz概览</h1>
                     
                     
-                    <h2 class="subheading">LinkedHashMap源码讲解</h2>
+                    <h2 class="subheading">HarfBuzz概览</h2>
                     
-                    <span class="meta">Posted by 袁平 on August 28, 2018</span>
+                    <span class="meta">Posted by 袁平 on October 25, 2025</span>
                 </div>
             </div>
         </div>
@@ -166,136 +168,173 @@
                 col-md-10 col-md-offset-1
                 post-container">
 
-				<h1 id="前言">前言</h1>
+				<h1 id="本文概述">本文概述</h1>
+
+<p>本文主要介绍：</p>
+
+<p><strong>1）什么是HarfBuzz</strong></p>
+
+<p><strong>2）HarfBuzz名称来源</strong></p>
+
+<p><strong>3）为什么需要HarfBuzz</strong></p>
+
+<p><strong>4）HarfBuzz能做什么</strong></p>
+
+<p><strong>5）HarfBuzz不能做什么</strong></p>
+
+<p><strong>6）哪些平台在使用HarfBuzz</strong></p>
+
+<p>可以直接跳转感兴趣部分阅读。</p>
+
+<h1 id="一什么是harfbuzz">一、什么是HarfBuzz</h1>
+
+<p>HarfBuzz 是一个用 C++ 编写的文字塑形引擎（Text Shaping），即将字符序列转换成字形序列（Glyph）。</p>
+
+<h1 id="二harfbuzz的名称来源">二、HarfBuzz的名称来源</h1>
+
+<p>HarfBuzz的作者是Behdad Esfahbod（贝赫达德·埃斯法赫博德），HarfBuzz的命名最初来自于该作者<strong>对 OpenType 的波斯语翻译</strong>。</p>
+
+<h1 id="三为什么需要harfbuzz">三、为什么需要HarfBuzz</h1>
+
+<p>我们回答清楚以下几个问题，「为什么需要HarfBuzz」这个问题就理解了。</p>
+
+<p><strong>1）一段字符串从输入到上屏，需要经历哪些过程？</strong></p>
+
+<p>可以用下面这张图概括：详细的流程可以参考<a href="https://mp.weixin.qq.com/s/fcL6if52qYQUTChEjntHJg">从0到1自定义文字排版引擎：原理篇</a></p>
+
+<p><img src="/img/post/HarfBuzz概览/text-render.png" alt="text-render" /></p>
+
+<p>图中红色部分就是HarfBuzz所能做的事情。</p>
+
+<p><strong>Text Shaping/文本塑形</strong>就是将一串 Unicode 字符码点（Codepoints），根据字体中的规则，转换为一串有序的字形（Glyphs）序列及其位置信息的过程。</p>
+
+<p><strong>2）为什么不能把字符串里的字符直接从字体文件里拿出来画在屏幕上？</strong></p>
+
+<p>在<a href="https://mp.weixin.qq.com/s/D0A8HAQaQNart7KAdWXyJg">一文读懂Fon文件</a>一文中，我们知道了Font文件中存储着字符的位图信息，那能直接取出每个字符的位图进行绘制吗，答案当然是不可以！</p>
+
+<p>举几个例子：</p>
+
+<p><strong>例子一：</strong></p>
+
+<p>在 Tamil（泰米尔语）语言规则中，当字母“ட”后接元音符号“ு”时，这一对字符必须替换为单个字形“டு”，即字符序列 “ட,ு” 需要用字体中的单个“டு”字形来替代。</p>
+
+<p><strong>例子二：</strong></p>
+
+<p>在配置了连字 feature 的应用中，当遇到 <code class="highlighter-rouge">f</code> 和 <code class="highlighter-rouge">i</code> 相遇时，在很多英文字体中会合并成一个单独的 <code class="highlighter-rouge">ﬁ</code> 字形。</p>
+
+<p>以上这些连字、重排、字形替换等处理，都是在Shaping阶段完成的。</p>
+
+<h1 id="四harfbuzz能做什么">四、HarfBuzz能做什么</h1>
+
+<p><strong>1）塑形</strong></p>
+
+<p>沿用上面对塑形的解释：HarfBuzz可以将一串 Unicode 字符码点（Codepoints），根据字体中的规则，转换为一串有序的字形（Glyphs）序列及其位置信息。</p>
+
+<p>可以用下面这张图来概括HarfBuzz的塑形流程：</p>
+
+<p><img src="/img/post/HarfBuzz概览/HarfBuzz.png" alt="HarfBuzz" /></p>
 
 <blockquote>
-  <ol>
-    <li><a href="https://husteryp.github.io/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/">前面</a>我们对Java集合框架有了一个基本的认识; 本文将主要讲解<code class="highlighter-rouge">LinkedHashMap</code>的实现原理和处理细节</li>
-    <li><code class="highlighter-rouge">LinkedHashMap</code>继承于<code class="highlighter-rouge">HashMap</code>, 所以需要先对<code class="highlighter-rouge">HashMap</code>有一个基本的认识, 可以参见<a href="https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/">Java集合框架之HashMap</a></li>
-  </ol>
+  <p>图片来自：https://mrandri19.github.io/2019/07/24/modern-text-rendering-linux-overview.html</p>
 </blockquote>
 
-<p>文章源码基于<code class="highlighter-rouge">JDK8</code></p>
+<p>可以看出</p>
 
-<p><strong><code class="highlighter-rouge">Java</code>集合框架系列博客</strong>:</p>
+<p><strong>HarfBuzz的输入是</strong>：字体文件 + 分段好的字符</p>
 
-<ol>
-  <li>
-    <p><a href="https://husteryp.github.io/2018/08/26/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E6%A6%82%E8%BF%B0/">Java集合框架概述</a></p>
+<p><strong>HarfBuzz的输出是</strong>：字形信息（Glyph）、position、kerning等</p>
+
+<p><strong>2）字体处理</strong></p>
+
+<p>除了核心的塑形功能，HarfBuzz还提供了访问其他字体功能的函数，比如：GSUB和GPOS表，可变字体，彩色字体，字体子集化等。</p>
+
+<h1 id="五harfbuzz不能做什么">五、HarfBuzz不能做什么</h1>
+
+<p><strong>1）HarfBuzz 不会处理双向文本问题</strong></p>
+
+<p>如果想排版LTR、RTL（如希伯来语、阿拉伯语）混排的字符串，需要确保在提交给HarfBuzz的输入中，字符串的顺序是一致的。</p>
+
+<p>也就是在将文本输入HarfBuzz之前，需要进行分段。</p>
+
+<p><strong>2）HarfBuzz无法处理包含不同字体属性的文本</strong></p>
+
+<p>比如，对于字符串“a <em>huge</em> breakfast”，其中“huge”希望是斜体，那么我们需要向 HarfBuzz 分开发送三个字符串：</p>
+
+<ul>
+  <li>使用罗马字体的<code class="highlighter-rouge">a</code></li>
+  <li>使用斜体字体的<code class="highlighter-rouge">huge</code></li>
+  <li>以及再次使用罗马字体的<code class="highlighter-rouge">breakfast</code>。</li>
+</ul>
+
+<p>同样，如果在字符串中包含不同的字体、字号、字体样式、语言或方向，那么需要<strong>独立地对每个文本段进行塑形。</strong></p>
+
+<p>HarfBuzz在处理字符串时<strong>要求字符串具有相同的属性。</strong></p>
+
+<p><strong>3）HarfBuzz不会处理换行、连字符或对齐</strong></p>
+
+<p>HarfBuzz会<strong>将字符串排列在一条理论上长度无限的单行上，</strong>如果想找出文本中可能的单词、句子和换行点，需要使用ICU库的断句函数。</p>
+
+<h1 id="六哪些平台在使用harfbuzz">六、哪些平台在使用HarfBuzz</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>场景/平台</th>
+      <th>举例</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>操作系统</td>
+      <td>* Android：安卓系统的核心文本渲染组件* ChromeOS：随 Chrome 浏览器集成* Linux：Ubuntu、Fedora、Arch Linux等</td>
+    </tr>
+    <tr>
+      <td>浏览器</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>* Chrome/Chromium* Mozilla Firefox* Microsoft Edge</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>知名软件</td>
+      <td>* Figma* Adobe Photoshop* Adobe InDesign* OpenJDK* LibreOffice</td>
+    </tr>
+    <tr>
+      <td>游戏引擎</td>
+      <td>* Unreal Engine* Godot Engine</td>
+    </tr>
+    <tr>
+      <td>…</td>
+      <td>…</td>
+    </tr>
+  </tbody>
+</table>
+
+<h1 id="参考">参考</h1>
+
+<ul>
+  <li>https://github.com/harfbuzz/harfbuzz/wiki/</li>
+  <li>HarfBuzz作者博客：文本渲染现状
+    <ul>
+      <li>https://behdad.org/text2024/</li>
+      <li>https://behdad.org/text/</li>
+    </ul>
   </li>
-  <li>
-    <p><a href="https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BList/">Java集合框架之List</a></p>
-  </li>
-  <li>
-    <p><a href="https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BHashMap/">Java集合框架之HashMap</a></p>
-  </li>
-  <li>
-    <p><a href="https://husteryp.github.io/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BSet/">Java集合框架之Set</a></p>
-  </li>
-  <li>
-    <p><a href="https://husteryp.github.io/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/">Java集合框架之LinkedHashMap</a></p>
-  </li>
-  <li>
-    <p><a href="https://husteryp.github.io/2018/09/06/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BQueue/">Java集合框架之Queue</a></p>
-  </li>
-</ol>
+</ul>
 
-<hr />
+<p>本文是从0到1自定义富文本渲染的原理篇之一，此外你还可能感兴趣：</p>
 
-<h1 id="正文">正文</h1>
+<ul>
+  <li><a href="https://mp.weixin.qq.com/s/EYPO3sSjtIstD3RmlRCs9w">一文读懂字符与编码</a></li>
+  <li><a href="https://mp.weixin.qq.com/s/96YJGYKLoxENC4qT9tYNoQ">一文读懂字符、字形、字体</a></li>
+  <li><a href="https://mp.weixin.qq.com/s/D0A8HAQaQNart7KAdWXyJg">一文读懂字体文件</a></li>
+  <li><a href="https://mp.weixin.qq.com/s/fcL6if52qYQUTChEjntHJg">从0到1自定义文字排版引擎：原理篇</a></li>
+  <li><a href="https://mp.weixin.qq.com/s/EpaNjLcG6DZBc128A2gdIQ">逆向分析CoreText中的字体级联/Font Fallback机制</a></li>
+  <li><a href="https://mp.weixin.qq.com/s/1oOSJkTIJ8njV49B6PsfgA">新手小白也能看懂的LLDB技巧/逆向技巧</a></li>
+</ul>
 
-<hr />
-
-<h2 id="一-概述">一. 概述</h2>
-
-<p><code class="highlighter-rouge">LinkedHashMap</code>继承于<code class="highlighter-rouge">HashMap</code>, 除了<code class="highlighter-rouge">HashMap</code>元素遍历无序, <code class="highlighter-rouge">LinkedHashMap</code>元素遍历有序以外, 具有<code class="highlighter-rouge">HashMap</code>的大多数特点; 另外, <code class="highlighter-rouge">LinkedHashMap</code>内部还有一个双向链表, 用于记录元素顺序(这也是保证其遍历有序的原因), 具体有两种顺序,  一个是插入顺序, 一个访问顺序; 同时, <code class="highlighter-rouge">LinkedHashMap</code>还可以用来实现<code class="highlighter-rouge">LRU</code>算法(<code class="highlighter-rouge">Least Recently Used</code>, 即最近最少使用算法); 本文将主要分析<code class="highlighter-rouge">LinkedHashMap</code>的两个大方面: 一个是遍历有序, 另一个是用于<code class="highlighter-rouge">LRU</code>算法的特性</p>
-
-<hr />
-
-<h2 id="二-遍历有序">二. 遍历有序</h2>
-
-<p><code class="highlighter-rouge">LinkedHashMap</code>遍历有序, 主要是因为其在<code class="highlighter-rouge">HashMap</code>的基础上, 增加了一个双向链表, 按照元素的插入顺序或者访问顺序, 将数据重新组织成一个双向链表; 根据标志位<code class="highlighter-rouge">final boolean accessOrder;</code>来决定是按照插入顺序(<code class="highlighter-rouge">insertion-order</code>, 此时需要<code class="highlighter-rouge">accessOrder = false</code>)还是访问顺序(<code class="highlighter-rouge">access-order</code>, 此时需要<code class="highlighter-rouge">accessOrder = true</code>)来组织</p>
-
-<p><code class="highlighter-rouge">LinkedHashMap</code>改写了<code class="highlighter-rouge">HashMap</code>的节点, 如下; 在其中增加了<code class="highlighter-rouge">before</code>和<code class="highlighter-rouge">after</code>域用于帮助组织双向链表</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    static class Entry&lt;K,V&gt; extends HashMap.Node&lt;K,V&gt; {
-        Entry&lt;K,V&gt; before, after;
-        Entry(int hash, K key, V value, Node&lt;K,V&gt; next) {
-            super(hash, key, value, next);
-        }
-    }
-</code></pre></div></div>
-
-<p>对于<code class="highlighter-rouge">accessOrder</code>值的指定只能在创建<code class="highlighter-rouge">LinkedHashMap</code>的时候, 也就是说<code class="highlighter-rouge">LinkedHashMap</code>并没有提供明确的<code class="highlighter-rouge">set()</code>方法来改变该值(一旦在构造函数中指定, 就无法改变); <code class="highlighter-rouge">LinkedHashMap</code>提供了如下构造函数可以用于指定<code class="highlighter-rouge">accessOrder</code>的值, 其余构造函数中, <code class="highlighter-rouge">accessOrder</code>都默认为<code class="highlighter-rouge">false</code>, 即默认以<code class="highlighter-rouge">insertion-order</code>的顺序组织双向链表</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    public LinkedHashMap(int initialCapacity,
-                         float loadFactor,
-                         boolean accessOrder) {
-        super(initialCapacity, loadFactor);
-        this.accessOrder = accessOrder;
-    }
-</code></pre></div></div>
-
-<p><code class="highlighter-rouge">LinkedHashMap</code>重写了<code class="highlighter-rouge">HashMap</code>的<code class="highlighter-rouge">newNode()</code>函数, <code class="highlighter-rouge">newNode()</code>在进行元素插入的时候会被<code class="highlighter-rouge">HashMap.putVal()</code>调用, <code class="highlighter-rouge">LinkedHashMap</code>用自己的<code class="highlighter-rouge">Entry</code>节点替换<code class="highlighter-rouge">HashMap</code><code class="highlighter-rouge">Node</code>节点的同时, 进行双向链表的构建, 使得程序改动最小</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    Node&lt;K,V&gt; newNode(int hash, K key, V value, Node&lt;K,V&gt; e) {
-        LinkedHashMap.Entry&lt;K,V&gt; p =
-            new LinkedHashMap.Entry&lt;K,V&gt;(hash, key, value, e);
-        linkNodeLast(p); // 将节点插入到双向链表的末尾
-        return p;
-    }
-</code></pre></div></div>
-
-<p>至于<code class="highlighter-rouge">linkNodeLast()</code>函数, 即将节点插入到双向链表的末尾, 该方法比较简单, 这里就不再贴源码啦 !</p>
-
-<p>那么当我们指定了<code class="highlighter-rouge">accessOrder</code>为<code class="highlighter-rouge">true</code>的时候, 即以元素访问顺序来组织双向链表的时候, 其实就只是在获取元素的时候, 将被访问的元素移动到链表末尾; 如下; 那么链表表头的元素就是最近没有被访问的元素, 这也是我们实现<code class="highlighter-rouge">LRU</code>算法的依据(稍后会细讲)</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    public V get(Object key) {
-        Node&lt;K,V&gt; e;
-        if ((e = getNode(hash(key), key)) == null)
-            return null;
-        if (accessOrder) // 如果指定为按照元素访问顺序组织元素
-            afterNodeAccess(e); // 将元素移动到链表末尾
-        return e.value;
-    }
-</code></pre></div></div>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    void afterNodeAccess(Node&lt;K,V&gt; e) { // move node to last
-        // 省略具体细节
-        ...
-    }
-</code></pre></div></div>
-
-<p>到这里, 我们对<code class="highlighter-rouge">LinkedHashMap</code>遍历有序的原因有了较为详细的了解; 接下来要讲的是<code class="highlighter-rouge">LinkedHashMap</code>的一个应用, 即用于实现<code class="highlighter-rouge">LRU</code>算法的特性</p>
-
-<hr />
-
-<h2 id="三-lru算法">三. LRU算法</h2>
-
-<p><strong>LRU算法</strong>即<code class="highlighter-rouge">Least Recently Used</code>, 其依据是<strong>如果数据最近被访问过, 那么其将来被访问的几率也更大</strong></p>
-
-<p><code class="highlighter-rouge">Android</code>中的<code class="highlighter-rouge">LruCache</code>(内存缓存)内部就是利用<code class="highlighter-rouge">LinkedHashMap</code>实现的</p>
-
-<p>前面我们讲了, 当<code class="highlighter-rouge">accessOrder</code>设置为<code class="highlighter-rouge">true</code>, 即按照元素访问顺序组织数据的时候, 会在<code class="highlighter-rouge">get()</code>方法中将被访问的元素移动到链表的末尾, 那么链表首部的元素就是最久没有访问的, 所以, 当要使用<code class="highlighter-rouge">LinkedHashMap</code>实现<code class="highlighter-rouge">LRU</code>的时候, 必须将<code class="highlighter-rouge">accessOrder</code>置为<code class="highlighter-rouge">true</code></p>
-
-<p>另外, 还需要我们自己去定义<code class="highlighter-rouge">LRU</code>的实现规则, 即自己定义什么时候应该移除最久没有使用的元素; 此时我们需要去重写<code class="highlighter-rouge">LinkedHashMap</code>的<code class="highlighter-rouge">removeEldestEntry()</code>函数, <code class="highlighter-rouge">removeEldestEntry()</code>是在我们插入一个元素完毕之后, 回调<code class="highlighter-rouge">afterNodeInsertion()</code>中调用的, 如下; 但是<code class="highlighter-rouge">removeEldestEntry()</code>默认返回<code class="highlighter-rouge">false</code>, 所以需要我们自己去定义规则</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    void afterNodeInsertion(boolean evict) { // possibly remove eldest
-        LinkedHashMap.Entry&lt;K,V&gt; first;
-        if (evict &amp;&amp; (first = head) != null &amp;&amp; removeEldestEntry(first)) { // 插入元素之后, 判断是否需要移除最久没有访问的元素
-            K key = first.key;
-            removeNode(hash(key), key, null, false, true); // 移除链表首部的元素
-        }
-    }
-</code></pre></div></div>
-
-<p>至于自定义规则, 比如: 约定最多在内存中缓存多少个元素, 超过该阈值之后, <code class="highlighter-rouge">removeEldestEntry()</code>返回<code class="highlighter-rouge">true</code>, 即将旧元素移除; 或者, 规定缓存占用多少内存, 当达到该阈值之后, 即进行旧元素移除; 当然, 这些都是后话, 具体的<code class="highlighter-rouge">LRU</code>算法, 可以根据实际需求来定</p>
-
-<hr />
-
-<h2 id="四-总结">四. 总结</h2>
-
-<p><code class="highlighter-rouge">LinkedHashMap</code>基于<code class="highlighter-rouge">HashMap</code>, 总体上比较简单, 主要掌握上文说的两个主要特点即可, 不再赘述 !</p>
+<p>更多内容可订阅公众号：<strong>非专业程序员Ping</strong></p>
 
 
                 <hr>
@@ -306,13 +345,9 @@
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/2018/08/27/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BSet/" data-toggle="tooltip" data-placement="top" title="Java集合框架之Set">&larr; Previous Post</a>
+                        <a href="/2025/10/18/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3CoreText-API/" data-toggle="tooltip" data-placement="top" title="深入理解iOS CoreText API">&larr; Previous Post</a>
                     </li>
                     
-                    
-                    <li class="next">
-                        <a href="/2018/08/31/%E5%9B%BE%E7%89%87%E4%B8%89%E7%BA%A7%E7%BC%93%E5%AD%98%E4%B9%8BLruCache%E5%92%8CDiskLurCache/" data-toggle="tooltip" data-placement="top" title="图片三级缓存之内存缓存和磁盘缓存">Next Post &rarr;</a>
-                    </li>
                     
                 </ul>
 
@@ -457,8 +492,8 @@
 <script type="text/javascript">
     /* * * CONFIGURATION VARIABLES * * */
     var disqus_shortname = "HusterYP";
-    var disqus_identifier = "/2018/08/28/Java集合框架之LinkedHashMap";
-    var disqus_url = "http://localhost:4000/2018/08/28/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E4%B9%8BLinkedHashMap/";
+    var disqus_identifier = "/2025/10/25/HarfBuzz概览";
+    var disqus_url = "http://localhost:4000/2025/10/25/HarfBuzz%E6%A6%82%E8%A7%88/";
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
